@@ -57,6 +57,7 @@ import androidx.compose.runtime.Composable
 import androidx.compose.runtime.LaunchedEffect
 import androidx.compose.runtime.getValue
 import androidx.compose.runtime.mutableDoubleStateOf
+import androidx.compose.runtime.mutableLongStateOf
 import androidx.compose.runtime.mutableStateOf
 import androidx.compose.runtime.remember
 import androidx.compose.runtime.setValue
@@ -113,7 +114,7 @@ fun LendingEntryDialog(
     var isManualInput by remember { mutableStateOf(false) }
     var manualText by remember { mutableStateOf(amount.toLong().toString()) }
     var notes by remember { mutableStateOf(existingEntry?.lending?.notes ?: "") }
-    var entryDate by remember { mutableStateOf(existingEntry?.lending?.date ?: System.currentTimeMillis()) }
+    var entryDate by remember { mutableLongStateOf(existingEntry?.lending?.date ?: System.currentTimeMillis()) }
     var dueDate by remember { mutableStateOf<Long?>(existingEntry?.lending?.dueDate) }
 
     var showCustomDatePicker by remember { mutableStateOf(false) }
@@ -644,7 +645,7 @@ fun LendingEntryDialog(
                                     )
                                     Text(
                                         text = if (isCustomSelected && dueDate != null) {
-                                            SimpleDateFormat("d MMM", Locale.getDefault()).format(Date(dueDate!!))
+                                            LendingDateFormatters.formatShort(dueDate!!)
                                         } else {
                                             "Custom"
                                         },

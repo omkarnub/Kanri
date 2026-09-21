@@ -24,7 +24,7 @@ import java.util.Locale
 
 class LendingHubViewModel(
     application: Application,
-    private val savedStateHandle: SavedStateHandle = SavedStateHandle(),
+    private val savedStateHandle: SavedStateHandle = SavedStateHandle(emptyMap()),
     dao: LendingDao? = null,
     private val timeProvider: () -> Long = { System.currentTimeMillis() }
 ) : AndroidViewModel(application) {
@@ -483,12 +483,11 @@ class LendingHubViewModel(
         }
 
         fun groupRecordsByMonth(records: List<LendingWithRepayments>): List<MonthTimelineGroup> {
-            val monthFormatter = SimpleDateFormat("MMMM yyyy", Locale.getDefault())
             val sorted = records.sortedByDescending { it.lending.date }
 
             val groups = mutableMapOf<String, MutableList<LendingWithRepayments>>()
             for (record in sorted) {
-                val key = monthFormatter.format(Date(record.lending.date))
+                val key = LendingDateFormatters.formatMonthHeader(record.lending.date)
                 groups.getOrPut(key) { mutableListOf() }.add(record)
             }
 

@@ -575,7 +575,7 @@ fun PersonEntryCardContent(
             }
 
             // Dates: Entry date and due date
-            val entryDateStr = SimpleDateFormat("d MMM yyyy", Locale.getDefault()).format(Date(entry.date))
+            val entryDateStr = LendingDateFormatters.formatMedium(entry.date)
             Row(
                 modifier = Modifier.fillMaxWidth(),
                 verticalAlignment = Alignment.CenterVertically,
@@ -588,7 +588,7 @@ fun PersonEntryCardContent(
                 )
 
                 if (entry.dueDate != null) {
-                    val dueDateStr = SimpleDateFormat("d MMM yyyy", Locale.getDefault()).format(Date(entry.dueDate))
+                    val dueDateStr = LendingDateFormatters.formatMedium(entry.dueDate)
                     Text(
                         text = "•",
                         fontSize = 11.sp,
@@ -677,7 +677,7 @@ fun PersonEntryCardContent(
                                 horizontalArrangement = Arrangement.SpaceBetween
                             ) {
                                 Column(verticalArrangement = Arrangement.spacedBy(1.dp)) {
-                                    val repDate = SimpleDateFormat("d MMM yyyy", Locale.getDefault()).format(Date(rep.paidAt))
+                                    val repDate = LendingDateFormatters.formatMedium(rep.paidAt)
                                     Text(
                                         text = repDate,
                                         style = MaterialTheme.typography.bodySmall.copy(fontSize = 11.5.sp),
