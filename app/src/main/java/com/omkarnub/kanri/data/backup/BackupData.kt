@@ -4,6 +4,7 @@ import com.omkarnub.kanri.data.db.BudgetEntity
 import com.omkarnub.kanri.data.db.CategoryEntity
 import com.omkarnub.kanri.data.db.CounterpartyCategoryMapEntity
 import com.omkarnub.kanri.data.db.LendingEntity
+import com.omkarnub.kanri.data.db.LendingRepaymentEntity
 import com.omkarnub.kanri.data.db.TransactionEntity
 import org.json.JSONArray
 import org.json.JSONObject
@@ -16,10 +17,11 @@ data class BackupPayload(
     val categories: List<CategoryEntity>,
     val budgets: List<BudgetEntity>,
     val lendingRecords: List<LendingEntity>,
-    val counterpartyMappings: List<CounterpartyCategoryMapEntity>
+    val counterpartyMappings: List<CounterpartyCategoryMapEntity>,
+    val lendingRepayments: List<LendingRepaymentEntity> = emptyList()
 ) {
     companion object {
-        const val CURRENT_VERSION = 1
+        const val CURRENT_VERSION = 2
     }
 }
 
@@ -28,7 +30,8 @@ data class BackupStats(
     val categoryCount: Int,
     val budgetCount: Int,
     val lendingCount: Int,
-    val mappingCount: Int
+    val mappingCount: Int,
+    val repaymentCount: Int = 0
 )
 
 object BackupJsonParser {
@@ -97,9 +100,23 @@ object BackupJsonParser {
             obj.put("isSettled", l.isSettled)
             obj.put("notes", l.notes ?: JSONObject.NULL)
             obj.put("linkedTransactionId", l.linkedTransactionId ?: JSONObject.NULL)
+            obj.put("originalAmount", l.originalAmount ?: JSONObject.NULL)
             lendingArray.put(obj)
         }
         root.put("lendingRecords", lendingArray)
+
+        // Lending Repayments
+        val repaymentArray = JSONArray()
+        payload.lendingRepayments.forEach { r ->
+            val obj = JSONObject()
+            obj.put("id", r.id)
+            obj.put("lendingId", r.lendingId)
+            obj.put("amount", r.amount)
+            obj.put("paidAt", r.paidAt)
+            obj.put("note", r.note ?: JSONObject.NULL)
+            repaymentArray.put(obj)
+        }
+        root.put("lendingRepayments", repaymentArray)
 
         // Counterparty Mappings
         val mapArray = JSONArray()
@@ -190,7 +207,24 @@ object BackupJsonParser {
                     dueDate = if (obj.isNull("dueDate")) null else obj.getLong("dueDate"),
                     isSettled = obj.optBoolean("isSettled", false),
                     notes = if (obj.isNull("notes")) null else obj.getString("notes"),
-                    linkedTransactionId = if (obj.isNull("linkedTransactionId")) null else obj.getLong("linkedTransactionId")
+                    linkedTransactionId = if (obj.isNull("linkedTransactionId")) null else obj.getLong("linkedTransactionId"),
+                    originalAmount = if (obj.isNull("originalAmount")) null else obj.optDouble("originalAmount")
+                )
+            )
+        }
+
+        // Parse lending repayments
+        val repaymentList = mutableListOf<LendingRepaymentEntity>()
+        val repaymentArray = root.optJSONArray("lendingRepayments") ?: JSONArray()
+        for (i in 0 until repaymentArray.length()) {
+            val obj = repaymentArray.getJSONObject(i)
+            repaymentList.add(
+                LendingRepaymentEntity(
+                    id = obj.optLong("id", 0),
+                    lendingId = obj.getLong("lendingId"),
+                    amount = obj.getDouble("amount"),
+                    paidAt = obj.optLong("paidAt", System.currentTimeMillis()),
+                    note = if (obj.isNull("note")) null else obj.getString("note")
                 )
             )
         }
@@ -216,7 +250,8 @@ object BackupJsonParser {
             categories = catList,
             budgets = budgetList,
             lendingRecords = lendingList,
-            counterpartyMappings = mapList
+            counterpartyMappings = mapList,
+            lendingRepayments = repaymentList
         )
     }
 }

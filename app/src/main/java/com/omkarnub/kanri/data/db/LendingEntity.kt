@@ -31,5 +31,8 @@ data class LendingEntity(
     val notes: String? = null,
 
     @ColumnInfo(name = "linked_transaction_id")
-    val linkedTransactionId: Long? = null
+    val linkedTransactionId: Long? = null,
+
+    @ColumnInfo(name = "original_amount")
+    val originalAmount: Double? = null
 )
