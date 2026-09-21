@@ -18,6 +18,7 @@ class BackupRepository(private val context: Context) {
         val cats = db.categoryDao().getAllCategoriesSync()
         val budgets = db.budgetDao().getAllBudgetsSync()
         val lending = db.lendingDao().getAllRecordsSync()
+        val repayments = db.lendingDao().getAllRepaymentsSync()
         val mappings = db.categoryDao().getAllMappings()
 
         BackupPayload(
@@ -25,7 +26,8 @@ class BackupRepository(private val context: Context) {
             categories = cats,
             budgets = budgets,
             lendingRecords = lending,
-            counterpartyMappings = mappings
+            counterpartyMappings = mappings,
+            lendingRepayments = repayments
         )
     }
 
@@ -49,7 +51,8 @@ class BackupRepository(private val context: Context) {
                 categoryCount = payload.categories.size,
                 budgetCount = payload.budgets.size,
                 lendingCount = payload.lendingRecords.size,
-                mappingCount = payload.counterpartyMappings.size
+                mappingCount = payload.counterpartyMappings.size,
+                repaymentCount = payload.lendingRepayments.size
             )
             Result.success(stats)
         } catch (e: Exception) {
@@ -94,6 +97,7 @@ class BackupRepository(private val context: Context) {
                 if (clearExisting) {
                     db.transactionDao().deleteAllTransactions()
                     db.budgetDao().deleteAllBudgets()
+                    db.lendingDao().deleteAllRepayments()
                     db.lendingDao().deleteAllRecords()
                     db.categoryDao().deleteAllMappings()
                     db.categoryDao().deleteAllCategories()
@@ -111,6 +115,9 @@ class BackupRepository(private val context: Context) {
                 if (payload.lendingRecords.isNotEmpty()) {
                     db.lendingDao().insertAll(payload.lendingRecords)
                 }
+                if (payload.lendingRepayments.isNotEmpty()) {
+                    db.lendingDao().insertAllRepayments(payload.lendingRepayments)
+                }
                 if (payload.counterpartyMappings.isNotEmpty()) {
                     db.categoryDao().insertMappings(payload.counterpartyMappings)
                 }
@@ -121,7 +128,8 @@ class BackupRepository(private val context: Context) {
                 categoryCount = payload.categories.size,
                 budgetCount = payload.budgets.size,
                 lendingCount = payload.lendingRecords.size,
-                mappingCount = payload.counterpartyMappings.size
+                mappingCount = payload.counterpartyMappings.size,
+                repaymentCount = payload.lendingRepayments.size
             )
             Result.success(stats)
         } catch (e: Exception) {

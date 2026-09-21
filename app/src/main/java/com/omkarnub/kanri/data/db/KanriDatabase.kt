@@ -23,10 +23,11 @@ import androidx.room.migration.Migration
         CounterpartyCategoryMapEntity::class,
         BudgetEntity::class,
         LendingEntity::class,
+        LendingRepaymentEntity::class,
         RecurringPaymentEntity::class,
         SavingsGoalEntity::class
     ],
-    version = 8,
+    version = 9,
     exportSchema = false
 )
 abstract class KanriDatabase : RoomDatabase() {
@@ -58,6 +59,25 @@ abstract class KanriDatabase : RoomDatabase() {
         val MIGRATION_7_8 = object : Migration(7, 8) {
             override fun migrate(db: SupportSQLiteDatabase) {
                 db.execSQL("ALTER TABLE categories ADD COLUMN is_custom INTEGER NOT NULL DEFAULT 0")
+            }
+        }
+
+        val MIGRATION_8_9 = object : Migration(8, 9) {
+            override fun migrate(db: SupportSQLiteDatabase) {
+                db.execSQL("ALTER TABLE lending_records ADD COLUMN original_amount REAL DEFAULT NULL")
+                db.execSQL(
+                    """
+                    CREATE TABLE IF NOT EXISTS lending_repayments (
+                        id INTEGER PRIMARY KEY AUTOINCREMENT NOT NULL,
+                        lending_id INTEGER NOT NULL,
+                        amount REAL NOT NULL,
+                        paid_at INTEGER NOT NULL,
+                        note TEXT,
+                        FOREIGN KEY(lending_id) REFERENCES lending_records(id) ON DELETE CASCADE
+                    )
+                    """.trimIndent()
+                )
+                db.execSQL("CREATE INDEX IF NOT EXISTS index_lending_repayments_lending_id ON lending_repayments (lending_id)")
             }
         }
 
@@ -103,7 +123,7 @@ abstract class KanriDatabase : RoomDatabase() {
                     KanriDatabase::class.java,
                     "kanri_database"
                 )
-                    .addMigrations(MIGRATION_5_6, MIGRATION_6_7, MIGRATION_7_8)
+                    .addMigrations(MIGRATION_5_6, MIGRATION_6_7, MIGRATION_7_8, MIGRATION_8_9)
                     .fallbackToDestructiveMigration(dropAllTables = false)
                     .addCallback(object : Callback() {
                         override fun onCreate(db: SupportSQLiteDatabase) {
@@ -137,7 +157,7 @@ abstract class KanriDatabase : RoomDatabase() {
                 System.loadLibrary("sqlcipher")
                 val config = androidx.sqlite.db.SupportSQLiteOpenHelper.Configuration.builder(context)
                     .name(dbFile.name)
-                    .callback(object : androidx.sqlite.db.SupportSQLiteOpenHelper.Callback(8) {
+                    .callback(object : androidx.sqlite.db.SupportSQLiteOpenHelper.Callback(9) {
                         override fun onCreate(db: SupportSQLiteDatabase) {}
                         override fun onUpgrade(db: SupportSQLiteDatabase, oldVersion: Int, newVersion: Int) {}
                         override fun onDowngrade(db: SupportSQLiteDatabase, oldVersion: Int, newVersion: Int) {}
