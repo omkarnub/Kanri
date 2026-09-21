@@ -284,7 +284,7 @@ fun PersonRowItem(
                     subtitleText = "Overdue ${person.overdueDays}d"
                     subtitleColor = WarningAmber
                 } else if (person.nextDueDate != null) {
-                    val dateStr = SimpleDateFormat("d MMM", Locale.getDefault()).format(Date(person.nextDueDate))
+                    val dateStr = LendingDateFormatters.formatShort(person.nextDueDate)
                     subtitleText = "${person.openCount} open · next due $dateStr"
                     subtitleColor = if (person.isDueSoon) WarningAmber else MaterialTheme.colorScheme.onSurfaceVariant
                 } else {
