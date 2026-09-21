@@ -22,7 +22,7 @@ import java.util.Calendar
 import java.util.Date
 import java.util.Locale
 
-class LendingHubViewModel(
+class LendingHubViewModel @JvmOverloads constructor(
     application: Application,
     private val savedStateHandle: SavedStateHandle = SavedStateHandle(emptyMap()),
     dao: LendingDao? = null,
