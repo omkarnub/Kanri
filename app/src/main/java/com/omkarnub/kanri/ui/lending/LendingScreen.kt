@@ -1,612 +1,505 @@
 package com.omkarnub.kanri.ui.lending
 
-import androidx.compose.foundation.background
-import androidx.compose.foundation.border
-import androidx.compose.foundation.clickable
+import androidx.activity.compose.BackHandler
+import androidx.compose.animation.AnimatedContent
+import androidx.compose.animation.core.Animatable
+import androidx.compose.animation.core.FastOutSlowInEasing
+import androidx.compose.animation.core.tween
+import androidx.compose.animation.fadeIn
+import androidx.compose.animation.fadeOut
+import androidx.compose.animation.slideInHorizontally
+import androidx.compose.animation.slideOutHorizontally
+import androidx.compose.animation.togetherWith
 import androidx.compose.foundation.layout.Arrangement
 import androidx.compose.foundation.layout.Box
 import androidx.compose.foundation.layout.Column
-import androidx.compose.foundation.layout.PaddingValues
-import androidx.compose.foundation.layout.Row
 import androidx.compose.foundation.layout.Spacer
 import androidx.compose.foundation.layout.fillMaxSize
 import androidx.compose.foundation.layout.fillMaxWidth
 import androidx.compose.foundation.layout.height
 import androidx.compose.foundation.layout.padding
 import androidx.compose.foundation.layout.size
-import androidx.compose.foundation.layout.width
 import androidx.compose.foundation.lazy.LazyColumn
-import androidx.compose.foundation.lazy.items
-import androidx.compose.foundation.shape.CircleShape
-import androidx.compose.foundation.shape.RoundedCornerShape
 import androidx.compose.material.icons.Icons
 import androidx.compose.material.icons.automirrored.filled.CallSplit
 import androidx.compose.material.icons.filled.Add
-import androidx.compose.material.icons.filled.Check
-import androidx.compose.material.icons.filled.DeleteOutline
-import androidx.compose.material.icons.filled.Handshake
-import androidx.compose.material3.Card
-import androidx.compose.material3.CardDefaults
-import androidx.compose.material3.CircularProgressIndicator
+import androidx.compose.material3.Button
+import androidx.compose.material3.ButtonDefaults
 import androidx.compose.material3.ExperimentalMaterial3Api
-import androidx.compose.material3.FloatingActionButton
 import androidx.compose.material3.Icon
 import androidx.compose.material3.IconButton
 import androidx.compose.material3.MaterialTheme
 import androidx.compose.material3.Scaffold
+import androidx.compose.material3.SnackbarDuration
+import androidx.compose.material3.SnackbarHost
+import androidx.compose.material3.SnackbarHostState
+import androidx.compose.material3.SnackbarResult
 import androidx.compose.material3.Text
 import androidx.compose.material3.TopAppBar
 import androidx.compose.material3.TopAppBarDefaults
 import androidx.compose.material3.rememberModalBottomSheetState
 import androidx.compose.runtime.Composable
+import androidx.compose.runtime.LaunchedEffect
 import androidx.compose.runtime.collectAsState
 import androidx.compose.runtime.getValue
 import androidx.compose.runtime.mutableStateOf
 import androidx.compose.runtime.remember
+import androidx.compose.runtime.rememberCoroutineScope
 import androidx.compose.runtime.setValue
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
-import androidx.compose.ui.draw.clip
-import androidx.compose.ui.graphics.Color
+import androidx.compose.ui.graphics.graphicsLayer
 import androidx.compose.ui.text.font.FontWeight
-import androidx.compose.ui.text.style.TextDecoration
-import androidx.compose.ui.text.style.TextOverflow
 import androidx.compose.ui.unit.dp
 import androidx.compose.ui.unit.sp
 import androidx.lifecycle.viewmodel.compose.viewModel
-import com.omkarnub.kanri.data.db.LendingEntity
-import com.omkarnub.kanri.ui.home.formatCurrency
-import java.text.SimpleDateFormat
-import java.util.Date
-import java.util.Locale
+import com.omkarnub.kanri.data.db.LendingWithRepayments
+import kotlinx.coroutines.launch
 
 @OptIn(ExperimentalMaterial3Api::class)
 @Composable
 fun LendingScreen(
     modifier: Modifier = Modifier,
-    viewModel: LendingViewModel = viewModel()
+    viewModel: LendingViewModel = viewModel(),
+    hubViewModel: LendingHubViewModel = viewModel()
 ) {
-    val state by viewModel.uiState.collectAsState()
-    var showAddDialog by remember { mutableStateOf(false) }
+    val hubState by hubViewModel.uiState.collectAsState()
+    val scope = rememberCoroutineScope()
+    val snackbarHostState = remember { SnackbarHostState() }
+
+    // Dialog states
+    var showAddEntryDialog by remember { mutableStateOf(false) }
+    var addEntryInitialType by remember { mutableStateOf("LENT") }
+    var addEntryInitialPerson by remember { mutableStateOf("") }
+    var editingEntry by remember { mutableStateOf<LendingWithRepayments?>(null) }
+
+    var repaymentDialogPerson by remember { mutableStateOf<PersonSummary?>(null) }
+    var repaymentDialogEntry by remember { mutableStateOf<LendingWithRepayments?>(null) }
+
+    var renameDialogPerson by remember { mutableStateOf<PersonSummary?>(null) }
+    var settleAllDialogPerson by remember { mutableStateOf<PersonSummary?>(null) }
+
+    // Split Expense Sheet
     var showSplitSheet by remember { mutableStateOf(false) }
     val splitSheetState = rememberModalBottomSheetState(skipPartiallyExpanded = true)
 
+    // Entrance animation animatables (played once on tab entrance)
+    val headerAlpha = remember { Animatable(0f) }
+    val heroAlpha = remember { Animatable(0f) }
+    val controlAlpha = remember { Animatable(0f) }
+    val listAlpha = remember { Animatable(0f) }
+
+    LaunchedEffect(Unit) {
+        launch {
+            headerAlpha.animateTo(
+                targetValue = 1f,
+                animationSpec = tween(durationMillis = 400, delayMillis = 0, easing = FastOutSlowInEasing)
+            )
+        }
+        launch {
+            heroAlpha.animateTo(
+                targetValue = 1f,
+                animationSpec = tween(durationMillis = 420, delayMillis = 60, easing = FastOutSlowInEasing)
+            )
+        }
+        launch {
+            controlAlpha.animateTo(
+                targetValue = 1f,
+                animationSpec = tween(durationMillis = 440, delayMillis = 130, easing = FastOutSlowInEasing)
+            )
+        }
+        launch {
+            listAlpha.animateTo(
+                targetValue = 1f,
+                animationSpec = tween(durationMillis = 460, delayMillis = 180, easing = FastOutSlowInEasing)
+            )
+        }
+    }
+
     Scaffold(
         modifier = modifier.fillMaxSize(),
+        snackbarHost = { SnackbarHost(snackbarHostState) },
         topBar = {
-            TopAppBar(
-                title = {
-                    Text(
-                        text = "Lent & Borrowed",
-                        fontWeight = FontWeight.Bold,
-                        fontSize = 22.sp
-                    )
-                },
-                actions = {
-                    IconButton(onClick = { showSplitSheet = true }) {
-                        Icon(
-                            imageVector = Icons.AutoMirrored.Filled.CallSplit,
-                            contentDescription = "Split a Bill",
-                            tint = MaterialTheme.colorScheme.onSurface
+            if (hubState.selectedPersonSummary == null) {
+                TopAppBar(
+                    title = {
+                        Text(
+                            text = "Lend & Borrow",
+                            fontWeight = FontWeight.Bold,
+                            fontSize = 22.sp
                         )
+                    },
+                    actions = {
+                        IconButton(onClick = { showSplitSheet = true }) {
+                            Icon(
+                                imageVector = Icons.AutoMirrored.Filled.CallSplit,
+                                contentDescription = "Split a Bill",
+                                tint = MaterialTheme.colorScheme.onSurface
+                            )
+                        }
+                        IconButton(onClick = {
+                            addEntryInitialType = "LENT"
+                            addEntryInitialPerson = ""
+                            editingEntry = null
+                            showAddEntryDialog = true
+                        }) {
+                            Icon(
+                                imageVector = Icons.Default.Add,
+                                contentDescription = "Add Entry",
+                                tint = MaterialTheme.colorScheme.onSurface
+                            )
+                        }
+                    },
+                    colors = TopAppBarDefaults.topAppBarColors(
+                        containerColor = MaterialTheme.colorScheme.surface
+                    ),
+                    modifier = Modifier.graphicsLayer {
+                        alpha = headerAlpha.value
+                        translationY = (1f - headerAlpha.value) * (-10.dp.toPx())
                     }
-                },
-                colors = TopAppBarDefaults.topAppBarColors(
-                    containerColor = MaterialTheme.colorScheme.surface
                 )
-            )
+            }
         }
     ) { innerPadding ->
-        if (showAddDialog) {
-            AddLendingDialog(
-                onDismiss = { showAddDialog = false },
-                onSave = { personName, amount, type, dueDate, notes ->
-                    viewModel.addRecord(personName, amount, type, dueDate, notes)
-                    showAddDialog = false
-                }
-            )
-        }
-
-        if (showSplitSheet) {
-            SplitExpenseSheet(
-                sheetState = splitSheetState,
-                onDismiss = { showSplitSheet = false },
-                onSaveLenderSplit = { friendNames, perPersonShare, eventDescription ->
-                    viewModel.addSplitAsLender(friendNames, perPersonShare, eventDescription)
-                    showSplitSheet = false
-                },
-                onSaveBorrowerSplit = { payerName, userShare, eventDescription ->
-                    viewModel.addSplitAsBorrower(payerName, userShare, eventDescription)
-                    showSplitSheet = false
-                }
-            )
-        }
-
-        if (state.isLoading) {
-            Box(
-                modifier = Modifier
-                    .fillMaxSize()
-                    .padding(innerPadding),
-                contentAlignment = Alignment.Center
-            ) {
-                com.omkarnub.kanri.ui.common.KanriWobbleLoader(color = MaterialTheme.colorScheme.primary)
-            }
-        } else {
-            LazyColumn(
-                modifier = Modifier
-                    .fillMaxSize()
-                    .padding(innerPadding),
-                contentPadding = PaddingValues(start = 16.dp, top = 16.dp, end = 16.dp, bottom = 100.dp),
-                verticalArrangement = Arrangement.spacedBy(14.dp)
-            ) {
-                // Summary Cards
-                item {
-                    LendingSummaryCard(
-                        totalLent = state.totalLentPending,
-                        totalBorrowed = state.totalBorrowedPending,
-                        netBalance = state.netBalance
+        // Main Screen Transition: Main List <-> Person Detail
+        AnimatedContent(
+            targetState = hubState.selectedPersonSummary,
+            transitionSpec = {
+                if (targetState != null) {
+                    (slideInHorizontally(
+                        initialOffsetX = { it / 3 },
+                        animationSpec = tween(durationMillis = 320, easing = FastOutSlowInEasing)
+                    ) + fadeIn(
+                        animationSpec = tween(durationMillis = 280, easing = FastOutSlowInEasing)
+                    )).togetherWith(
+                        slideOutHorizontally(
+                            targetOffsetX = { -it / 5 },
+                            animationSpec = tween(durationMillis = 280, easing = FastOutSlowInEasing)
+                        ) + fadeOut(
+                            animationSpec = tween(durationMillis = 200, easing = FastOutSlowInEasing)
+                        )
                     )
-                }
-
-                // Split a Bill Quick Action Card
-                item {
-                    SplitBillBannerCard(onClick = { showSplitSheet = true })
-                }
-
-                // Filter Chips Row
-                item {
-                    LendingFilterRow(
-                        currentFilter = state.activeFilter,
-                        onFilterSelected = { viewModel.setFilter(it) }
-                    )
-                }
-
-                if (state.records.isEmpty()) {
-                    item {
-                        EmptyLendingView(onAddClick = { showAddDialog = true })
-                    }
                 } else {
-                    items(state.records, key = { it.id }) { record ->
-                        LendingItemCard(
-                            record = record,
-                            onToggleSettled = { viewModel.toggleSettled(record) },
-                            onDelete = { viewModel.deleteRecord(record) }
+                    (slideInHorizontally(
+                        initialOffsetX = { -it / 5 },
+                        animationSpec = tween(durationMillis = 300, easing = FastOutSlowInEasing)
+                    ) + fadeIn(
+                        animationSpec = tween(durationMillis = 260, easing = FastOutSlowInEasing)
+                    )).togetherWith(
+                        slideOutHorizontally(
+                            targetOffsetX = { it / 3 },
+                            animationSpec = tween(durationMillis = 260, easing = FastOutSlowInEasing)
+                        ) + fadeOut(
+                            animationSpec = tween(durationMillis = 180, easing = FastOutSlowInEasing)
                         )
-                    }
+                    )
                 }
-
-                item {
-                    Spacer(modifier = Modifier.height(60.dp))
-                }
-            }
-        }
-    }
-}
-
-@Composable
-fun LendingSummaryCard(
-    totalLent: Double,
-    totalBorrowed: Double,
-    netBalance: Double
-) {
-    Card(
-        modifier = Modifier.fillMaxWidth(),
-        shape = RoundedCornerShape(24.dp),
-        colors = CardDefaults.cardColors(containerColor = MaterialTheme.colorScheme.surface),
-        border = androidx.compose.foundation.BorderStroke(1.dp, MaterialTheme.colorScheme.outlineVariant)
-    ) {
-        Column(
+            },
+            label = "personDetailTransition",
             modifier = Modifier
-                .fillMaxWidth()
-                .padding(20.dp)
-        ) {
-            Row(
-                modifier = Modifier.fillMaxWidth(),
-                horizontalArrangement = Arrangement.SpaceBetween,
-                verticalAlignment = Alignment.CenterVertically
-            ) {
-                Text(
-                    text = "DEBT LEDGER OVERVIEW",
-                    style = MaterialTheme.typography.labelSmall.copy(
-                        color = MaterialTheme.colorScheme.onSurfaceVariant,
-                        letterSpacing = 1.2.sp,
-                        fontWeight = FontWeight.Bold
-                    )
-                )
-
-                Box(
-                    modifier = Modifier
-                        .clip(RoundedCornerShape(8.dp))
-                        .background(if (netBalance >= 0) Color(0x222ECC71) else Color(0x22E74C3C))
-                        .padding(horizontal = 8.dp, vertical = 3.dp)
-                ) {
-                    Text(
-                        text = if (netBalance >= 0) "Net: +${formatCurrency(netBalance)}" else "Net: ${formatCurrency(netBalance)}",
-                        color = MaterialTheme.colorScheme.onSurface,
-                        fontSize = 11.sp,
-                        fontWeight = FontWeight.Bold
-                    )
-                }
-            }
-
-            Spacer(modifier = Modifier.height(16.dp))
-
-            Row(
-                modifier = Modifier.fillMaxWidth(),
-                horizontalArrangement = Arrangement.SpaceBetween
-            ) {
-                // Lent Column
-                Column(modifier = Modifier.weight(1f)) {
-                    Text(
-                        text = "Money I Lent",
-                        style = MaterialTheme.typography.bodySmall,
-                        color = MaterialTheme.colorScheme.onSurfaceVariant
-                    )
-                    Text(
-                        text = formatCurrency(totalLent),
-                        style = MaterialTheme.typography.titleLarge,
-                        fontWeight = FontWeight.Bold,
-                        color = MaterialTheme.colorScheme.onSurface
-                    )
-                    Text(
-                        text = "Awaiting return",
-                        fontSize = 10.sp,
-                        color = MaterialTheme.colorScheme.outline
-                    )
+                .fillMaxSize()
+                .padding(innerPadding)
+        ) { selectedPerson ->
+            if (selectedPerson != null) {
+                // Intercept back button to return to Main list
+                BackHandler {
+                    hubViewModel.clearSelectedPerson()
                 }
 
-                // Borrowed Column
-                Column(modifier = Modifier.weight(1f)) {
-                    Text(
-                        text = "Money I Borrowed",
-                        style = MaterialTheme.typography.bodySmall,
-                        color = MaterialTheme.colorScheme.onSurfaceVariant
-                    )
-                    Text(
-                        text = formatCurrency(totalBorrowed),
-                        style = MaterialTheme.typography.titleLarge,
-                        fontWeight = FontWeight.Bold,
-                        color = MaterialTheme.colorScheme.onSurface
-                    )
-                    Text(
-                        text = "To pay back",
-                        fontSize = 10.sp,
-                        color = MaterialTheme.colorScheme.outline
-                    )
-                }
-            }
-        }
-    }
-}
-
-@Composable
-fun LendingFilterRow(
-    currentFilter: LendingFilter,
-    onFilterSelected: (LendingFilter) -> Unit
-) {
-    Row(
-        modifier = Modifier.fillMaxWidth(),
-        horizontalArrangement = Arrangement.spacedBy(8.dp)
-    ) {
-        LendingFilter.entries.forEach { filter ->
-            val isSelected = currentFilter == filter
-            val label = when (filter) {
-                LendingFilter.ALL -> "All"
-                LendingFilter.LENT -> "Lent"
-                LendingFilter.BORROWED -> "Borrowed"
-                LendingFilter.PENDING_ONLY -> "Pending"
-            }
-            Box(
-                modifier = Modifier
-                    .clip(RoundedCornerShape(10.dp))
-                    .background(if (isSelected) MaterialTheme.colorScheme.primary else MaterialTheme.colorScheme.surfaceVariant)
-                    .then(
-                        if (!isSelected) Modifier.border(1.dp, MaterialTheme.colorScheme.outlineVariant, RoundedCornerShape(10.dp))
-                        else Modifier
-                    )
-                    .clickable { onFilterSelected(filter) }
-                    .padding(horizontal = 12.dp, vertical = 6.dp)
-            ) {
-                Text(
-                    text = label,
-                    color = if (isSelected) MaterialTheme.colorScheme.onPrimary else MaterialTheme.colorScheme.onSurfaceVariant,
-                    fontSize = 12.sp,
-                    fontWeight = FontWeight.SemiBold
-                )
-            }
-        }
-    }
-}
-
-@Composable
-fun LendingItemCard(
-    record: LendingEntity,
-    onToggleSettled: () -> Unit,
-    onDelete: () -> Unit
-) {
-    val isLent = record.type.equals("LENT", ignoreCase = true)
-    val accentColor = MaterialTheme.colorScheme.onSurface
-    val isSettled = record.isSettled
-
-    val now = System.currentTimeMillis()
-    val isOverdue = !isSettled && record.dueDate != null && record.dueDate < now
-
-    Card(
-        modifier = Modifier.fillMaxWidth(),
-        shape = RoundedCornerShape(18.dp),
-        colors = CardDefaults.cardColors(
-            containerColor = if (isSettled) MaterialTheme.colorScheme.surfaceVariant.copy(alpha = 0.5f) else MaterialTheme.colorScheme.surface
-        ),
-        border = androidx.compose.foundation.BorderStroke(1.dp, MaterialTheme.colorScheme.outlineVariant)
-    ) {
-        Row(
-            modifier = Modifier
-                .fillMaxWidth()
-                .padding(16.dp),
-            verticalAlignment = Alignment.CenterVertically
-        ) {
-            // Avatar Circle
-            Box(
-                modifier = Modifier
-                    .size(44.dp)
-                    .clip(CircleShape)
-                    .background(accentColor.copy(alpha = if (isSettled) 0.1f else 0.2f)),
-                contentAlignment = Alignment.Center
-            ) {
-                Text(
-                    text = record.personName.firstOrNull()?.uppercase() ?: "?",
-                    color = accentColor.copy(alpha = if (isSettled) 0.5f else 1.0f),
-                    fontWeight = FontWeight.Bold,
-                    fontSize = 18.sp
-                )
-            }
-
-            Spacer(modifier = Modifier.width(12.dp))
-
-            // Details Column
-            Column(modifier = Modifier.weight(1f)) {
-                Row(verticalAlignment = Alignment.CenterVertically) {
-                    Text(
-                        text = record.personName,
-                        style = MaterialTheme.typography.bodyLarge.copy(
-                            fontWeight = FontWeight.Bold,
-                            color = if (isSettled) MaterialTheme.colorScheme.onSurfaceVariant else MaterialTheme.colorScheme.onSurface,
-                            textDecoration = if (isSettled) TextDecoration.LineThrough else TextDecoration.None
-                        ),
-                        maxLines = 1,
-                        overflow = TextOverflow.Ellipsis
-                    )
-                    Spacer(modifier = Modifier.width(6.dp))
-                    Box(
-                        modifier = Modifier
-                            .clip(RoundedCornerShape(6.dp))
-                            .background(accentColor.copy(alpha = 0.15f))
-                            .padding(horizontal = 6.dp, vertical = 2.dp)
-                    ) {
-                        Text(
-                            text = if (isLent) "Lent" else "Borrowed",
-                            color = accentColor,
-                            fontSize = 10.sp,
-                            fontWeight = FontWeight.SemiBold
-                        )
-                    }
-                }
-
-                if (!record.notes.isNullOrBlank()) {
-                    Text(
-                        text = record.notes,
-                        style = MaterialTheme.typography.bodySmall,
-                        color = MaterialTheme.colorScheme.onSurfaceVariant,
-                        maxLines = 1,
-                        overflow = TextOverflow.Ellipsis
-                    )
-                }
-
-                Spacer(modifier = Modifier.height(4.dp))
-
-                // Date & Due Info
-                Row(verticalAlignment = Alignment.CenterVertically) {
-                    Text(
-                        text = formatDate(record.date),
-                        fontSize = 11.sp,
-                        color = MaterialTheme.colorScheme.outline
-                    )
-
-                    if (record.dueDate != null) {
-                        Text(
-                            text = " • ",
-                            fontSize = 11.sp,
-                            color = MaterialTheme.colorScheme.outline
-                        )
-                        Text(
-                            text = if (isOverdue) "Overdue (${formatDate(record.dueDate)})" else "Due ${formatDate(record.dueDate)}",
-                            fontSize = 11.sp,
-                            fontWeight = if (isOverdue) FontWeight.Bold else FontWeight.Normal,
-                            color = if (isOverdue) MaterialTheme.colorScheme.onSurfaceVariant else MaterialTheme.colorScheme.primary
-                        )
-                    }
-                }
-            }
-
-            Spacer(modifier = Modifier.width(8.dp))
-
-            // Amount & Settle Button Column
-            Column(horizontalAlignment = Alignment.End) {
-                Text(
-                    text = "${if (isLent) "+" else "-"}${formatCurrency(record.amount)}",
-                    style = MaterialTheme.typography.titleMedium.copy(
-                        fontWeight = FontWeight.Bold,
-                        color = if (isSettled) MaterialTheme.colorScheme.onSurfaceVariant else accentColor,
-                        textDecoration = if (isSettled) TextDecoration.LineThrough else TextDecoration.None
-                    )
-                )
-
-                Spacer(modifier = Modifier.height(6.dp))
-
-                Row(
-                    verticalAlignment = Alignment.CenterVertically,
-                    horizontalArrangement = Arrangement.spacedBy(6.dp)
-                ) {
-                    // Settle Chip Button
-                    Box(
-                        modifier = Modifier
-                            .clip(RoundedCornerShape(8.dp))
-                            .background(
-                                if (isSettled) MaterialTheme.colorScheme.primaryContainer else MaterialTheme.colorScheme.surfaceVariant
+                LendingPersonDetailView(
+                    person = selectedPerson,
+                    onBack = { hubViewModel.clearSelectedPerson() },
+                    onRenameClick = { renameDialogPerson = selectedPerson },
+                    onAddLentClick = {
+                        addEntryInitialType = "LENT"
+                        addEntryInitialPerson = selectedPerson.displayName
+                        editingEntry = null
+                        showAddEntryDialog = true
+                    },
+                    onAddBorrowedClick = {
+                        addEntryInitialType = "BORROWED"
+                        addEntryInitialPerson = selectedPerson.displayName
+                        editingEntry = null
+                        showAddEntryDialog = true
+                    },
+                    onRecordRepaymentClick = {
+                        repaymentDialogPerson = selectedPerson
+                        repaymentDialogEntry = null
+                    },
+                    onSettleAllClick = {
+                        settleAllDialogPerson = selectedPerson
+                    },
+                    onEntryRepay = { entry ->
+                        repaymentDialogPerson = selectedPerson
+                        repaymentDialogEntry = entry
+                    },
+                    onEntryEdit = { entry ->
+                        editingEntry = entry
+                        showAddEntryDialog = true
+                    },
+                    onEntryDelete = { entry ->
+                        hubViewModel.deleteEntry(entry)
+                        scope.launch {
+                            val res = snackbarHostState.showSnackbar(
+                                message = "Entry deleted",
+                                actionLabel = "Undo",
+                                duration = SnackbarDuration.Short
                             )
-                            .border(
-                                0.5.dp,
-                                if (isSettled) MaterialTheme.colorScheme.primary else MaterialTheme.colorScheme.outlineVariant,
-                                RoundedCornerShape(8.dp)
-                            )
-                            .clickable { onToggleSettled() }
-                            .padding(horizontal = 10.dp, vertical = 6.dp)
-                    ) {
-                        Row(verticalAlignment = Alignment.CenterVertically) {
-                            if (isSettled) {
-                                Icon(
-                                    imageVector = Icons.Default.Check,
-                                    contentDescription = null,
-                                    tint = MaterialTheme.colorScheme.onPrimaryContainer,
-                                    modifier = Modifier.size(12.dp)
-                                )
-                                Spacer(modifier = Modifier.width(4.dp))
+                            if (res == SnackbarResult.ActionPerformed) {
+                                hubViewModel.undoDelete()
                             }
-                            Text(
-                                text = if (isSettled) "Settled" else "Mark Settled",
-                                color = if (isSettled) MaterialTheme.colorScheme.onPrimaryContainer else MaterialTheme.colorScheme.onSurface,
-                                fontSize = 11.sp,
-                                fontWeight = FontWeight.SemiBold
-                            )
+                        }
+                    },
+                    onEntryReopen = { entry ->
+                        hubViewModel.reopenLegacyEntry(entry.lending.id)
+                    },
+                    onUndoRepayment = { entry ->
+                        hubViewModel.undoLastRepayment(entry.lending.id)
+                    },
+                    modifier = Modifier.padding(horizontal = 18.dp)
+                )
+            } else {
+                // Main Tab View (People & Timeline)
+                LazyColumn(
+                    modifier = Modifier.fillMaxSize(),
+                    verticalArrangement = Arrangement.spacedBy(16.dp)
+                ) {
+                    item {
+                        Spacer(modifier = Modifier.height(2.dp))
+                    }
+
+                    // 1. Hero Card
+                    item {
+                        LendingHeroCard(
+                            heroTotals = hubState.heroTotals,
+                            modifier = Modifier
+                                .padding(horizontal = 18.dp)
+                                .graphicsLayer {
+                                    alpha = heroAlpha.value
+                                    translationY = (1f - heroAlpha.value) * 16.dp.toPx()
+                                }
+                        )
+                    }
+
+                    // 2. Segmented Control: People | Timeline
+                    item {
+                        LendingSegmentedControl(
+                            selectedTab = hubState.selectedTab,
+                            onTabSelected = { hubViewModel.selectTab(it) },
+                            modifier = Modifier
+                                .padding(horizontal = 18.dp)
+                                .graphicsLayer {
+                                    alpha = controlAlpha.value
+                                    translationY = (1f - controlAlpha.value) * 16.dp.toPx()
+                                }
+                        )
+                    }
+
+                    // 3. Tab Content: People or Timeline
+                    item {
+                        Box(
+                            modifier = Modifier
+                                .fillMaxWidth()
+                                .padding(horizontal = 18.dp)
+                                .graphicsLayer {
+                                    alpha = listAlpha.value
+                                    translationY = (1f - listAlpha.value) * 16.dp.toPx()
+                                }
+                        ) {
+                            if (hubState.allPeopleSummaries.isEmpty()) {
+                                // Clean Empty State with Add CTA
+                                Column(
+                                    modifier = Modifier
+                                        .fillMaxWidth()
+                                        .padding(vertical = 40.dp),
+                                    horizontalAlignment = Alignment.CenterHorizontally,
+                                    verticalArrangement = Arrangement.spacedBy(12.dp)
+                                ) {
+                                    Text(
+                                        text = "No lending or borrowed records yet",
+                                        style = MaterialTheme.typography.bodyLarge.copy(
+                                            fontWeight = FontWeight.Medium
+                                        ),
+                                        color = MaterialTheme.colorScheme.onSurfaceVariant
+                                    )
+                                    Text(
+                                        text = "Keep track of money lent to or borrowed from friends.",
+                                        style = MaterialTheme.typography.bodySmall,
+                                        color = MaterialTheme.colorScheme.onSurfaceVariant.copy(alpha = 0.7f)
+                                    )
+                                    Button(
+                                        onClick = {
+                                            addEntryInitialType = "LENT"
+                                            addEntryInitialPerson = ""
+                                            editingEntry = null
+                                            showAddEntryDialog = true
+                                        },
+                                        shape = androidx.compose.foundation.shape.RoundedCornerShape(14.dp),
+                                        colors = ButtonDefaults.buttonColors(
+                                            containerColor = MaterialTheme.colorScheme.onSurface,
+                                            contentColor = MaterialTheme.colorScheme.surface
+                                        ),
+                                        modifier = Modifier.padding(top = 8.dp)
+                                    ) {
+                                        Text("Add First Entry", fontWeight = FontWeight.Bold)
+                                    }
+                                }
+                            } else {
+                                when (hubState.selectedTab) {
+                                    LendingTabOption.PEOPLE -> {
+                                        LendingPeopleView(
+                                            needsAttentionPeople = hubState.needsAttentionPeople,
+                                            activePeople = hubState.activePeople,
+                                            settledPeople = hubState.settledPeople,
+                                            isSettledExpanded = hubState.isSettledSectionExpanded,
+                                            onToggleSettled = { hubViewModel.toggleSettledSection() },
+                                            onPersonClick = { person ->
+                                                hubViewModel.selectPerson(person.key)
+                                            }
+                                        )
+                                    }
+                                    LendingTabOption.TIMELINE -> {
+                                        LendingTimelineView(
+                                            timelineGroups = hubState.timelineGroups,
+                                            activeFilter = hubState.timelineFilter,
+                                            onFilterSelected = { hubViewModel.setTimelineFilter(it) },
+                                            onEntryClick = { entry ->
+                                                val personKey = LendingHubViewModel.normalizePersonKey(entry.lending.personName)
+                                                hubViewModel.selectPerson(personKey)
+                                            }
+                                        )
+                                    }
+                                }
+                            }
                         }
                     }
 
-                    // Delete Icon
-                    Box(
-                        modifier = Modifier
-                            .size(32.dp)
-                            .clip(CircleShape)
-                            .clickable { onDelete() },
-                        contentAlignment = Alignment.Center
-                    ) {
-                        Icon(
-                            imageVector = Icons.Default.DeleteOutline,
-                            contentDescription = "Delete",
-                            tint = MaterialTheme.colorScheme.onSurfaceVariant,
-                            modifier = Modifier.size(18.dp)
-                        )
+                    // Bottom Spacer for 115.dp dock clearance
+                    item {
+                        Spacer(modifier = Modifier.height(115.dp))
                     }
                 }
             }
         }
     }
-}
 
-@Composable
-fun EmptyLendingView(onAddClick: () -> Unit) {
-    Column(
-        modifier = Modifier
-            .fillMaxWidth()
-            .padding(vertical = 48.dp),
-        horizontalAlignment = Alignment.CenterHorizontally,
-        verticalArrangement = Arrangement.Center
-    ) {
-        Icon(
-            imageVector = Icons.Default.Handshake,
-            contentDescription = null,
-            modifier = Modifier.size(60.dp),
-            tint = MaterialTheme.colorScheme.outlineVariant
-        )
-        Spacer(modifier = Modifier.height(12.dp))
-        Text(
-            text = "No lending records yet",
-            style = MaterialTheme.typography.titleMedium,
-            color = MaterialTheme.colorScheme.onSurfaceVariant,
-            fontWeight = FontWeight.Bold
-        )
-        Spacer(modifier = Modifier.height(4.dp))
-        Text(
-            text = "Track money given to friends, split bills, or money you borrowed in one place.",
-            style = MaterialTheme.typography.bodySmall,
-            color = MaterialTheme.colorScheme.onSurfaceVariant,
-            modifier = Modifier.padding(horizontal = 32.dp),
-            lineHeight = 18.sp
-        )
-    }
-}
-
-fun formatDate(timestamp: Long): String {
-    val sdf = SimpleDateFormat("dd MMM", Locale.getDefault())
-    return sdf.format(Date(timestamp))
-}
-
-@Composable
-fun SplitBillBannerCard(onClick: () -> Unit) {
-    Card(
-        modifier = Modifier
-            .fillMaxWidth()
-            .clip(RoundedCornerShape(18.dp))
-            .clickable { onClick() },
-        colors = CardDefaults.cardColors(containerColor = MaterialTheme.colorScheme.surfaceVariant),
-        border = androidx.compose.foundation.BorderStroke(1.dp, MaterialTheme.colorScheme.outlineVariant)
-    ) {
-        Row(
-            modifier = Modifier
-                .fillMaxWidth()
-                .padding(16.dp),
-            verticalAlignment = Alignment.CenterVertically,
-            horizontalArrangement = Arrangement.SpaceBetween
-        ) {
-            Row(
-                verticalAlignment = Alignment.CenterVertically,
-                modifier = Modifier.weight(1f)
-            ) {
-                Box(
-                    modifier = Modifier
-                        .size(42.dp)
-                        .clip(CircleShape)
-                        .background(MaterialTheme.colorScheme.primaryContainer),
-                    contentAlignment = Alignment.Center
-                ) {
-                    Icon(
-                        imageVector = Icons.AutoMirrored.Filled.CallSplit,
-                        contentDescription = null,
-                        tint = MaterialTheme.colorScheme.primary,
-                        modifier = Modifier.size(22.dp)
-                    )
-                }
-
-                Spacer(modifier = Modifier.width(12.dp))
-
-                Column {
-                    Text(
-                        text = "⚡ Split a Group Bill",
-                        fontWeight = FontWeight.Bold,
-                        color = MaterialTheme.colorScheme.onSurface,
-                        fontSize = 14.sp
-                    )
-                    Text(
-                        text = "Divide costs with animated circle & auto-log debts",
-                        color = MaterialTheme.colorScheme.onSurfaceVariant,
-                        fontSize = 11.sp
-                    )
-                }
-            }
-
-            Box(
-                modifier = Modifier
-                    .clip(RoundedCornerShape(8.dp))
-                    .background(MaterialTheme.colorScheme.primary)
-                    .padding(horizontal = 10.dp, vertical = 6.dp)
-            ) {
-                Text(
-                    text = "Split Now →",
-                    color = MaterialTheme.colorScheme.onPrimary,
-                    fontSize = 11.sp,
-                    fontWeight = FontWeight.Bold
-                )
-            }
+    // Dialogs
+    // 1. Add / Edit Entry Dialog
+    if (showAddEntryDialog) {
+        val recentPeople = remember(hubState.allPeopleSummaries) {
+            hubState.allPeopleSummaries.map { it.displayName }
         }
+        LendingEntryDialog(
+            initialType = addEntryInitialType,
+            initialPersonName = addEntryInitialPerson,
+            existingEntry = editingEntry,
+            recentPeople = recentPeople,
+            onDismiss = {
+                showAddEntryDialog = false
+                editingEntry = null
+            },
+            onSave = { personName, amount, type, date, dueDate, notes ->
+                if (editingEntry != null) {
+                    hubViewModel.editEntry(
+                        id = editingEntry!!.lending.id,
+                        personName = personName,
+                        amount = amount,
+                        type = type,
+                        date = date,
+                        dueDate = dueDate,
+                        notes = notes
+                    )
+                } else {
+                    hubViewModel.addEntry(
+                        personName = personName,
+                        amount = amount,
+                        type = type,
+                        date = date,
+                        dueDate = dueDate,
+                        notes = notes
+                    )
+                }
+                showAddEntryDialog = false
+                editingEntry = null
+            }
+        )
+    }
+
+    // 2. Record Repayment Dialog
+    if (repaymentDialogPerson != null) {
+        val p = repaymentDialogPerson!!
+        val specificEntry = repaymentDialogEntry
+        val initialDir = specificEntry?.lending?.type ?: if (p.toReceive > 0) "LENT" else "BORROWED"
+        val maxAllowed = specificEntry?.outstanding
+
+        LendingRepaymentDialog(
+            personName = p.displayName,
+            toReceive = p.toReceive,
+            toPay = p.toPay,
+            initialDirection = initialDir,
+            maxAllowed = maxAllowed,
+            onDismiss = {
+                repaymentDialogPerson = null
+                repaymentDialogEntry = null
+            },
+            onConfirm = { direction, amount, date, note ->
+                if (specificEntry != null) {
+                    hubViewModel.repayEntry(specificEntry.lending.id, amount, date, note)
+                } else {
+                    hubViewModel.repayPersonDues(p.displayName, direction, amount, date, note)
+                }
+                repaymentDialogPerson = null
+                repaymentDialogEntry = null
+            }
+        )
+    }
+
+    // 3. Rename Person Dialog
+    if (renameDialogPerson != null) {
+        LendingRenameDialog(
+            currentName = renameDialogPerson!!.displayName,
+            onDismiss = { renameDialogPerson = null },
+            onConfirm = { newName ->
+                hubViewModel.requestRenamePerson(renameDialogPerson!!.displayName, newName)
+                renameDialogPerson = null
+            }
+        )
+    }
+
+    // 4. Settle All Confirmation Dialog
+    if (settleAllDialogPerson != null) {
+        LendingSettleAllDialog(
+            person = settleAllDialogPerson!!,
+            onDismiss = { settleAllDialogPerson = null },
+            onConfirm = {
+                hubViewModel.settleAllForPerson(settleAllDialogPerson!!.key)
+                settleAllDialogPerson = null
+            }
+        )
+    }
+
+    // 5. Merge Confirmation Dialog (from rename)
+    hubState.pendingMergePrompt?.let { prompt ->
+        LendingMergeConfirmationDialog(
+            prompt = prompt,
+            onDismiss = { hubViewModel.dismissMergePrompt() },
+            onConfirm = { hubViewModel.confirmMergePerson() }
+        )
+    }
+
+    // 6. Split a Bill Sheet
+    if (showSplitSheet) {
+        SplitExpenseSheet(
+            sheetState = splitSheetState,
+            onDismiss = { showSplitSheet = false },
+            onSaveLenderSplit = { friendNames, perPersonShare, eventDescription ->
+                viewModel.addSplitAsLender(friendNames, perPersonShare, eventDescription)
+                showSplitSheet = false
+            },
+            onSaveBorrowerSplit = { payerName, userShare, eventDescription ->
+                viewModel.addSplitAsBorrower(payerName, userShare, eventDescription)
+                showSplitSheet = false
+            }
+        )
     }
 }
-
