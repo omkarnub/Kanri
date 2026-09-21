@@ -24,7 +24,7 @@ import java.util.Locale
 
 class LendingHubViewModel @JvmOverloads constructor(
     application: Application,
-    private val savedStateHandle: SavedStateHandle = SavedStateHandle(emptyMap()),
+    private val savedStateHandle: SavedStateHandle = SavedStateHandle(),
     dao: LendingDao? = null,
     private val timeProvider: () -> Long = { System.currentTimeMillis() }
 ) : AndroidViewModel(application) {
