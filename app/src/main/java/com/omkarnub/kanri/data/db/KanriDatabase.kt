@@ -155,21 +155,18 @@ abstract class KanriDatabase : RoomDatabase() {
             if (!dbFile.exists() || dbFile.length() == 0L) return
             try {
                 System.loadLibrary("sqlcipher")
-                val config = androidx.sqlite.db.SupportSQLiteOpenHelper.Configuration.builder(context)
-                    .name(dbFile.name)
-                    .callback(object : androidx.sqlite.db.SupportSQLiteOpenHelper.Callback(9) {
-                        override fun onCreate(db: SupportSQLiteDatabase) {}
-                        override fun onUpgrade(db: SupportSQLiteDatabase, oldVersion: Int, newVersion: Int) {}
-                        override fun onDowngrade(db: SupportSQLiteDatabase, oldVersion: Int, newVersion: Int) {}
-                    })
-                    .build()
-                val helper = SupportOpenHelperFactory(passphrase).create(config)
+                val db = net.zetetic.database.sqlcipher.SQLiteDatabase.openDatabase(
+                    dbFile.absolutePath,
+                    passphrase,
+                    null,
+                    net.zetetic.database.sqlcipher.SQLiteDatabase.OPEN_READONLY,
+                    null
+                )
                 try {
-                    val db = helper.writableDatabase
-                    val cursor = db.query("SELECT count(*) FROM sqlite_schema")
+                    val cursor = db.rawQuery("SELECT count(*) FROM sqlite_schema", null)
                     cursor.close()
                 } finally {
-                    helper.close()
+                    db.close()
                 }
             } catch (e: Throwable) {
                 val msg = e.message ?: ""
