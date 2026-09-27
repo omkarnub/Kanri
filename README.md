@@ -37,17 +37,21 @@ Everything runs fully offline — there's no Kanri backend to breach, because th
 
 ## Screenshots
 
-> [!TIP]
-> Add 4–6 screenshots to `docs/screenshots/` (home, insights, lend & borrow, widgets) and uncomment the block below. A real screenshot strip will sell this README harder than any badge.
-
-<!--
 <p align="center">
-  <img src="docs/screenshots/home.png" width="200" alt="Home screen" />
-  <img src="docs/screenshots/insights.png" width="200" alt="Insights screen" />
-  <img src="docs/screenshots/lend-borrow.png" width="200" alt="Lend & Borrow screen" />
-  <img src="docs/screenshots/widgets.png" width="200" alt="Home screen widgets" />
+  <img src="docs/screenshots/home.jpeg" width="180" alt="Home screen" />
+  &nbsp;&nbsp;
+  <img src="docs/screenshots/insights.jpeg" width="180" alt="Insights screen" />
+  &nbsp;&nbsp;
+  <img src="docs/screenshots/lend-borrow.jpeg" width="180" alt="Lend & Borrow screen" />
+  &nbsp;&nbsp;
+  <img src="docs/screenshots/goals.jpeg" width="180" alt="Goals screen" />
+  &nbsp;&nbsp;
+  <img src="docs/screenshots/profile.jpeg" width="180" alt="Profile screen" />
 </p>
--->
+
+<p align="center">
+  <sub>Home &nbsp;·&nbsp; Insights &nbsp;·&nbsp; Lend & Borrow &nbsp;·&nbsp; Goals &nbsp;·&nbsp; Profile</sub>
+</p>
 
 ## Features
 
