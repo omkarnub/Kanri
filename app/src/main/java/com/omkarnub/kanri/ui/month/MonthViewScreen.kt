@@ -104,11 +104,14 @@ import com.omkarnub.kanri.ui.search.DateRangePreset
 import com.omkarnub.kanri.ui.search.SearchFilterState
 import com.omkarnub.kanri.ui.search.SearchScreen
 import com.omkarnub.kanri.ui.search.TransactionTypeFilter
+import com.omkarnub.kanri.ui.theme.Panchang
+import com.omkarnub.kanri.util.rememberKanriHaptics
 import kotlinx.coroutines.launch
 import java.time.LocalDate
 import java.time.YearMonth
 import java.time.ZoneId
 import java.time.format.DateTimeFormatter
+import java.util.Calendar
 
 @OptIn(ExperimentalMaterial3Api::class)
 @Composable
@@ -120,6 +123,7 @@ fun MonthViewScreen(
 ) {
     val monthState by monthViewModel.uiState.collectAsState()
     val allTimeState by monthViewModel.allTimeTrendsUiState.collectAsState()
+    val haptics = rememberKanriHaptics()
 
     val currentRange by insightsViewModel.range.collectAsState()
     val currentMode by insightsViewModel.mode.collectAsState()
@@ -175,6 +179,38 @@ fun MonthViewScreen(
     var setBudgetCategory by remember { mutableStateOf<CategoryEntity?>(null) }
     var showSetBudgetDialog by remember { mutableStateOf(false) }
     var selectedTxForCategoryPicker by remember { mutableStateOf<TransactionWithCategory?>(null) }
+    var lendingEntryForTransaction by remember { mutableStateOf<TransactionWithCategory?>(null) }
+    var showFinancialHealthDetailsSheet by remember { mutableStateOf(false) }
+
+    val daysRemaining = if (monthState.isCurrentMonth) {
+        (monthState.daysInMonth - monthState.currentDay + 1).coerceAtLeast(1)
+    } else 1
+    val currentBudget = when (val bState = budgetVsActualState) {
+        is SectionState.Data -> bState.data.overallBudget
+        else -> com.omkarnub.kanri.data.budget.BudgetCalculator.DEFAULT_MONTHLY_BUDGET
+    }
+    val financialHealth = remember(
+        monthState.totalSpent,
+        monthState.totalReceived,
+        currentBudget,
+        daysRemaining,
+        monthState.selectedYear,
+        monthState.selectedMonth,
+        monthState.currentDay
+    ) {
+        val cal = Calendar.getInstance().apply {
+            if (monthState.selectedYear > 0) set(Calendar.YEAR, monthState.selectedYear)
+            if (monthState.selectedMonth > 0) set(Calendar.MONTH, monthState.selectedMonth - 1)
+            set(Calendar.DAY_OF_MONTH, monthState.currentDay.coerceAtLeast(1))
+        }
+        com.omkarnub.kanri.data.analytics.FinancialHealthCalculator.calculate(
+            monthSpent = monthState.totalSpent,
+            monthIncome = monthState.totalReceived,
+            monthlyBudget = currentBudget,
+            daysRemaining = daysRemaining,
+            calendar = cal
+        )
+    }
 
     val snackbarHostState = remember { SnackbarHostState() }
     val coroutineScope = rememberCoroutineScope()
@@ -284,13 +320,19 @@ fun MonthViewScreen(
             TopAppBar(
                 title = {
                     Text(
-                        text = "Monthly Insights",
-                        fontWeight = FontWeight.Bold,
-                        fontSize = 22.sp
+                        text = "INSIGHTS",
+                        style = MaterialTheme.typography.titleLarge.copy(
+                            fontFamily = Panchang,
+                            fontWeight = FontWeight.Bold,
+                            letterSpacing = 1.8.sp,
+                            fontSize = 16.sp
+                        ),
+                        color = MaterialTheme.colorScheme.onSurface
                     )
                 },
                 actions = {
                     IconButton(onClick = {
+                        haptics.click()
                         searchFilterToApply = null
                         showSearchScreen = true
                     }) {
@@ -300,7 +342,10 @@ fun MonthViewScreen(
                             tint = MaterialTheme.colorScheme.onSurface
                         )
                     }
-                    IconButton(onClick = { showExportSheet = true }) {
+                    IconButton(onClick = {
+                        haptics.click()
+                        showExportSheet = true
+                    }) {
                         Icon(
                             imageVector = Icons.Default.Download,
                             contentDescription = "Export Financial Statement",
@@ -340,6 +385,7 @@ fun MonthViewScreen(
                             verticalAlignment = Alignment.CenterVertically
                         ) {
                             IconButton(onClick = {
+                                haptics.tick()
                                 monthViewModel.previousMonth()
                                 val prevYm = activeSelectedMonth.minusMonths(1)
                                 insightsViewModel.setRange(InsightsRange.Month(prevYm))
@@ -362,6 +408,7 @@ fun MonthViewScreen(
                             )
 
                             IconButton(onClick = {
+                                haptics.tick()
                                 monthViewModel.nextMonth()
                                 val nextYm = activeSelectedMonth.plusMonths(1)
                                 insightsViewModel.setRange(InsightsRange.Month(nextYm))
@@ -446,6 +493,15 @@ fun MonthViewScreen(
             }
 
             // ═══════════════════════════════════════════════════════════
+            // FINANCIAL HEALTH (CHECK FINANCIAL HEALTH CARD)
+            // ═══════════════════════════════════════════════════════════
+            item {
+                com.omkarnub.kanri.ui.insights.sections.CheckFinancialHealthCard(
+                    onClick = { showFinancialHealthDetailsSheet = true }
+                )
+            }
+
+            // ═══════════════════════════════════════════════════════════
             // SECTION 1: SUMMARY STRIP (All ranges, Both modes) — Card
             // ═══════════════════════════════════════════════════════════
             item {
@@ -492,6 +548,7 @@ fun MonthViewScreen(
                         categorySpends = monthState.categorySpends,
                         totalSpent = monthState.totalSpent,
                         onCategoryClick = { item ->
+                            haptics.click()
                             selectedCategoryDetail = item
                         }
                     )
@@ -876,6 +933,7 @@ fun MonthViewScreen(
                             SuggestedBudgetSection(
                                 data = st.data,
                                 onApplyCategory = { catRow ->
+                                    haptics.success()
                                     insightsViewModel.applyCategoryBudget(
                                         categoryId = catRow.categoryId,
                                         amount = catRow.suggestedBudget,
@@ -886,6 +944,7 @@ fun MonthViewScreen(
                                     }
                                 },
                                 onApplyAll = { suggestedData ->
+                                    haptics.success()
                                     insightsViewModel.applyAllSuggestedBudgets(
                                         suggested = suggestedData,
                                         yearMonth = activeSelectedMonth
@@ -994,9 +1053,18 @@ fun MonthViewScreen(
             // ═══════════════════════════════════════════════════════════
             item {
                 InsightsToolsRow(
-                    onCompareMonthsClick = { showCompareMonths = true },
-                    onMonthlyRecapClick = { showMonthlyRecap = true },
-                    onAllTimeTrendsClick = { showAllTimeTrends = true }
+                    onCompareMonthsClick = {
+                        haptics.click()
+                        showCompareMonths = true
+                    },
+                    onMonthlyRecapClick = {
+                        haptics.click()
+                        showMonthlyRecap = true
+                    },
+                    onAllTimeTrendsClick = {
+                        haptics.click()
+                        showAllTimeTrends = true
+                    }
                 )
             }
 
@@ -1057,7 +1125,26 @@ fun MonthViewScreen(
                     note = note
                 )
                 selectedTxForCategoryPicker = null
+            },
+            onOpenLendBorrow = {
+                lendingEntryForTransaction = item
+                selectedTxForCategoryPicker = null
             }
+        )
+    }
+
+    lendingEntryForTransaction?.let { target ->
+        com.omkarnub.kanri.ui.lending.LendingTransactionBridgeDialog(
+            targetTransaction = target,
+            onDismiss = { lendingEntryForTransaction = null }
+        )
+    }
+
+    if (showFinancialHealthDetailsSheet) {
+        com.omkarnub.kanri.ui.home.FinancialHealthDetailsSheet(
+            financialHealth = financialHealth,
+            monthName = monthState.monthTitle,
+            onDismiss = { showFinancialHealthDetailsSheet = false }
         )
     }
 }

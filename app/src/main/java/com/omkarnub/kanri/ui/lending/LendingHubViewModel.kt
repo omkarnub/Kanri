@@ -9,6 +9,7 @@ import com.omkarnub.kanri.data.db.LendingDao
 import com.omkarnub.kanri.data.db.LendingEntity
 import com.omkarnub.kanri.data.db.LendingWithRepayments
 import com.omkarnub.kanri.data.lending.LendingMoneyEngine
+import com.omkarnub.kanri.data.lending.LendingTransactionSyncHelper
 import kotlinx.coroutines.Job
 import kotlinx.coroutines.delay
 import kotlinx.coroutines.flow.MutableStateFlow
@@ -29,7 +30,14 @@ class LendingHubViewModel @JvmOverloads constructor(
     private val timeProvider: () -> Long = { System.currentTimeMillis() }
 ) : AndroidViewModel(application) {
 
-    private val lendingDao: LendingDao = dao ?: KanriDatabase.getDatabase(application).lendingDao()
+    private val db: KanriDatabase = KanriDatabase.getDatabase(application)
+    private val lendingDao: LendingDao = dao ?: db.lendingDao()
+
+    init {
+        viewModelScope.launch {
+            LendingTransactionSyncHelper.syncAllHistoricalRecords(db, application)
+        }
+    }
 
     private val _selectedTab = MutableStateFlow(
         LendingTabOption.valueOf(
@@ -183,7 +191,7 @@ class LendingHubViewModel @JvmOverloads constructor(
         }
 
         viewModelScope.launch {
-            lendingDao.insert(
+            val recordId = lendingDao.insert(
                 LendingEntity(
                     personName = normalizedName,
                     amount = amount,
@@ -193,6 +201,10 @@ class LendingHubViewModel @JvmOverloads constructor(
                     notes = notes?.trim()?.ifBlank { null }
                 )
             )
+            LendingTransactionSyncHelper.syncLendingRecord(recordId, db, getApplication())
+            if (dueDate != null) {
+                com.omkarnub.kanri.data.lending.LendingReminderScheduler.checkNow(getApplication())
+            }
         }
     }
 
@@ -228,6 +240,10 @@ class LendingHubViewModel @JvmOverloads constructor(
                     notes = notes?.trim()?.ifBlank { null }
                 )
             )
+            LendingTransactionSyncHelper.syncLendingRecord(id, db, getApplication())
+            if (dueDate != null) {
+                com.omkarnub.kanri.data.lending.LendingReminderScheduler.checkNow(getApplication())
+            }
         }
     }
 
@@ -238,7 +254,10 @@ class LendingHubViewModel @JvmOverloads constructor(
         note: String? = null
     ) {
         viewModelScope.launch {
-            lendingDao.repayRecord(id, repaymentAmount, paidAt, note?.trim()?.ifBlank { null })
+            val result = lendingDao.repayRecord(id, repaymentAmount, paidAt, note?.trim()?.ifBlank { null })
+            result.onSuccess { repaymentId ->
+                LendingTransactionSyncHelper.syncRepayment(repaymentId, db, getApplication())
+            }
         }
     }
 
@@ -248,19 +267,34 @@ class LendingHubViewModel @JvmOverloads constructor(
         note: String? = null
     ) {
         viewModelScope.launch {
-            lendingDao.settleAllRecord(id, paidAt, note?.trim()?.ifBlank { null })
+            val result = lendingDao.settleAllRecord(id, paidAt, note?.trim()?.ifBlank { null })
+            result.onSuccess { repaymentId ->
+                LendingTransactionSyncHelper.syncRepayment(repaymentId, db, getApplication())
+            }
         }
     }
 
     fun undoLastRepayment(recordId: Long) {
         viewModelScope.launch {
-            lendingDao.undoLastRepayment(recordId)
+            val repayments = lendingDao.getRepaymentsForLending(recordId)
+            val latest = repayments.firstOrNull()
+            val result = lendingDao.undoLastRepayment(recordId)
+            if (result.isSuccess && latest != null) {
+                LendingTransactionSyncHelper.deleteRepaymentTransaction(latest.id, db, getApplication())
+            }
+        }
+    }
+
+    fun forgiveEntry(recordId: Long) {
+        viewModelScope.launch {
+            LendingTransactionSyncHelper.forgiveLendingRecord(recordId, db, getApplication())
         }
     }
 
     fun reopenLegacyEntry(recordId: Long) {
         viewModelScope.launch {
             lendingDao.reopenLegacyRecord(recordId)
+            LendingTransactionSyncHelper.syncLendingRecord(recordId, db, getApplication())
         }
     }
 
@@ -269,6 +303,7 @@ class LendingHubViewModel @JvmOverloads constructor(
             undoJob?.cancel()
             _deletedRecordCache.value = record
             lendingDao.deleteRecordWithRepayments(record.lending.id)
+            LendingTransactionSyncHelper.deleteLendingTransactions(record.lending.id, record.repayments, db, getApplication())
 
             // Auto-clear cache after 5 seconds
             undoJob = launch {
@@ -283,6 +318,10 @@ class LendingHubViewModel @JvmOverloads constructor(
         viewModelScope.launch {
             undoJob?.cancel()
             lendingDao.restoreRecordWithRepayments(cached.lending, cached.repayments)
+            LendingTransactionSyncHelper.syncLendingRecord(cached.lending.id, db, getApplication())
+            for (repayment in cached.repayments) {
+                LendingTransactionSyncHelper.syncRepayment(repayment.id, db, getApplication())
+            }
             _deletedRecordCache.value = null
         }
     }
@@ -296,6 +335,7 @@ class LendingHubViewModel @JvmOverloads constructor(
     ) {
         viewModelScope.launch {
             lendingDao.allocatePersonRepayment(personName, type, amount, paidAt, note?.trim()?.ifBlank { null })
+            LendingTransactionSyncHelper.syncAllUnsynced(db, getApplication())
         }
     }
 
@@ -304,7 +344,10 @@ class LendingHubViewModel @JvmOverloads constructor(
             val allRecords = lendingDao.getAllRecordsWithRepaymentsSync()
             val personRecords = allRecords.filter { normalizePersonKey(it.lending.personName) == personKey && !it.lending.isSettled }
             for (entry in personRecords) {
-                lendingDao.settleAllRecord(entry.lending.id, timeProvider())
+                val result = lendingDao.settleAllRecord(entry.lending.id, timeProvider())
+                result.onSuccess { repaymentId ->
+                    LendingTransactionSyncHelper.syncRepayment(repaymentId, db, getApplication())
+                }
             }
         }
     }
@@ -319,6 +362,7 @@ class LendingHubViewModel @JvmOverloads constructor(
             // Same key, just updating casing
             viewModelScope.launch {
                 lendingDao.updatePersonName(oldName, cleanedNew)
+                LendingTransactionSyncHelper.updatePersonNameInTransactions(oldName, cleanedNew, db, getApplication())
             }
             return
         }
@@ -337,6 +381,7 @@ class LendingHubViewModel @JvmOverloads constructor(
             // No merge needed, direct rename
             viewModelScope.launch {
                 lendingDao.updatePersonName(oldName, cleanedNew)
+                LendingTransactionSyncHelper.updatePersonNameInTransactions(oldName, cleanedNew, db, getApplication())
                 if (_selectedPersonKey.value == oldKey) {
                     selectPerson(newKey)
                 }
@@ -348,6 +393,7 @@ class LendingHubViewModel @JvmOverloads constructor(
         val prompt = _pendingMergePrompt.value ?: return
         viewModelScope.launch {
             lendingDao.updatePersonName(prompt.sourceName, prompt.targetName)
+            LendingTransactionSyncHelper.updatePersonNameInTransactions(prompt.sourceName, prompt.targetName, db, getApplication())
             if (_selectedPersonKey.value == normalizePersonKey(prompt.sourceName)) {
                 selectPerson(prompt.targetPersonKey)
             }

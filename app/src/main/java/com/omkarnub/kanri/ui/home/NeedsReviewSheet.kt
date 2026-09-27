@@ -74,11 +74,22 @@ import androidx.compose.ui.text.style.TextAlign
 import androidx.compose.ui.text.style.TextOverflow
 import androidx.compose.ui.unit.dp
 import androidx.compose.ui.unit.sp
+import androidx.compose.foundation.horizontalScroll
+import androidx.compose.foundation.rememberScrollState
+import androidx.compose.material3.Switch
+import androidx.compose.material3.SwitchDefaults
+import androidx.compose.runtime.LaunchedEffect
+import androidx.compose.ui.text.input.KeyboardType
 import com.omkarnub.kanri.data.db.CategoryEntity
 import com.omkarnub.kanri.data.db.KanriDatabase
+import com.omkarnub.kanri.data.db.SavingsGoalContributionEntity
+import com.omkarnub.kanri.data.db.SavingsGoalEntity
 import com.omkarnub.kanri.data.db.TransactionEntity
 import com.omkarnub.kanri.ui.common.CategoryIcon
+import com.omkarnub.kanri.ui.savings.GoalIcon
+import com.omkarnub.kanri.ui.theme.GoogleSansFlex
 import com.omkarnub.kanri.util.CurrencyUtils
+import com.omkarnub.kanri.util.rememberKanriHaptics
 import kotlinx.coroutines.Dispatchers
 import kotlinx.coroutines.launch
 import kotlinx.coroutines.withContext
@@ -96,12 +107,22 @@ fun NeedsReviewSheet(
     reviewQueue: List<TransactionEntity>,
     categories: List<CategoryEntity>,
     onDismiss: () -> Unit,
-    onAssignCategory: (transactionId: Long, counterparty: String?, categoryId: Long, note: String?) -> Unit
+    onAssignCategory: (transactionId: Long, counterparty: String?, categoryId: Long, note: String?) -> Unit,
+    onOpenLendBorrow: ((TransactionEntity) -> Unit)? = null
 ) {
     val sheetState = rememberModalBottomSheetState(skipPartiallyExpanded = true)
     val context = LocalContext.current
     val coroutineScope = rememberCoroutineScope()
     val focusManager = LocalFocusManager.current
+    val db = remember { KanriDatabase.getDatabase(context) }
+    val haptics = rememberKanriHaptics()
+
+    var activeGoals by remember { mutableStateOf<List<SavingsGoalEntity>>(emptyList()) }
+    LaunchedEffect(Unit) {
+        withContext(Dispatchers.IO) {
+            activeGoals = db.savingsGoalDao().getActiveGoalsSync()
+        }
+    }
 
     var selectedTransaction by remember { mutableStateOf<TransactionEntity?>(null) }
     var allCategories by remember(categories) {
@@ -237,7 +258,10 @@ fun NeedsReviewSheet(
                                     ReviewQueueItem(
                                         transaction = tx,
                                         formattedDate = dateFormat.format(Date(tx.timestamp)),
-                                        onClick = { selectedTransaction = tx }
+                                        onClick = {
+                                            haptics.click()
+                                            selectedTransaction = tx
+                                        }
                                     )
                                 }
                             }
@@ -252,6 +276,13 @@ fun NeedsReviewSheet(
                     }
                     var noteText by remember(targetTx) {
                         mutableStateOf(targetTx.notes ?: "")
+                    }
+                    var isAllocateToGoalEnabled by remember(targetTx) { mutableStateOf(false) }
+                    var selectedGoalId by remember(targetTx, activeGoals) {
+                        mutableStateOf(activeGoals.firstOrNull()?.id)
+                    }
+                    var allocatedGoalAmountStr by remember(targetTx) {
+                        mutableStateOf(targetTx.amount.toInt().toString())
                     }
 
                     val filteredCategories = remember(allCategories, searchQuery) {
@@ -294,6 +325,7 @@ fun NeedsReviewSheet(
                             ) {
                                 IconButton(
                                     onClick = {
+                                        haptics.tick()
                                         if (isSearchOpen || searchQuery.isNotEmpty()) {
                                             isSearchOpen = false
                                             searchQuery = ""
@@ -336,6 +368,7 @@ fun NeedsReviewSheet(
                                 ) {
                                     IconButton(
                                         onClick = {
+                                            haptics.tick()
                                             isSearchOpen = !isSearchOpen
                                             if (!isSearchOpen) searchQuery = ""
                                         },
@@ -350,7 +383,10 @@ fun NeedsReviewSheet(
                                     }
 
                                     IconButton(
-                                        onClick = { isCreatingCategory = true },
+                                        onClick = {
+                                            haptics.click()
+                                            isCreatingCategory = true
+                                        },
                                         modifier = Modifier.size(36.dp)
                                     ) {
                                         Icon(
@@ -420,7 +456,13 @@ fun NeedsReviewSheet(
                                             .fillMaxWidth()
                                             .clip(RoundedCornerShape(14.dp))
                                             .clickable {
+                                                haptics.click()
                                                 chosenCategoryId = cat.id
+                                                val isLendBorrow = cat.name.contains("lend", ignoreCase = true) || cat.name.contains("borrow", ignoreCase = true)
+                                                if (isLendBorrow && onOpenLendBorrow != null) {
+                                                    onOpenLendBorrow(targetTx)
+                                                    selectedTransaction = null
+                                                }
                                             }
                                     ) {
                                         Row(
@@ -457,6 +499,169 @@ fun NeedsReviewSheet(
                                 }
                             }
 
+                            // ==========================================
+                            // OPTIONAL: ADD INCOME AS SAVINGS FOR A GOAL
+                            // ==========================================
+                            val isTxCredit = targetTx.type.equals("CREDIT", ignoreCase = true)
+                            if (isTxCredit && activeGoals.isNotEmpty()) {
+                                Spacer(modifier = Modifier.height(10.dp))
+                                Surface(
+                                    shape = RoundedCornerShape(16.dp),
+                                    color = MaterialTheme.colorScheme.surfaceVariant.copy(alpha = 0.5f),
+                                    border = BorderStroke(1.dp, MaterialTheme.colorScheme.outlineVariant.copy(alpha = 0.6f)),
+                                    modifier = Modifier.fillMaxWidth()
+                                ) {
+                                    Column(
+                                        modifier = Modifier
+                                            .fillMaxWidth()
+                                            .padding(12.dp)
+                                    ) {
+                                        Row(
+                                            modifier = Modifier.fillMaxWidth(),
+                                            verticalAlignment = Alignment.CenterVertically,
+                                            horizontalArrangement = Arrangement.SpaceBetween
+                                        ) {
+                                            Row(
+                                                verticalAlignment = Alignment.CenterVertically,
+                                                horizontalArrangement = Arrangement.spacedBy(8.dp)
+                                            ) {
+                                                GoalIcon(
+                                                    iconKey = "savings",
+                                                    tint = MaterialTheme.colorScheme.primary,
+                                                    modifier = Modifier.size(20.dp)
+                                                )
+                                                Column {
+                                                    Text(
+                                                        text = "Add to Savings Goal",
+                                                        fontFamily = GoogleSansFlex,
+                                                        fontSize = 13.5.sp,
+                                                        fontWeight = FontWeight.SemiBold,
+                                                        color = MaterialTheme.colorScheme.onSurface
+                                                    )
+                                                    Text(
+                                                        text = "Allocate this income directly to a target",
+                                                        fontFamily = GoogleSansFlex,
+                                                        fontSize = 11.sp,
+                                                        color = MaterialTheme.colorScheme.onSurfaceVariant
+                                                    )
+                                                }
+                                            }
+
+                                            Switch(
+                                                checked = isAllocateToGoalEnabled,
+                                                onCheckedChange = { isAllocateToGoalEnabled = it },
+                                                colors = SwitchDefaults.colors(
+                                                    checkedThumbColor = MaterialTheme.colorScheme.surface,
+                                                    checkedTrackColor = MaterialTheme.colorScheme.onSurface,
+                                                    uncheckedThumbColor = MaterialTheme.colorScheme.onSurfaceVariant,
+                                                    uncheckedTrackColor = MaterialTheme.colorScheme.surfaceVariant
+                                                )
+                                            )
+                                        }
+
+                                        if (isAllocateToGoalEnabled) {
+                                            Spacer(modifier = Modifier.height(10.dp))
+
+                                            Text(
+                                                text = "SELECT GOAL:",
+                                                fontFamily = GoogleSansFlex,
+                                                fontSize = 10.sp,
+                                                fontWeight = FontWeight.Bold,
+                                                letterSpacing = 1.sp,
+                                                color = MaterialTheme.colorScheme.onSurfaceVariant
+                                            )
+                                            Spacer(modifier = Modifier.height(6.dp))
+
+                                            Row(
+                                                modifier = Modifier
+                                                    .fillMaxWidth()
+                                                    .horizontalScroll(rememberScrollState()),
+                                                horizontalArrangement = Arrangement.spacedBy(8.dp)
+                                            ) {
+                                                activeGoals.forEach { g ->
+                                                    val isGoalSelected = selectedGoalId == g.id
+                                                    Surface(
+                                                        shape = RoundedCornerShape(12.dp),
+                                                        color = if (isGoalSelected) MaterialTheme.colorScheme.onSurface else MaterialTheme.colorScheme.surface,
+                                                        border = BorderStroke(
+                                                            1.dp,
+                                                            if (isGoalSelected) MaterialTheme.colorScheme.onSurface else MaterialTheme.colorScheme.outlineVariant
+                                                        ),
+                                                        modifier = Modifier
+                                                            .clip(RoundedCornerShape(12.dp))
+                                                            .clickable { selectedGoalId = g.id }
+                                                    ) {
+                                                        Row(
+                                                            modifier = Modifier.padding(horizontal = 10.dp, vertical = 7.dp),
+                                                            verticalAlignment = Alignment.CenterVertically,
+                                                            horizontalArrangement = Arrangement.spacedBy(6.dp)
+                                                        ) {
+                                                            GoalIcon(
+                                                                iconKey = g.emoji,
+                                                                tint = if (isGoalSelected) MaterialTheme.colorScheme.surface else MaterialTheme.colorScheme.onSurface,
+                                                                modifier = Modifier.size(16.dp)
+                                                            )
+                                                            Text(
+                                                                text = g.title,
+                                                                fontFamily = GoogleSansFlex,
+                                                                fontSize = 12.sp,
+                                                                fontWeight = if (isGoalSelected) FontWeight.Bold else FontWeight.Medium,
+                                                                color = if (isGoalSelected) MaterialTheme.colorScheme.surface else MaterialTheme.colorScheme.onSurface
+                                                            )
+                                                        }
+                                                    }
+                                                }
+                                            }
+
+                                            Spacer(modifier = Modifier.height(8.dp))
+
+                                            Row(
+                                                modifier = Modifier.fillMaxWidth(),
+                                                verticalAlignment = Alignment.CenterVertically,
+                                                horizontalArrangement = Arrangement.spacedBy(8.dp)
+                                            ) {
+                                                OutlinedTextField(
+                                                    value = allocatedGoalAmountStr,
+                                                    onValueChange = { allocatedGoalAmountStr = it },
+                                                    label = { Text("Amount to Save (₹)", fontFamily = GoogleSansFlex, fontSize = 11.sp) },
+                                                    keyboardOptions = KeyboardOptions(keyboardType = KeyboardType.Number),
+                                                    singleLine = true,
+                                                    shape = RoundedCornerShape(12.dp),
+                                                    colors = OutlinedTextFieldDefaults.colors(
+                                                        focusedContainerColor = MaterialTheme.colorScheme.surface,
+                                                        unfocusedContainerColor = MaterialTheme.colorScheme.surface,
+                                                        focusedBorderColor = MaterialTheme.colorScheme.onSurface,
+                                                        unfocusedBorderColor = MaterialTheme.colorScheme.outlineVariant
+                                                    ),
+                                                    textStyle = MaterialTheme.typography.bodyMedium.copy(fontFamily = GoogleSansFlex, fontSize = 13.sp),
+                                                    modifier = Modifier.weight(1f)
+                                                )
+
+                                                Surface(
+                                                    shape = RoundedCornerShape(10.dp),
+                                                    color = MaterialTheme.colorScheme.surface,
+                                                    border = BorderStroke(0.8.dp, MaterialTheme.colorScheme.outlineVariant),
+                                                    modifier = Modifier
+                                                        .clip(RoundedCornerShape(10.dp))
+                                                        .clickable {
+                                                            allocatedGoalAmountStr = targetTx.amount.toInt().toString()
+                                                        }
+                                                ) {
+                                                    Text(
+                                                        text = "Full ₹${targetTx.amount.toInt()}",
+                                                        fontFamily = GoogleSansFlex,
+                                                        fontSize = 11.sp,
+                                                        fontWeight = FontWeight.SemiBold,
+                                                        color = MaterialTheme.colorScheme.onSurface,
+                                                        modifier = Modifier.padding(horizontal = 8.dp, vertical = 10.dp)
+                                                    )
+                                                }
+                                            }
+                                        }
+                                    }
+                                }
+                            }
+
                             Spacer(modifier = Modifier.height(14.dp))
 
                             // Text input box above Confirm button (smaller, normal appearance)
@@ -473,6 +678,7 @@ fun NeedsReviewSheet(
                                         } else {
                                             "Add a note to remember (Optional)..."
                                         },
+                                        fontFamily = GoogleSansFlex,
                                         fontSize = 13.sp
                                     )
                                 },
@@ -486,7 +692,7 @@ fun NeedsReviewSheet(
                                 },
                                 singleLine = true,
                                 shape = RoundedCornerShape(12.dp),
-                                textStyle = MaterialTheme.typography.bodyMedium.copy(fontSize = 13.5.sp),
+                                textStyle = MaterialTheme.typography.bodyMedium.copy(fontFamily = GoogleSansFlex, fontSize = 13.5.sp),
                                 keyboardOptions = KeyboardOptions(imeAction = ImeAction.Done),
                                 keyboardActions = KeyboardActions(onDone = { focusManager.clearFocus() }),
                                 colors = OutlinedTextFieldDefaults.colors(
@@ -501,9 +707,47 @@ fun NeedsReviewSheet(
 
                             Button(
                                 onClick = {
+                                    haptics.success()
                                     chosenCategoryId?.let { catId ->
-                                        onAssignCategory(targetTx.id, targetTx.counterparty, catId, noteText.trim().ifBlank { null })
-                                        selectedTransaction = null
+                                        val chosenCat = allCategories.firstOrNull { it.id == catId }
+                                        val isLendBorrow = chosenCat?.name?.contains("lend", ignoreCase = true) == true ||
+                                                chosenCat?.name?.contains("borrow", ignoreCase = true) == true
+                                        if (isLendBorrow && onOpenLendBorrow != null) {
+                                            onOpenLendBorrow(targetTx)
+                                            selectedTransaction = null
+                                        } else {
+                                            var finalNote = noteText.trim().ifBlank { null }
+                                            if (isAllocateToGoalEnabled && selectedGoalId != null) {
+                                                val allocAmount = allocatedGoalAmountStr.toDoubleOrNull() ?: 0.0
+                                                val chosenGoal = activeGoals.find { it.id == selectedGoalId }
+                                                if (allocAmount > 0.0 && chosenGoal != null) {
+                                                    coroutineScope.launch(Dispatchers.IO) {
+                                                        val newTotal = chosenGoal.currentAmount + allocAmount
+                                                        val isDone = chosenGoal.targetAmount > 0 && newTotal >= chosenGoal.targetAmount
+                                                        db.savingsGoalDao().updateProgress(chosenGoal.id, newTotal, isDone)
+                                                        val payeeName = targetTx.counterparty?.ifBlank { "Income" } ?: "Income"
+                                                        db.savingsGoalDao().insertContribution(
+                                                            SavingsGoalContributionEntity(
+                                                                goalId = chosenGoal.id,
+                                                                amount = allocAmount,
+                                                                timestamp = System.currentTimeMillis(),
+                                                                note = "Income allocation ($payeeName)",
+                                                                sourceTransactionId = targetTx.id
+                                                            )
+                                                        )
+                                                    }
+                                                    val goalTag = "[Saved ₹${allocAmount.toInt()} for ${chosenGoal.title}]"
+                                                    finalNote = if (finalNote != null) "$goalTag $finalNote" else goalTag
+                                                    android.widget.Toast.makeText(
+                                                        context,
+                                                        "₹${allocAmount.toInt()} allocated to ${chosenGoal.title}",
+                                                        android.widget.Toast.LENGTH_SHORT
+                                                    ).show()
+                                                }
+                                            }
+                                            onAssignCategory(targetTx.id, targetTx.counterparty, catId, finalNote)
+                                            selectedTransaction = null
+                                        }
                                     }
                                 },
                                 enabled = isConfirmEnabled,
@@ -520,6 +764,7 @@ fun NeedsReviewSheet(
                             ) {
                                 Text(
                                     text = "Confirm",
+                                    fontFamily = GoogleSansFlex,
                                     style = MaterialTheme.typography.titleMedium.copy(
                                         fontWeight = FontWeight.SemiBold,
                                         fontSize = 15.sp

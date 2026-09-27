@@ -193,6 +193,7 @@ class SearchViewModel(application: Application) : AndroidViewModel(application) 
     fun updateTransactionCategory(transactionId: Long, categoryId: Long, note: String? = null) {
         viewModelScope.launch {
             transactionDao.updateCategoryAndNotes(transactionId, categoryId, note)
+            com.omkarnub.kanri.data.lending.LendingTransactionSyncHelper.onTransactionCategoryChanged(transactionId, categoryId, db, getApplication())
         }
     }
 }

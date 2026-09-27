@@ -1,5 +1,6 @@
 package com.omkarnub.kanri.ui.security
 
+import androidx.activity.compose.BackHandler
 import androidx.compose.foundation.background
 import androidx.compose.foundation.border
 import androidx.compose.foundation.layout.Arrangement
@@ -34,13 +35,17 @@ import androidx.compose.ui.Modifier
 import androidx.compose.ui.draw.clip
 import androidx.compose.ui.graphics.Brush
 import androidx.compose.ui.graphics.Color
+import androidx.compose.ui.graphics.luminance
 import androidx.compose.ui.platform.LocalContext
+import androidx.compose.ui.res.painterResource
 import androidx.compose.ui.text.font.FontWeight
 import androidx.compose.ui.text.style.TextAlign
 import androidx.compose.ui.unit.dp
 import androidx.compose.ui.unit.sp
 import androidx.fragment.app.FragmentActivity
+import com.omkarnub.kanri.R
 import com.omkarnub.kanri.data.security.BiometricHelper
+import com.omkarnub.kanri.ui.theme.Panchang
 
 @Composable
 fun LockScreen(
@@ -50,6 +55,10 @@ fun LockScreen(
     val context = LocalContext.current
     val activity = context as? FragmentActivity
     var statusMessage by remember { mutableStateOf<String?>(null) }
+
+    BackHandler {
+        activity?.finish()
+    }
 
     fun triggerSystemLock() {
         if (activity != null) {
@@ -87,66 +96,52 @@ fun LockScreen(
             horizontalAlignment = Alignment.CenterHorizontally,
             verticalArrangement = Arrangement.Center
         ) {
-            // Glowing Lock Emblem
-            Box(
-                modifier = Modifier
-                    .size(100.dp)
-                    .clip(CircleShape)
-                    .background(MaterialTheme.colorScheme.primaryContainer)
-                    .border(2.dp, MaterialTheme.colorScheme.outlineVariant, CircleShape),
-                contentAlignment = Alignment.Center
-            ) {
-                Icon(
-                    imageVector = Icons.Default.Lock,
-                    contentDescription = "Lock",
-                    tint = MaterialTheme.colorScheme.primary,
-                    modifier = Modifier.size(46.dp)
-                )
-            }
-
-            Spacer(modifier = Modifier.height(28.dp))
-
+            // KANRI logo in Panchang font
             Text(
-                text = "Kanri is Locked",
-                fontSize = 26.sp,
-                fontWeight = FontWeight.Bold,
+                text = "KANRI",
+                style = MaterialTheme.typography.titleLarge.copy(
+                    fontFamily = Panchang,
+                    fontWeight = FontWeight.Bold,
+                    letterSpacing = 4.sp,
+                    fontSize = 32.sp
+                ),
                 color = MaterialTheme.colorScheme.onBackground
             )
 
             Spacer(modifier = Modifier.height(8.dp))
 
             Text(
-                text = "Protected by your phone's screen lock\n(Fingerprint, Face, PIN, or Pattern)",
-                style = MaterialTheme.typography.bodyMedium,
-                color = MaterialTheme.colorScheme.onSurfaceVariant,
-                textAlign = TextAlign.Center,
-                lineHeight = 20.sp
+                text = "Kanri is Locked",
+                fontSize = 15.sp,
+                fontWeight = FontWeight.Medium,
+                color = MaterialTheme.colorScheme.onSurfaceVariant
             )
 
             Spacer(modifier = Modifier.height(36.dp))
 
-            // Primary Unlock Button
+            // Unlock Now Button with Lock SVG
             Button(
                 onClick = { triggerSystemLock() },
                 modifier = Modifier
                     .fillMaxWidth(0.85f)
                     .height(54.dp),
-                shape = RoundedCornerShape(14.dp),
+                shape = RoundedCornerShape(16.dp),
                 colors = ButtonDefaults.buttonColors(
                     containerColor = MaterialTheme.colorScheme.primary,
                     contentColor = MaterialTheme.colorScheme.onPrimary
                 )
             ) {
                 Icon(
-                    imageVector = Icons.Default.Fingerprint,
-                    contentDescription = null,
-                    modifier = Modifier.size(22.dp)
+                    imageVector = Icons.Default.Lock,
+                    contentDescription = "Unlock",
+                    modifier = Modifier.size(20.dp)
                 )
                 Spacer(modifier = Modifier.width(10.dp))
                 Text(
-                    text = "Unlock with Device Lock",
+                    text = "Unlock Now",
                     fontSize = 15.sp,
-                    fontWeight = FontWeight.Bold
+                    fontWeight = FontWeight.Bold,
+                    letterSpacing = 0.5.sp
                 )
             }
 

@@ -47,7 +47,14 @@ object NotificationDeduplicationHelper {
                 !existingMatch.refNo.isNullOrBlank() &&
                 parsed.refNo != existingMatch.refNo
 
-        if (existingMatch != null && !hasDifferentRefNo) {
+        val hasDistinctMerchants = existingMatch != null &&
+                !parsed.counterparty.isNullOrBlank() &&
+                !existingMatch.counterparty.isNullOrBlank() &&
+                !isGenericMerchant(parsed.counterparty) &&
+                !isGenericMerchant(existingMatch.counterparty) &&
+                !parsed.counterparty!!.trim().equals(existingMatch.counterparty!!.trim(), ignoreCase = true)
+
+        if (existingMatch != null && !hasDifferentRefNo && !hasDistinctMerchants) {
             var enriched = false
             if (shouldEnrich(existingMatch.counterparty, parsed.counterparty)) {
                 val enrichedName = parsed.counterparty!!
@@ -70,7 +77,8 @@ object NotificationDeduplicationHelper {
             val atmCat = categoryDao.getCategoryByName("Cash & ATM")
             categoryId = atmCat?.id
         } else if (!parsed.counterparty.isNullOrBlank()) {
-            val mapping = categoryDao.getMappingForCounterparty(parsed.counterparty)
+            val mapping = categoryDao.findSmartRuleForCounterparty(parsed.counterparty)
+                ?: categoryDao.getMappingForCounterparty(parsed.counterparty)
             categoryId = mapping?.categoryId
         }
 
@@ -116,5 +124,13 @@ object NotificationDeduplicationHelper {
         if (existingCounterparty.isNullOrBlank()) return true
         val existingLower = existingCounterparty.trim().lowercase()
         return existingLower == "upi" || existingLower == "upi payment" || existingLower == "bank transfer"
+    }
+
+    private fun isGenericMerchant(name: String?): Boolean {
+        if (name.isNullOrBlank()) return true
+        val lower = name.trim().lowercase()
+        return lower == "upi" || lower == "upi payment" || lower == "bank transfer" ||
+                lower == "expense" || lower == "income" || lower == "unknown" ||
+                lower == "payment" || lower == "upi credit"
     }
 }

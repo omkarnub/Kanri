@@ -68,6 +68,7 @@ import androidx.compose.ui.unit.sp
 import androidx.core.content.FileProvider
 import com.omkarnub.kanri.ui.insights.InsightsViewModel
 import com.omkarnub.kanri.ui.insights.MonthlyRecapData
+import com.omkarnub.kanri.util.rememberKanriHaptics
 import kotlinx.coroutines.launch
 import java.io.File
 import java.io.FileOutputStream
@@ -87,6 +88,7 @@ fun MonthlyRecapScreen(
 
     var isDarkStyle by remember { mutableStateOf(true) }
     var hideAmounts by remember { mutableStateOf(false) }
+    val haptics = rememberKanriHaptics()
 
     val graphicsLayer = rememberGraphicsLayer()
     var pendingSaveBitmap by remember { mutableStateOf<Bitmap?>(null) }
@@ -120,7 +122,10 @@ fun MonthlyRecapScreen(
                     )
                 },
                 navigationIcon = {
-                    IconButton(onClick = onBack) {
+                    IconButton(onClick = {
+                        haptics.tick()
+                        onBack()
+                    }) {
                         Icon(
                             imageVector = Icons.AutoMirrored.Filled.ArrowBack,
                             contentDescription = "Back",
@@ -184,7 +189,10 @@ fun MonthlyRecapScreen(
                                 modifier = Modifier
                                     .clip(RoundedCornerShape(8.dp))
                                     .background(if (isDarkStyle) MaterialTheme.colorScheme.onSurface else Color.Transparent)
-                                    .clickable { isDarkStyle = true }
+                                    .clickable {
+                                        haptics.tick()
+                                        isDarkStyle = true
+                                    }
                                     .padding(horizontal = 10.dp, vertical = 6.dp)
                             ) {
                                 Text(
@@ -198,7 +206,10 @@ fun MonthlyRecapScreen(
                                 modifier = Modifier
                                     .clip(RoundedCornerShape(8.dp))
                                     .background(if (!isDarkStyle) MaterialTheme.colorScheme.onSurface else Color.Transparent)
-                                    .clickable { isDarkStyle = false }
+                                    .clickable {
+                                        haptics.tick()
+                                        isDarkStyle = false
+                                    }
                                     .padding(horizontal = 10.dp, vertical = 6.dp)
                             ) {
                                 Text(
@@ -224,7 +235,10 @@ fun MonthlyRecapScreen(
                             )
                             Switch(
                                 checked = hideAmounts,
-                                onCheckedChange = { hideAmounts = it },
+                                onCheckedChange = {
+                                    haptics.tick()
+                                    hideAmounts = it
+                                },
                                 colors = SwitchDefaults.colors(
                                     checkedThumbColor = MaterialTheme.colorScheme.surface,
                                     checkedTrackColor = MaterialTheme.colorScheme.primary
@@ -263,6 +277,7 @@ fun MonthlyRecapScreen(
                     // Share Button
                     Button(
                         onClick = {
+                            haptics.primaryAction()
                             coroutineScope.launch {
                                 try {
                                     val imageBitmap = graphicsLayer.toImageBitmap()
@@ -292,6 +307,7 @@ fun MonthlyRecapScreen(
                     // Save Button
                     OutlinedButton(
                         onClick = {
+                            haptics.primaryAction()
                             coroutineScope.launch {
                                 try {
                                     val imageBitmap = graphicsLayer.toImageBitmap()

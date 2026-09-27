@@ -5,6 +5,7 @@ import androidx.lifecycle.AndroidViewModel
 import androidx.lifecycle.viewModelScope
 import com.omkarnub.kanri.data.db.KanriDatabase
 import com.omkarnub.kanri.data.db.LendingEntity
+import com.omkarnub.kanri.data.lending.LendingTransactionSyncHelper
 import kotlinx.coroutines.flow.MutableStateFlow
 import kotlinx.coroutines.flow.SharingStarted
 import kotlinx.coroutines.flow.StateFlow
@@ -94,7 +95,8 @@ class LendingViewModel(application: Application) : AndroidViewModel(application)
                 isSettled = false,
                 notes = notes?.trim()?.ifBlank { null }
             )
-            lendingDao.insert(record)
+            val recordId = lendingDao.insert(record)
+            LendingTransactionSyncHelper.syncLendingRecord(recordId, db, getApplication())
         }
     }
 
@@ -106,7 +108,9 @@ class LendingViewModel(application: Application) : AndroidViewModel(application)
 
     fun deleteRecord(record: LendingEntity) {
         viewModelScope.launch {
-            lendingDao.delete(record)
+            val repayments = lendingDao.getRepaymentsForLending(record.id)
+            lendingDao.deleteRecordWithRepayments(record.id)
+            LendingTransactionSyncHelper.deleteLendingTransactions(record.id, repayments, db, getApplication())
         }
     }
 
@@ -130,7 +134,8 @@ class LendingViewModel(application: Application) : AndroidViewModel(application)
                     isSettled = false,
                     notes = "$notePrefix (1 share)"
                 )
-                lendingDao.insert(record)
+                val recordId = lendingDao.insert(record)
+                LendingTransactionSyncHelper.syncLendingRecord(recordId, db, getApplication())
             }
         }
     }
@@ -154,7 +159,8 @@ class LendingViewModel(application: Application) : AndroidViewModel(application)
                 isSettled = false,
                 notes = "$notePrefix (My share)"
             )
-            lendingDao.insert(record)
+            val recordId = lendingDao.insert(record)
+            LendingTransactionSyncHelper.syncLendingRecord(recordId, db, getApplication())
         }
     }
 }

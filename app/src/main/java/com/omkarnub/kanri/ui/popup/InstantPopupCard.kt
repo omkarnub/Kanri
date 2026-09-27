@@ -1,16 +1,22 @@
 package com.omkarnub.kanri.ui.popup
 
 import androidx.compose.animation.AnimatedVisibility
+import androidx.compose.animation.core.FastOutSlowInEasing
 import androidx.compose.animation.core.LinearEasing
+import androidx.compose.animation.core.Spring
 import androidx.compose.animation.core.animateFloatAsState
+import androidx.compose.animation.core.spring
 import androidx.compose.animation.core.tween
 import androidx.compose.animation.fadeIn
 import androidx.compose.animation.fadeOut
+import androidx.compose.animation.scaleIn
+import androidx.compose.animation.scaleOut
 import androidx.compose.animation.slideInVertically
 import androidx.compose.animation.slideOutVertically
+import androidx.compose.foundation.BorderStroke
 import androidx.compose.foundation.background
-import androidx.compose.foundation.border
 import androidx.compose.foundation.clickable
+import androidx.compose.foundation.gestures.detectVerticalDragGestures
 import androidx.compose.foundation.horizontalScroll
 import androidx.compose.foundation.layout.Arrangement
 import androidx.compose.foundation.layout.Box
@@ -34,29 +40,36 @@ import androidx.compose.material3.CardDefaults
 import androidx.compose.material3.Icon
 import androidx.compose.material3.IconButton
 import androidx.compose.material3.LinearProgressIndicator
-import androidx.compose.material3.MaterialTheme
 import androidx.compose.material3.Surface
 import androidx.compose.material3.Text
 import androidx.compose.runtime.Composable
 import androidx.compose.runtime.LaunchedEffect
 import androidx.compose.runtime.getValue
+import androidx.compose.runtime.mutableFloatStateOf
 import androidx.compose.runtime.mutableStateOf
 import androidx.compose.runtime.remember
+import androidx.compose.runtime.rememberCoroutineScope
 import androidx.compose.runtime.setValue
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.draw.clip
 import androidx.compose.ui.graphics.Color
+import androidx.compose.ui.input.pointer.pointerInput
 import androidx.compose.ui.text.font.FontWeight
 import androidx.compose.ui.unit.dp
 import androidx.compose.ui.unit.sp
 import com.omkarnub.kanri.data.db.CategoryEntity
 import com.omkarnub.kanri.ui.common.CategoryIcon
 import com.omkarnub.kanri.ui.home.formatCurrency
-import com.omkarnub.kanri.ui.home.parseHexColor
-import com.omkarnub.kanri.ui.month.MonthViewModel
+import com.omkarnub.kanri.ui.theme.Panchang
 import kotlinx.coroutines.delay
+import kotlinx.coroutines.launch
 
+/**
+ * Signature Monochrome Instant Popup positioned at the top like a heads-up notification.
+ * Features smooth spring drop-in and glide-out animations, swipe-up-to-dismiss gesture,
+ * colored debit (red) and credit (green) amounts, and a 10-second auto-dismiss countdown.
+ */
 @Composable
 fun InstantPopupCard(
     amount: Double,
@@ -65,16 +78,26 @@ fun InstantPopupCard(
     bank: String?,
     sourceType: String,
     categories: List<CategoryEntity>,
-    autoDismissSeconds: Int = 8,
+    autoDismissSeconds: Int = 10,
     onCategorySelected: (categoryId: Long) -> Unit,
     onOpenInApp: () -> Unit,
     onDismiss: () -> Unit,
     modifier: Modifier = Modifier
 ) {
+    val coroutineScope = rememberCoroutineScope()
     var isVisible by remember { mutableStateOf(false) }
     var selectedCategoryName by remember { mutableStateOf<String?>(null) }
     var timerRunning by remember { mutableStateOf(true) }
-    var progressTarget by remember { mutableStateOf(1f) }
+    var progressTarget by remember { mutableFloatStateOf(1f) }
+
+    fun triggerDismiss() {
+        if (!isVisible) return
+        coroutineScope.launch {
+            isVisible = false
+            delay(320) // Allow smooth upward slide-out animation to finish
+            onDismiss()
+        }
+    }
 
     LaunchedEffect(Unit) {
         isVisible = true
@@ -90,56 +113,117 @@ fun InstantPopupCard(
         label = "autoDismissTimer"
     )
 
-    // Auto-dismiss when timer completes
+    // Automatically trigger exit animation when 10-second countdown finishes
     LaunchedEffect(timerRunning) {
         if (timerRunning) {
             delay((autoDismissSeconds * 1000).toLong())
             if (selectedCategoryName == null) {
-                isVisible = false
-                delay(250)
-                onDismiss()
+                triggerDismiss()
             }
         }
     }
 
     AnimatedVisibility(
         visible = isVisible,
-        enter = slideInVertically(initialOffsetY = { -it }) + fadeIn(),
-        exit = slideOutVertically(targetOffsetY = { -it }) + fadeOut()
+        enter = slideInVertically(
+            initialOffsetY = { -it - 60 },
+            animationSpec = spring(
+                dampingRatio = 0.76f,
+                stiffness = 340f
+            )
+        ) + fadeIn(
+            animationSpec = tween(260)
+        ) + scaleIn(
+            initialScale = 0.92f,
+            animationSpec = spring(
+                dampingRatio = 0.76f,
+                stiffness = 340f
+            )
+        ),
+        exit = slideOutVertically(
+            targetOffsetY = { -it - 80 },
+            animationSpec = tween(300, easing = FastOutSlowInEasing)
+        ) + fadeOut(
+            animationSpec = tween(240)
+        ) + scaleOut(
+            targetScale = 0.94f,
+            animationSpec = tween(300)
+        )
     ) {
         Card(
             modifier = modifier
                 .fillMaxWidth()
-                .padding(horizontal = 14.dp, vertical = 8.dp),
-            shape = RoundedCornerShape(22.dp),
+                .padding(horizontal = 14.dp, vertical = 6.dp)
+                .pointerInput(Unit) {
+                    detectVerticalDragGestures { _, dragAmount ->
+                        // Swipe up to dismiss (natural notification gesture)
+                        if (dragAmount < -18f) {
+                            triggerDismiss()
+                        }
+                    }
+                },
+            shape = RoundedCornerShape(26.dp),
             colors = CardDefaults.cardColors(
-                containerColor = Color(0xFF161B22)
+                containerColor = Color(0xFF111215)
             ),
-            elevation = CardDefaults.cardElevation(defaultElevation = 10.dp),
-            border = androidx.compose.foundation.BorderStroke(1.dp, Color(0xFF30363D))
+            elevation = CardDefaults.cardElevation(defaultElevation = 16.dp),
+            border = BorderStroke(1.dp, Color.White.copy(alpha = 0.12f))
         ) {
-            Column(modifier = Modifier.fillMaxWidth()) {
-                // Header Row
+            Column(
+                modifier = Modifier.fillMaxWidth()
+            ) {
+                // Top drag affordance handle
+                Box(
+                    modifier = Modifier
+                        .fillMaxWidth()
+                        .padding(top = 8.dp),
+                    contentAlignment = Alignment.Center
+                ) {
+                    Box(
+                        modifier = Modifier
+                            .width(36.dp)
+                            .height(4.dp)
+                            .clip(CircleShape)
+                            .background(Color.White.copy(alpha = 0.20f))
+                    )
+                }
+
+                // Header Row: Kanri Wordmark & Action Controls (no spent/income pill)
                 Row(
                     modifier = Modifier
                         .fillMaxWidth()
-                        .padding(start = 16.dp, end = 8.dp, top = 12.dp),
+                        .padding(start = 18.dp, end = 10.dp, top = 6.dp, bottom = 4.dp),
                     horizontalArrangement = Arrangement.SpaceBetween,
                     verticalAlignment = Alignment.CenterVertically
                 ) {
-                    Row(verticalAlignment = Alignment.CenterVertically) {
+                    Row(
+                        verticalAlignment = Alignment.CenterVertically
+                    ) {
+                        Text(
+                            text = "KANRI",
+                            fontFamily = Panchang,
+                            fontSize = 12.sp,
+                            fontWeight = FontWeight.Bold,
+                            color = Color.White,
+                            letterSpacing = 1.6.sp
+                        )
+
+                        Spacer(modifier = Modifier.width(6.dp))
+
                         Box(
                             modifier = Modifier
-                                .size(8.dp)
+                                .size(3.5.dp)
                                 .clip(CircleShape)
-                                .background(if (isDebit) Color(0xFFF85149) else Color(0xFF3FB950))
+                                .background(Color.White.copy(alpha = 0.35f))
                         )
-                        Spacer(modifier = Modifier.width(8.dp))
+
+                        Spacer(modifier = Modifier.width(6.dp))
+
                         Text(
-                            text = "KANRI • PAYMENT DETECTED",
-                            fontSize = 11.sp,
-                            fontWeight = FontWeight.Bold,
-                            color = Color(0xFF8B949E),
+                            text = "TRANSACTION",
+                            fontSize = 10.sp,
+                            fontWeight = FontWeight.Medium,
+                            color = Color(0xFF8E93A0),
                             letterSpacing = 1.sp
                         )
                     }
@@ -151,23 +235,21 @@ fun InstantPopupCard(
                         ) {
                             Icon(
                                 imageVector = Icons.AutoMirrored.Filled.OpenInNew,
-                                contentDescription = "Open in Kanri",
-                                tint = Color(0xFF8B949E),
-                                modifier = Modifier.size(16.dp)
+                                contentDescription = "Open in App",
+                                tint = Color(0xFF8E93A0),
+                                modifier = Modifier.size(15.dp)
                             )
                         }
+
                         IconButton(
-                            onClick = {
-                                isVisible = false
-                                onDismiss()
-                            },
+                            onClick = { triggerDismiss() },
                             modifier = Modifier.size(32.dp)
                         ) {
                             Icon(
                                 imageVector = Icons.Default.Close,
                                 contentDescription = "Dismiss",
-                                tint = Color(0xFF8B949E),
-                                modifier = Modifier.size(18.dp)
+                                tint = Color(0xFF8E93A0),
+                                modifier = Modifier.size(16.dp)
                             )
                         }
                     }
@@ -177,92 +259,105 @@ fun InstantPopupCard(
                 Row(
                     modifier = Modifier
                         .fillMaxWidth()
-                        .padding(horizontal = 16.dp, vertical = 6.dp),
+                        .padding(horizontal = 18.dp, vertical = 4.dp),
                     horizontalArrangement = Arrangement.SpaceBetween,
                     verticalAlignment = Alignment.CenterVertically
                 ) {
-                    Column(modifier = Modifier.weight(1f)) {
+                    Column(
+                        modifier = Modifier.weight(1f)
+                    ) {
                         Text(
-                            text = counterparty.ifBlank { "Unknown Payee" },
-                            fontSize = 17.sp,
+                            text = counterparty.ifBlank { if (isDebit) "Expense" else "Income" },
+                            fontSize = 18.sp,
                             fontWeight = FontWeight.Bold,
-                            color = Color.White
+                            color = Color.White,
+                            maxLines = 1
                         )
+
                         Spacer(modifier = Modifier.height(2.dp))
-                        val meta = listOfNotNull(bank?.takeIf { it.isNotBlank() }, sourceType.takeIf { it.isNotBlank() })
-                            .joinToString(" • ")
+
+                        val metaInfo = listOfNotNull(
+                            bank?.takeIf { it.isNotBlank() },
+                            sourceType.takeIf { it.isNotBlank() }
+                        ).joinToString(" • ")
+
                         Text(
-                            text = meta.ifBlank { "Auto-captured payment" },
+                            text = metaInfo.ifBlank { "Auto-detected transaction" },
                             fontSize = 11.sp,
-                            color = Color(0xFF8B949E)
+                            color = Color(0xFF8E93A0),
+                            maxLines = 1
                         )
                     }
 
+                    Spacer(modifier = Modifier.width(12.dp))
+
+                    // Amount with distinct Red for Debit and Green for Credit
                     Text(
                         text = "${if (isDebit) "-" else "+"} ${formatCurrency(amount)}",
-                        fontSize = 20.sp,
+                        fontSize = 22.sp,
                         fontWeight = FontWeight.ExtraBold,
-                        color = if (isDebit) Color(0xFFF85149) else Color(0xFF3FB950)
+                        color = if (isDebit) Color(0xFFFF5252) else Color(0xFF2ECC71),
+                        letterSpacing = (-0.5).sp
                     )
                 }
 
-                // Success Confirmation Banner (when category tapped)
+                Spacer(modifier = Modifier.height(8.dp))
+
+                // Success Confirmation Banner or Quick Category Chips
                 if (selectedCategoryName != null) {
                     Surface(
                         modifier = Modifier
                             .fillMaxWidth()
-                            .padding(horizontal = 16.dp, vertical = 8.dp),
-                        shape = RoundedCornerShape(10.dp),
-                        color = Color(0xFF3FB950).copy(alpha = 0.15f)
+                            .padding(horizontal = 18.dp, vertical = 6.dp),
+                        shape = RoundedCornerShape(12.dp),
+                        color = Color.White.copy(alpha = 0.08f),
+                        border = BorderStroke(1.dp, Color.White.copy(alpha = 0.15f))
                     ) {
                         Row(
-                            modifier = Modifier.padding(horizontal = 12.dp, vertical = 8.dp),
+                            modifier = Modifier.padding(horizontal = 14.dp, vertical = 10.dp),
                             verticalAlignment = Alignment.CenterVertically
                         ) {
-                            Icon(
-                                imageVector = Icons.Default.Check,
-                                contentDescription = null,
-                                tint = Color(0xFF3FB950),
-                                modifier = Modifier.size(16.dp)
-                            )
-                            Spacer(modifier = Modifier.width(8.dp))
+                            Box(
+                                modifier = Modifier
+                                    .size(20.dp)
+                                    .clip(CircleShape)
+                                    .background(Color.White),
+                                contentAlignment = Alignment.Center
+                            ) {
+                                Icon(
+                                    imageVector = Icons.Default.Check,
+                                    contentDescription = null,
+                                    tint = Color.Black,
+                                    modifier = Modifier.size(13.dp)
+                                )
+                            }
+                            Spacer(modifier = Modifier.width(10.dp))
                             Text(
                                 text = "Categorized as $selectedCategoryName",
-                                fontSize = 12.sp,
+                                fontSize = 13.sp,
                                 fontWeight = FontWeight.SemiBold,
-                                color = Color(0xFF3FB950)
+                                color = Color.White
                             )
                         }
                     }
                 } else {
-                    // Quick Category Chips
+                    // Category Selection Chips Row
                     Column(
                         modifier = Modifier
                             .fillMaxWidth()
-                            .padding(horizontal = 16.dp, vertical = 6.dp)
+                            .padding(horizontal = 18.dp, vertical = 2.dp)
                     ) {
-                        Text(
-                            text = "Tap to categorize:",
-                            fontSize = 11.sp,
-                            color = Color(0xFF8B949E),
-                            fontWeight = FontWeight.Medium
-                        )
-                        Spacer(modifier = Modifier.height(6.dp))
-
                         Row(
                             modifier = Modifier
                                 .fillMaxWidth()
                                 .horizontalScroll(rememberScrollState()),
                             horizontalArrangement = Arrangement.spacedBy(8.dp)
                         ) {
-                            categories.take(7).forEach { cat ->
+                            categories.take(8).forEach { cat ->
                                 Surface(
                                     shape = RoundedCornerShape(12.dp),
-                                    color = Color(0xFF21262D),
-                                    border = androidx.compose.foundation.BorderStroke(
-                                        width = 1.dp,
-                                        color = Color.White.copy(alpha = 0.15f)
-                                    ),
+                                    color = Color(0xFF1A1C22),
+                                    border = BorderStroke(1.dp, Color.White.copy(alpha = 0.08f)),
                                     modifier = Modifier
                                         .clip(RoundedCornerShape(12.dp))
                                         .clickable {
@@ -272,21 +367,21 @@ fun InstantPopupCard(
                                         }
                                 ) {
                                     Row(
-                                        modifier = Modifier.padding(horizontal = 10.dp, vertical = 6.dp),
+                                        modifier = Modifier.padding(horizontal = 11.dp, vertical = 7.dp),
                                         verticalAlignment = Alignment.CenterVertically
                                     ) {
                                         CategoryIcon(
                                             categoryName = cat.name,
                                             iconName = cat.iconName,
-                                            tint = Color(0xFFE6EDF3),
-                                            modifier = Modifier.size(14.dp)
+                                            tint = Color(0xFFD6D9E0),
+                                            modifier = Modifier.size(13.dp)
                                         )
                                         Spacer(modifier = Modifier.width(6.dp))
                                         Text(
                                             text = cat.name,
                                             fontSize = 12.sp,
                                             fontWeight = FontWeight.Medium,
-                                            color = Color.White
+                                            color = Color(0xFFEDEDED)
                                         )
                                     }
                                 }
@@ -295,16 +390,16 @@ fun InstantPopupCard(
                     }
                 }
 
-                Spacer(modifier = Modifier.height(8.dp))
+                Spacer(modifier = Modifier.height(10.dp))
 
-                // Auto-Dismiss Timer Line
+                // Smooth 10s Monochrome Countdown Progress Line
                 LinearProgressIndicator(
                     progress = { animatedProgress },
                     modifier = Modifier
                         .fillMaxWidth()
-                        .height(3.dp),
-                    color = Color(0xFF58A6FF),
-                    trackColor = Color(0xFF21262D)
+                        .height(2.5.dp),
+                    color = Color.White.copy(alpha = 0.75f),
+                    trackColor = Color.White.copy(alpha = 0.06f)
                 )
             }
         }

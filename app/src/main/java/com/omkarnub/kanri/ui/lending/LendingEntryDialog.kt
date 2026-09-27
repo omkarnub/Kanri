@@ -1,8 +1,9 @@
 package com.omkarnub.kanri.ui.lending
 
-import android.content.Context
+import android.app.TimePickerDialog
 import android.net.Uri
 import android.provider.ContactsContract
+import android.text.format.DateFormat
 import androidx.activity.compose.BackHandler
 import kotlin.math.abs
 import androidx.activity.compose.rememberLauncherForActivityResult
@@ -22,10 +23,14 @@ import androidx.compose.foundation.layout.Spacer
 import androidx.compose.foundation.layout.fillMaxSize
 import androidx.compose.foundation.layout.fillMaxWidth
 import androidx.compose.foundation.layout.height
+import androidx.compose.foundation.layout.heightIn
 import androidx.compose.foundation.layout.imePadding
 import androidx.compose.foundation.layout.padding
 import androidx.compose.foundation.layout.size
 import androidx.compose.foundation.layout.width
+import androidx.compose.foundation.lazy.LazyColumn
+import androidx.compose.foundation.lazy.items
+import androidx.compose.foundation.horizontalScroll
 import androidx.compose.foundation.rememberScrollState
 import androidx.compose.foundation.shape.CircleShape
 import androidx.compose.foundation.shape.RoundedCornerShape
@@ -35,10 +40,14 @@ import androidx.compose.foundation.verticalScroll
 import androidx.compose.material.icons.Icons
 import androidx.compose.material.icons.filled.Add
 import androidx.compose.material.icons.filled.CalendarMonth
+import androidx.compose.material.icons.filled.Check
 import androidx.compose.material.icons.filled.Close
 import androidx.compose.material.icons.filled.Contacts
 import androidx.compose.material.icons.filled.Edit
+import androidx.compose.material.icons.filled.People
 import androidx.compose.material.icons.filled.Remove
+import androidx.compose.material.icons.filled.Schedule
+import androidx.compose.material.icons.filled.Search
 import androidx.compose.material3.Button
 import androidx.compose.material3.ButtonDefaults
 import androidx.compose.material3.DatePicker
@@ -72,7 +81,6 @@ import androidx.compose.ui.platform.LocalContext
 import androidx.compose.ui.text.font.FontWeight
 import androidx.compose.ui.text.input.ImeAction
 import androidx.compose.ui.text.input.KeyboardType
-import androidx.compose.ui.text.style.TextAlign
 import androidx.compose.ui.unit.dp
 import androidx.compose.ui.unit.sp
 import com.omkarnub.kanri.data.db.LendingWithRepayments
@@ -80,22 +88,27 @@ import com.omkarnub.kanri.ui.common.AnimatedNumberText
 import com.omkarnub.kanri.ui.common.LocalHazeState
 import com.omkarnub.kanri.ui.common.rememberKanriGlassTheme
 import com.omkarnub.kanri.util.CurrencyUtils
+import dev.chrisbanes.haze.ExperimentalHazeApi
 import dev.chrisbanes.haze.hazeChild
-import java.text.SimpleDateFormat
 import java.util.Calendar
-import java.util.Date
 import java.util.Locale
+import java.util.TimeZone
 
 private val SageGreen = Color(0xFF30A46C)
 private val ExpenseRed = Color(0xFFE54D2E)
 
-@OptIn(ExperimentalLayoutApi::class, ExperimentalMaterial3Api::class)
+@OptIn(ExperimentalLayoutApi::class, ExperimentalMaterial3Api::class, ExperimentalHazeApi::class)
 @Composable
 fun LendingEntryDialog(
     initialType: String = "LENT",
     initialPersonName: String = "",
+    initialAmount: Double = 100.0,
+    initialDate: Long = System.currentTimeMillis(),
+    initialDueDate: Long? = null,
+    initialNotes: String? = null,
     existingEntry: LendingWithRepayments? = null,
     recentPeople: List<String> = emptyList(),
+    allPeople: List<PersonSummary> = emptyList(),
     onDismiss: () -> Unit,
     onSave: (personName: String, amount: Double, type: String, date: Long, dueDate: Long?, notes: String?) -> Unit
 ) {
@@ -105,19 +118,22 @@ fun LendingEntryDialog(
     val hazeState = LocalHazeState.current
     val glassTheme = rememberKanriGlassTheme()
 
+
     val isEditing = existingEntry != null
     val hasRepayments = existingEntry?.repayments?.isNotEmpty() == true
 
     var type by remember { mutableStateOf(existingEntry?.lending?.type ?: initialType) }
     var personName by remember { mutableStateOf(existingEntry?.lending?.personName ?: initialPersonName) }
-    var amount by remember { mutableDoubleStateOf(existingEntry?.lending?.amount ?: 100.0) }
+    var amount by remember { mutableDoubleStateOf(existingEntry?.lending?.amount ?: initialAmount) }
     var isManualInput by remember { mutableStateOf(false) }
-    var manualText by remember { mutableStateOf(amount.toLong().toString()) }
-    var notes by remember { mutableStateOf(existingEntry?.lending?.notes ?: "") }
-    var entryDate by remember { mutableLongStateOf(existingEntry?.lending?.date ?: System.currentTimeMillis()) }
-    var dueDate by remember { mutableStateOf<Long?>(existingEntry?.lending?.dueDate) }
+    var manualText by remember { mutableStateOf(if (amount % 1.0 == 0.0) amount.toLong().toString() else amount.toString()) }
+    var notes by remember { mutableStateOf(existingEntry?.lending?.notes ?: (initialNotes ?: "")) }
+    var entryDate by remember { mutableLongStateOf(existingEntry?.lending?.date ?: initialDate) }
+    var dueDate by remember { mutableStateOf<Long?>(existingEntry?.lending?.dueDate ?: initialDueDate) }
 
-    var showCustomDatePicker by remember { mutableStateOf(false) }
+    var showEntryDatePicker by remember { mutableStateOf(false) }
+    var showCustomDueDatePicker by remember { mutableStateOf(false) }
+    var showPeoplePopup by remember { mutableStateOf(false) }
     val focusRequester = remember { FocusRequester() }
 
     // Contact Picker Launcher
@@ -166,7 +182,7 @@ fun LendingEntryDialog(
         Box(
             modifier = Modifier
                 .fillMaxSize()
-                .background(Color.Black.copy(alpha = 0.55f))
+                .background(Color.Black.copy(alpha = 0.35f))
                 .clickable(
                     interactionSource = remember { MutableInteractionSource() },
                     indication = null,
@@ -186,10 +202,10 @@ fun LendingEntryDialog(
                 modifier = Modifier
                     .fillMaxWidth()
                     .shadow(
-                        elevation = glassTheme.shadowElevation + 8.dp,
+                        elevation = glassTheme.shadowElevation + 6.dp,
                         shape = RoundedCornerShape(28.dp),
                         spotColor = glassTheme.shadowColor,
-                        ambientColor = glassTheme.shadowColor.copy(alpha = 0.6f)
+                        ambientColor = glassTheme.shadowColor.copy(alpha = glassTheme.shadowColor.alpha * 0.7f)
                     )
                     .clip(RoundedCornerShape(28.dp))
                     .then(
@@ -197,7 +213,9 @@ fun LendingEntryDialog(
                             Modifier.hazeChild(
                                 state = hazeState,
                                 style = glassTheme.popupHazeStyle
-                            )
+                            ) {
+                                canDrawArea = { true }
+                            }
                         } else {
                             Modifier
                         }
@@ -503,24 +521,131 @@ fun LendingEntryDialog(
 
                     Spacer(modifier = Modifier.height(14.dp))
 
-                    // Person Name Input + Contact Picker
+                    // Person Section: Action Buttons (Profiles Popup & Contacts) + Name Input
                     Column(
                         modifier = Modifier.fillMaxWidth(),
-                        verticalArrangement = Arrangement.spacedBy(6.dp)
+                        verticalArrangement = Arrangement.spacedBy(8.dp)
                     ) {
+                        Row(
+                            modifier = Modifier.fillMaxWidth(),
+                            verticalAlignment = Alignment.CenterVertically,
+                            horizontalArrangement = Arrangement.SpaceBetween
+                        ) {
+                            Text(
+                                text = "PERSON",
+                                style = MaterialTheme.typography.labelSmall.copy(
+                                    fontWeight = FontWeight.Bold,
+                                    letterSpacing = 1.1.sp,
+                                    fontSize = 10.5.sp
+                                ),
+                                color = MaterialTheme.colorScheme.onSurfaceVariant
+                            )
+
+                            Row(
+                                verticalAlignment = Alignment.CenterVertically,
+                                horizontalArrangement = Arrangement.spacedBy(6.dp)
+                            ) {
+                                if (allPeople.isNotEmpty()) {
+                                    Surface(
+                                        shape = RoundedCornerShape(10.dp),
+                                        color = MaterialTheme.colorScheme.onSurface.copy(alpha = 0.08f),
+                                        border = BorderStroke(0.8.dp, MaterialTheme.colorScheme.outlineVariant),
+                                        modifier = Modifier
+                                            .clip(RoundedCornerShape(10.dp))
+                                            .clickable { showPeoplePopup = true }
+                                    ) {
+                                        Row(
+                                            modifier = Modifier.padding(horizontal = 9.dp, vertical = 5.dp),
+                                            verticalAlignment = Alignment.CenterVertically,
+                                            horizontalArrangement = Arrangement.spacedBy(4.dp)
+                                        ) {
+                                            Icon(
+                                                imageVector = Icons.Default.People,
+                                                contentDescription = null,
+                                                tint = MaterialTheme.colorScheme.onSurface,
+                                                modifier = Modifier.size(13.dp)
+                                            )
+                                            Text(
+                                                text = "Profiles (${allPeople.size})",
+                                                style = MaterialTheme.typography.labelSmall.copy(
+                                                    fontWeight = FontWeight.SemiBold,
+                                                    fontSize = 11.sp
+                                                ),
+                                                color = MaterialTheme.colorScheme.onSurface
+                                            )
+                                        }
+                                    }
+                                }
+
+                                Surface(
+                                    shape = RoundedCornerShape(10.dp),
+                                    color = MaterialTheme.colorScheme.onSurface.copy(alpha = 0.08f),
+                                    border = BorderStroke(0.8.dp, MaterialTheme.colorScheme.outlineVariant),
+                                    modifier = Modifier
+                                        .clip(RoundedCornerShape(10.dp))
+                                        .clickable { contactPickerLauncher.launch(null) }
+                                ) {
+                                    Row(
+                                        modifier = Modifier.padding(horizontal = 9.dp, vertical = 5.dp),
+                                        verticalAlignment = Alignment.CenterVertically,
+                                        horizontalArrangement = Arrangement.spacedBy(4.dp)
+                                    ) {
+                                        Icon(
+                                            imageVector = Icons.Default.Contacts,
+                                            contentDescription = null,
+                                            tint = MaterialTheme.colorScheme.onSurface,
+                                            modifier = Modifier.size(13.dp)
+                                        )
+                                        Text(
+                                            text = "Contacts",
+                                            style = MaterialTheme.typography.labelSmall.copy(
+                                                fontWeight = FontWeight.SemiBold,
+                                                fontSize = 11.sp
+                                            ),
+                                            color = MaterialTheme.colorScheme.onSurface
+                                        )
+                                    }
+                                }
+                            }
+                        }
+
+                        // Person Name Input + Trailing Quick Pickers
                         OutlinedTextField(
                             value = personName,
                             onValueChange = { personName = it.take(40) },
                             label = { Text("Person Name") },
-                            placeholder = { Text("e.g. John Doe") },
+                            placeholder = { Text("Type name or select profile") },
                             singleLine = true,
                             trailingIcon = {
-                                IconButton(onClick = { contactPickerLauncher.launch(null) }) {
-                                    Icon(
-                                        imageVector = Icons.Default.Contacts,
-                                        contentDescription = "Pick Contact",
-                                        tint = MaterialTheme.colorScheme.onSurface
-                                    )
+                                Row(
+                                    verticalAlignment = Alignment.CenterVertically,
+                                    horizontalArrangement = Arrangement.spacedBy(2.dp),
+                                    modifier = Modifier.padding(end = 4.dp)
+                                ) {
+                                    if (allPeople.isNotEmpty()) {
+                                        IconButton(
+                                            onClick = { showPeoplePopup = true },
+                                            modifier = Modifier.size(34.dp)
+                                        ) {
+                                            Icon(
+                                                imageVector = Icons.Default.People,
+                                                contentDescription = "Select Existing Person",
+                                                tint = MaterialTheme.colorScheme.onSurface,
+                                                modifier = Modifier.size(19.dp)
+                                            )
+                                        }
+                                    }
+                                    IconButton(
+                                        onClick = { contactPickerLauncher.launch(null) },
+                                        modifier = Modifier.size(34.dp)
+                                    ) {
+                                        Icon(
+                                            imageVector = Icons.Default.Contacts,
+                                            contentDescription = "Pick Contact",
+                                            tint = MaterialTheme.colorScheme.onSurface,
+                                            modifier = Modifier.size(19.dp)
+                                        )
+                                    }
                                 }
                             },
                             modifier = Modifier.fillMaxWidth(),
@@ -530,30 +655,292 @@ fun LendingEntryDialog(
                             )
                         )
 
-                        // Recent People Chips
-                        if (recentPeople.isNotEmpty() && !isEditing) {
-                            FlowRow(
-                                modifier = Modifier.fillMaxWidth(),
-                                horizontalArrangement = Arrangement.spacedBy(6.dp),
-                                verticalArrangement = Arrangement.spacedBy(4.dp)
+                        // Quick-select People Chips row (Single-tap selection from existing profiles)
+                        if (allPeople.isNotEmpty()) {
+                            Row(
+                                modifier = Modifier
+                                    .fillMaxWidth()
+                                    .horizontalScroll(rememberScrollState()),
+                                horizontalArrangement = Arrangement.spacedBy(8.dp),
+                                verticalAlignment = Alignment.CenterVertically
                             ) {
-                                recentPeople.take(4).forEach { recent ->
+                                allPeople.take(6).forEach { p ->
+                                    val isSelected = personName.trim().equals(p.displayName.trim(), ignoreCase = true)
+                                    val initial = p.displayName.trim().take(1).uppercase(Locale.ROOT).ifBlank { "?" }
+                                    Surface(
+                                        shape = RoundedCornerShape(12.dp),
+                                        color = if (isSelected) MaterialTheme.colorScheme.onSurface.copy(alpha = 0.15f) else MaterialTheme.colorScheme.onSurface.copy(alpha = 0.05f),
+                                        border = BorderStroke(
+                                            if (isSelected) 1.5.dp else 0.8.dp,
+                                            if (isSelected) MaterialTheme.colorScheme.onSurface else MaterialTheme.colorScheme.outlineVariant
+                                        ),
+                                        modifier = Modifier
+                                            .clip(RoundedCornerShape(12.dp))
+                                            .clickable {
+                                                personName = p.displayName
+                                            }
+                                    ) {
+                                        Row(
+                                            modifier = Modifier.padding(horizontal = 10.dp, vertical = 6.dp),
+                                            verticalAlignment = Alignment.CenterVertically,
+                                            horizontalArrangement = Arrangement.spacedBy(6.dp)
+                                        ) {
+                                            Box(
+                                                modifier = Modifier
+                                                    .size(20.dp)
+                                                    .clip(CircleShape)
+                                                    .background(if (isSelected) MaterialTheme.colorScheme.onSurface else MaterialTheme.colorScheme.onSurface.copy(alpha = 0.12f)),
+                                                contentAlignment = Alignment.Center
+                                            ) {
+                                                Text(
+                                                    text = initial,
+                                                    style = MaterialTheme.typography.labelSmall.copy(
+                                                        fontWeight = FontWeight.Bold,
+                                                        fontSize = 11.sp
+                                                    ),
+                                                    color = if (isSelected) MaterialTheme.colorScheme.surface else MaterialTheme.colorScheme.onSurface
+                                                )
+                                            }
+                                            Text(
+                                                text = p.displayName,
+                                                style = MaterialTheme.typography.labelMedium.copy(
+                                                    fontWeight = if (isSelected) FontWeight.Bold else FontWeight.Medium
+                                                ),
+                                                color = MaterialTheme.colorScheme.onSurface
+                                            )
+                                            if (isSelected) {
+                                                Icon(
+                                                    imageVector = Icons.Default.Check,
+                                                    contentDescription = "Selected",
+                                                    tint = MaterialTheme.colorScheme.onSurface,
+                                                    modifier = Modifier.size(13.dp)
+                                                )
+                                            }
+                                        }
+                                    }
+                                }
+                                if (allPeople.size > 6) {
                                     Surface(
                                         shape = RoundedCornerShape(12.dp),
                                         color = MaterialTheme.colorScheme.onSurface.copy(alpha = 0.05f),
                                         border = BorderStroke(0.8.dp, MaterialTheme.colorScheme.outlineVariant),
                                         modifier = Modifier
                                             .clip(RoundedCornerShape(12.dp))
-                                            .clickable { personName = recent }
+                                            .clickable { showPeoplePopup = true }
                                     ) {
                                         Text(
-                                            text = recent,
-                                            style = MaterialTheme.typography.labelSmall.copy(fontSize = 11.sp),
-                                            color = MaterialTheme.colorScheme.onSurface,
-                                            modifier = Modifier.padding(horizontal = 8.dp, vertical = 4.dp)
+                                            text = "+${allPeople.size - 6} more",
+                                            style = MaterialTheme.typography.labelMedium.copy(
+                                                fontWeight = FontWeight.SemiBold,
+                                                fontSize = 12.sp,
+                                                color = MaterialTheme.colorScheme.onSurface
+                                            ),
+                                            modifier = Modifier.padding(horizontal = 10.dp, vertical = 7.dp)
                                         )
                                     }
                                 }
+                            }
+                        }
+
+                        // Counterparty suggestion chip if available and not yet matching
+                        if (personName.isBlank() && !initialNotes.isNullOrBlank() && allPeople.none { it.displayName.equals(initialNotes.trim(), ignoreCase = true) }) {
+                            val cleanNote = initialNotes.trim().take(30)
+                            Surface(
+                                shape = RoundedCornerShape(10.dp),
+                                color = MaterialTheme.colorScheme.onSurface.copy(alpha = 0.08f),
+                                border = BorderStroke(0.8.dp, MaterialTheme.colorScheme.outlineVariant),
+                                modifier = Modifier
+                                    .clip(RoundedCornerShape(10.dp))
+                                    .clickable { personName = cleanNote }
+                            ) {
+                                Row(
+                                    modifier = Modifier.padding(horizontal = 9.dp, vertical = 5.dp),
+                                    verticalAlignment = Alignment.CenterVertically,
+                                    horizontalArrangement = Arrangement.spacedBy(4.dp)
+                                ) {
+                                    Icon(
+                                        imageVector = Icons.Default.Add,
+                                        contentDescription = null,
+                                        tint = MaterialTheme.colorScheme.onSurface,
+                                        modifier = Modifier.size(12.dp)
+                                    )
+                                    Text(
+                                        text = "Use counterparty: \"$cleanNote\"",
+                                        style = MaterialTheme.typography.labelSmall.copy(
+                                            fontWeight = FontWeight.SemiBold,
+                                            fontSize = 11.sp,
+                                            color = MaterialTheme.colorScheme.onSurface
+                                        )
+                                    )
+                                }
+                            }
+                        }
+                    }
+
+                    Spacer(modifier = Modifier.height(14.dp))
+
+                    // Recorded Date & Time Section: Pick Date + Pick Time + Today/Yesterday chips
+                    Column(
+                        modifier = Modifier.fillMaxWidth(),
+                        verticalArrangement = Arrangement.spacedBy(6.dp)
+                    ) {
+                        Text(
+                            text = "DATE & TIME",
+                            style = MaterialTheme.typography.labelSmall.copy(
+                                fontWeight = FontWeight.Bold,
+                                letterSpacing = 1.1.sp,
+                                fontSize = 10.5.sp
+                            ),
+                            color = MaterialTheme.colorScheme.onSurfaceVariant
+                        )
+
+                        Row(
+                            modifier = Modifier.fillMaxWidth(),
+                            horizontalArrangement = Arrangement.spacedBy(8.dp)
+                        ) {
+                            // Date Button
+                            Surface(
+                                shape = RoundedCornerShape(12.dp),
+                                color = MaterialTheme.colorScheme.onSurface.copy(alpha = 0.05f),
+                                border = BorderStroke(0.8.dp, MaterialTheme.colorScheme.outlineVariant),
+                                modifier = Modifier
+                                    .weight(1.3f)
+                                    .clip(RoundedCornerShape(12.dp))
+                                    .clickable { showEntryDatePicker = true }
+                            ) {
+                                Row(
+                                    modifier = Modifier.padding(horizontal = 10.dp, vertical = 9.dp),
+                                    verticalAlignment = Alignment.CenterVertically,
+                                    horizontalArrangement = Arrangement.spacedBy(6.dp)
+                                ) {
+                                    Icon(
+                                        imageVector = Icons.Default.CalendarMonth,
+                                        contentDescription = "Pick Date",
+                                        tint = MaterialTheme.colorScheme.onSurface,
+                                        modifier = Modifier.size(15.dp)
+                                    )
+                                    Text(
+                                        text = LendingDateFormatters.formatMedium(entryDate),
+                                        style = MaterialTheme.typography.labelMedium.copy(
+                                            fontWeight = FontWeight.SemiBold,
+                                            fontSize = 12.sp
+                                        ),
+                                        color = MaterialTheme.colorScheme.onSurface,
+                                        maxLines = 1
+                                    )
+                                }
+                            }
+
+                            // Time Button
+                            Surface(
+                                shape = RoundedCornerShape(12.dp),
+                                color = MaterialTheme.colorScheme.onSurface.copy(alpha = 0.05f),
+                                border = BorderStroke(0.8.dp, MaterialTheme.colorScheme.outlineVariant),
+                                modifier = Modifier
+                                    .weight(1f)
+                                    .clip(RoundedCornerShape(12.dp))
+                                    .clickable {
+                                        val cal = Calendar.getInstance().apply { timeInMillis = entryDate }
+                                        val is24Hr = DateFormat.is24HourFormat(context)
+                                        TimePickerDialog(
+                                            context,
+                                            { _, h, m ->
+                                                entryDate = updateTimePreserveDate(h, m, entryDate)
+                                            },
+                                            cal.get(Calendar.HOUR_OF_DAY),
+                                            cal.get(Calendar.MINUTE),
+                                            is24Hr
+                                        ).show()
+                                    }
+                            ) {
+                                Row(
+                                    modifier = Modifier.padding(horizontal = 10.dp, vertical = 9.dp),
+                                    verticalAlignment = Alignment.CenterVertically,
+                                    horizontalArrangement = Arrangement.spacedBy(6.dp)
+                                ) {
+                                    Icon(
+                                        imageVector = Icons.Default.Schedule,
+                                        contentDescription = "Pick Time",
+                                        tint = MaterialTheme.colorScheme.onSurface,
+                                        modifier = Modifier.size(15.dp)
+                                    )
+                                    Text(
+                                        text = LendingDateFormatters.formatTime(entryDate),
+                                        style = MaterialTheme.typography.labelMedium.copy(
+                                            fontWeight = FontWeight.SemiBold,
+                                            fontSize = 12.sp
+                                        ),
+                                        color = MaterialTheme.colorScheme.onSurface,
+                                        maxLines = 1
+                                    )
+                                }
+                            }
+                        }
+
+                        // Quick date chips: Today, Yesterday
+                        Row(
+                            horizontalArrangement = Arrangement.spacedBy(6.dp)
+                        ) {
+                            val now = Calendar.getInstance()
+                            val isToday = {
+                                val c = Calendar.getInstance().apply { timeInMillis = entryDate }
+                                now.get(Calendar.YEAR) == c.get(Calendar.YEAR) && now.get(Calendar.DAY_OF_YEAR) == c.get(Calendar.DAY_OF_YEAR)
+                            }()
+                            val isYesterday = {
+                                val c = Calendar.getInstance().apply { timeInMillis = entryDate }
+                                now.get(Calendar.YEAR) == c.get(Calendar.YEAR) && (now.get(Calendar.DAY_OF_YEAR) - c.get(Calendar.DAY_OF_YEAR) == 1)
+                            }()
+
+                            Surface(
+                                shape = RoundedCornerShape(10.dp),
+                                color = if (isToday) MaterialTheme.colorScheme.onSurface else MaterialTheme.colorScheme.onSurface.copy(alpha = 0.05f),
+                                border = if (!isToday) BorderStroke(0.8.dp, MaterialTheme.colorScheme.outlineVariant) else null,
+                                modifier = Modifier
+                                    .clip(RoundedCornerShape(10.dp))
+                                    .clickable {
+                                        val calNow = Calendar.getInstance()
+                                        val calEntry = Calendar.getInstance().apply { timeInMillis = entryDate }
+                                        calNow.set(Calendar.HOUR_OF_DAY, calEntry.get(Calendar.HOUR_OF_DAY))
+                                        calNow.set(Calendar.MINUTE, calEntry.get(Calendar.MINUTE))
+                                        calNow.set(Calendar.SECOND, calEntry.get(Calendar.SECOND))
+                                        entryDate = calNow.timeInMillis
+                                    }
+                            ) {
+                                Text(
+                                    text = "Today",
+                                    style = MaterialTheme.typography.labelSmall.copy(
+                                        fontWeight = if (isToday) FontWeight.Bold else FontWeight.Medium,
+                                        fontSize = 11.sp
+                                    ),
+                                    color = if (isToday) MaterialTheme.colorScheme.surface else MaterialTheme.colorScheme.onSurfaceVariant,
+                                    modifier = Modifier.padding(horizontal = 9.dp, vertical = 5.dp)
+                                )
+                            }
+
+                            Surface(
+                                shape = RoundedCornerShape(10.dp),
+                                color = if (isYesterday) MaterialTheme.colorScheme.onSurface else MaterialTheme.colorScheme.onSurface.copy(alpha = 0.05f),
+                                border = if (!isYesterday) BorderStroke(0.8.dp, MaterialTheme.colorScheme.outlineVariant) else null,
+                                modifier = Modifier
+                                    .clip(RoundedCornerShape(10.dp))
+                                    .clickable {
+                                        val calYest = Calendar.getInstance().apply { add(Calendar.DAY_OF_YEAR, -1) }
+                                        val calEntry = Calendar.getInstance().apply { timeInMillis = entryDate }
+                                        calYest.set(Calendar.HOUR_OF_DAY, calEntry.get(Calendar.HOUR_OF_DAY))
+                                        calYest.set(Calendar.MINUTE, calEntry.get(Calendar.MINUTE))
+                                        calYest.set(Calendar.SECOND, calEntry.get(Calendar.SECOND))
+                                        entryDate = calYest.timeInMillis
+                                    }
+                            ) {
+                                Text(
+                                    text = "Yesterday",
+                                    style = MaterialTheme.typography.labelSmall.copy(
+                                        fontWeight = if (isYesterday) FontWeight.Bold else FontWeight.Medium,
+                                        fontSize = 11.sp
+                                    ),
+                                    color = if (isYesterday) MaterialTheme.colorScheme.surface else MaterialTheme.colorScheme.onSurfaceVariant,
+                                    modifier = Modifier.padding(horizontal = 9.dp, vertical = 5.dp)
+                                )
                             }
                         }
                     }
@@ -592,6 +979,9 @@ fun LendingEntryDialog(
                                     Calendar.getInstance().apply {
                                         timeInMillis = entryDate
                                         add(Calendar.DAY_OF_YEAR, d)
+                                        set(Calendar.HOUR_OF_DAY, 23)
+                                        set(Calendar.MINUTE, 59)
+                                        set(Calendar.SECOND, 59)
                                     }.timeInMillis
                                 }
                                 val isSelected = (days == null && dueDate == null) ||
@@ -630,7 +1020,7 @@ fun LendingEntryDialog(
                                 border = if (!isCustomSelected) BorderStroke(0.8.dp, MaterialTheme.colorScheme.outlineVariant) else null,
                                 modifier = Modifier
                                     .clip(RoundedCornerShape(12.dp))
-                                    .clickable { showCustomDatePicker = true }
+                                    .clickable { showCustomDueDatePicker = true }
                             ) {
                                 Row(
                                     verticalAlignment = Alignment.CenterVertically,
@@ -705,30 +1095,252 @@ fun LendingEntryDialog(
                 }
             }
         }
+
+        // -------------------------------------------------------------
+        // Existing Profiles Popup (Avatar + Name ONLY, no owe/lent, no settled)
+        // -------------------------------------------------------------
+        if (showPeoplePopup && allPeople.isNotEmpty()) {
+            var searchQuery by remember { mutableStateOf("") }
+            val filteredPeople = remember(searchQuery, allPeople) {
+                if (searchQuery.isBlank()) allPeople else {
+                    allPeople.filter { it.displayName.contains(searchQuery.trim(), ignoreCase = true) }
+                }
+            }
+
+            Box(
+                modifier = Modifier.fillMaxSize(),
+                contentAlignment = Alignment.Center
+            ) {
+                // Secondary Scrim
+                Box(
+                    modifier = Modifier
+                        .fillMaxSize()
+                        .background(Color.Black.copy(alpha = 0.70f))
+                        .clickable(
+                            interactionSource = remember { MutableInteractionSource() },
+                            indication = null,
+                            onClick = { showPeoplePopup = false }
+                        )
+                )
+
+                Box(
+                    modifier = Modifier
+                        .fillMaxWidth()
+                        .imePadding()
+                        .padding(horizontal = 24.dp),
+                    contentAlignment = Alignment.Center
+                ) {
+                    Surface(
+                        modifier = Modifier
+                            .fillMaxWidth()
+                            .shadow(
+                                elevation = glassTheme.shadowElevation + 6.dp,
+                                shape = RoundedCornerShape(24.dp),
+                                spotColor = glassTheme.shadowColor,
+                                ambientColor = glassTheme.shadowColor.copy(alpha = glassTheme.shadowColor.alpha * 0.7f)
+                            )
+                            .clip(RoundedCornerShape(24.dp))
+                            .then(
+                                if (hazeState != null) {
+                                    Modifier.hazeChild(
+                                        state = hazeState,
+                                        style = glassTheme.popupHazeStyle
+                                    ) {
+                                        canDrawArea = { true }
+                                    }
+                                } else {
+                                    Modifier
+                                }
+                            )
+                            .border(glassTheme.glassBorder, shape = RoundedCornerShape(24.dp)),
+                        shape = RoundedCornerShape(24.dp),
+                        color = if (hazeState != null) Color.Transparent else glassTheme.fallbackBackgroundColor
+                    ) {
+                        Column(
+                            modifier = Modifier
+                                .fillMaxWidth()
+                                .padding(20.dp),
+                            verticalArrangement = Arrangement.spacedBy(14.dp)
+                        ) {
+                            // Popup Header
+                            Row(
+                                modifier = Modifier.fillMaxWidth(),
+                                verticalAlignment = Alignment.CenterVertically,
+                                horizontalArrangement = Arrangement.SpaceBetween
+                            ) {
+                                Column(verticalArrangement = Arrangement.spacedBy(2.dp)) {
+                                    Text(
+                                        text = "Select Profile",
+                                        style = MaterialTheme.typography.titleMedium.copy(
+                                            fontWeight = FontWeight.Bold,
+                                            fontSize = 17.sp
+                                        ),
+                                        color = MaterialTheme.colorScheme.onSurface
+                                    )
+                                    Text(
+                                        text = "${allPeople.size} created profiles",
+                                        style = MaterialTheme.typography.labelSmall.copy(fontSize = 11.sp),
+                                        color = MaterialTheme.colorScheme.onSurfaceVariant.copy(alpha = 0.7f)
+                                    )
+                                }
+
+                                IconButton(
+                                    onClick = { showPeoplePopup = false },
+                                    modifier = Modifier.size(30.dp)
+                                ) {
+                                    Icon(
+                                        imageVector = Icons.Default.Close,
+                                        contentDescription = "Close",
+                                        tint = MaterialTheme.colorScheme.onSurfaceVariant
+                                    )
+                                }
+                            }
+
+                            // Search bar if > 3 people
+                            if (allPeople.size > 3) {
+                                OutlinedTextField(
+                                    value = searchQuery,
+                                    onValueChange = { searchQuery = it },
+                                    placeholder = { Text("Search by name...") },
+                                    singleLine = true,
+                                    leadingIcon = {
+                                        Icon(
+                                            imageVector = Icons.Default.Search,
+                                            contentDescription = null,
+                                            tint = MaterialTheme.colorScheme.onSurfaceVariant,
+                                            modifier = Modifier.size(18.dp)
+                                        )
+                                    },
+                                    modifier = Modifier.fillMaxWidth(),
+                                    shape = RoundedCornerShape(12.dp),
+                                    colors = OutlinedTextFieldDefaults.colors(
+                                        focusedBorderColor = MaterialTheme.colorScheme.onSurface,
+                                        unfocusedBorderColor = MaterialTheme.colorScheme.outlineVariant
+                                    )
+                                )
+                            }
+
+                            // Profiles List: Avatar initial + Display Name ONLY (no amount, no status)
+                            LazyColumn(
+                                modifier = Modifier
+                                    .fillMaxWidth()
+                                    .heightIn(max = 280.dp),
+                                verticalArrangement = Arrangement.spacedBy(8.dp)
+                            ) {
+                                if (filteredPeople.isEmpty()) {
+                                    item {
+                                        Box(
+                                            modifier = Modifier
+                                                .fillMaxWidth()
+                                                .padding(vertical = 24.dp),
+                                            contentAlignment = Alignment.Center
+                                        ) {
+                                            Text(
+                                                text = "No matching profile found",
+                                                style = MaterialTheme.typography.bodySmall,
+                                                color = MaterialTheme.colorScheme.onSurfaceVariant
+                                            )
+                                        }
+                                    }
+                                } else {
+                                    items(filteredPeople, key = { it.key }) { p ->
+                                        val isSelected = personName.trim().equals(p.displayName.trim(), ignoreCase = true)
+                                        val initial = p.displayName.trim().take(1).uppercase(Locale.ROOT).ifBlank { "?" }
+
+                                        Surface(
+                                            shape = RoundedCornerShape(14.dp),
+                                            color = if (isSelected) MaterialTheme.colorScheme.onSurface.copy(alpha = 0.12f) else MaterialTheme.colorScheme.surfaceVariant.copy(alpha = 0.35f),
+                                            border = BorderStroke(
+                                                if (isSelected) 1.5.dp else 1.dp,
+                                                if (isSelected) MaterialTheme.colorScheme.onSurface else MaterialTheme.colorScheme.outlineVariant
+                                            ),
+                                            modifier = Modifier
+                                                .fillMaxWidth()
+                                                .clip(RoundedCornerShape(14.dp))
+                                                .clickable {
+                                                    personName = p.displayName
+                                                    showPeoplePopup = false
+                                                }
+                                        ) {
+                                            Row(
+                                                modifier = Modifier.padding(horizontal = 14.dp, vertical = 10.dp),
+                                                verticalAlignment = Alignment.CenterVertically,
+                                                horizontalArrangement = Arrangement.SpaceBetween
+                                            ) {
+                                                Row(
+                                                    verticalAlignment = Alignment.CenterVertically,
+                                                    horizontalArrangement = Arrangement.spacedBy(12.dp)
+                                                ) {
+                                                    Box(
+                                                        modifier = Modifier
+                                                            .size(38.dp)
+                                                            .clip(CircleShape)
+                                                            .background(if (isSelected) MaterialTheme.colorScheme.onSurface else MaterialTheme.colorScheme.surfaceVariant)
+                                                            .border(1.dp, MaterialTheme.colorScheme.outlineVariant, CircleShape),
+                                                        contentAlignment = Alignment.Center
+                                                    ) {
+                                                        Text(
+                                                            text = initial,
+                                                            style = MaterialTheme.typography.titleMedium.copy(
+                                                                fontWeight = FontWeight.Bold,
+                                                                fontSize = 15.sp
+                                                            ),
+                                                            color = if (isSelected) MaterialTheme.colorScheme.surface else MaterialTheme.colorScheme.onSurface
+                                                        )
+                                                    }
+
+                                                    Text(
+                                                        text = p.displayName,
+                                                        style = MaterialTheme.typography.bodyLarge.copy(
+                                                            fontWeight = if (isSelected) FontWeight.Bold else FontWeight.SemiBold,
+                                                            fontSize = 15.sp
+                                                        ),
+                                                        color = MaterialTheme.colorScheme.onSurface
+                                                    )
+                                                }
+
+                                                if (isSelected) {
+                                                    Icon(
+                                                        imageVector = Icons.Default.Check,
+                                                        contentDescription = "Selected",
+                                                        tint = MaterialTheme.colorScheme.onSurface,
+                                                        modifier = Modifier.size(18.dp)
+                                                    )
+                                                }
+                                            }
+                                        }
+                                    }
+                                }
+                            }
+                        }
+                    }
+                }
+            }
+        }
     }
 
-    // Material Date Picker Dialog for Custom Date
-    if (showCustomDatePicker) {
+    // Material Date Picker Dialog for Entry Date
+    if (showEntryDatePicker) {
         val datePickerState = rememberDatePickerState(
-            initialSelectedDateMillis = dueDate ?: (entryDate + 7L * 86_400_000L)
+            initialSelectedDateMillis = entryDate
         )
         DatePickerDialog(
-            onDismissRequest = { showCustomDatePicker = false },
+            onDismissRequest = { showEntryDatePicker = false },
             confirmButton = {
                 TextButton(
                     onClick = {
                         val selected = datePickerState.selectedDateMillis
                         if (selected != null) {
-                            dueDate = selected
+                            entryDate = combineDateAndPreserveTime(selected, entryDate)
                         }
-                        showCustomDatePicker = false
+                        showEntryDatePicker = false
                     }
                 ) {
                     Text("OK", color = MaterialTheme.colorScheme.onSurface)
                 }
             },
             dismissButton = {
-                TextButton(onClick = { showCustomDatePicker = false }) {
+                TextButton(onClick = { showEntryDatePicker = false }) {
                     Text("Cancel", color = MaterialTheme.colorScheme.onSurfaceVariant)
                 }
             }
@@ -736,4 +1348,93 @@ fun LendingEntryDialog(
             DatePicker(state = datePickerState)
         }
     }
+
+    // Material Date Picker Dialog for Custom Due Date
+    if (showCustomDueDatePicker) {
+        val datePickerState = rememberDatePickerState(
+            initialSelectedDateMillis = dueDate ?: (entryDate + 7L * 86_400_000L)
+        )
+        DatePickerDialog(
+            onDismissRequest = { showCustomDueDatePicker = false },
+            confirmButton = {
+                TextButton(
+                    onClick = {
+                        val selected = datePickerState.selectedDateMillis
+                        if (selected != null) {
+                            dueDate = combineDueDateEndOfDay(selected)
+                        }
+                        showCustomDueDatePicker = false
+                    }
+                ) {
+                    Text("OK", color = MaterialTheme.colorScheme.onSurface)
+                }
+            },
+            dismissButton = {
+                TextButton(onClick = { showCustomDueDatePicker = false }) {
+                    Text("Cancel", color = MaterialTheme.colorScheme.onSurfaceVariant)
+                }
+            }
+        ) {
+            DatePicker(state = datePickerState)
+        }
+    }
+}
+
+// -------------------------------------------------------------
+// Date & Time Combination Helpers
+// -------------------------------------------------------------
+private fun combineDateAndPreserveTime(selectedDateUtcMillis: Long, originalTimeMillis: Long): Long {
+    val calOriginal = Calendar.getInstance().apply { timeInMillis = originalTimeMillis }
+    val hour = calOriginal.get(Calendar.HOUR_OF_DAY)
+    val minute = calOriginal.get(Calendar.MINUTE)
+    val second = calOriginal.get(Calendar.SECOND)
+
+    val calUtc = Calendar.getInstance(TimeZone.getTimeZone("UTC")).apply {
+        timeInMillis = selectedDateUtcMillis
+    }
+    val year = calUtc.get(Calendar.YEAR)
+    val month = calUtc.get(Calendar.MONTH)
+    val day = calUtc.get(Calendar.DAY_OF_MONTH)
+
+    val calTarget = Calendar.getInstance().apply {
+        set(Calendar.YEAR, year)
+        set(Calendar.MONTH, month)
+        set(Calendar.DAY_OF_MONTH, day)
+        set(Calendar.HOUR_OF_DAY, hour)
+        set(Calendar.MINUTE, minute)
+        set(Calendar.SECOND, second)
+        set(Calendar.MILLISECOND, 0)
+    }
+    return calTarget.timeInMillis
+}
+
+private fun updateTimePreserveDate(hour: Int, minute: Int, originalTimeMillis: Long): Long {
+    val cal = Calendar.getInstance().apply {
+        timeInMillis = originalTimeMillis
+        set(Calendar.HOUR_OF_DAY, hour)
+        set(Calendar.MINUTE, minute)
+        set(Calendar.SECOND, 0)
+        set(Calendar.MILLISECOND, 0)
+    }
+    return cal.timeInMillis
+}
+
+private fun combineDueDateEndOfDay(selectedDateUtcMillis: Long): Long {
+    val calUtc = Calendar.getInstance(TimeZone.getTimeZone("UTC")).apply {
+        timeInMillis = selectedDateUtcMillis
+    }
+    val year = calUtc.get(Calendar.YEAR)
+    val month = calUtc.get(Calendar.MONTH)
+    val day = calUtc.get(Calendar.DAY_OF_MONTH)
+
+    val calTarget = Calendar.getInstance().apply {
+        set(Calendar.YEAR, year)
+        set(Calendar.MONTH, month)
+        set(Calendar.DAY_OF_MONTH, day)
+        set(Calendar.HOUR_OF_DAY, 23)
+        set(Calendar.MINUTE, 59)
+        set(Calendar.SECOND, 59)
+        set(Calendar.MILLISECOND, 999)
+    }
+    return calTarget.timeInMillis
 }

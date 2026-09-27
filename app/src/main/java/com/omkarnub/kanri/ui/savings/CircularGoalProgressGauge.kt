@@ -5,6 +5,8 @@ import androidx.compose.animation.core.tween
 import androidx.compose.foundation.Canvas
 import androidx.compose.foundation.layout.Box
 import androidx.compose.foundation.layout.Column
+import androidx.compose.foundation.layout.Spacer
+import androidx.compose.foundation.layout.height
 import androidx.compose.foundation.layout.size
 import androidx.compose.material3.MaterialTheme
 import androidx.compose.material3.Text
@@ -12,6 +14,8 @@ import androidx.compose.runtime.Composable
 import androidx.compose.runtime.getValue
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
+import androidx.compose.ui.geometry.Offset
+import androidx.compose.ui.geometry.Size
 import androidx.compose.ui.graphics.Brush
 import androidx.compose.ui.graphics.Color
 import androidx.compose.ui.graphics.StrokeCap
@@ -20,16 +24,18 @@ import androidx.compose.ui.text.font.FontWeight
 import androidx.compose.ui.unit.Dp
 import androidx.compose.ui.unit.dp
 import androidx.compose.ui.unit.sp
+import com.omkarnub.kanri.ui.theme.GoogleSansFlex
 
 @Composable
 fun CircularGoalProgressGauge(
     progressPercent: Float,
-    emoji: String,
     modifier: Modifier = Modifier,
+    iconKey: String? = null,
+    emoji: String = "target",
     size: Dp = 88.dp,
-    strokeWidth: Dp = 8.dp,
-    primaryColor: Color = MaterialTheme.colorScheme.primary,
-    secondaryColor: Color = MaterialTheme.colorScheme.primary.copy(alpha = 0.7f)
+    strokeWidth: Dp = 7.dp,
+    primaryColor: Color = MaterialTheme.colorScheme.onSurface,
+    secondaryColor: Color = MaterialTheme.colorScheme.onSurface.copy(alpha = 0.65f)
 ) {
     val clampedRatio = (progressPercent / 100f).coerceIn(0f, 1f)
     val animatedProgress by animateFloatAsState(
@@ -38,7 +44,8 @@ fun CircularGoalProgressGauge(
         label = "GoalProgressAnimation"
     )
 
-    val trackColor = MaterialTheme.colorScheme.surfaceVariant
+    val trackColor = MaterialTheme.colorScheme.surfaceVariant.copy(alpha = 0.6f)
+    val effectiveKey = if (!iconKey.isNullOrBlank()) iconKey else emoji
 
     Box(
         modifier = modifier.size(size),
@@ -48,7 +55,7 @@ fun CircularGoalProgressGauge(
             val strokeWidthPx = strokeWidth.toPx()
             val diameter = size.toPx() - strokeWidthPx
             val radius = diameter / 2f
-            val centerOffset = androidx.compose.ui.geometry.Offset(size.toPx() / 2f, size.toPx() / 2f)
+            val centerOffset = Offset(size.toPx() / 2f, size.toPx() / 2f)
 
             // Background Track
             drawCircle(
@@ -72,8 +79,8 @@ fun CircularGoalProgressGauge(
                         width = strokeWidthPx,
                         cap = StrokeCap.Round
                     ),
-                    size = androidx.compose.ui.geometry.Size(diameter, diameter),
-                    topLeft = androidx.compose.ui.geometry.Offset(strokeWidthPx / 2f, strokeWidthPx / 2f)
+                    size = Size(diameter, diameter),
+                    topLeft = Offset(strokeWidthPx / 2f, strokeWidthPx / 2f)
                 )
             }
         }
@@ -81,14 +88,18 @@ fun CircularGoalProgressGauge(
         Column(
             horizontalAlignment = Alignment.CenterHorizontally
         ) {
-            Text(
-                text = emoji,
-                fontSize = if (size > 80.dp) 22.sp else 16.sp
+            val iconSize = if (size > 80.dp) 22.dp else 18.dp
+            GoalIcon(
+                iconKey = effectiveKey,
+                tint = MaterialTheme.colorScheme.onSurface,
+                modifier = Modifier.size(iconSize)
             )
+            Spacer(modifier = Modifier.height(2.dp))
             Text(
                 text = "${progressPercent.toInt()}%",
-                fontSize = if (size > 80.dp) 11.sp else 9.sp,
+                fontSize = if (size > 80.dp) 11.sp else 9.5.sp,
                 fontWeight = FontWeight.Bold,
+                fontFamily = GoogleSansFlex,
                 color = MaterialTheme.colorScheme.onSurface
             )
         }

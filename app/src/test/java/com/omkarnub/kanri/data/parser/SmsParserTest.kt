@@ -306,6 +306,134 @@ class SmsParserTest {
         org.junit.Assert.assertTrue(BankSmsPatterns.isAllowlistedSender("AD-HDFCBK"))
         org.junit.Assert.assertTrue(BankSmsPatterns.isAllowlistedSender("VK-CANBNK"))
         org.junit.Assert.assertTrue(BankSmsPatterns.isAllowlistedSender("BP-PHONPE"))
+        org.junit.Assert.assertTrue(BankSmsPatterns.isAllowlistedSender("AM-SBICRD-S"))
+        org.junit.Assert.assertTrue(BankSmsPatterns.isAllowlistedSender("BZ-JUPITR"))
+        org.junit.Assert.assertTrue(BankSmsPatterns.isAllowlistedSender("CP-ONECRD"))
         org.junit.Assert.assertFalse(BankSmsPatterns.isAllowlistedSender("PROMO-DISCOUNT"))
+    }
+
+    @Test
+    fun testSbiUpiDebitWithBalanceDisambiguation() {
+        val sms = "Your a/c XXXX1234 is debited by Rs.500.00 on 20/06/26 transfer to VPA merchant@upi Ref No 123456789012. Avl Bal Rs.9,500.00 -SBI"
+        val result = SmsParser.parse(sms, sender = "SBIPAY")
+
+        assertNotNull(result)
+        assertEquals(TransactionType.DEBIT, result!!.type)
+        assertEquals(500.0, result.amount, 0.001)
+        assertEquals(9500.0, result.balance!!, 0.001)
+        assertEquals("State Bank of India", result.bank)
+        assertEquals("123456789012", result.refNo)
+    }
+
+    @Test
+    fun testHdfcSalaryCredit() {
+        val sms = "Rs.15,000.00 deposited to a/c **1234 on 20-06-26. Info: SALARY-ACME Corp. Avl Bal: Rs.25,000.00"
+        val result = SmsParser.parse(sms, sender = "HDFCBK")
+
+        assertNotNull(result)
+        assertEquals(TransactionType.CREDIT, result!!.type)
+        assertEquals(15000.0, result.amount, 0.001)
+        assertEquals(25000.0, result.balance!!, 0.001)
+        assertEquals("HDFC Bank", result.bank)
+        assertEquals("SALARY-ACME Corp", result.counterparty)
+    }
+
+    @Test
+    fun testIciciCardSpendWithCreditLimit() {
+        val sms = "Spent Rs.2,500.00 From ICICI Bank Card 1234 At Amazon On 20-Jun-2026. Avl bal:INR 8,500.00"
+        val result = SmsParser.parse(sms, sender = "ICICIB")
+
+        assertNotNull(result)
+        assertEquals(TransactionType.DEBIT, result!!.type)
+        assertEquals(2500.0, result.amount, 0.001)
+        assertEquals(8500.0, result.balance!!, 0.001)
+        assertEquals("ICICI Bank", result.bank)
+        assertEquals(SourceType.CARD, result.sourceType)
+    }
+
+    @Test
+    fun testOneCardSpend() {
+        val sms = "Spent Rs. 3,450.00 on your OneCard at Apple Store on 20-Jun. Available Limit: Rs. 96,550.00."
+        val result = SmsParser.parse(sms, sender = "CP-ONECRD")
+
+        assertNotNull(result)
+        assertEquals(TransactionType.DEBIT, result!!.type)
+        assertEquals(3450.0, result.amount, 0.001)
+        assertEquals(96550.0, result.creditLimit!!, 0.001)
+        assertEquals("OneCard", result.bank)
+        assertEquals(SourceType.CARD, result.sourceType)
+    }
+
+    @Test
+    fun testCredPaySpend() {
+        val sms = "Rs. 1,999.00 paid towards Credit Card Bill using CRED Pay. Ref: CRED987654."
+        val result = SmsParser.parse(sms, sender = "CREDTX")
+
+        assertNotNull(result)
+        assertEquals(TransactionType.DEBIT, result!!.type)
+        assertEquals(1999.0, result.amount, 0.001)
+        assertEquals("CRED", result.bank)
+        assertEquals("CRED987654", result.refNo)
+    }
+
+    @Test
+    fun testJupiterFederalDebit() {
+        val sms = "Rs. 250.00 debited from your Jupiter account ending 4321 to Swiggy. UPI Ref: 483920192837."
+        val result = SmsParser.parse(sms, sender = "BZ-JUPITR")
+
+        assertNotNull(result)
+        assertEquals(TransactionType.DEBIT, result!!.type)
+        assertEquals(250.0, result.amount, 0.001)
+        assertEquals("Jupiter", result.bank)
+        assertEquals("Swiggy", result.counterparty)
+        assertEquals("483920192837", result.refNo)
+    }
+
+    @Test
+    fun testBillDueReminderIsIgnored() {
+        val sms = "Your credit card bill of Rs. 15,000.00 is due by 25-Oct-2026. Pay now to avoid late charges."
+        val result = SmsParser.parse(sms, sender = "HDFCBK")
+
+        assertNull("Bill due reminder should return null", result)
+    }
+
+    @Test
+    fun testMinAmountDueReminderIsIgnored() {
+        val sms = "Total due: Rs. 24,000.00. Min amount due Rs. 1,200.00 by 10-Nov. Pls pay min of Rs 1200."
+        val result = SmsParser.parse(sms, sender = "ICICIB")
+
+        assertNull("Min amount due reminder should return null", result)
+    }
+
+    @Test
+    fun testPaymentRequestIsIgnored() {
+        val sms = "Rahul has requested Rs. 500.00 from your account via Google Pay. Approve payment request to pay."
+        val result = SmsParser.parse(sms, sender = "GOOGLE")
+
+        assertNull("Payment request should return null", result)
+    }
+
+    @Test
+    fun testUpiMandateCreatedIsIgnored() {
+        val sms = "UPI-Mandate created for Netflix UMN ABC123XYZ for Rs.199.00 on 20-Jun-26. -SBI"
+        val result = SmsParser.parse(sms, sender = "SBIPAY")
+
+        assertNull("Mandate notification should return null", result)
+    }
+
+    @Test
+    fun testFutureDebitNotificationIsIgnored() {
+        val sms = "Your ICICI Bank account will be debited with Rs.199.00 for Netflix subscription on 25-Jun-2026."
+        val result = SmsParser.parse(sms, sender = "ICICIB")
+
+        assertNull("Future debit notification should return null", result)
+    }
+
+    @Test
+    fun testPreApprovedLoanIsIgnored() {
+        val sms = "Congratulations! You are eligible for a pre-approved personal loan of Rs. 5,00,000. Apply now!"
+        val result = SmsParser.parse(sms, sender = "AXISBK")
+
+        assertNull("Pre-approved loan should return null", result)
     }
 }

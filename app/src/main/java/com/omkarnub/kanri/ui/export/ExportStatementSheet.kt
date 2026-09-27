@@ -69,6 +69,7 @@ import com.omkarnub.kanri.data.export.ExportSummary
 import com.omkarnub.kanri.data.export.StatementExportRepository
 import com.omkarnub.kanri.data.security.SecurityManager
 import com.omkarnub.kanri.ui.home.formatCurrency
+import com.omkarnub.kanri.util.rememberKanriHaptics
 import kotlinx.coroutines.launch
 
 @OptIn(ExperimentalMaterial3Api::class)
@@ -82,6 +83,7 @@ fun ExportStatementSheet(
     val context = LocalContext.current
     val repository = remember { StatementExportRepository(context) }
     val coroutineScope = rememberCoroutineScope()
+    val haptics = rememberKanriHaptics()
 
     var selectedFormat by remember { mutableStateOf(ExportFormat.PDF) }
     var selectedRange by remember { mutableStateOf<ExportRange>(initialRange) }
@@ -110,8 +112,10 @@ fun ExportStatementSheet(
                 result.onSuccess { summary ->
                     exportSuccessSummary = summary
                     exportedUri = uri
+                    haptics.success()
                     Toast.makeText(context, "Statement exported successfully!", Toast.LENGTH_SHORT).show()
                 }.onFailure { err ->
+                    haptics.warning()
                     errorMessage = "Export failed: ${err.localizedMessage}"
                 }
             }
@@ -305,7 +309,10 @@ fun ExportStatementSheet(
                     icon = Icons.Default.PictureAsPdf,
                     accentColor = Color(0xFFEF476F),
                     isSelected = selectedFormat == ExportFormat.PDF,
-                    onClick = { selectedFormat = ExportFormat.PDF },
+                    onClick = {
+                        haptics.tick()
+                        selectedFormat = ExportFormat.PDF
+                    },
                     modifier = Modifier.weight(1f)
                 )
 
@@ -316,7 +323,10 @@ fun ExportStatementSheet(
                     icon = Icons.Default.TableChart,
                     accentColor = Color(0xFF06D6A0),
                     isSelected = selectedFormat == ExportFormat.CSV,
-                    onClick = { selectedFormat = ExportFormat.CSV },
+                    onClick = {
+                        haptics.tick()
+                        selectedFormat = ExportFormat.CSV
+                    },
                     modifier = Modifier.weight(1f)
                 )
             }
@@ -350,7 +360,10 @@ fun ExportStatementSheet(
                     val isSelected = selectedRange == range
                     FilterChip(
                         selected = isSelected,
-                        onClick = { selectedRange = range },
+                        onClick = {
+                            haptics.tick()
+                            selectedRange = range
+                        },
                         label = {
                             Text(
                                 text = range.label,
@@ -431,6 +444,7 @@ fun ExportStatementSheet(
             // Export Action Button
             Button(
                 onClick = {
+                    haptics.primaryAction()
                     SecurityManager.isTemporarilyExempt = true
                     val suggestedFilename = repository.getSuggestedFilename(selectedFormat, selectedRange)
                     createDocLauncher.launch(suggestedFilename)

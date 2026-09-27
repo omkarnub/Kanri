@@ -39,6 +39,7 @@ import androidx.compose.runtime.collectAsState
 import androidx.compose.runtime.getValue
 import androidx.compose.runtime.mutableStateOf
 import androidx.compose.runtime.remember
+import androidx.compose.runtime.rememberCoroutineScope
 import androidx.compose.runtime.setValue
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
@@ -48,6 +49,7 @@ import androidx.compose.ui.geometry.Offset
 import androidx.compose.ui.geometry.Size
 import androidx.compose.ui.graphics.Color
 import androidx.compose.ui.input.pointer.pointerInput
+import androidx.compose.ui.platform.LocalContext
 import androidx.compose.ui.text.font.FontWeight
 import androidx.compose.ui.text.style.TextOverflow
 import androidx.compose.ui.unit.dp
@@ -58,11 +60,12 @@ import com.omkarnub.kanri.ui.home.CategoryPickerSheet
 import com.omkarnub.kanri.ui.home.TransactionItemCard
 import com.omkarnub.kanri.ui.home.formatCurrency
 import com.omkarnub.kanri.ui.insights.InsightsViewModel
+import kotlinx.coroutines.launch
 import com.omkarnub.kanri.ui.insights.PayeeDetailData
+import com.omkarnub.kanri.util.rememberKanriHaptics
 import java.time.format.DateTimeFormatter
 
 private val ExpenseRed = Color(0xFFE54D2E)
-private val IncomeSage = Color(0xFF30A46C)
 
 @OptIn(ExperimentalMaterial3Api::class)
 @Composable
@@ -76,7 +79,9 @@ fun PayeeDetailScreen(
     val availableCategories: List<CategoryEntity> by viewModel.allCategoriesFlow.collectAsState(initial = emptyList<CategoryEntity>())
     var isAllTimeScope by remember { mutableStateOf(false) }
     var selectedTxForPicker by remember { mutableStateOf<TransactionWithCategory?>(null) }
+    var lendingEntryForTransaction by remember { mutableStateOf<TransactionWithCategory?>(null) }
     var scrubbedMonthIndex by remember { mutableStateOf<Int?>(null) }
+    val haptics = rememberKanriHaptics()
 
     Scaffold(
         modifier = modifier.fillMaxSize(),
@@ -90,7 +95,10 @@ fun PayeeDetailScreen(
                     )
                 },
                 navigationIcon = {
-                    IconButton(onClick = onBack) {
+                    IconButton(onClick = {
+                        haptics.tick()
+                        onBack()
+                    }) {
                         Icon(
                             imageVector = Icons.AutoMirrored.Filled.ArrowBack,
                             contentDescription = "Back",
@@ -201,6 +209,7 @@ fun PayeeDetailScreen(
                                 color = MaterialTheme.colorScheme.surface,
                                 border = BorderStroke(1.dp, MaterialTheme.colorScheme.outlineVariant),
                                 modifier = Modifier.clickable {
+                                    haptics.click()
                                     transactionsToDisplay.firstOrNull()?.let { tx ->
                                         selectedTxForPicker = tx
                                     }
@@ -384,7 +393,10 @@ fun PayeeDetailScreen(
             ) { txModel ->
                 TransactionItemCard(
                     item = txModel,
-                    onClick = { selectedTxForPicker = txModel }
+                    onClick = {
+                        haptics.click()
+                        selectedTxForPicker = txModel
+                    }
                 )
             }
         }
@@ -403,7 +415,18 @@ fun PayeeDetailScreen(
                     note = note
                 )
                 selectedTxForPicker = null
+            },
+            onOpenLendBorrow = {
+                lendingEntryForTransaction = item
+                selectedTxForPicker = null
             }
+        )
+    }
+
+    lendingEntryForTransaction?.let { target ->
+        com.omkarnub.kanri.ui.lending.LendingTransactionBridgeDialog(
+            targetTransaction = target,
+            onDismiss = { lendingEntryForTransaction = null }
         )
     }
 }

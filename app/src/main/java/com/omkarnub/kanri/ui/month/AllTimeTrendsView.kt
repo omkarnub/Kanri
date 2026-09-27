@@ -40,6 +40,7 @@ import androidx.compose.ui.text.font.FontWeight
 import androidx.compose.ui.unit.dp
 import androidx.compose.ui.unit.sp
 import com.omkarnub.kanri.ui.home.formatCurrency
+import com.omkarnub.kanri.util.rememberKanriHaptics
 import java.util.Locale
 import kotlin.math.abs
 
@@ -51,6 +52,7 @@ fun AllTimeTrendsView(
     onSelectMonth: (year: Int, month: Int) -> Unit,
     modifier: Modifier = Modifier
 ) {
+    val haptics = rememberKanriHaptics()
     LazyColumn(
         modifier = modifier.fillMaxSize(),
         contentPadding = PaddingValues(16.dp),
@@ -73,7 +75,10 @@ fun AllTimeTrendsView(
                     val isSelected = state.selectedMetric == metric
                     FilterChip(
                         selected = isSelected,
-                        onClick = { onMetricSelect(metric) },
+                        onClick = {
+                            haptics.tick()
+                            onMetricSelect(metric)
+                        },
                         label = {
                             Text(
                                 text = metric.label,
@@ -276,10 +281,14 @@ fun MonthTrajectoryCard(
     item: MonthTrendItem,
     onClick: () -> Unit
 ) {
+    val haptics = rememberKanriHaptics()
     Card(
         modifier = Modifier
             .fillMaxWidth()
-            .clickable(onClick = onClick),
+            .clickable(onClick = {
+                haptics.click()
+                onClick()
+            }),
         shape = RoundedCornerShape(16.dp),
         colors = CardDefaults.cardColors(containerColor = MaterialTheme.colorScheme.surface),
         border = BorderStroke(1.dp, MaterialTheme.colorScheme.outlineVariant)

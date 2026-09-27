@@ -1,0 +1,20 @@
+<vector xmlns:android="http://schemas.android.com/apk/res/android"
+    android:width="120dp"
+    android:height="120dp"
+    android:viewportWidth="120"
+    android:viewportHeight="120">
+
+    <!-- Track Circle -->
+    <path
+        android:strokeColor="#33FFFFFF"
+        android:strokeWidth="11"
+        android:strokeLineCap="round"
+        android:pathData="M 60,12 A 48,48 0 1,1 59.9,12" />
+
+    <!-- Progress Arc (~65%) -->
+    <path
+        android:strokeColor="#FFFFFFFF"
+        android:strokeWidth="11"
+        android:strokeLineCap="round"
+        android:pathData="M 60,12 A 48,48 0 1,1 25,90" />
+</vector>

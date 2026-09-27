@@ -39,10 +39,10 @@ object GreetingResolver {
     }
 
     /**
-     * Formats greeting template with userName, cleanly dropping the name if blank.
+     * Formats greeting template with userName's first name only, cleanly dropping the name if blank.
      */
     fun formatGreeting(template: String, userName: String): String {
-        val cleanName = userName.trim()
+        val cleanName = userName.trim().split("\\s+".toRegex()).firstOrNull()?.trim() ?: ""
         return if (cleanName.isNotBlank()) {
             template.replace("{name}", cleanName)
         } else {

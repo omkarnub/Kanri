@@ -74,4 +74,52 @@ class SavingsGoalsTest {
         assertEquals(3, stats.totalGoals)
         assertEquals(1, stats.completedGoals)
     }
+
+    @Test
+    fun testDaysRemainingAndPaceCalculators() {
+        val now = 1000000000L
+        val oneDayMillis = 86_400_000L
+        val thirtyDaysLater = now + 30 * oneDayMillis
+
+        // 30 days remaining
+        val days = SavingsGoalCalculator.calculateDaysRemaining(thirtyDaysLater, now)
+        assertEquals(30L, days)
+
+        // Past deadline
+        val pastDays = SavingsGoalCalculator.calculateDaysRemaining(now - oneDayMillis, now)
+        assertEquals(-1L, pastDays)
+
+        // Required monthly pace (remaining 30,000 in 30 days ~= 1 month)
+        val monthly = SavingsGoalCalculator.calculateRequiredMonthlySavings(
+            currentAmount = 20000.0,
+            targetAmount = 50000.0,
+            targetDateMillis = thirtyDaysLater,
+            currentTimeMillis = now
+        )
+        // 30,000 / 1.0 month = 30000
+        assertEquals(30000.0, monthly ?: 0.0, 100.0)
+
+        // Required daily pace (30,000 / 30 = 1000)
+        val daily = SavingsGoalCalculator.calculateRequiredDailySavings(
+            currentAmount = 20000.0,
+            targetAmount = 50000.0,
+            targetDateMillis = thirtyDaysLater,
+            currentTimeMillis = now
+        )
+        assertEquals(1000.0, daily ?: 0.0, 10.0)
+    }
+
+    @Test
+    fun testGoalIconHelper() {
+        val laptopRes = getGoalIconRes("laptop")
+        assertEquals(com.omkarnub.kanri.R.drawable.ic_goal_laptop, laptopRes)
+
+        // Test fallback for unknown key
+        val unknownRes = getGoalIconRes("random_unknown_key")
+        assertEquals(com.omkarnub.kanri.R.drawable.ic_goal_target, unknownRes)
+
+        // Test legacy emoji mapping
+        val emojiRes = getGoalIconRes("🚗")
+        assertEquals(com.omkarnub.kanri.R.drawable.ic_goal_car, emojiRes)
+    }
 }

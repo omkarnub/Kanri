@@ -46,8 +46,10 @@ import androidx.compose.ui.unit.dp
 import androidx.compose.ui.unit.sp
 import com.omkarnub.kanri.ui.common.LocalHazeState
 import com.omkarnub.kanri.ui.common.rememberKanriGlassTheme
+import dev.chrisbanes.haze.ExperimentalHazeApi
 import dev.chrisbanes.haze.hazeChild
 
+@OptIn(ExperimentalHazeApi::class)
 @Composable
 fun LendingRenameDialog(
     currentName: String,
@@ -69,7 +71,7 @@ fun LendingRenameDialog(
         Box(
             modifier = Modifier
                 .fillMaxSize()
-                .background(Color.Black.copy(alpha = 0.55f))
+                .background(Color.Black.copy(alpha = 0.65f))
                 .clickable(
                     interactionSource = remember { MutableInteractionSource() },
                     indication = null,
@@ -99,7 +101,9 @@ fun LendingRenameDialog(
                             Modifier.hazeChild(
                                 state = hazeState,
                                 style = glassTheme.popupHazeStyle
-                            )
+                            ) {
+                                canDrawArea = { true }
+                            }
                         } else {
                             Modifier
                         }
@@ -185,6 +189,7 @@ fun LendingRenameDialog(
     }
 }
 
+@OptIn(ExperimentalHazeApi::class)
 @Composable
 fun LendingMergeConfirmationDialog(
     prompt: MergeConfirmationPrompt,
@@ -223,7 +228,12 @@ fun LendingMergeConfirmationDialog(
                     .clip(RoundedCornerShape(24.dp))
                     .then(
                         if (hazeState != null) {
-                            Modifier.hazeChild(state = hazeState, style = glassTheme.popupHazeStyle)
+                            Modifier.hazeChild(
+                                state = hazeState,
+                                style = glassTheme.popupHazeStyle
+                            ) {
+                                canDrawArea = { true }
+                            }
                         } else {
                             Modifier
                         }

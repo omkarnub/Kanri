@@ -21,7 +21,7 @@ fun getCategoryIconRes(categoryName: String?, iconName: String? = null): Int {
             "shopping_bag", "bag", "shop" -> return R.drawable.ic_category_shopping
             "directions_car", "car", "transport" -> return R.drawable.ic_category_transport
             "receipt", "bolt", "bill", "utilities" -> return R.drawable.ic_category_bills
-            "payments", "wallet", "salary", "income" -> return R.drawable.ic_category_salary
+            "payments", "wallet", "salary", "income", "lend", "borrow", "lending" -> return R.drawable.ic_category_salary
             "local_hospital", "medical_services", "health" -> return R.drawable.ic_category_health
             "local_atm", "atm", "cash" -> return R.drawable.ic_category_cash
             "sports_esports", "movie", "entertainment" -> return R.drawable.ic_category_entertainment
@@ -104,6 +104,9 @@ fun getCategoryIconRes(categoryName: String?, iconName: String? = null): Int {
         lower.contains("invest") || lower.contains("stock") || lower.contains("mutual") ||
                 lower.contains("crypto") || lower.contains("gold") || lower.contains("deposit") ||
                 lower.contains("sip") -> R.drawable.ic_category_investment
+
+        lower.contains("lend") || lower.contains("borrow") || lower.contains("debt") ||
+                lower.contains("loan") -> R.drawable.ic_category_salary
 
         else -> R.drawable.ic_category_other
     }

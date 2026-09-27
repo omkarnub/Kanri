@@ -51,6 +51,7 @@ import com.omkarnub.kanri.ui.home.formatCurrency
 import com.omkarnub.kanri.ui.insights.InsightsMode
 import com.omkarnub.kanri.ui.insights.YearHeatmapCell
 import com.omkarnub.kanri.ui.insights.YearHeatmapData
+import com.omkarnub.kanri.util.rememberKanriHaptics
 import java.time.LocalDate
 import java.time.format.DateTimeFormatter
 import java.time.temporal.ChronoUnit
@@ -68,6 +69,7 @@ fun YearHeatmapSection(
     var selectedCell by remember { mutableStateOf<YearHeatmapCell?>(null) }
     val scrollState = rememberScrollState()
     val textMeasurer = rememberTextMeasurer()
+    val haptics = rememberKanriHaptics()
 
     val onSurface = MaterialTheme.colorScheme.onSurface
     val onSurfaceVariant = MaterialTheme.colorScheme.onSurfaceVariant
@@ -147,7 +149,12 @@ fun YearHeatmapSection(
                 ) {
                     val canGoBack = data.availableYears.contains(data.year - 1)
                     IconButton(
-                        onClick = { if (canGoBack) onYearChange(data.year - 1) },
+                        onClick = {
+                            if (canGoBack) {
+                                haptics.tick()
+                                onYearChange(data.year - 1)
+                            }
+                        },
                         enabled = canGoBack,
                         modifier = Modifier.size(28.dp)
                     ) {
@@ -169,7 +176,12 @@ fun YearHeatmapSection(
 
                     val canGoForward = data.availableYears.contains(data.year + 1)
                     IconButton(
-                        onClick = { if (canGoForward) onYearChange(data.year + 1) },
+                        onClick = {
+                            if (canGoForward) {
+                                haptics.tick()
+                                onYearChange(data.year + 1)
+                            }
+                        },
                         enabled = canGoForward,
                         modifier = Modifier.size(28.dp)
                     ) {
@@ -212,6 +224,7 @@ fun YearHeatmapSection(
                                     val cellIndex = col * 7 + row
                                     val dayIndex = cellIndex - dayOfWeekOffset
                                     if (dayIndex in data.cells.indices) {
+                                        haptics.tick()
                                         selectedCell = data.cells[dayIndex]
                                     } else {
                                         selectedCell = null
@@ -333,7 +346,10 @@ fun YearHeatmapSection(
 
                         if (sel.txCount > 0) {
                             TextButton(
-                                onClick = { onViewDayInHistory(sel.date) },
+                                onClick = {
+                                    haptics.click()
+                                    onViewDayInHistory(sel.date)
+                                },
                                 contentPadding = androidx.compose.foundation.layout.PaddingValues(horizontal = 8.dp, vertical = 0.dp)
                             ) {
                                 Text("View day", fontSize = 11.sp, fontWeight = FontWeight.SemiBold)

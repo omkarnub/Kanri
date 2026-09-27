@@ -5,6 +5,8 @@ import androidx.compose.animation.core.Animatable
 import androidx.compose.animation.core.FastOutSlowInEasing
 import androidx.compose.animation.core.animateFloatAsState
 import androidx.compose.animation.core.tween
+import androidx.compose.animation.core.Spring
+import androidx.compose.animation.core.spring
 import androidx.compose.foundation.BorderStroke
 import androidx.compose.foundation.border
 import androidx.compose.foundation.clickable
@@ -31,6 +33,7 @@ import androidx.compose.runtime.LaunchedEffect
 import androidx.compose.runtime.collectAsState
 import androidx.compose.runtime.getValue
 import androidx.compose.runtime.remember
+import com.omkarnub.kanri.util.rememberKanriHaptics
 import kotlinx.coroutines.launch
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
@@ -181,13 +184,23 @@ private fun DockTabItem(
     dockTheme: KanriGlassTheme,
     modifier: Modifier = Modifier
 ) {
+    val haptics = rememberKanriHaptics()
     val interactionSource = remember { MutableInteractionSource() }
     val isPressed by interactionSource.collectIsPressedAsState()
 
     val scale by animateFloatAsState(
-        targetValue = if (isPressed) 0.94f else 1.0f,
+        targetValue = if (isPressed) 0.93f else 1.0f,
         animationSpec = tween(durationMillis = 150, easing = FastOutSlowInEasing),
         label = "tabScale"
+    )
+
+    val iconScale by animateFloatAsState(
+        targetValue = if (isSelected) 1.08f else 1.0f,
+        animationSpec = spring(
+            dampingRatio = Spring.DampingRatioMediumBouncy,
+            stiffness = Spring.StiffnessMedium
+        ),
+        label = "tabIconScale"
     )
 
     val contentColor by animateColorAsState(
@@ -204,14 +217,23 @@ private fun DockTabItem(
             .clickable(
                 interactionSource = interactionSource,
                 indication = null,
-                onClick = onClick
+                onClick = {
+                    if (!isSelected) {
+                        haptics.tick()
+                    }
+                    onClick()
+                }
             )
             .padding(vertical = 4.dp),
         contentAlignment = Alignment.Center
     ) {
         Column(
             horizontalAlignment = Alignment.CenterHorizontally,
-            verticalArrangement = Arrangement.Center
+            verticalArrangement = Arrangement.Center,
+            modifier = Modifier.graphicsLayer {
+                scaleX = iconScale
+                scaleY = iconScale
+            }
         ) {
             when (tab) {
                 KanriTab.HOME -> HomeDockIcon(tint = contentColor, isSelected = isSelected, size = 22.dp)
@@ -243,6 +265,7 @@ private fun DockAddButton(
     hazeState: HazeState?,
     modifier: Modifier = Modifier
 ) {
+    val haptics = rememberKanriHaptics()
     val interactionSource = remember { MutableInteractionSource() }
     val isPressed by interactionSource.collectIsPressedAsState()
 
@@ -287,7 +310,10 @@ private fun DockAddButton(
             .clickable(
                 interactionSource = interactionSource,
                 indication = null,
-                onClick = onClick
+                onClick = {
+                    haptics.click()
+                    onClick()
+                }
             ),
         shape = CircleShape,
         color = if (hazeState != null) Color.Transparent else dockTheme.fallbackBackgroundColor

@@ -44,11 +44,13 @@ import androidx.compose.runtime.collectAsState
 import androidx.compose.runtime.getValue
 import androidx.compose.runtime.mutableStateOf
 import androidx.compose.runtime.remember
+import androidx.compose.runtime.rememberCoroutineScope
 import androidx.compose.runtime.setValue
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.draw.clip
 import androidx.compose.ui.graphics.Color
+import androidx.compose.ui.platform.LocalContext
 import androidx.compose.ui.text.font.FontWeight
 import androidx.compose.ui.unit.dp
 import androidx.compose.ui.unit.sp
@@ -59,6 +61,7 @@ import com.omkarnub.kanri.ui.home.TransactionItemCard
 import com.omkarnub.kanri.ui.home.formatCurrency
 import com.omkarnub.kanri.ui.common.CategoryIcon
 import com.omkarnub.kanri.ui.month.CategorySpendItem
+import kotlinx.coroutines.launch
 import java.util.Locale
 
 @OptIn(ExperimentalMaterial3Api::class)
@@ -73,6 +76,7 @@ fun CategoryDetailScreen(
 ) {
     val state by viewModel.uiState.collectAsState()
     var selectedTxForPicker by remember { mutableStateOf<TransactionWithCategory?>(null) }
+    var lendingEntryForTransaction by remember { mutableStateOf<TransactionWithCategory?>(null) }
 
     LaunchedEffect(categoryItem, selectedYear, selectedMonth) {
         viewModel.initCategory(
@@ -299,7 +303,18 @@ fun CategoryDetailScreen(
                     note = note
                 )
                 selectedTxForPicker = null
+            },
+            onOpenLendBorrow = {
+                lendingEntryForTransaction = item
+                selectedTxForPicker = null
             }
+        )
+    }
+
+    lendingEntryForTransaction?.let { target ->
+        com.omkarnub.kanri.ui.lending.LendingTransactionBridgeDialog(
+            targetTransaction = target,
+            onDismiss = { lendingEntryForTransaction = null }
         )
     }
 }

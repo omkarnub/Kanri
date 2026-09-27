@@ -10,6 +10,8 @@ import com.omkarnub.kanri.data.db.KanriDatabase
 import com.omkarnub.kanri.data.parser.DeduplicationResult
 import com.omkarnub.kanri.data.parser.NotificationDeduplicationHelper
 import com.omkarnub.kanri.data.parser.NotificationParser
+import com.omkarnub.kanri.data.parser.SmsParser
+import com.omkarnub.kanri.data.parser.TransactionType
 import com.omkarnub.kanri.ui.popup.InstantPopupNotificationHelper
 import com.omkarnub.kanri.ui.popup.InstantPopupService
 import com.omkarnub.kanri.ui.popup.OverlayPermissionHelper
@@ -32,7 +34,7 @@ class KanriNotificationListenerService : NotificationListenerService() {
         if (sbn == null) return
 
         val packageName = sbn.packageName ?: return
-        if (!NotificationParser.SUPPORTED_PACKAGES.contains(packageName)) {
+        if (!NotificationParser.isPackageSupported(packageName)) {
             return
         }
 
@@ -46,20 +48,35 @@ class KanriNotificationListenerService : NotificationListenerService() {
 
         Log.d(TAG, "Intercepted notification from $packageName: Title='$title', Text='$text', BigText='$bigText'")
 
-        val parsed = NotificationParser.parse(
-            packageName = packageName,
-            title = title,
-            text = bigText ?: text,
-            subText = subText,
-            timestamp = sbn.postTime
-        )
+        // 1. If it's an SMS app notification (e.g. Google Messages, Samsung Messages), parse via SmsParser
+        // where title is typically the SMS sender (e.g. VK-HDFCBK) and body is the SMS text
+        val parsed = if (NotificationParser.isSmsApp(packageName)) {
+            SmsParser.parse(
+                body = bigText ?: text ?: "",
+                sender = title,
+                timestamp = sbn.postTime
+            )
+        } else {
+            // 2. Otherwise parse as a payment or banking app notification, with SmsParser fallback
+            NotificationParser.parse(
+                packageName = packageName,
+                title = title,
+                text = bigText ?: text,
+                subText = subText,
+                timestamp = sbn.postTime
+            ) ?: SmsParser.parse(
+                body = bigText ?: text ?: "",
+                sender = title ?: NotificationParser.getAppNameForPackage(packageName),
+                timestamp = sbn.postTime
+            )
+        }
 
         if (parsed == null) {
-            Log.d(TAG, "Notification from $packageName is not a received payment/reward. Skipping.")
+            Log.d(TAG, "Notification from $packageName is not a recognized transaction. Skipping.")
             return
         }
 
-        Log.d(TAG, "Parsed received payment: Amount=${parsed.amount}, Sender=${parsed.counterparty}, Bank=${parsed.bank}, Ref=${parsed.refNo}")
+        Log.d(TAG, "Parsed transaction: Type=${parsed.type}, Amount=${parsed.amount}, Counterparty=${parsed.counterparty}, Bank=${parsed.bank}, Ref=${parsed.refNo}")
 
         serviceScope.launch {
             try {
@@ -72,15 +89,16 @@ class KanriNotificationListenerService : NotificationListenerService() {
 
                 when (result) {
                     is DeduplicationResult.Inserted -> {
-                        Log.d(TAG, "Successfully recorded received payment with ID: ${result.id}")
+                        val isDebit = result.entity.type.equals("DEBIT", ignoreCase = true)
+                        val counterparty = result.entity.counterparty ?: if (isDebit) "Expense" else "Income"
+                        Log.d(TAG, "Successfully recorded transaction with ID: ${result.id} (isDebit=$isDebit)")
 
                         // Trigger Truecaller-style Instant Popup or Notification Fallback
-                        val counterparty = result.entity.counterparty ?: "UPI Payment"
                         if (OverlayPermissionHelper.canDrawOverlays(applicationContext)) {
                             val popupIntent = Intent(applicationContext, InstantPopupService::class.java).apply {
                                 putExtra(InstantPopupService.EXTRA_TRANSACTION_ID, result.id)
                                 putExtra(InstantPopupService.EXTRA_AMOUNT, result.entity.amount)
-                                putExtra(InstantPopupService.EXTRA_IS_DEBIT, false) // Received credit
+                                putExtra(InstantPopupService.EXTRA_IS_DEBIT, isDebit)
                                 putExtra(InstantPopupService.EXTRA_COUNTERPARTY, counterparty)
                                 putExtra(InstantPopupService.EXTRA_BANK, result.entity.bank)
                                 putExtra(InstantPopupService.EXTRA_SOURCE_TYPE, result.entity.sourceType)
@@ -95,23 +113,23 @@ class KanriNotificationListenerService : NotificationListenerService() {
                                 context = applicationContext,
                                 txId = result.id,
                                 amount = result.entity.amount,
-                                isDebit = false,
+                                isDebit = isDebit,
                                 counterparty = counterparty,
                                 bank = result.entity.bank,
                                 sourceType = result.entity.sourceType
                             )
                         }
-                        com.omkarnub.kanri.widget.KanriAppWidgetProvider.updateAllWidgets(applicationContext)
+                        com.omkarnub.kanri.widget.KanriWidgetsUpdater.updateAllWidgets(applicationContext)
                     }
                     is DeduplicationResult.Enriched -> {
-                        Log.d(TAG, "Enriched existing transaction ${result.id} with sender: ${result.updatedCounterparty}")
+                        Log.d(TAG, "Enriched existing transaction ${result.id} with counterparty: ${result.updatedCounterparty}")
                     }
                     is DeduplicationResult.SkippedDuplicate -> {
-                        Log.d(TAG, "Skipped duplicate received payment (already captured in tx ${result.existingId})")
+                        Log.d(TAG, "Skipped duplicate transaction (already captured in tx ${result.existingId})")
                     }
                 }
             } catch (e: Exception) {
-                Log.e(TAG, "Error processing incoming notification payment", e)
+                Log.e(TAG, "Error processing incoming notification transaction", e)
                 com.omkarnub.kanri.data.crash.CrashLogger.logHandledException(applicationContext, "NotificationListener.process", e)
             }
         }

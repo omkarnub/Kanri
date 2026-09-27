@@ -14,11 +14,10 @@
 # Manifest declared components
 -keep class com.omkarnub.kanri.KanriApplication { *; }
 -keep class com.omkarnub.kanri.MainActivity { *; }
--keep class com.omkarnub.kanri.SmsReceiver { *; }
 -keep class com.omkarnub.kanri.ui.popup.InstantPopupService { *; }
 -keep class com.omkarnub.kanri.ui.popup.InstantPopupReceiver { *; }
 -keep class com.omkarnub.kanri.ui.notification.KanriNotificationListenerService { *; }
--keep class com.omkarnub.kanri.widget.KanriAppWidgetProvider { *; }
+-keep class com.omkarnub.kanri.widget.** { *; }
 
 # SQLCipher for Android
 -keep class net.sqlcipher.** { *; }

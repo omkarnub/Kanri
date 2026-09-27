@@ -58,6 +58,7 @@ import androidx.compose.runtime.mutableDoubleStateOf
 import androidx.compose.runtime.mutableStateOf
 import androidx.compose.runtime.remember
 import androidx.compose.runtime.setValue
+import com.omkarnub.kanri.util.rememberKanriHaptics
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.draw.clip
@@ -80,6 +81,18 @@ import com.omkarnub.kanri.ui.common.rememberKanriGlassTheme
 import com.omkarnub.kanri.util.CurrencyUtils
 import dev.chrisbanes.haze.HazeState
 import dev.chrisbanes.haze.hazeChild
+import androidx.compose.foundation.horizontalScroll
+import androidx.compose.material3.Switch
+import androidx.compose.material3.SwitchDefaults
+import androidx.compose.runtime.collectAsState
+import androidx.compose.runtime.rememberCoroutineScope
+import androidx.compose.ui.platform.LocalContext
+import com.omkarnub.kanri.data.db.KanriDatabase
+import com.omkarnub.kanri.data.db.SavingsGoalContributionEntity
+import com.omkarnub.kanri.ui.savings.GoalIcon
+import com.omkarnub.kanri.ui.theme.GoogleSansFlex
+import kotlinx.coroutines.Dispatchers
+import kotlinx.coroutines.launch
 
 /**
  * Pure Monochrome Frosted Glass Transaction Dialog (Expense & Income):
@@ -96,9 +109,17 @@ fun AddTransactionDialog(
     onConfirm: (amount: Double, type: String, counterparty: String, sourceType: String, categoryId: Long?) -> Unit,
     initialType: String = "DEBIT",
     categories: List<CategoryEntity> = emptyList(),
+    onOpenLendBorrow: ((amount: Double, type: String, counterparty: String, note: String) -> Unit)? = null,
     hazeState: HazeState? = LocalHazeState.current
 ) {
     BackHandler(onBack = onDismiss)
+
+    val context = LocalContext.current
+    val haptics = rememberKanriHaptics()
+    val scope = rememberCoroutineScope()
+    val db = remember { KanriDatabase.getDatabase(context) }
+    val activeGoalsFlow = remember { db.savingsGoalDao().getActiveGoals() }
+    val activeGoals by activeGoalsFlow.collectAsState(initial = emptyList())
 
     val glassTheme = rememberKanriGlassTheme()
     val isDebit = initialType.equals("DEBIT", ignoreCase = true)
@@ -110,6 +131,11 @@ fun AddTransactionDialog(
     var payeeText by remember { mutableStateOf("") }
     var selectedSource by remember { mutableStateOf("UPI") }
     var errorMessage by remember { mutableStateOf<String?>(null) }
+
+    var isAllocateToGoalEnabled by remember { mutableStateOf(false) }
+    var selectedGoalId by remember(activeGoals) {
+        mutableStateOf<Long?>(activeGoals.firstOrNull()?.id)
+    }
 
     val sortedCategories = remember(categories) {
         sortCategoriesWithPriority(categories)
@@ -235,6 +261,7 @@ fun AddTransactionDialog(
                             // Decrease Button [-] (Frosted glass button)
                             IconButton(
                                 onClick = {
+                                    haptics.tick()
                                     val step = if (amount <= 50) 10.0 else 50.0
                                     val next = (amount - step).coerceAtLeast(0.0)
                                     amount = next
@@ -353,6 +380,7 @@ fun AddTransactionDialog(
                             // Increase Button [+] (Frosted glass button)
                             IconButton(
                                 onClick = {
+                                    haptics.tick()
                                     val step = if (amount < 50) 10.0 else 50.0
                                     val next = amount + step
                                     amount = next
@@ -398,6 +426,7 @@ fun AddTransactionDialog(
                                     .weight(1f)
                                     .clip(RoundedCornerShape(12.dp))
                                     .clickable {
+                                        haptics.tick()
                                         amount += inc
                                         manualText = amount.toLong().toString()
                                         isManualInput = false
@@ -457,7 +486,19 @@ fun AddTransactionDialog(
                                 ),
                                 modifier = Modifier
                                     .clip(RoundedCornerShape(12.dp))
-                                    .clickable { selectedCategoryId = cat.id }
+                                    .clickable {
+                                        haptics.tick()
+                                        selectedCategoryId = cat.id
+                                        if (cat.name.contains("lend", ignoreCase = true) && onOpenLendBorrow != null) {
+                                            haptics.click()
+                                            onOpenLendBorrow(
+                                                amount,
+                                                if (isDebit) "LENT" else "BORROWED",
+                                                payeeText.trim(),
+                                                ""
+                                            )
+                                        }
+                                    }
                             ) {
                                 Row(
                                     modifier = Modifier.padding(horizontal = 10.dp, vertical = 7.dp),
@@ -536,7 +577,10 @@ fun AddTransactionDialog(
                             val isSelected = selectedSource == sourceKey
                             FilterChip(
                                 selected = isSelected,
-                                onClick = { selectedSource = sourceKey },
+                                onClick = {
+                                    haptics.tick()
+                                    selectedSource = sourceKey
+                                },
                                 label = {
                                     Text(
                                         text = source,
@@ -563,6 +607,123 @@ fun AddTransactionDialog(
                         }
                     }
 
+                    // -------------------------------------------------------------
+                    // Allocate Income to Savings Goal (When adding Income)
+                    // -------------------------------------------------------------
+                    if (!isDebit && activeGoals.isNotEmpty()) {
+                        Spacer(modifier = Modifier.height(14.dp))
+                        Surface(
+                            shape = RoundedCornerShape(14.dp),
+                            color = MaterialTheme.colorScheme.onSurface.copy(alpha = 0.05f),
+                            border = BorderStroke(
+                                1.dp,
+                                if (isAllocateToGoalEnabled) MaterialTheme.colorScheme.onSurface else MaterialTheme.colorScheme.outlineVariant
+                            ),
+                            modifier = Modifier.fillMaxWidth()
+                        ) {
+                            Column(modifier = Modifier.padding(12.dp)) {
+                                Row(
+                                    modifier = Modifier
+                                        .fillMaxWidth()
+                                        .clickable { isAllocateToGoalEnabled = !isAllocateToGoalEnabled },
+                                    verticalAlignment = Alignment.CenterVertically,
+                                    horizontalArrangement = Arrangement.SpaceBetween
+                                ) {
+                                    Row(
+                                        verticalAlignment = Alignment.CenterVertically,
+                                        horizontalArrangement = Arrangement.spacedBy(8.dp),
+                                        modifier = Modifier.weight(1f)
+                                    ) {
+                                        GoalIcon(
+                                            iconKey = "savings",
+                                            tint = MaterialTheme.colorScheme.onSurface,
+                                            modifier = Modifier.size(18.dp)
+                                        )
+                                        Column {
+                                            Text(
+                                                text = "Add to Savings Goal",
+                                                fontFamily = GoogleSansFlex,
+                                                fontSize = 13.sp,
+                                                fontWeight = FontWeight.Bold,
+                                                color = MaterialTheme.colorScheme.onSurface
+                                            )
+                                            Text(
+                                                text = "Save this income towards your goal",
+                                                fontFamily = GoogleSansFlex,
+                                                fontSize = 11.sp,
+                                                color = MaterialTheme.colorScheme.onSurfaceVariant
+                                            )
+                                        }
+                                    }
+                                    Switch(
+                                        checked = isAllocateToGoalEnabled,
+                                        onCheckedChange = { isAllocateToGoalEnabled = it },
+                                        colors = SwitchDefaults.colors(
+                                            checkedThumbColor = MaterialTheme.colorScheme.surface,
+                                            checkedTrackColor = MaterialTheme.colorScheme.onSurface,
+                                            uncheckedThumbColor = MaterialTheme.colorScheme.outline,
+                                            uncheckedTrackColor = MaterialTheme.colorScheme.surfaceVariant
+                                        )
+                                    )
+                                }
+
+                                if (isAllocateToGoalEnabled) {
+                                    Spacer(modifier = Modifier.height(10.dp))
+                                    Text(
+                                        text = "CHOOSE GOAL:",
+                                        fontFamily = GoogleSansFlex,
+                                        fontSize = 10.sp,
+                                        fontWeight = FontWeight.Bold,
+                                        letterSpacing = 1.sp,
+                                        color = MaterialTheme.colorScheme.onSurfaceVariant
+                                    )
+                                    Spacer(modifier = Modifier.height(6.dp))
+
+                                    Row(
+                                        modifier = Modifier
+                                            .fillMaxWidth()
+                                            .horizontalScroll(rememberScrollState()),
+                                        horizontalArrangement = Arrangement.spacedBy(6.dp)
+                                    ) {
+                                        activeGoals.forEach { g ->
+                                            val isGoalSelected = selectedGoalId == g.id
+                                            Surface(
+                                                shape = RoundedCornerShape(10.dp),
+                                                color = if (isGoalSelected) MaterialTheme.colorScheme.onSurface else MaterialTheme.colorScheme.surface,
+                                                border = BorderStroke(
+                                                    1.dp,
+                                                    if (isGoalSelected) MaterialTheme.colorScheme.onSurface else MaterialTheme.colorScheme.outlineVariant
+                                                ),
+                                                modifier = Modifier
+                                                    .clip(RoundedCornerShape(10.dp))
+                                                    .clickable { selectedGoalId = g.id }
+                                            ) {
+                                                Row(
+                                                    modifier = Modifier.padding(horizontal = 9.dp, vertical = 6.dp),
+                                                    verticalAlignment = Alignment.CenterVertically,
+                                                    horizontalArrangement = Arrangement.spacedBy(5.dp)
+                                                ) {
+                                                    GoalIcon(
+                                                        iconKey = g.emoji,
+                                                        tint = if (isGoalSelected) MaterialTheme.colorScheme.surface else MaterialTheme.colorScheme.onSurface,
+                                                        modifier = Modifier.size(15.dp)
+                                                    )
+                                                    Text(
+                                                        text = g.title,
+                                                        fontFamily = GoogleSansFlex,
+                                                        fontSize = 11.5.sp,
+                                                        fontWeight = if (isGoalSelected) FontWeight.Bold else FontWeight.Medium,
+                                                        color = if (isGoalSelected) MaterialTheme.colorScheme.surface else MaterialTheme.colorScheme.onSurface
+                                                    )
+                                                }
+                                            }
+                                        }
+                                    }
+                                }
+                            }
+                        }
+                    }
+
                     if (errorMessage != null) {
                         Text(
                             text = errorMessage ?: "",
@@ -582,7 +743,10 @@ fun AddTransactionDialog(
                         horizontalArrangement = Arrangement.End,
                         verticalAlignment = Alignment.CenterVertically
                     ) {
-                        TextButton(onClick = onDismiss) {
+                        TextButton(onClick = {
+                            haptics.tick()
+                            onDismiss()
+                        }) {
                             Text(
                                 text = "Cancel",
                                 color = MaterialTheme.colorScheme.onSurfaceVariant,
@@ -596,8 +760,46 @@ fun AddTransactionDialog(
                                     errorMessage = "Please enter an amount greater than 0"
                                     return@Button
                                 }
+                                val selectedCat = sortedCategories.firstOrNull { it.id == selectedCategoryId }
+                                if (selectedCat?.name?.contains("lend", ignoreCase = true) == true && onOpenLendBorrow != null) {
+                                    onOpenLendBorrow(
+                                        amount,
+                                        if (isDebit) "LENT" else "BORROWED",
+                                        payeeText.trim(),
+                                        ""
+                                    )
+                                    return@Button
+                                }
                                 val defaultNote = if (isDebit) "Expense" else "Income"
-                                val resolvedPayee = payeeText.ifBlank { defaultNote }
+                                var resolvedPayee = payeeText.ifBlank { defaultNote }
+
+                                // If savings goal allocation was checked
+                                if (!isDebit && isAllocateToGoalEnabled && selectedGoalId != null) {
+                                    val chosenGoal = activeGoals.find { it.id == selectedGoalId }
+                                    if (chosenGoal != null) {
+                                        scope.launch(Dispatchers.IO) {
+                                            val newTotal = chosenGoal.currentAmount + amount
+                                            val isDone = chosenGoal.targetAmount > 0 && newTotal >= chosenGoal.targetAmount
+                                            db.savingsGoalDao().updateProgress(chosenGoal.id, newTotal, isDone)
+                                            db.savingsGoalDao().insertContribution(
+                                                SavingsGoalContributionEntity(
+                                                    goalId = chosenGoal.id,
+                                                    amount = amount,
+                                                    timestamp = System.currentTimeMillis(),
+                                                    note = "Income: $resolvedPayee"
+                                                )
+                                            )
+                                        }
+                                        resolvedPayee = "[Saved ₹${amount.toInt()} for ${chosenGoal.title}] $resolvedPayee"
+                                        android.widget.Toast.makeText(
+                                            context,
+                                            "₹${amount.toInt()} allocated to ${chosenGoal.title}",
+                                            android.widget.Toast.LENGTH_SHORT
+                                        ).show()
+                                    }
+                                }
+
+                                haptics.success()
                                 onConfirm(amount, initialType, resolvedPayee, selectedSource, selectedCategoryId)
                             },
                             colors = ButtonDefaults.buttonColors(

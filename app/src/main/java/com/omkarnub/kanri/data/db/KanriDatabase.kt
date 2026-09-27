@@ -25,9 +25,10 @@ import androidx.room.migration.Migration
         LendingEntity::class,
         LendingRepaymentEntity::class,
         RecurringPaymentEntity::class,
-        SavingsGoalEntity::class
+        SavingsGoalEntity::class,
+        SavingsGoalContributionEntity::class
     ],
-    version = 9,
+    version = 10,
     exportSchema = false
 )
 abstract class KanriDatabase : RoomDatabase() {
@@ -81,6 +82,25 @@ abstract class KanriDatabase : RoomDatabase() {
             }
         }
 
+        val MIGRATION_9_10 = object : Migration(9, 10) {
+            override fun migrate(db: SupportSQLiteDatabase) {
+                db.execSQL(
+                    """
+                    CREATE TABLE IF NOT EXISTS savings_goal_contributions (
+                        id INTEGER PRIMARY KEY AUTOINCREMENT NOT NULL,
+                        goal_id INTEGER NOT NULL,
+                        amount REAL NOT NULL,
+                        timestamp INTEGER NOT NULL,
+                        note TEXT,
+                        source_transaction_id INTEGER,
+                        FOREIGN KEY(goal_id) REFERENCES savings_goals(id) ON DELETE CASCADE
+                    )
+                    """.trimIndent()
+                )
+                db.execSQL("CREATE INDEX IF NOT EXISTS index_savings_goal_contributions_goal_id ON savings_goal_contributions (goal_id)")
+            }
+        }
+
         val DEFAULT_CATEGORIES = listOf(
             CategoryEntity(name = "Auto / Taxi Fare", colorHex = "#F59E0B", iconName = "taxi"),
             CategoryEntity(name = "Food & Dining", colorHex = "#FF7043", iconName = "restaurant"),
@@ -99,7 +119,8 @@ abstract class KanriDatabase : RoomDatabase() {
             CategoryEntity(name = "Rent & Maintenance", colorHex = "#6366F1", iconName = "home"),
             CategoryEntity(name = "Personal Care", colorHex = "#F43F5E", iconName = "fitness"),
             CategoryEntity(name = "Gifts & Donations", colorHex = "#D946EF", iconName = "gift"),
-            CategoryEntity(name = "Travel & Vacation", colorHex = "#06B6D4", iconName = "flight")
+            CategoryEntity(name = "Travel & Vacation", colorHex = "#06B6D4", iconName = "flight"),
+            CategoryEntity(name = "Lend & Borrow", colorHex = "#30A46C", iconName = "payments")
         )
 
         fun getDatabase(context: Context): KanriDatabase {
@@ -123,7 +144,7 @@ abstract class KanriDatabase : RoomDatabase() {
                     KanriDatabase::class.java,
                     "kanri_database"
                 )
-                    .addMigrations(MIGRATION_5_6, MIGRATION_6_7, MIGRATION_7_8, MIGRATION_8_9)
+                    .addMigrations(MIGRATION_5_6, MIGRATION_6_7, MIGRATION_7_8, MIGRATION_8_9, MIGRATION_9_10)
                     .fallbackToDestructiveMigration(dropAllTables = false)
                     .addCallback(object : Callback() {
                         override fun onCreate(db: SupportSQLiteDatabase) {
@@ -262,7 +283,8 @@ abstract class KanriDatabase : RoomDatabase() {
                         "budgets",
                         "lending",
                         "recurring_payments",
-                        "savings_goals"
+                        "savings_goals",
+                        "savings_goal_contributions"
                     )
                     for (table in tables) {
                         try {

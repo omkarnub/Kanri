@@ -22,15 +22,26 @@ import androidx.compose.foundation.layout.size
 import androidx.compose.foundation.layout.width
 import androidx.compose.foundation.shape.CircleShape
 import androidx.compose.foundation.shape.RoundedCornerShape
+import androidx.compose.foundation.lazy.LazyRow
+import androidx.compose.foundation.lazy.items
 import androidx.compose.material.icons.Icons
+import androidx.compose.material.icons.filled.Close
 import androidx.compose.material.icons.filled.KeyboardArrowDown
+import androidx.compose.material.icons.filled.Search
 import androidx.compose.material3.Card
 import androidx.compose.material3.CardDefaults
 import androidx.compose.material3.Icon
+import androidx.compose.material3.IconButton
 import androidx.compose.material3.MaterialTheme
+import androidx.compose.material3.OutlinedTextField
+import androidx.compose.material3.OutlinedTextFieldDefaults
+import androidx.compose.material3.Surface
 import androidx.compose.material3.Text
 import androidx.compose.runtime.Composable
 import androidx.compose.runtime.getValue
+import androidx.compose.runtime.mutableStateOf
+import androidx.compose.runtime.remember
+import androidx.compose.runtime.setValue
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.draw.clip
@@ -49,6 +60,13 @@ private val SageGreen = Color(0xFF30A46C)
 private val ExpenseRed = Color(0xFFE54D2E)
 private val WarningAmber = Color(0xFFF5A524)
 
+enum class PeopleFilter(val label: String) {
+    ALL("All"),
+    YOU_LL_GET("You'll get"),
+    YOU_OWE("You owe"),
+    OVERDUE("Overdue")
+}
+
 @Composable
 fun LendingPeopleView(
     needsAttentionPeople: List<PersonSummary>,
@@ -59,12 +77,143 @@ fun LendingPeopleView(
     onPersonClick: (PersonSummary) -> Unit,
     modifier: Modifier = Modifier
 ) {
+    var searchQuery by remember { mutableStateOf("") }
+    var selectedFilter by remember { mutableStateOf(PeopleFilter.ALL) }
+
+    fun matchesFilter(person: PersonSummary): Boolean {
+        val matchesQuery = searchQuery.isBlank() || person.displayName.contains(searchQuery.trim(), ignoreCase = true)
+        if (!matchesQuery) return false
+        return when (selectedFilter) {
+            PeopleFilter.ALL -> true
+            PeopleFilter.YOU_LL_GET -> person.toReceive > 0
+            PeopleFilter.YOU_OWE -> person.toPay > 0
+            PeopleFilter.OVERDUE -> person.isOverdue || person.needsAttention
+        }
+    }
+
+    val filteredNeedsAttention = remember(needsAttentionPeople, searchQuery, selectedFilter) {
+        needsAttentionPeople.filter { matchesFilter(it) }
+    }
+    val filteredActive = remember(activePeople, searchQuery, selectedFilter) {
+        activePeople.filter { matchesFilter(it) }
+    }
+    val filteredSettled = remember(settledPeople, searchQuery, selectedFilter) {
+        settledPeople.filter { matchesFilter(it) }
+    }
+
     Column(
         modifier = modifier.fillMaxWidth(),
-        verticalArrangement = Arrangement.spacedBy(18.dp)
+        verticalArrangement = Arrangement.spacedBy(16.dp)
     ) {
+        // 0. Frosted Search & Filter Bar
+        Column(verticalArrangement = Arrangement.spacedBy(10.dp)) {
+            OutlinedTextField(
+                value = searchQuery,
+                onValueChange = { searchQuery = it },
+                modifier = Modifier.fillMaxWidth(),
+                placeholder = {
+                    Text(
+                        text = "Search contacts...",
+                        style = MaterialTheme.typography.bodyMedium.copy(fontSize = 13.5.sp),
+                        color = MaterialTheme.colorScheme.onSurfaceVariant.copy(alpha = 0.6f)
+                    )
+                },
+                leadingIcon = {
+                    Icon(
+                        imageVector = Icons.Default.Search,
+                        contentDescription = "Search",
+                        tint = MaterialTheme.colorScheme.onSurfaceVariant,
+                        modifier = Modifier.size(18.dp)
+                    )
+                },
+                trailingIcon = {
+                    if (searchQuery.isNotEmpty()) {
+                        IconButton(onClick = { searchQuery = "" }) {
+                            Icon(
+                                imageVector = Icons.Default.Close,
+                                contentDescription = "Clear",
+                                tint = MaterialTheme.colorScheme.onSurfaceVariant,
+                                modifier = Modifier.size(18.dp)
+                            )
+                        }
+                    }
+                },
+                singleLine = true,
+                shape = RoundedCornerShape(14.dp),
+                colors = OutlinedTextFieldDefaults.colors(
+                    focusedBorderColor = MaterialTheme.colorScheme.onSurface,
+                    unfocusedBorderColor = MaterialTheme.colorScheme.outlineVariant.copy(alpha = 0.6f),
+                    focusedContainerColor = MaterialTheme.colorScheme.surfaceVariant.copy(alpha = 0.25f),
+                    unfocusedContainerColor = MaterialTheme.colorScheme.surfaceVariant.copy(alpha = 0.15f)
+                )
+            )
+
+            // Horizontal Filter Chips
+            LazyRow(
+                modifier = Modifier.fillMaxWidth(),
+                horizontalArrangement = Arrangement.spacedBy(8.dp)
+            ) {
+                items(PeopleFilter.entries) { filter ->
+                    val isSelected = selectedFilter == filter
+                    Surface(
+                        shape = RoundedCornerShape(12.dp),
+                        color = if (isSelected) {
+                            MaterialTheme.colorScheme.onSurface
+                        } else {
+                            MaterialTheme.colorScheme.surfaceVariant.copy(alpha = 0.3f)
+                        },
+                        border = BorderStroke(
+                            width = if (isSelected) 1.dp else 0.8.dp,
+                            color = if (isSelected) MaterialTheme.colorScheme.onSurface else MaterialTheme.colorScheme.outlineVariant.copy(alpha = 0.6f)
+                        ),
+                        modifier = Modifier
+                            .clip(RoundedCornerShape(12.dp))
+                            .clickable { selectedFilter = filter }
+                    ) {
+                        Text(
+                            text = filter.label,
+                            style = MaterialTheme.typography.labelSmall.copy(
+                                fontWeight = if (isSelected) FontWeight.Bold else FontWeight.Medium,
+                                fontSize = 11.5.sp
+                            ),
+                            color = if (isSelected) {
+                                MaterialTheme.colorScheme.surface
+                            } else {
+                                MaterialTheme.colorScheme.onSurfaceVariant
+                            },
+                            modifier = Modifier.padding(horizontal = 14.dp, vertical = 7.dp)
+                        )
+                    }
+                }
+            }
+        }
+
+        // Empty state when search or filter returns zero matches
+        if (filteredNeedsAttention.isEmpty() && filteredActive.isEmpty() && filteredSettled.isEmpty()) {
+            Box(
+                modifier = Modifier
+                    .fillMaxWidth()
+                    .padding(vertical = 36.dp),
+                contentAlignment = Alignment.Center
+            ) {
+                Column(horizontalAlignment = Alignment.CenterHorizontally) {
+                    Text(
+                        text = "No contacts found",
+                        style = MaterialTheme.typography.titleMedium.copy(fontWeight = FontWeight.SemiBold),
+                        color = MaterialTheme.colorScheme.onSurface
+                    )
+                    Spacer(modifier = Modifier.height(4.dp))
+                    Text(
+                        text = "No people match your search or filter",
+                        style = MaterialTheme.typography.bodySmall,
+                        color = MaterialTheme.colorScheme.onSurfaceVariant
+                    )
+                }
+            }
+        }
+
         // 1. Needs Attention Section (Only when present)
-        if (needsAttentionPeople.isNotEmpty()) {
+        if (filteredNeedsAttention.isNotEmpty()) {
             Column(verticalArrangement = Arrangement.spacedBy(8.dp)) {
                 Text(
                     text = "NEEDS ATTENTION",
@@ -89,12 +238,12 @@ fun LendingPeopleView(
                         modifier = Modifier.padding(horizontal = 14.dp, vertical = 6.dp),
                         verticalArrangement = Arrangement.spacedBy(2.dp)
                     ) {
-                        needsAttentionPeople.forEachIndexed { index, person ->
+                        filteredNeedsAttention.forEachIndexed { index, person ->
                             PersonRowItem(
                                 person = person,
                                 onClick = { onPersonClick(person) }
                             )
-                            if (index < needsAttentionPeople.size - 1) {
+                            if (index < filteredNeedsAttention.size - 1) {
                                 androidx.compose.material3.HorizontalDivider(
                                     color = MaterialTheme.colorScheme.outlineVariant.copy(alpha = 0.4f),
                                     modifier = Modifier.padding(horizontal = 8.dp)
@@ -107,7 +256,7 @@ fun LendingPeopleView(
         }
 
         // 2. Active People Section
-        if (activePeople.isNotEmpty()) {
+        if (filteredActive.isNotEmpty()) {
             Column(verticalArrangement = Arrangement.spacedBy(8.dp)) {
                 Text(
                     text = "PEOPLE",
@@ -132,12 +281,12 @@ fun LendingPeopleView(
                         modifier = Modifier.padding(horizontal = 14.dp, vertical = 6.dp),
                         verticalArrangement = Arrangement.spacedBy(2.dp)
                     ) {
-                        activePeople.forEachIndexed { index, person ->
+                        filteredActive.forEachIndexed { index, person ->
                             PersonRowItem(
                                 person = person,
                                 onClick = { onPersonClick(person) }
                             )
-                            if (index < activePeople.size - 1) {
+                            if (index < filteredActive.size - 1) {
                                 androidx.compose.material3.HorizontalDivider(
                                     color = MaterialTheme.colorScheme.outlineVariant.copy(alpha = 0.4f),
                                     modifier = Modifier.padding(horizontal = 8.dp)
@@ -150,7 +299,7 @@ fun LendingPeopleView(
         }
 
         // 3. Settled Section (Collapsible)
-        if (settledPeople.isNotEmpty()) {
+        if (filteredSettled.isNotEmpty()) {
             Column(verticalArrangement = Arrangement.spacedBy(8.dp)) {
                 val chevronRotation by animateFloatAsState(
                     targetValue = if (isSettledExpanded) 180f else 0f,

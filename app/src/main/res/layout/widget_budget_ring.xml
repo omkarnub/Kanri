@@ -1,0 +1,64 @@
+<?xml version="1.0" encoding="utf-8"?>
+<LinearLayout xmlns:android="http://schemas.android.com/apk/res/android"
+    android:id="@+id/widget_budget_ring_root"
+    android:layout_width="match_parent"
+    android:layout_height="match_parent"
+    android:background="@drawable/widget_glass_card"
+    android:gravity="center"
+    android:orientation="vertical"
+    android:padding="14dp">
+
+    <!-- Header -->
+    <TextView
+        android:id="@+id/widget_budget_ring_header"
+        android:layout_width="match_parent"
+        android:layout_height="wrap_content"
+        android:fontFamily="@font/google_sans_bold"
+        android:letterSpacing="0.08"
+        android:text="BUDGET"
+        android:textColor="#FFFFFF"
+        android:textSize="11sp" />
+
+    <!-- Ring Chart Canvas rendered Bitmap -->
+    <ImageView
+        android:id="@+id/widget_ring_chart_image"
+        android:layout_width="match_parent"
+        android:layout_height="0dp"
+        android:layout_marginTop="4dp"
+        android:layout_marginBottom="4dp"
+        android:layout_weight="1"
+        android:src="@drawable/preview_budget_ring"
+        android:contentDescription="Budget Ring Chart"
+        android:scaleType="fitCenter" />
+
+    <!-- Bottom Spend & Limit details -->
+    <LinearLayout
+        android:id="@+id/widget_ring_bottom_row"
+        android:layout_width="match_parent"
+        android:layout_height="wrap_content"
+        android:gravity="center_vertical"
+        android:orientation="horizontal">
+
+        <TextView
+            android:id="@+id/widget_ring_spent_text"
+            android:layout_width="0dp"
+            android:layout_height="wrap_content"
+            android:layout_weight="1"
+            android:fontFamily="@font/google_sans_medium"
+            android:singleLine="true"
+            android:text="Spent: ₹18.5K"
+            android:textColor="#FFFFFF"
+            android:textSize="10.5sp" />
+
+        <TextView
+            android:id="@+id/widget_ring_budget_text"
+            android:layout_width="wrap_content"
+            android:layout_height="wrap_content"
+            android:fontFamily="@font/google_sans_medium"
+            android:singleLine="true"
+            android:text="Budget: ₹50K"
+            android:textColor="#B3FFFFFF"
+            android:textSize="10.5sp" />
+    </LinearLayout>
+
+</LinearLayout>
