@@ -1,153 +1,184 @@
+<div align="center">
+  <img src="kanri_app_icon_dark.png" width="120" height="120" alt="Kanri app icon" />
+
+  # Kanri
+
+  **The offline-first personal finance ledger for Android**
+
+  Kanri reads your bank SMS and payment notifications, keeps a running tally of every rupee that moves, and never sends any of it off your phone.
+
+  [![Latest release](https://img.shields.io/github/v/release/omkarnub/Kanri?style=for-the-badge&color=30A46C&label=Release)](https://github.com/omkarnub/Kanri/releases/latest)
+  [![Downloads](https://img.shields.io/github/downloads/omkarnub/Kanri/total?style=for-the-badge&color=30A46C&label=Downloads)](https://github.com/omkarnub/Kanri/releases)
+  [![Platform](https://img.shields.io/badge/Android-8.0%2B-3DDC84?style=for-the-badge&logo=android&logoColor=white)](#installation)
+  [![Encryption](https://img.shields.io/badge/SQLCipher-AES--256-121212?style=for-the-badge)](#privacy--security)
+</div>
+
+---
+
+## Table of Contents
+
+- [Overview](#overview)
+- [Screenshots](#screenshots)
+- [Features](#features)
+- [Architecture](#architecture)
+- [Tech Stack](#tech-stack)
+- [Installation](#installation)
+- [Building from Source](#building-from-source)
+- [Privacy & Security](#privacy--security)
+- [Contributing](#contributing)
+- [License](#license)
+- [Star History](#star-history)
+
+## Overview
+
+Most expense trackers stop at your own spending. Kanri also keeps a ledger of money you lend and borrow, splits shared bills, and projects your month-end balance before it happens — all from parsed SMS and notifications, with no login and no server.
+
+Everything runs fully offline — there's no Kanri backend to breach, because there isn't one.
+
+## Screenshots
+
+> [!TIP]
+> Add 4–6 screenshots to `docs/screenshots/` (home, insights, lend & borrow, widgets) and uncomment the block below. A real screenshot strip will sell this README harder than any badge.
+
+<!--
 <p align="center">
-  <img src="kanri_app_icon_dark.png" alt="Kanri Logo" width="108" height="108" style="border-radius: 24px;" />
+  <img src="docs/screenshots/home.png" width="200" alt="Home screen" />
+  <img src="docs/screenshots/insights.png" width="200" alt="Insights screen" />
+  <img src="docs/screenshots/lend-borrow.png" width="200" alt="Lend & Borrow screen" />
+  <img src="docs/screenshots/widgets.png" width="200" alt="Home screen widgets" />
 </p>
+-->
 
-<h1 align="center">KANRI</h1>
+## Features
 
-<p align="center">
-  <strong>The 100% Offline, Privacy-First Personal Finance Operating System for Android</strong>
-</p>
+<table>
+<tr>
+<td width="50%" valign="top">
+<img src="https://api.iconify.design/mdi:shield-lock-outline.svg?color=%2330A46C" width="22" valign="middle" /> <strong>Offline by default</strong>
 
-<p align="center">
-  <a href="https://github.com/omkarnub/Kanri/releases/tag/v1.0.1"><img src="https://img.shields.io/badge/Release-v1.0.1-000000?style=for-the-badge&logo=android&logoColor=white" alt="Release v1.0.1" /></a>
-  <a href="https://github.com/omkarnub/Kanri/releases/download/v1.0.1/Kanri-v1.0.1.apk"><img src="https://img.shields.io/badge/Download-APK%20(24.9%20MB)-30A46C?style=for-the-badge&logo=googleplay&logoColor=white" alt="Download APK" /></a>
-  <a href="#"><img src="https://img.shields.io/badge/Privacy-100%25%20Offline-000000?style=for-the-badge&logo=shield&logoColor=white" alt="100% Offline" /></a>
-  <a href="#"><img src="https://img.shields.io/badge/Security-SQLCipher%20AES--256-blue?style=for-the-badge" alt="SQLCipher AES-256" /></a>
-  <a href="#"><img src="https://img.shields.io/badge/Android-8.0%2B%20(API%2026%2B)-brightgreen?style=for-the-badge&logo=android" alt="Android 8.0+" /></a>
-</p>
+All records, categories, and notes are encrypted on-device with SQLCipher (AES-256) behind Android Keystore hardware keys. No analytics, no ad SDKs, no credit-score inquiries.
+</td>
+<td width="50%" valign="top">
+<img src="https://api.iconify.design/mdi:radar.svg?color=%2330A46C" width="22" valign="middle" /> <strong>Dual-engine transaction capture</strong>
 
----
+An SMS parser covers 15+ major banks; a notification listener catches Google Pay, PhonePe, Paytm, CRED, FamPay, and Amazon Pay in real time. Cross-channel fingerprinting drops the duplicates. Messaging apps are never read.
+</td>
+</tr>
+<tr>
+<td width="50%" valign="top">
+<img src="https://api.iconify.design/mdi:account-cash-outline.svg?color=%2330A46C" width="22" valign="middle" /> <strong>Lend & borrow ledger</strong>
 
-## ⚡ What is Kanri?
+Track what you're owed and what you owe, log partial repayments, split a bill across 2–20 people, and settle up with a pre-filled UPI deep link or a one-tap WhatsApp reminder.
+</td>
+<td width="50%" valign="top">
+<img src="https://api.iconify.design/mdi:piggy-bank-outline.svg?color=%2330A46C" width="22" valign="middle" /> <strong>Savings milestones</strong>
 
-**Kanri** is an intelligent, offline personal financial tracker designed from the ground up for privacy, speed, and tactile elegance. It automatically recognizes bank transactions, card spends, ATM withdrawals, and UPI alerts without sending a single byte of your financial data to any server.
+Set a target, see the daily and monthly pace needed to hit it, and log contributions with quick steppers (+₹500 / +₹1,000 / +₹2,000 / +₹5,000).
+</td>
+</tr>
+<tr>
+<td width="50%" valign="top">
+<img src="https://api.iconify.design/mdi:chart-timeline-variant.svg?color=%2330A46C" width="22" valign="middle" /> <strong>Insights & financial health</strong>
 
-Built entirely with **Kotlin 2.2**, **Jetpack Compose (Material 3)**, and encrypted at rest with **SQLCipher AES-256**.
+18+ visualizations — a GitHub-style spending heatmap, a 365-day matrix, burn-rate projections, month-over-month comparisons — plus a 0–100 health score weighing savings rate, budget use, spend velocity, and debt load.
+</td>
+<td width="50%" valign="top">
+<img src="https://api.iconify.design/mdi:widgets-outline.svg?color=%2330A46C" width="22" valign="middle" /> <strong>Home screen & quick settings</strong>
 
----
+Seven widgets (today's spend, budget ring, goals ring, lend/borrow, split bill, quick add) and a Quick Settings tile for logging an expense from anywhere. Screen-off auto-lock re-secures the app with biometrics the moment the display turns off.
+</td>
+</tr>
+<tr>
+<td width="50%" valign="top">
+<img src="https://api.iconify.design/mdi:palette-outline.svg?color=%2330A46C" width="22" valign="middle" /> <strong>A quieter aesthetic</strong>
 
-## ✨ Key Features
+A matte `#121212` dark palette, Panchang display type paired with Google Sans Flex, and frosted-glass surfaces via Haze.
+</td>
+<td width="50%" valign="top">
+<img src="https://api.iconify.design/mdi:vibrate.svg?color=%2330A46C" width="22" valign="middle" /> <strong>Haptics that match the hardware</strong>
 
-### 🛡️ 100% Offline & Zero Cloud Leakage
-* **Zero Remote Servers:** All database records, categorizations, and notes stay encrypted on your physical device.
-* **SQLCipher AES-256:** Database encryption backed by Android Keystore hardware-backed cryptographic keys.
-* **Privacy by Default:** Zero tracking SDKs, zero analytics, zero personal loan advertisements, and zero credit score inquiries.
+Calibrated feedback for linear resonant actuators on newer phones, with a soft 3–8 ms fallback on older ERM motors so it never buzzes harder than it should.
+</td>
+</tr>
+</table>
 
-### ⚡ Dual-Engine Transaction Detection
-* **High-Precision SMS Parser:** Automatic extraction of transaction amounts, types (Debit/Credit), sources (UPI, ATM, Card, NetBanking), merchants, and UTR/reference numbers across 15+ major banks.
-* **Notification Listener:** Captures real-time push receipts from Google Pay, PhonePe, Paytm, CRED, FamPay, Amazon Pay, and BHIM.
-* **Chat Privacy Preserved:** Strictly ignores messaging apps (WhatsApp, Telegram, Signal) — only verified banking and payment channels are parsed.
-* **Smart Deduplication:** Cross-channel fingerprinting prevents duplicate entries from SMS and push alerts.
+## Architecture
 
-### 🖤 Minimalist Luxury Aesthetic
-* **Refined Dark Palette:** Tailored `#121212` matte dark background (no harsh AMOLED black crush).
-* **Origami 3D FoldText:** Brand typography with staggered perspective hinge unfolding and dynamic crease lighting.
-* **Bespoke Typography:** Panchang brand typography paired with Google Sans Flex for data clarity.
-* **Frosted Glass Interfaces:** Dynamic backdrop blurring powered by Haze glassmorphism.
+```mermaid
+flowchart LR
+    A[Bank SMS] --> C{Transaction parser}
+    B[Payment app notification] --> C
+    C --> D[(Room + SQLCipher<br/>AES-256, on-device)]
+    D --> E[Budgets & insights]
+    D --> F[Lend & borrow ledger]
+    D --> G[Home screen widgets]
+```
 
-### 📳 Intelligent Haptic Engine
-* **True Haptics for Advanced Motors:** Hardware-calibrated tactile feedback for devices with linear resonant actuators (LRA / Z-axis linear motors, e.g., Infinix Note 30, Google Pixel, Samsung Galaxy).
-* **Whisper-Soft Fallback:** Soft micro-pulses (3ms–8ms) on legacy ERM motors to prevent loud, rattling vibrations.
+## Tech Stack
 
-### 🤝 Lend & Borrow Hub (P2P Credit Ledger)
-* Track peer-to-peer debts ("Money I Lent" vs "Money I Borrowed") with a high-contrast net balance ring chart.
-* **Partial Repayments:** Log partial installment repayments with remaining balance recalculations.
-* **Group Bill Splitter:** Distribute shared expenses dynamically among 2 to 20 people.
-* **Native UPI Deep-Links:** 1-tap debt settlement opening Google Pay, PhonePe, or Paytm with pre-filled recipient VPA and amount.
-* **Polite WhatsApp Reminders:** Generate contextual, polite payment reminders in one tap.
+| | |
+|---|---|
+| ![Kotlin](https://img.shields.io/badge/Kotlin-2.2.10-7F52FF?style=flat-square&logo=kotlin&logoColor=white) | Language |
+| ![Jetpack Compose](https://img.shields.io/badge/Jetpack%20Compose-Material%203-4285F4?style=flat-square&logo=jetpackcompose&logoColor=white) | UI toolkit, BOM 2026.02.01 |
+| ![Room](https://img.shields.io/badge/Room-2.8.5-3DDC84?style=flat-square&logo=sqlite&logoColor=white) | Local database, KSP compiler |
+| ![SQLCipher](https://img.shields.io/badge/SQLCipher-4.6.1-121212?style=flat-square&logo=sqlite&logoColor=white) | AES-256 encryption at rest, Android Keystore, Google Tink |
+| ![WorkManager](https://img.shields.io/badge/WorkManager-2.9.1-3DDC84?style=flat-square&logo=android&logoColor=white) | Background tasks |
+| ![Biometric](https://img.shields.io/badge/Biometric-1.2.0-30A46C?style=flat-square&logo=android&logoColor=white) | Lock screen authentication |
+| ![Haze](https://img.shields.io/badge/Haze-1.3.1-30A46C?style=flat-square) | Glassmorphism effects |
+| ![Tests](https://img.shields.io/badge/Unit%20tests-222%2B%20passing-30A46C?style=flat-square) | 35 suites, 100% coverage of financial logic |
 
-### 🎯 Savings Milestones Hub
-* Target milestone goals with daily and monthly required savings pace formulas.
-* Full contribution ledger tracking deposit and withdrawal audit trails.
-* Monetary steppers (`+₹500`, `+₹1000`, `+₹2000`, `+₹5000`) for quick allocation.
+## Installation
 
-### 📊 Advanced Insights & Financial Health
-* **18+ Analytical Visualizers:** GitHub-style calendar heatmap, 365-day annual spending matrix, month-end projection burn rate, and side-by-side month comparison.
-* **Monthly Recap:** Interactive Spotify Wrapped-style visual story deck summarizing monthly financial wins.
-* **Financial Health Score:** Proprietary 0–100 algorithm evaluating Savings Rate, Budget Utilization, Spend Velocity, and Debt Burden.
+Grab the latest signed APK from the [Releases page](https://github.com/omkarnub/Kanri/releases/latest).
 
-### 📱 Android Ecosystem Integration
-* **7 Dedicated Home Screen Widgets:**
-  1. *Money Spent Today* (Today's burn + quick add)
-  2. *Budget Progress* (Linear safe-to-spend gauge)
-  3. *Budget Ring* (Circular donut consumption chart)
-  4. *Goals Ring* (Savings milestone tracker)
-  5. *Lend & Borrow* (At-a-glance net debt ledger)
-  6. *Split Bill* (Quick group split calculator)
-  7. *Quick Add* (1-tap floating expense logger)
-* **Quick Settings Pull-Down Tile:** Native Android notification shade tile ("Quick Add") for instant logging from any app or lock screen.
-* **Screen-Off Auto-Lock:** Automatically locks with biometric authentication when the device screen turns off.
+- **Package:** `com.omkarnub.kanri`
+- **Size:** ~24.9 MB (R8 minified, shrunk)
+- **Requires:** Android 8.0 (API 26) or later
 
----
+> [!NOTE]
+> Kanri isn't on the Play Store yet, so Android will ask you to confirm installing from an unknown source the first time. That's expected for a sideloaded APK — just confirm you got it from this repo's Releases page.
 
-## 📥 Installation
+## Building from Source
 
-Download the latest production release APK:
+```bash
+git clone https://github.com/omkarnub/Kanri.git
+cd Kanri
+```
 
-<p align="center">
-  <a href="https://github.com/omkarnub/Kanri/releases/download/v1.0.0/Kanri-v1.0.0.apk">
-    <img src="https://img.shields.io/badge/Download-Kanri--v1.0.0.apk-black?style=for-the-badge&logo=android&logoColor=white" alt="Download APK" />
-  </a>
-</p>
+Open the project in Android Studio (Ladybug/Meerkat or later, JDK 17 or 21), then:
 
-* **Package Name:** `com.omkarnub.kanri`
-* **Size:** ~24.9 MB *(R8 minified & shrink-wrapped)*
-* **Requirements:** Android 8.0 (API 26) or higher
+```bash
+./gradlew assembleDebug        # build a debug APK
+./gradlew testDebugUnitTest    # run the unit test suite
+```
 
----
+## Privacy & Security
 
-## 🛠️ Tech Stack & Architecture
+Kanri starts from one premise: your financial data is yours.
 
-| Layer | Technology |
-| :--- | :--- |
-| **Language** | Kotlin 2.2.10 |
-| **UI Toolkit** | Jetpack Compose (BOM 2026.02.01), Material 3 |
-| **Local Database** | Room 2.8.5 with KSP compiler |
-| **Encryption** | SQLCipher 4.6.1 (AES-256), Android Keystore, Google Tink |
-| **Background Tasks**| AndroidX WorkManager 2.9.1 |
-| **Biometrics** | AndroidX Biometric 1.2.0 |
-| **Visual Effects** | Haze Glassmorphism 1.3.1 |
-| **Testing** | 35 Unit Test Suites (222+ tests) covering 100% of financial logic |
+- **No analytics or tracking SDKs** — nothing about how you use the app leaves the app.
+- **No account required** — no email, phone verification, or password.
+- **No credential harvesting** — Kanri never asks for banking passwords, ATM PINs, or UPI credentials.
+- **Encrypted, user-initiated backups** — local backups use AES-GCM with PBKDF2 under a passphrase you choose.
 
----
+Full details: [Privacy Policy](PRIVACY_POLICY.md)
 
-## 🏗️ Building from Source
+## Contributing
 
-1. **Clone the repository:**
-   ```bash
-   git clone https://github.com/omkarnub/Kanri.git
-   cd Kanri
-   ```
+Issues and pull requests are welcome. For anything larger than a small fix, open an issue first so we can talk through the approach before you put the work in.
 
-2. **Open in Android Studio:**
-   * Recommended: Android Studio Ladybug / Meerkat or later.
-   * JDK: Java 17 or Java 21.
+## License
 
-3. **Build Debug APK:**
-   ```bash
-   ./gradlew assembleDebug
-   ```
+See [LICENSE](LICENSE) for terms.
 
-4. **Run Unit Tests:**
-   ```bash
-   ./gradlew testDebugUnitTest
-   ```
+## Star History
+
+[![Star History Chart](https://api.star-history.com/svg?repos=omkarnub/Kanri&type=Date)](https://star-history.com/#omkarnub/Kanri&Date)
 
 ---
 
-## 📜 Privacy & Security Manifesto
+<div align="center">
 
-Kanri was created on the fundamental belief that **your financial data belongs solely to you**.
+Built by [omkarnub](https://github.com/omkarnub)
 
-* **No Analytics:** We do not track user behavior or app usage.
-* **No Account Creation:** No email sign-up, phone verification, or passwords required.
-* **No Credential Harvesting:** Kanri never requests your banking passwords, ATM PINs, or UPI credentials.
-* **Encrypted Backups:** User-initiated backups are encrypted with AES-GCM (PBKDF2) using a master passphrase chosen by you.
-
-Read our full [Privacy Policy](PRIVACY_POLICY.md).
-
----
-
-<p align="center">
-  Crafted with precision by <strong><a href="https://github.com/omkarnub">omkarnub</a></strong>
-</p>
+</div>
