@@ -3,8 +3,9 @@
 **App Name:** Kanri  
 **Package Name:** `com.omkarnub.kanri`  
 **Purpose:** 100% offline, privacy-first personal financial operating system — automatically detects UPI transactions, ATM withdrawals, card payments, and bank transfers (sent & received), tracks daily and monthly cash flow, budgets, lending/borrowing ledgers, group split expenses, financial health scoring, savings milestones, and encrypted data exports.  
-**Target Platform:** Android 8.0+ (Min SDK 26, Target SDK 35, 16 KB memory page size compliant).  
+**Target Platform:** Android 8.0+ (Min SDK 26, Target SDK 37, 16 KB memory page size compliant).  
 **Tested On:** Pixel 8 virtual & physical devices (API 34/35/37) and real hardware (Android 14+).  
+**Current Release:** v1.0.1 (versionCode 2)  
 **Tech Stack:** Kotlin 2.2.10, Jetpack Compose (BOM 2026.02.01), Material 3, Room 2.8.5, SQLCipher 4.6.1 (AES-256), AndroidX Biometric 1.2.0, WorkManager 2.9.1, Haze Glassmorphism.  
 **Design Philosophy:** Strict minimalist monochrome luxury aesthetic (pure AMOLED black `#000000`, refined dark `#1E1E1E`, cream light `#FEFAEC`, frosted glass accents), zero visual clutter, surgical dual-tone amount accents (Expense Red `#E54D2E`, Radix Sage Green `#30A46C`), Panchang brand typography, Google Sans Flex UI typography, and fluid choreographic micro-animations.
 
@@ -131,7 +132,15 @@
     - Retroactive categorization engine (`applyCategoryToMatchingTransactions`) updating historical transactions in 1 tap.
     - Full management hub in Settings with rule counts, category badges, and edit/delete modal dialogs.
 76. **Centralized Widget Event Bus (`KanriWidgetActions.kt`, `KanriWidgetsUpdater.kt`)** — Dispatches targeted broadcast intents (`ACTION_EXPENSE_ADDED`, `ACTION_UPDATE_ALL`) and synchronizes AppWidgetManager state across all 7 providers.
-77. **35 Comprehensive Unit Test Suites (222+ Unit Tests)** — Complete coverage of all business logic, parsers, cryptographic routines, cloud sync states, merchant rules, widget layouts, and financial health calculators with 100% pass rate.
+77. **36 Comprehensive Unit Test Suites (232+ Unit Tests)** — Complete coverage of all business logic, parsers, cryptographic routines, cloud sync states, merchant rules, widget layouts, deduplication logic, and financial health calculators with 100% pass rate.
+78. **Hardened SMS Receiver Pipeline (`SmsReceiver.kt`)** — Upgraded to `goAsync()` with priority 999 intent filter, ensuring Kanri's SMS processor runs before other SMS apps. Multi-part PDU concatenation now operates within a `goAsync()` coroutine scope for reliable background processing.
+79. **Boot Persistence Engine (`BootReceiver.kt`)** — Manifest-registered `BOOT_COMPLETED` BroadcastReceiver that re-initializes all background monitors (NotificationListenerService watchdog, widget midnight reset, lending reminder scheduler, daily reminder scheduler) after device reboot, ensuring zero-gap detection without requiring manual app launch.
+80. **Notification Listener Watchdog (`NotificationListenerWatchdogWorker.kt`)** — 15-minute periodic WorkManager watchdog that detects silently disconnected `NotificationListenerService` (common on MIUI, ColorOS, FunTouchOS battery savers) and triggers automatic rebind to restore payment notification capture without user intervention.
+81. **Midnight Widget Auto-Reset (`MidnightWidgetResetWorker.kt`)** — WorkManager periodic worker firing 5 seconds past midnight to refresh all 7 home screen widgets, ensuring "Money Spent Today" and daily counters reset cleanly at the start of each new day.
+82. **Daily 9 PM Smart Reminder Notifications (`DailyReminderScheduler.kt`, `DailyReminderWorker.kt`)** — End-of-day WorkManager worker that checks for uncategorized transactions, zero-transaction days, and approaching lending dues, dispatching contextual notification reminders to maintain financial tracking discipline.
+83. **Cross-Channel 5-Minute Sliding Window Deduplication (`NotificationDeduplicationHelper.kt`)** — Enhanced two-way deduplication engine using a 5-minute sliding timestamp window to prevent duplicate entries when both an SMS alert and a UPI app notification arrive for the same transaction, with cross-channel metadata enrichment.
+84. **Battery Optimization Exemption Helper (`BatteryOptimizationHelper.kt`)** — Guided prompt requesting battery optimization exemption for Kanri so that background services (SMS receiver, notification listener, widget updater) are not silently killed by Android Doze or OEM battery savers.
+85. **Development Capture Logger (`DevCaptureLogger.kt`)** — Structured development-time logging utility that captures SMS and notification payloads to local encrypted files for debugging parser failures and missed transaction patterns.
 
 ---
 
@@ -317,18 +326,37 @@ Consolidated preferences and administrative tools:
 
 ### 2.10 Background Detection & Notification Services
 - **SMS Receiver (`SmsReceiver.kt`):**
+  - Priority 999 intent filter ensuring Kanri processes bank SMS before other apps.
+  - `goAsync()` coroutine scope for reliable background processing within BroadcastReceiver time limits.
   - Multi-part PDU concatenation.
   - Regex patterns for 15+ Indian banks (`BankSmsPatterns.kt`).
   - Reference number deduplication.
   - Reversals, refunds, and declined payment handling.
 - **Notification Listener Service (`KanriNotificationListenerService.kt`):**
   - Captures payment notifications from Google Pay, PhonePe, Paytm, Amazon Pay, FamPay, BHIM.
-  - Cross-channel deduplication with SMS alerts (`NotificationDeduplicationHelper.kt`).
+  - Cross-channel 5-minute sliding window deduplication with SMS alerts (`NotificationDeduplicationHelper.kt`).
+  - Cross-channel metadata enrichment (merging counterparty, bank, and reference data from both sources).
+- **Notification Listener Watchdog (`NotificationListenerWatchdogWorker.kt`):**
+  - 15-minute periodic WorkManager health check.
+  - Detects silently disconnected `NotificationListenerService` (common on MIUI, ColorOS, FunTouchOS).
+  - Automatic rebind trigger via `KanriNotificationListenerService.rebindService()` without user intervention.
+- **Boot Receiver (`BootReceiver.kt`):**
+  - Manifest-registered `BOOT_COMPLETED` listener.
+  - Re-initializes all background monitors after device reboot: notification watchdog, widget midnight reset, lending reminder scheduler, daily reminder scheduler.
+  - Refreshes all active home screen widgets immediately.
+- **Daily Reminder Engine (`DailyReminderScheduler.kt`, `DailyReminderWorker.kt`):**
+  - WorkManager periodic worker scheduled around 9 PM daily.
+  - Checks for uncategorized transactions and nudges user to categorize.
+  - Detects zero-transaction days and prompts for missed expense/income logging.
+  - Priority-based notification dispatch (uncategorized > no-transaction > lending dues).
 - **Instant Popup Service (`InstantPopupService.kt`):**
   - Foreground service (`specialUse`) rendering a system overlay card (`TYPE_APPLICATION_OVERLAY`) upon payment detection.
   - 8-second auto-dismiss with countdown ring.
   - 1-tap category assignment without opening the app.
   - Heads-up notification fallback if overlay permission is missing.
+- **Battery Optimization Exemption (`BatteryOptimizationHelper.kt`):**
+  - Guided dialog requesting `REQUEST_IGNORE_BATTERY_OPTIMIZATIONS` exemption.
+  - Prevents Android Doze and OEM battery savers from silently killing background services.
 
 ---
 
@@ -353,6 +381,7 @@ Specialized Android AppWidget suite with dynamic RemoteViews Canvas rendering:
 7. **Quick Add Widget (`QuickAddWidgetProvider`):** Floating action bar for instant Expense, Income, and Split Bill logging.
 - **Centralized Event Bus (`KanriWidgetsUpdater.kt`):** Automated refresh across all active widgets triggered whenever transactions, budgets, or goals are created, updated, or deleted.
 - **Canvas Renderer (`WidgetCanvasRenderer.kt`):** Off-screen antialiased circular gauge drawing generating crisp Bitmaps for RemoteViews display.
+- **Midnight Auto-Reset (`MidnightWidgetResetWorker.kt`):** WorkManager periodic worker firing 5 seconds past midnight to refresh all widgets, ensuring daily counters ("Money Spent Today") reset cleanly.
 
 ---
 
@@ -506,9 +535,9 @@ Kanri uses **Room 2.8.5** secured with **SQLCipher 4.6.1** AES-256 encryption at
 
 ---
 
-## 4. Comprehensive Test Suite (35 Test Suites) 🧪
+## 4. Comprehensive Test Suite (36 Test Suites) 🧪
 
-The repository maintains **35 unit and integration test suites** (222+ individual tests) verifying financial accuracy, cryptographic integrity, background services, and UI state:
+The repository maintains **36 unit and integration test suites** (232+ individual tests) verifying financial accuracy, cryptographic integrity, background services, deduplication logic, and UI state:
 
 1. **`DeltaCalculatorTest.kt`** — Validates month-over-month spend delta calculations, zero spending baselines, and percentage bounds.
 2. **`FinancialHealthCalculatorTest.kt`** — Validates the 4 financial health pillars (Savings Rate, Budget Utilization, Spend Velocity, Debt Burden), edge cases (zero income, over-budget), letter grade assignments, and diagnostic feedback generation.
@@ -544,7 +573,8 @@ The repository maintains **35 unit and integration test suites** (222+ individua
 32. **`SavingsGoalsTest.kt`** — Tests `SavingsGoalCalculator` daily and monthly savings pace formulas, progress percentages, and contribution logging.
 33. **`SearchFilterTest.kt`** — Validates multi-criteria search filtering across text, dates, amounts, categories, and payment sources.
 34. **`WidgetBreakpointTest.kt`** — Verifies RemoteViews layout selection across Small (1x1), Medium (2x2), Large (4x2+), and all 7 dedicated widget providers.
-35. **`ExampleUnitTest.kt`** — Base environment validation test.
+35. **`DeduplicationLogicTest.kt`** — Validates the cross-channel 5-minute sliding window deduplication engine, two-way SMS/notification matching, enrichment merging, duplicate suppression, and edge cases around timing boundaries.
+36. **`ExampleUnitTest.kt`** — Base environment validation test.
 
 ---
 
