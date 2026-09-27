@@ -75,9 +75,9 @@ object SmsParser {
         """(?i)(?:available\s*credit\s*limit|avl\s*limit|available\s*limit|credit\s*limit)[\s:]+(?:(?:rs\.?|inr|₹)\s*)?([0-9,]+(?:\.\d{1,2})?)"""
     )
 
-    // Regex for extracting account masks
+    // Regex for extracting account masks across all major bank variations (A/C, AC, Card, etc.)
     private val ACCOUNT_PATTERN = Pattern.compile(
-        """(?i)(?:A/c|Account|acct|acc\.?|Card)\s*(?:no\.?)?\s*(?:ending\s+)?(?:with\s+)?(?:\.\.\.\s*|X+|\*+)?(\d{3,6})"""
+        """(?i)\b(?:A/c|Account|acct|acc|ac|Card)\b\s*(?:no\.?)?\s*(?:ending\s+(?:in\s+|with\s+)?)?(?:with\s+)?(?:\.\.\.\s*|X+|\*+|-+)?(\d{3,6})"""
     )
 
     fun parse(body: String, sender: String? = null, timestamp: Long = System.currentTimeMillis()): ParsedTransaction? {
@@ -105,6 +105,7 @@ object SmsParser {
         val refNo = extractRefNo(trimmed)
         val account = extractAccount(trimmed)
         val counterparty = extractCounterparty(trimmed, sourceType)
+        val resolvedTimestamp = extractTimestamp(trimmed, timestamp)
 
         return ParsedTransaction(
             type = type,
@@ -115,7 +116,7 @@ object SmsParser {
             refNo = refNo,
             account = account,
             rawText = trimmed,
-            timestamp = timestamp,
+            timestamp = resolvedTimestamp,
             balance = balance,
             creditLimit = creditLimit,
             isCard = isCard,
@@ -430,7 +431,7 @@ object SmsParser {
 
     fun extractRefNo(body: String): String? {
         val pattern = Pattern.compile(
-            """\b(?:UPI\s+Ref(?:\s+no)?|UPI\s*[:\/]|Ref(?:no|\.|\s+no)?|UTR|Txn\s*ID|Transaction\s*ID|RRN)\b\s*[:#.\/]?\s*([0-9a-zA-Z]{6,25})""",
+            """\b(?:UPI\s+Ref(?:\s*no\.?)?|UPI\s*[:\/]|Ref(?:\s*no\.?|\.)?|UTR|Txn\s*ID|Transaction\s*ID|RRN)\b\s*[:#.\/]?\s*([0-9a-zA-Z]{6,25})""",
             Pattern.CASE_INSENSITIVE
         )
         val matcher = pattern.matcher(body)
@@ -438,6 +439,78 @@ object SmsParser {
             return matcher.group(1)
         }
         return null
+    }
+
+    /**
+     * Extracts explicit transaction date/time from SMS text for immediate and delayed-delivery alerts.
+     * Prevents carrier delivery delays from distorting transaction dates or the 5-minute dedup window.
+     */
+    fun extractTimestamp(body: String, fallback: Long = System.currentTimeMillis()): Long {
+        // Pattern 1: e.g. 01-09-2026 19:07:46 or 14-09-26 18:22:10 or 15-09-2026 or 12/09/2026 or 18-09-26
+        val numDatePattern = Pattern.compile(
+            """\b(\d{1,2})[-/](\d{1,2})[-/](\d{2,4})(?:\s+(\d{1,2}):(\d{2})(?::(\d{2}))?)?\b"""
+        )
+        val nm = numDatePattern.matcher(body)
+        if (nm.find()) {
+            try {
+                val day = nm.group(1)!!.toInt()
+                val month = nm.group(2)!!.toInt()
+                var year = nm.group(3)!!.toInt()
+                if (year < 100) year += 2000
+                val hour = nm.group(4)?.toIntOrNull() ?: 12
+                val min = nm.group(5)?.toIntOrNull() ?: 0
+                val sec = nm.group(6)?.toIntOrNull() ?: 0
+
+                if (day in 1..31 && month in 1..12 && year in 2020..2035) {
+                    val cal = java.util.Calendar.getInstance()
+                    cal.set(year, month - 1, day, hour, min, sec)
+                    cal.set(java.util.Calendar.MILLISECOND, 0)
+                    return cal.timeInMillis
+                }
+            } catch (_: Exception) {}
+        }
+
+        // Pattern 2: e.g. 15Sep26, 15-Sep-2026, 12-Sep-26, 15 Sep 2026
+        val alphaDatePattern = Pattern.compile(
+            """\b(\d{1,2})[-/\s]?(Jan|Feb|Mar|Apr|May|Jun|Jul|Aug|Sep|Oct|Nov|Dec)[a-z]*[-/\s]?(\d{2,4})?(?:\s+(\d{1,2}):(\d{2})(?::(\d{2}))?)?\b""",
+            Pattern.CASE_INSENSITIVE
+        )
+        val am = alphaDatePattern.matcher(body)
+        if (am.find()) {
+            try {
+                val day = am.group(1)!!.toInt()
+                val monthStr = am.group(2)!!.lowercase()
+                val month = when (monthStr) {
+                    "jan" -> 1
+                    "feb" -> 2
+                    "mar" -> 3
+                    "apr" -> 4
+                    "may" -> 5
+                    "jun" -> 6
+                    "jul" -> 7
+                    "aug" -> 8
+                    "sep" -> 9
+                    "oct" -> 10
+                    "nov" -> 11
+                    "dec" -> 12
+                    else -> 0
+                }
+                var year = am.group(3)?.toIntOrNull() ?: java.util.Calendar.getInstance().get(java.util.Calendar.YEAR)
+                if (year < 100) year += 2000
+                val hour = am.group(4)?.toIntOrNull() ?: 12
+                val min = am.group(5)?.toIntOrNull() ?: 0
+                val sec = am.group(6)?.toIntOrNull() ?: 0
+
+                if (day in 1..31 && month in 1..12 && year in 2020..2035) {
+                    val cal = java.util.Calendar.getInstance()
+                    cal.set(year, month - 1, day, hour, min, sec)
+                    cal.set(java.util.Calendar.MILLISECOND, 0)
+                    return cal.timeInMillis
+                }
+            } catch (_: Exception) {}
+        }
+
+        return fallback
     }
 
     fun extractAccount(body: String): String? {
@@ -499,14 +572,16 @@ object SmsParser {
         val patterns = listOf(
             // "Info: UPI/Apollo Pharmacy" or "Info: Dominos" or "Info: SALARY-Google"
             Pattern.compile("""(?:Info:\s*UPI\/|Info:\s*)([A-Za-z0-9.\-_&']+(?:\s+[A-Za-z0-9.\-_&']+)*?)$delimiter""", Pattern.CASE_INSENSITIVE),
+            // "by transfer to Flipkart" or "transfer to Uber"
+            Pattern.compile("""(?:by\s+transfer\s+to|transfer\s+to)\s+([A-Za-z0-9.\-_@]+(?:\s+[A-Za-z0-9.\-_&']+)*?)$delimiter""", Pattern.CASE_INSENSITIVE),
             // "to swiggy@icici on 12-09-26" or "to Rohit Kumar Refno..." or "towards Amazon Pay..."
             Pattern.compile("""(?:trf\s+to|towards\s+|paid\s+to|to\s+(?:VPA\s+)?|to\s+)([A-Za-z0-9.\-_@]+(?:\s+[A-Za-z0-9.\-_&']+)*?)$delimiter""", Pattern.CASE_INSENSITIVE),
             // "Transferred to Uber"
             Pattern.compile("""(?:Transferred\s+to\s+)([A-Za-z0-9.\-_&']+(?:\s+[A-Za-z0-9.\-_&']+)*?)$delimiter""", Pattern.CASE_INSENSITIVE),
             // "refund for Swiggy order..." or "for D-Mart purchase..."
             Pattern.compile("""(?:refund\s+for|for\s+)([A-Za-z0-9.\-_@]+(?:\s+[A-Za-z0-9.\-_&']+)*?)$delimiter""", Pattern.CASE_INSENSITIVE),
-            // "transfer from John Doe (UPI..." or "from friend@upi"
-            Pattern.compile("""(?:transfer\s+from|from\s+)([A-Za-z0-9.\-_@]+(?:\s+[A-Za-z0-9.\-_&']+)*?)$delimiter""", Pattern.CASE_INSENSITIVE),
+            // "by transfer from Ramesh" or "transfer from John Doe (UPI..." or "from friend@upi"
+            Pattern.compile("""(?:by\s+transfer\s+from|transfer\s+from|from\s+)([A-Za-z0-9.\-_@]+(?:\s+[A-Za-z0-9.\-_&']+)*?)$delimiter""", Pattern.CASE_INSENSITIVE),
             // "by Vikas" or "by Neha" (excluding amounts like "by Rs" / "by INR")
             Pattern.compile("""(?:by\s+(?!Rs|INR|₹|\d))([A-Za-z0-9.\-_&']+(?:\s+[A-Za-z0-9.\-_&']+)*?)$delimiter""", Pattern.CASE_INSENSITIVE),
             // "at STARBUCKS on 14-09-26"
@@ -551,12 +626,21 @@ object SmsParser {
 
         // Strip leading prefixes
         val removePrefixes = listOf(
-            "to ", "from ", "VPA ", "vpa ", "transfer from ", "by ", "by transfer from ",
+            "to ", "from ", "VPA ", "vpa ", "by transfer to ", "transfer to ", "by transfer from ", "transfer from ", "by ",
             "through UPI from ", "through UPI to ", "UPI/", "UPI-", "POS/", "ECOM/", "INB/", "NEFT/", "IMPS/"
         )
         for (prefix in removePrefixes) {
             if (cleaned.startsWith(prefix, ignoreCase = true)) {
                 cleaned = cleaned.substring(prefix.length).trim()
+            }
+        }
+
+        // If string contains slash (e.g. "Zomato/zomato@icici"), pick the cleaner merchant name
+        if (cleaned.contains("/")) {
+            val segments = cleaned.split("/")
+            val validSeg = segments.firstOrNull { isValidCounterparty(it) && !it.contains("@") }
+            if (validSeg != null) {
+                cleaned = validSeg.trim()
             }
         }
 

@@ -436,4 +436,77 @@ class SmsParserTest {
 
         assertNull("Pre-approved loan should return null", result)
     }
+
+    @Test
+    fun testPnbDebitWithAccountAndRef() {
+        val sms = "Dear Customer, A/c *1234 debited for Rs.600.00 on 15-09-26 by transfer to Flipkart (UPI Ref: 425678912345). PNB."
+        val result = SmsParser.parse(sms, sender = "PNBSMS")
+
+        assertNotNull(result)
+        assertEquals(TransactionType.DEBIT, result!!.type)
+        assertEquals(600.0, result.amount, 0.001)
+        assertEquals("Punjab National Bank", result.bank)
+        assertEquals("Flipkart", result.counterparty)
+        assertEquals("425678912345", result.refNo)
+        assertEquals("••1234", result.account)
+    }
+
+    @Test
+    fun testPnbCreditWithAccountAndRef() {
+        val sms = "Dear Customer, A/c *1234 credited for Rs.1200.00 on 15-09-26 by transfer from Ramesh (UPI Ref: 425678912345). PNB."
+        val result = SmsParser.parse(sms, sender = "PNBSMS")
+
+        assertNotNull(result)
+        assertEquals(TransactionType.CREDIT, result!!.type)
+        assertEquals(1200.0, result.amount, 0.001)
+        assertEquals("Punjab National Bank", result.bank)
+        assertEquals("Ramesh", result.counterparty)
+        assertEquals("425678912345", result.refNo)
+        assertEquals("••1234", result.account)
+    }
+
+    @Test
+    fun testDelayedDeliveryDateParsing() {
+        // Delayed SMS arriving with explicit date and time in the body
+        val sms1 = "Rs. 4000.00 withdrawn from A/c ... 8477 at ATM TID ZMN8020 Ref. 624419519952 Avlbl Amt:Rs. 1055.77(01-09-2026 19:07:46)."
+        val result1 = SmsParser.parse(sms1, sender = "BOBTXN", timestamp = 1700000000000L)
+        assertNotNull(result1)
+        val cal1 = java.util.Calendar.getInstance().apply { timeInMillis = result1!!.timestamp }
+        assertEquals(2026, cal1.get(java.util.Calendar.YEAR))
+        assertEquals(java.util.Calendar.SEPTEMBER, cal1.get(java.util.Calendar.MONTH))
+        assertEquals(1, cal1.get(java.util.Calendar.DAY_OF_MONTH))
+        assertEquals(19, cal1.get(java.util.Calendar.HOUR_OF_DAY))
+        assertEquals(7, cal1.get(java.util.Calendar.MINUTE))
+
+        // Delayed SMS with alpha date format "15Sep26"
+        val sms2 = "A/C X8477 debited by 500.00 on date 15Sep26 trf to Rohit Kumar Refno 425612345678."
+        val result2 = SmsParser.parse(sms2, sender = "SBIUPI", timestamp = 1700000000000L)
+        assertNotNull(result2)
+        val cal2 = java.util.Calendar.getInstance().apply { timeInMillis = result2!!.timestamp }
+        assertEquals(2026, cal2.get(java.util.Calendar.YEAR))
+        assertEquals(java.util.Calendar.SEPTEMBER, cal2.get(java.util.Calendar.MONTH))
+        assertEquals(15, cal2.get(java.util.Calendar.DAY_OF_MONTH))
+    }
+
+    @Test
+    fun testAccountMaskExtractionAcrossBanks() {
+        assertEquals("••8477", SmsParser.extractAccount("withdrawn from A/c ... 8477 at ATM"))
+        assertEquals("••8477", SmsParser.extractAccount("A/C X8477 debited by 500.00"))
+        assertEquals("••1234", SmsParser.extractAccount("Sent Rs.250.00 from Kotak Bank AC X1234 to swiggy@icici"))
+        assertEquals("••1234", SmsParser.extractAccount("spent on your Credit Card ending 1234 at STARBUCKS"))
+        assertEquals("••3948", SmsParser.extractAccount("Your A/c no. XX3948 is debited for Rs 850.00"))
+        assertEquals("••7821", SmsParser.extractAccount("debited from your IDFC FIRST Bank A/c ending 7821"))
+        assertEquals("••1234", SmsParser.extractAccount("Dear Customer, A/c *1234 debited for Rs.600.00"))
+    }
+
+    @Test
+    fun testRefNoExtractionAcrossFormats() {
+        assertEquals("425678912345", SmsParser.extractRefNo("to swiggy@icici on 12-09-26. UPI Ref 425678912345."))
+        assertEquals("425678912345", SmsParser.extractRefNo("trf to swiggy (UPI Ref no 425678912345)"))
+        assertEquals("425678912345", SmsParser.extractRefNo("transfer to Flipkart (UPI Ref: 425678912345)."))
+        assertEquals("624419519952", SmsParser.extractRefNo("at ATM TID ZMN8020 Ref. 624419519952 Avlbl Amt"))
+        assertEquals("425612345678", SmsParser.extractRefNo("trf to Rohit Kumar Refno 425612345678. If not u?"))
+        assertEquals("123456789012", SmsParser.extractRefNo("transfer via UTR 123456789012 successful"))
+        assertEquals("425678912345", SmsParser.extractRefNo("Payment done. Txn ID: 425678912345."))
+    }
 }

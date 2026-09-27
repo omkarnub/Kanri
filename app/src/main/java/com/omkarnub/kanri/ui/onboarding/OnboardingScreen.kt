@@ -1,5 +1,6 @@
 package com.omkarnub.kanri.ui.onboarding
 
+import android.Manifest
 import android.graphics.BitmapFactory
 import android.net.Uri
 import androidx.activity.compose.rememberLauncherForActivityResult
@@ -48,6 +49,8 @@ import androidx.compose.material.icons.filled.Close
 import androidx.compose.material.icons.filled.Fingerprint
 import androidx.compose.material.icons.filled.Notifications
 import androidx.compose.material.icons.filled.Person
+import androidx.compose.material.icons.filled.Sms
+import com.omkarnub.kanri.util.SmsPermissionHelper
 import androidx.compose.material3.Button
 import androidx.compose.material3.ButtonDefaults
 import androidx.compose.material3.Icon
@@ -109,6 +112,15 @@ fun OnboardingScreen(
     var currentSlide by remember { mutableIntStateOf(0) }
     var isLockConfigured by remember { mutableStateOf(securityPrefs.isLockEnabled) }
 
+    var hasSmsPermission by remember {
+        mutableStateOf(SmsPermissionHelper.hasSmsPermissions(context))
+    }
+    val smsLauncher = rememberLauncherForActivityResult(
+        ActivityResultContracts.RequestMultiplePermissions()
+    ) {
+        hasSmsPermission = SmsPermissionHelper.hasSmsPermissions(context)
+    }
+
     var hasNotificationAccess by remember {
         mutableStateOf(NotificationAccessHelper.isNotificationAccessGranted(context))
     }
@@ -120,6 +132,7 @@ fun OnboardingScreen(
     DisposableEffect(lifecycleOwner) {
         val observer = LifecycleEventObserver { _, event ->
             if (event == Lifecycle.Event.ON_RESUME) {
+                hasSmsPermission = SmsPermissionHelper.hasSmsPermissions(context)
                 hasNotificationAccess = NotificationAccessHelper.isNotificationAccessGranted(context)
                 hasOverlayPermission = OverlayPermissionHelper.canDrawOverlays(context)
             }
@@ -130,8 +143,8 @@ fun OnboardingScreen(
         }
     }
 
-    // Total slides: 0=hero, 1=profile-setup, 2=notification, 3=overlay, 4=security
-    val totalSlides = 5
+    // Total slides: 0=hero, 1=profile-setup, 2=sms, 3=notification, 4=overlay, 5=security
+    val totalSlides = 6
 
     // Helper to finish onboarding in offline-first mode
     fun finishOnboarding() {
@@ -183,14 +196,19 @@ fun OnboardingScreen(
                 )
 
                 2 -> PermissionSlide(
-                    icon = Icons.Default.Notifications,
-                    title = "Notification Access",
-                    description = "Automatically detect transactions from payment apps and bank alerts. Everything stays on-device.",
-                    isGranted = hasNotificationAccess,
-                    grantLabel = "Grant Access",
-                    grantedLabel = "Access Granted",
+                    icon = Icons.Default.Sms,
+                    title = "Bank SMS Detection",
+                    description = "Primary detection engine: Intercepts bank debit & credit alerts 100% offline. The only reliable source for sent payments (UPI, ATM, cards).",
+                    isGranted = hasSmsPermission,
+                    grantLabel = "Enable SMS Detection",
+                    grantedLabel = "SMS Detection Active",
                     onGrant = {
-                        NotificationAccessHelper.openNotificationAccessSettings(context)
+                        smsLauncher.launch(
+                            arrayOf(
+                                Manifest.permission.RECEIVE_SMS,
+                                Manifest.permission.READ_SMS
+                            )
+                        )
                     },
                     slideIndex = 2,
                     totalSlides = totalSlides,
@@ -199,6 +217,22 @@ fun OnboardingScreen(
                 )
 
                 3 -> PermissionSlide(
+                    icon = Icons.Default.Notifications,
+                    title = "Payment Apps Listener",
+                    description = "Supplementary engine: Catches incoming money notifications and reward scratch cards from Google Pay, Amazon Pay, Paytm & FamPay.",
+                    isGranted = hasNotificationAccess,
+                    grantLabel = "Grant Access",
+                    grantedLabel = "Access Granted",
+                    onGrant = {
+                        NotificationAccessHelper.openNotificationAccessSettings(context)
+                    },
+                    slideIndex = 3,
+                    totalSlides = totalSlides,
+                    onNext = { currentSlide = 4 },
+                    onSkip = { currentSlide = 4 }
+                )
+
+                4 -> PermissionSlide(
                     icon = Icons.Default.Bolt,
                     title = "Display Overlay",
                     description = "Show a quick receipt popup right after you pay, so you can categorize with a single tap.",
@@ -208,13 +242,13 @@ fun OnboardingScreen(
                     onGrant = {
                         OverlayPermissionHelper.requestOverlayPermission(context)
                     },
-                    slideIndex = 3,
+                    slideIndex = 4,
                     totalSlides = totalSlides,
-                    onNext = { currentSlide = 4 },
-                    onSkip = { currentSlide = 4 }
+                    onNext = { currentSlide = 5 },
+                    onSkip = { currentSlide = 5 }
                 )
 
-                4 -> PermissionSlide(
+                5 -> PermissionSlide(
                     icon = Icons.Default.Fingerprint,
                     title = "Device Lock",
                     description = "Require biometric or device credential authentication every time Kanri opens.",
@@ -226,7 +260,7 @@ fun OnboardingScreen(
                         isLockConfigured = newState
                         securityPrefs.isLockEnabled = newState
                     },
-                    slideIndex = 4,
+                    slideIndex = 5,
                     totalSlides = totalSlides,
                     onNext = { finishOnboarding() },
                     onSkip = { finishOnboarding() },

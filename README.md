@@ -9,8 +9,8 @@
 </p>
 
 <p align="center">
-  <a href="https://github.com/omkarnub/Kanri/releases/tag/v1.0.0"><img src="https://img.shields.io/badge/Release-v1.0.0-000000?style=for-the-badge&logo=android&logoColor=white" alt="Release v1.0.0" /></a>
-  <a href="https://github.com/omkarnub/Kanri/releases/download/v1.0.0/Kanri-v1.0.0.apk"><img src="https://img.shields.io/badge/Download-APK%20(24.9%20MB)-30A46C?style=for-the-badge&logo=googleplay&logoColor=white" alt="Download APK" /></a>
+  <a href="https://github.com/omkarnub/Kanri/releases/tag/v1.0.1"><img src="https://img.shields.io/badge/Release-v1.0.1-000000?style=for-the-badge&logo=android&logoColor=white" alt="Release v1.0.1" /></a>
+  <a href="https://github.com/omkarnub/Kanri/releases/download/v1.0.1/Kanri-v1.0.1.apk"><img src="https://img.shields.io/badge/Download-APK%20(24.9%20MB)-30A46C?style=for-the-badge&logo=googleplay&logoColor=white" alt="Download APK" /></a>
   <a href="#"><img src="https://img.shields.io/badge/Privacy-100%25%20Offline-000000?style=for-the-badge&logo=shield&logoColor=white" alt="100% Offline" /></a>
   <a href="#"><img src="https://img.shields.io/badge/Security-SQLCipher%20AES--256-blue?style=for-the-badge" alt="SQLCipher AES-256" /></a>
   <a href="#"><img src="https://img.shields.io/badge/Android-8.0%2B%20(API%2026%2B)-brightgreen?style=for-the-badge&logo=android" alt="Android 8.0+" /></a>
