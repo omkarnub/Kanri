@@ -54,6 +54,7 @@ import androidx.compose.runtime.collectAsState
 import androidx.compose.runtime.getValue
 import androidx.compose.runtime.mutableStateOf
 import androidx.compose.runtime.remember
+import androidx.compose.runtime.rememberCoroutineScope
 import androidx.compose.runtime.setValue
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
@@ -61,6 +62,7 @@ import androidx.compose.ui.draw.clip
 import androidx.compose.ui.focus.FocusRequester
 import androidx.compose.ui.focus.focusRequester
 import androidx.compose.ui.graphics.Color
+import androidx.compose.ui.platform.LocalContext
 import androidx.compose.ui.platform.LocalSoftwareKeyboardController
 import androidx.compose.ui.text.font.FontWeight
 import androidx.compose.ui.text.input.ImeAction
@@ -71,6 +73,8 @@ import com.omkarnub.kanri.data.db.TransactionWithCategory
 import com.omkarnub.kanri.ui.home.CategoryPickerSheet
 import com.omkarnub.kanri.ui.home.TransactionItemCard
 import com.omkarnub.kanri.ui.home.formatCurrency
+import com.omkarnub.kanri.util.rememberKanriHaptics
+import kotlinx.coroutines.launch
 
 @OptIn(ExperimentalMaterial3Api::class)
 @Composable
@@ -79,11 +83,14 @@ fun SearchScreen(
     modifier: Modifier = Modifier,
     viewModel: SearchViewModel = viewModel(),
     autoFocus: Boolean = true,
-    initialFilterState: SearchFilterState? = null
+    initialFilterState: SearchFilterState? = null,
+    onTransactionClick: ((TransactionWithCategory) -> Unit)? = null
 ) {
     val uiState by viewModel.uiState.collectAsState()
     var showFilterSheet by remember { mutableStateOf(false) }
     var selectedTransactionForCategory by remember { mutableStateOf<TransactionWithCategory?>(null) }
+    var lendingEntryForTransaction by remember { mutableStateOf<TransactionWithCategory?>(null) }
+    val haptics = rememberKanriHaptics()
 
     val focusRequester = remember { FocusRequester() }
     val keyboardController = LocalSoftwareKeyboardController.current
@@ -131,7 +138,10 @@ fun SearchScreen(
                         },
                         trailingIcon = {
                             if (uiState.query.isNotEmpty()) {
-                                IconButton(onClick = { viewModel.setQuery("") }) {
+                                IconButton(onClick = {
+                                    haptics.tick()
+                                    viewModel.setQuery("")
+                                }) {
                                     Icon(
                                         imageVector = Icons.Default.Close,
                                         contentDescription = "Clear",
@@ -157,7 +167,10 @@ fun SearchScreen(
                     )
                 },
                 navigationIcon = {
-                    IconButton(onClick = onBack) {
+                    IconButton(onClick = {
+                        haptics.tick()
+                        onBack()
+                    }) {
                         Icon(
                             imageVector = Icons.AutoMirrored.Filled.ArrowBack,
                             contentDescription = "Back",
@@ -166,7 +179,10 @@ fun SearchScreen(
                     }
                 },
                 actions = {
-                    IconButton(onClick = { showFilterSheet = true }) {
+                    IconButton(onClick = {
+                        haptics.click()
+                        showFilterSheet = true
+                    }) {
                         if (uiState.activeFilterCount > 0) {
                             BadgedBox(
                                 badge = {
@@ -207,8 +223,12 @@ fun SearchScreen(
             // Quick Filter Chips Bar
             QuickFilterChipsRow(
                 uiState = uiState,
-                onOpenFilterSheet = { showFilterSheet = true },
+                onOpenFilterSheet = {
+                    haptics.click()
+                    showFilterSheet = true
+                },
                 onToggleType = {
+                    haptics.tick()
                     val nextType = when (uiState.typeFilter) {
                         TransactionTypeFilter.ALL -> TransactionTypeFilter.DEBIT
                         TransactionTypeFilter.DEBIT -> TransactionTypeFilter.CREDIT
@@ -216,7 +236,10 @@ fun SearchScreen(
                     }
                     viewModel.setTypeFilter(nextType)
                 },
-                onClearAll = { viewModel.clearAllFilters() }
+                onClearAll = {
+                    haptics.tick()
+                    viewModel.clearAllFilters()
+                }
             )
 
             // Dynamic Results & Summary Header
@@ -255,7 +278,12 @@ fun SearchScreen(
                         TransactionItemCard(
                             item = item,
                             onClick = {
-                                selectedTransactionForCategory = item
+                                haptics.click()
+                                if (onTransactionClick != null) {
+                                    onTransactionClick(item)
+                                } else {
+                                    selectedTransactionForCategory = item
+                                }
                             }
                         )
                     }
@@ -289,7 +317,18 @@ fun SearchScreen(
             onCategorySelected = { catId, note ->
                 viewModel.updateTransactionCategory(item.transaction.id, catId, note)
                 selectedTransactionForCategory = null
+            },
+            onOpenLendBorrow = {
+                lendingEntryForTransaction = item
+                selectedTransactionForCategory = null
             }
+        )
+    }
+
+    lendingEntryForTransaction?.let { target ->
+        com.omkarnub.kanri.ui.lending.LendingTransactionBridgeDialog(
+            targetTransaction = target,
+            onDismiss = { lendingEntryForTransaction = null }
         )
     }
 }

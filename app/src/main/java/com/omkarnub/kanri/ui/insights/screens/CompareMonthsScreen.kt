@@ -66,6 +66,7 @@ import com.omkarnub.kanri.ui.insights.CompareMonthsData
 import com.omkarnub.kanri.ui.insights.DaySpendPoint
 import com.omkarnub.kanri.ui.insights.InsightsMode
 import com.omkarnub.kanri.ui.insights.InsightsViewModel
+import com.omkarnub.kanri.util.rememberKanriHaptics
 import java.time.YearMonth
 import java.time.format.DateTimeFormatter
 import kotlin.math.abs
@@ -85,6 +86,7 @@ fun CompareMonthsScreen(
     val globalMode by viewModel.mode.collectAsState()
     var compareMode by remember { mutableStateOf(globalMode) }
     var sameDaysOnly by remember { mutableStateOf(true) }
+    val haptics = rememberKanriHaptics()
 
     val compareDataState: CompareMonthsData? by viewModel.getCompareMonthsFlow(monthA, monthB, compareMode, sameDaysOnly)
         .collectAsState(initial = null)
@@ -102,7 +104,10 @@ fun CompareMonthsScreen(
                     )
                 },
                 navigationIcon = {
-                    IconButton(onClick = onBack) {
+                    IconButton(onClick = {
+                        haptics.tick()
+                        onBack()
+                    }) {
                         Icon(
                             imageVector = Icons.AutoMirrored.Filled.ArrowBack,
                             contentDescription = "Back",
@@ -153,6 +158,7 @@ fun CompareMonthsScreen(
 
                             IconButton(
                                 onClick = {
+                                    haptics.click()
                                     val tmp = monthA
                                     monthA = monthB
                                     monthB = tmp
@@ -192,7 +198,10 @@ fun CompareMonthsScreen(
                                     modifier = Modifier
                                         .clip(RoundedCornerShape(8.dp))
                                         .background(if (compareMode == InsightsMode.EXPENSE) ExpenseRed.copy(alpha = 0.15f) else Color.Transparent)
-                                        .clickable { compareMode = InsightsMode.EXPENSE }
+                                        .clickable {
+                                            haptics.tick()
+                                            compareMode = InsightsMode.EXPENSE
+                                        }
                                         .padding(horizontal = 10.dp, vertical = 5.dp)
                                 ) {
                                     Text(
@@ -206,7 +215,10 @@ fun CompareMonthsScreen(
                                     modifier = Modifier
                                         .clip(RoundedCornerShape(8.dp))
                                         .background(if (compareMode == InsightsMode.INCOME) IncomeSage.copy(alpha = 0.15f) else Color.Transparent)
-                                        .clickable { compareMode = InsightsMode.INCOME }
+                                        .clickable {
+                                            haptics.tick()
+                                            compareMode = InsightsMode.INCOME
+                                        }
                                         .padding(horizontal = 10.dp, vertical = 5.dp)
                                 ) {
                                     Text(
@@ -231,7 +243,10 @@ fun CompareMonthsScreen(
                                 )
                                 Switch(
                                     checked = sameDaysOnly,
-                                    onCheckedChange = { sameDaysOnly = it },
+                                    onCheckedChange = {
+                                        haptics.tick()
+                                        sameDaysOnly = it
+                                    },
                                     colors = SwitchDefaults.colors(
                                         checkedThumbColor = MaterialTheme.colorScheme.surface,
                                         checkedTrackColor = MaterialTheme.colorScheme.primary

@@ -43,6 +43,11 @@ sqlcipher = { group = "net.zetetic", name = "sqlcipher-android", version.ref = "
 androidx-graphics-path = { group = "androidx.graphics", name = "graphics-path", version.ref = "graphicsPath" }
 androidx-security-crypto = { group = "androidx.security", name = "security-crypto", version.ref = "securityCrypto" }
 androidx-work-runtime-ktx = { group = "androidx.work", name = "work-runtime-ktx", version.ref = "work" }
+androidx-credentials = { group = "androidx.credentials", name = "credentials", version = "1.3.0" }
+androidx-credentials-play-services = { group = "androidx.credentials", name = "credentials-play-services-auth", version = "1.3.0" }
+googleid = { group = "com.google.android.libraries.identity.googleid", name = "googleid", version = "1.1.1" }
+play-services-auth = { group = "com.google.android.gms", name = "play-services-auth", version = "21.3.0" }
+kotlinx-coroutines-play-services = { group = "org.jetbrains.kotlinx", name = "kotlinx-coroutines-play-services", version = "1.10.1" }
 
 
 [plugins]

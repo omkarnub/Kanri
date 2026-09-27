@@ -22,6 +22,32 @@ interface TransactionDao {
     @Query("SELECT * FROM transactions WHERE ref_no = :refNo LIMIT 1")
     suspend fun findByRefNo(refNo: String): TransactionEntity?
 
+    @Query("SELECT * FROM transactions WHERE id = :id LIMIT 1")
+    suspend fun getTransactionById(id: Long): TransactionEntity?
+
+    @androidx.room.Transaction
+    @Query("SELECT * FROM transactions WHERE id = :id LIMIT 1")
+    fun observeTransactionWithCategory(id: Long): Flow<TransactionWithCategory?>
+
+    @androidx.room.Transaction
+    @Query("SELECT * FROM transactions WHERE id = :id LIMIT 1")
+    suspend fun getTransactionWithCategoryById(id: Long): TransactionWithCategory?
+
+    @Query("DELETE FROM transactions WHERE id = :id")
+    suspend fun deleteById(id: Long)
+
+    @Query("DELETE FROM transactions WHERE ref_no = :refNo")
+    suspend fun deleteByRefNo(refNo: String)
+
+    @Query("DELETE FROM transactions WHERE ref_no LIKE :pattern")
+    suspend fun deleteByRefNoPattern(pattern: String)
+
+    @Query("SELECT * FROM transactions WHERE ref_no LIKE :pattern")
+    suspend fun getTransactionsByRefNoPattern(pattern: String): List<TransactionEntity>
+
+    @Query("UPDATE transactions SET counterparty = :newName, display_name = :newName WHERE counterparty = :oldName COLLATE NOCASE AND source_type = 'LENDING'")
+    suspend fun updateCounterpartyForLending(oldName: String, newName: String)
+
     @androidx.room.Transaction
     @Query("SELECT * FROM transactions ORDER BY timestamp DESC")
     fun getTransactionsWithCategory(): Flow<List<TransactionWithCategory>>
@@ -57,6 +83,12 @@ interface TransactionDao {
 
     @Query("UPDATE transactions SET category_id = :categoryId, needs_review = 0, review_reason = NULL WHERE counterparty = :counterparty")
     suspend fun updateCategoryForCounterparty(counterparty: String, categoryId: Long)
+
+    @Query("UPDATE transactions SET category_id = :categoryId, needs_review = 0, review_reason = NULL WHERE counterparty LIKE '%' || :keyword || '%' OR display_name LIKE '%' || :keyword || '%'")
+    suspend fun applyCategoryToMatchingTransactions(keyword: String, categoryId: Long): Int
+
+    @Query("SELECT COUNT(*) FROM transactions WHERE counterparty LIKE '%' || :keyword || '%' OR display_name LIKE '%' || :keyword || '%'")
+    suspend fun countTransactionsMatchingKeyword(keyword: String): Int
 
     @Query("UPDATE transactions SET category_id = :fallbackCategoryId WHERE category_id = :deletedCategoryId")
     suspend fun reassignTransactionsCategory(deletedCategoryId: Long, fallbackCategoryId: Long?)

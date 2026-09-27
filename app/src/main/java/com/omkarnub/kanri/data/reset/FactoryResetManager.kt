@@ -8,7 +8,7 @@ import com.omkarnub.kanri.data.db.KanriDatabase
 import com.omkarnub.kanri.data.security.SecurityPreferences
 import com.omkarnub.kanri.ui.onboarding.OnboardingPreferences
 import com.omkarnub.kanri.ui.theme.ThemePreferences
-import com.omkarnub.kanri.widget.KanriAppWidgetProvider
+import com.omkarnub.kanri.widget.KanriWidgetsUpdater
 import kotlinx.coroutines.Dispatchers
 import kotlinx.coroutines.withContext
 
@@ -36,8 +36,9 @@ object FactoryResetManager {
             // 3. Reset onboarding state
             OnboardingPreferences.getInstance(context).reset()
 
-            // 4. Reset theme preferences
+            // 4. Reset theme and profile preferences
             ThemePreferences.getInstance(context).reset()
+            com.omkarnub.kanri.data.profile.UserProfilePreferences.getInstance(context).reset()
 
             // 5. Delete all local crash logs
             CrashLogger.clearAllLogs(context)
@@ -52,7 +53,7 @@ object FactoryResetManager {
 
             // 7. Invalidate widgets
             try {
-                KanriAppWidgetProvider.updateAllWidgets(context)
+                KanriWidgetsUpdater.updateAllWidgets(context)
             } catch (e: Exception) {
                 // Ignore widget failures if not placed
             }

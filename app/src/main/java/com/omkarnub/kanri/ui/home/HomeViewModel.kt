@@ -55,6 +55,24 @@ data class BankAccountBalance(
 )
 
 @Immutable
+data class LendingDueItem(
+    val personName: String,
+    val amount: Double,
+    val isLent: Boolean,
+    val dueDate: Long?,
+    val isOverdue: Boolean
+)
+
+@Immutable
+data class GoalWidgetItem(
+    val title: String,
+    val progressPercent: Float,
+    val currentAmount: Double,
+    val targetAmount: Double,
+    val emoji: String
+)
+
+@Immutable
 data class HomeUiState(
     val transactions: List<TransactionWithCategory> = emptyList(),
     val categories: List<CategoryEntity> = emptyList(),
@@ -85,7 +103,19 @@ data class HomeUiState(
     val totalLiquidBalance: Double = 0.0,
     // New: Lend & Borrow Quick Pulse
     val totalLentPending: Double = 0.0,
-    val totalBorrowedPending: Double = 0.0
+    val totalBorrowedPending: Double = 0.0,
+    // Lending due alerts for widget
+    val lendingDueItems: List<LendingDueItem> = emptyList(),
+    // Active savings goals for widget
+    val activeGoals: List<GoalWidgetItem> = emptyList(),
+    // Feature: Financial Health Score & Statistics
+    val financialHealth: com.omkarnub.kanri.data.analytics.FinancialHealthData =
+        com.omkarnub.kanri.data.analytics.FinancialHealthCalculator.calculate(
+            monthSpent = 0.0,
+            monthIncome = 0.0,
+            monthlyBudget = BudgetCalculator.DEFAULT_MONTHLY_BUDGET,
+            daysRemaining = 1
+        )
 )
 
 class HomeViewModel(application: Application) : AndroidViewModel(application) {
@@ -95,6 +125,7 @@ class HomeViewModel(application: Application) : AndroidViewModel(application) {
     private val categoryDao = db.categoryDao()
     private val budgetDao = db.budgetDao()
     private val lendingDao = db.lendingDao()
+    private val savingsGoalDao = db.savingsGoalDao()
     private val streakDataStore = StreakDataStore(application)
     private val greetingDataStore = GreetingDataStore(application)
 
@@ -250,6 +281,41 @@ class HomeViewModel(application: Application) : AndroidViewModel(application) {
         val bankAccounts = bankMap.values.toList()
         val totalLiquid = bankAccounts.mapNotNull { it.balance }.sum()
 
+        // Lending due items for widget (overdue + due within 3 days)
+        val lendingDueItems = try {
+            val allLending = db.lendingDao().getAllRecordsWithRepaymentsSync()
+            val threeDaysLater = startOfToday + 3 * 86_400_000L
+            allLending
+                .filter { !it.lending.isSettled && it.lending.dueDate != null }
+                .filter { it.lending.dueDate!! < threeDaysLater }
+                .sortedBy { it.lending.dueDate }
+                .map { entry ->
+                    LendingDueItem(
+                        personName = entry.lending.personName,
+                        amount = entry.outstanding,
+                        isLent = entry.lending.type.equals("LENT", ignoreCase = true),
+                        dueDate = entry.lending.dueDate,
+                        isOverdue = entry.lending.dueDate!! < startOfToday
+                    )
+                }
+        } catch (_: Exception) { emptyList() }
+
+        // Active savings goals for widget
+        val activeGoals = try {
+            savingsGoalDao.getActiveGoalsSync().map { goal ->
+                val percent = if (goal.targetAmount > 0) {
+                    ((goal.currentAmount / goal.targetAmount) * 100).toFloat().coerceIn(0f, 100f)
+                } else 0f
+                GoalWidgetItem(
+                    title = goal.title,
+                    progressPercent = percent,
+                    currentAmount = goal.currentAmount,
+                    targetAmount = goal.targetAmount,
+                    emoji = goal.emoji
+                )
+            }
+        } catch (_: Exception) { emptyList() }
+
         HomeUiState(
             transactions = txList,
             categories = catList,
@@ -275,7 +341,17 @@ class HomeViewModel(application: Application) : AndroidViewModel(application) {
             bankAccounts = bankAccounts,
             totalLiquidBalance = totalLiquid,
             totalLentPending = lentPending,
-            totalBorrowedPending = borrowedPending
+            totalBorrowedPending = borrowedPending,
+            lendingDueItems = lendingDueItems,
+            activeGoals = activeGoals,
+            financialHealth = com.omkarnub.kanri.data.analytics.FinancialHealthCalculator.calculate(
+                monthSpent = spentMonth,
+                monthIncome = incomeMonth,
+                monthlyBudget = budgetLimit,
+                daysRemaining = daysLeft,
+                totalBorrowed = borrowedPending,
+                totalLent = lentPending
+            )
         )
     }.stateIn(
         scope = viewModelScope,
@@ -340,8 +416,9 @@ class HomeViewModel(application: Application) : AndroidViewModel(application) {
         uiState,
         greetingDataStore.antiRepetitionState,
         createTimeBucketFlow(),
-        createMidnightRolloverFlow()
-    ) { state, antiRep, now, _ ->
+        createMidnightRolloverFlow(),
+        com.omkarnub.kanri.data.profile.UserProfilePreferences.getInstance(getApplication()).userNameFlow
+    ) { state, antiRep, now, _, currentUserName ->
         val localDate = now.toLocalDate()
         val epochDay = localDate.toEpochDay()
         val bucket = GreetingResolver.getTimeBucket(now.toLocalTime())
@@ -350,7 +427,7 @@ class HomeViewModel(application: Application) : AndroidViewModel(application) {
         val lastMonthSpent = calculateLastMonthSpentSameDay(state.transactions.map { it.transaction })
 
         val context = GreetingContext(
-            userName = "Alex",
+            userName = currentUserName,
             now = now,
             dayOfWeek = now.dayOfWeek,
             dayOfMonth = now.dayOfMonth,
@@ -426,6 +503,7 @@ class HomeViewModel(application: Application) : AndroidViewModel(application) {
         viewModelScope.launch {
             // 1. Update this specific transaction
             transactionDao.updateCategoryAndNotes(transactionId, categoryId, note)
+            com.omkarnub.kanri.data.lending.LendingTransactionSyncHelper.onTransactionCategoryChanged(transactionId, categoryId, db, getApplication())
 
             // 2. Only bulk-update if explicitly requested AND it's a specific, non-generic merchant
             if (bulkUpdate && isSpecificMerchant(counterparty)) {
@@ -454,7 +532,7 @@ class HomeViewModel(application: Application) : AndroidViewModel(application) {
                     monthlyLimit = newLimit
                 )
             )
-            com.omkarnub.kanri.widget.KanriAppWidgetProvider.updateAllWidgets(getApplication())
+            com.omkarnub.kanri.widget.KanriWidgetsUpdater.updateAllWidgets(getApplication())
         }
     }
 
@@ -467,7 +545,8 @@ class HomeViewModel(application: Application) : AndroidViewModel(application) {
     ) {
         viewModelScope.launch {
             val resolvedCategoryId = categoryId ?: if (!counterparty.isBlank()) {
-                categoryDao.getMappingForCounterparty(counterparty.trim())?.categoryId
+                (categoryDao.findSmartRuleForCounterparty(counterparty.trim())
+                    ?: categoryDao.getMappingForCounterparty(counterparty.trim()))?.categoryId
             } else null
 
             val entity = TransactionEntity(
@@ -484,13 +563,70 @@ class HomeViewModel(application: Application) : AndroidViewModel(application) {
                 isManualEntry = true
             )
             transactionDao.insert(entity)
-            com.omkarnub.kanri.widget.KanriAppWidgetProvider.updateAllWidgets(getApplication())
+            com.omkarnub.kanri.widget.KanriWidgetsUpdater.updateAllWidgets(getApplication())
+        }
+    }
+
+    fun observeTransactionWithCategory(id: Long): Flow<TransactionWithCategory?> {
+        return transactionDao.observeTransactionWithCategory(id)
+    }
+
+    fun updateTransaction(
+        transactionId: Long,
+        amount: Double,
+        type: String,
+        counterparty: String?,
+        displayName: String?,
+        categoryId: Long?,
+        sourceType: String,
+        bank: String?,
+        refNo: String?,
+        notes: String?,
+        timestamp: Long
+    ) {
+        viewModelScope.launch {
+            val existing = transactionDao.getTransactionById(transactionId) ?: return@launch
+            val updated = existing.copy(
+                amount = amount,
+                type = type.uppercase(),
+                counterparty = counterparty?.trim(),
+                displayName = displayName?.trim() ?: counterparty?.trim(),
+                categoryId = categoryId,
+                sourceType = sourceType.uppercase(),
+                bank = bank?.trim(),
+                refNo = refNo?.trim(),
+                notes = notes?.trim(),
+                timestamp = timestamp
+            )
+            transactionDao.insert(updated)
+
+            if (categoryId != null && categoryId != existing.categoryId) {
+                com.omkarnub.kanri.data.lending.LendingTransactionSyncHelper.onTransactionCategoryChanged(
+                    transactionId, categoryId, db, getApplication()
+                )
+            }
+            com.omkarnub.kanri.widget.KanriWidgetsUpdater.updateAllWidgets(getApplication())
         }
     }
 
     fun deleteTransaction(transaction: TransactionEntity) {
         viewModelScope.launch {
             transactionDao.delete(transaction)
+            com.omkarnub.kanri.widget.KanriWidgetsUpdater.updateAllWidgets(getApplication())
+        }
+    }
+
+    fun deleteTransactionById(transactionId: Long) {
+        viewModelScope.launch {
+            transactionDao.deleteById(transactionId)
+            com.omkarnub.kanri.widget.KanriWidgetsUpdater.updateAllWidgets(getApplication())
+        }
+    }
+
+    fun clearReviewFlag(transactionId: Long) {
+        viewModelScope.launch {
+            transactionDao.clearReviewFlag(transactionId)
+            com.omkarnub.kanri.widget.KanriWidgetsUpdater.updateAllWidgets(getApplication())
         }
     }
 
@@ -505,33 +641,12 @@ class HomeViewModel(application: Application) : AndroidViewModel(application) {
     }
 
     companion object {
-        private val BALANCE_PATTERN = java.util.regex.Pattern.compile(
-            """(?:Avl\s*Bal(?:ance)?|Available\s*Balance|Bal|Balance|avl\s*bal|avl\s*balance)\s*(?::|is)?\s*(?:Rs\.?|INR|₹)?\s*([0-9,]+(?:\.[0-9]{1,2})?)""",
-            java.util.regex.Pattern.CASE_INSENSITIVE
-        )
-
-        private val ACCOUNT_PATTERN = java.util.regex.Pattern.compile(
-            """(?:A/c|Account|acct|acc\.?|Card)\s*(?:no\.?)?\s*(?:ending\s+)?(?:with\s+)?(\.{2,}\s*\d+|[xX*]+\s*\d+|\d{4,})""",
-            java.util.regex.Pattern.CASE_INSENSITIVE
-        )
-
         fun extractBalance(rawSms: String): Double? {
-            val m = BALANCE_PATTERN.matcher(rawSms)
-            if (m.find()) {
-                val numStr = m.group(1)?.replace(",", "") ?: return null
-                return numStr.toDoubleOrNull()
-            }
-            return null
+            return com.omkarnub.kanri.data.parser.SmsParser.extractBalance(rawSms)
         }
 
         fun extractAccountMask(rawSms: String): String? {
-            val m = ACCOUNT_PATTERN.matcher(rawSms)
-            if (m.find()) {
-                val raw = m.group(1)?.trim() ?: return null
-                val digits = raw.filter { it.isDigit() }
-                return if (digits.length >= 4) "••" + digits.takeLast(4) else raw
-            }
-            return null
+            return com.omkarnub.kanri.data.parser.SmsParser.extractAccount(rawSms)
         }
     }
 }

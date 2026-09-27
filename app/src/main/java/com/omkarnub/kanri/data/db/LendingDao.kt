@@ -50,6 +50,9 @@ interface LendingDao {
     @Query("SELECT * FROM lending_records WHERE id = :id")
     suspend fun getRecordById(id: Long): LendingEntity?
 
+    @Query("SELECT * FROM lending_records WHERE linked_transaction_id = :txId LIMIT 1")
+    suspend fun getRecordByLinkedTransactionId(txId: Long): LendingEntity?
+
     @androidx.room.Transaction
     @Query("SELECT * FROM lending_records ORDER BY date DESC")
     fun getAllRecordsWithRepayments(): Flow<List<LendingWithRepayments>>
@@ -57,6 +60,10 @@ interface LendingDao {
     @androidx.room.Transaction
     @Query("SELECT * FROM lending_records WHERE id = :id")
     suspend fun getRecordWithRepaymentsById(id: Long): LendingWithRepayments?
+
+    @androidx.room.Transaction
+    @Query("SELECT * FROM lending_records WHERE linked_transaction_id = :txId LIMIT 1")
+    suspend fun getRecordWithRepaymentsByLinkedTransactionId(txId: Long): LendingWithRepayments?
 
     @androidx.room.Transaction
     @Query("SELECT * FROM lending_records ORDER BY date DESC")
@@ -79,6 +86,9 @@ interface LendingDao {
 
     @Query("DELETE FROM lending_repayments WHERE lending_id = :lendingId")
     suspend fun deleteRepaymentsForLending(lendingId: Long)
+
+    @Query("SELECT * FROM lending_repayments WHERE id = :id LIMIT 1")
+    suspend fun getRepaymentById(id: Long): LendingRepaymentEntity?
 
     @Query("SELECT * FROM lending_repayments WHERE lending_id = :lendingId ORDER BY paid_at DESC, id DESC")
     suspend fun getRepaymentsForLending(lendingId: Long): List<LendingRepaymentEntity>

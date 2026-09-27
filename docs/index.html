@@ -1,0 +1,490 @@
+<!DOCTYPE html>
+<html lang="en">
+
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Privacy Policy | Kanri — Offline Expense Tracker</title>
+    <meta name="description"
+        content="Official Privacy Policy for Kanri - Personal expense tracker designed for 100% offline-first privacy, zero telemetry, and client-side encrypted Google Drive backup.">
+    <meta name="google-site-verification" content="DRPrIOg3RE7EbOSP2WX3x3-eEF0cA1l-8SiI9AXF26E" />
+    <link rel="preconnect" href="https://fonts.googleapis.com">
+    <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+    <link
+        href="https://fonts.googleapis.com/css2?family=Inter:wght@300;400;500;600;700;800&family=JetBrains+Mono:wght@400;500&display=swap"
+        rel="stylesheet">
+    <style>
+        :root {
+            --bg-color: #0A0A0A;
+            --surface-color: #121212;
+            --surface-card: #181818;
+            --surface-hover: #222222;
+            --border-color: #262626;
+            --border-subtle: #1F1F1F;
+            --text-primary: #F4F4F5;
+            --text-secondary: #A1A1AA;
+            --text-muted: #71717A;
+            --accent: #FFFFFF;
+            --badge-bg: #27272A;
+            --code-bg: #141414;
+        }
+
+        * {
+            box-sizing: border-box;
+            margin: 0;
+            padding: 0;
+        }
+
+        body {
+            background-color: var(--bg-color);
+            color: var(--text-primary);
+            font-family: 'Inter', -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, sans-serif;
+            line-height: 1.65;
+            -webkit-font-smoothing: antialiased;
+            padding: 0 16px 80px 16px;
+        }
+
+        .container {
+            max-width: 860px;
+            margin: 0 auto;
+        }
+
+        /* Header & Nav */
+        header {
+            padding: 48px 0 32px 0;
+            border-bottom: 1px solid var(--border-color);
+            margin-bottom: 40px;
+        }
+
+        .brand-badge {
+            display: inline-flex;
+            align-items: center;
+            gap: 8px;
+            padding: 6px 14px;
+            background-color: var(--surface-card);
+            border: 1px solid var(--border-color);
+            border-radius: 9999px;
+            font-size: 12px;
+            font-weight: 700;
+            letter-spacing: 1.5px;
+            text-transform: uppercase;
+            color: var(--text-primary);
+            margin-bottom: 20px;
+        }
+
+        .brand-badge span {
+            width: 8px;
+            height: 8px;
+            background-color: #10B981;
+            border-radius: 50%;
+            display: inline-block;
+        }
+
+        h1 {
+            font-size: clamp(28px, 4vw, 42px);
+            font-weight: 800;
+            letter-spacing: -0.03em;
+            color: var(--text-primary);
+            margin-bottom: 12px;
+            line-height: 1.15;
+        }
+
+        .subtitle {
+            font-size: 16px;
+            color: var(--text-secondary);
+            margin-bottom: 24px;
+        }
+
+        .meta-bar {
+            display: flex;
+            flex-wrap: wrap;
+            gap: 20px;
+            font-size: 13px;
+            color: var(--text-muted);
+            font-family: 'JetBrains Mono', monospace;
+        }
+
+        .meta-bar strong {
+            color: var(--text-secondary);
+        }
+
+        /* Pillars Banner */
+        .pillars-grid {
+            display: grid;
+            grid-template-columns: repeat(auto-fit, minmax(180px, 1fr));
+            gap: 12px;
+            margin-bottom: 40px;
+        }
+
+        .pillar-card {
+            background-color: var(--surface-card);
+            border: 1px solid var(--border-color);
+            border-radius: 12px;
+            padding: 16px;
+            text-align: left;
+        }
+
+        .pillar-title {
+            font-size: 12px;
+            font-weight: 700;
+            letter-spacing: 0.05em;
+            text-transform: uppercase;
+            color: var(--text-muted);
+            margin-bottom: 6px;
+        }
+
+        .pillar-val {
+            font-size: 15px;
+            font-weight: 600;
+            color: var(--text-primary);
+        }
+
+        /* Sections */
+        section {
+            margin-bottom: 44px;
+        }
+
+        h2 {
+            font-size: 22px;
+            font-weight: 700;
+            letter-spacing: -0.02em;
+            color: var(--text-primary);
+            margin-bottom: 16px;
+            padding-bottom: 8px;
+            border-bottom: 1px solid var(--border-subtle);
+            display: flex;
+            align-items: center;
+            gap: 10px;
+        }
+
+        h2 .section-num {
+            font-family: 'JetBrains Mono', monospace;
+            font-size: 14px;
+            color: var(--text-muted);
+            font-weight: 400;
+        }
+
+        h3 {
+            font-size: 16px;
+            font-weight: 600;
+            color: var(--text-primary);
+            margin: 22px 0 10px 0;
+        }
+
+        p {
+            font-size: 14.5px;
+            color: var(--text-secondary);
+            margin-bottom: 14px;
+        }
+
+        ul,
+        ol {
+            padding-left: 20px;
+            margin-bottom: 16px;
+            color: var(--text-secondary);
+            font-size: 14px;
+        }
+
+        li {
+            margin-bottom: 8px;
+        }
+
+        li strong {
+            color: var(--text-primary);
+        }
+
+        /* Callout Box */
+        .callout {
+            background-color: var(--surface-card);
+            border: 1px solid var(--border-color);
+            border-left: 3px solid var(--accent);
+            border-radius: 8px;
+            padding: 16px 20px;
+            margin: 20px 0;
+            font-size: 14px;
+            color: var(--text-secondary);
+        }
+
+        .callout strong {
+            color: var(--text-primary);
+        }
+
+        /* Tables */
+        .table-wrap {
+            overflow-x: auto;
+            margin: 20px 0;
+            border: 1px solid var(--border-color);
+            border-radius: 10px;
+            background-color: var(--surface-card);
+        }
+
+        table {
+            width: 100%;
+            border-collapse: collapse;
+            font-size: 13.5px;
+            text-align: left;
+        }
+
+        th {
+            background-color: var(--surface-color);
+            padding: 12px 16px;
+            font-weight: 600;
+            color: var(--text-primary);
+            border-bottom: 1px solid var(--border-color);
+            text-transform: uppercase;
+            font-size: 11px;
+            letter-spacing: 0.05em;
+        }
+
+        td {
+            padding: 14px 16px;
+            border-bottom: 1px solid var(--border-subtle);
+            color: var(--text-secondary);
+            vertical-align: top;
+        }
+
+        tr:last-child td {
+            border-bottom: none;
+        }
+
+        code {
+            background-color: var(--code-bg);
+            border: 1px solid var(--border-color);
+            border-radius: 4px;
+            padding: 2px 6px;
+            font-family: 'JetBrains Mono', monospace;
+            font-size: 12px;
+            color: var(--text-primary);
+        }
+
+        /* Footer */
+        footer {
+            margin-top: 60px;
+            padding-top: 30px;
+            border-top: 1px solid var(--border-color);
+            text-align: center;
+            font-size: 13px;
+            color: var(--text-muted);
+        }
+
+        footer a {
+            color: var(--text-primary);
+            text-decoration: none;
+            border-bottom: 1px dotted var(--text-muted);
+        }
+
+        footer a:hover {
+            color: #fff;
+            border-bottom-style: solid;
+        }
+    </style>
+</head>
+
+<body>
+    <div class="container">
+        <header>
+            <div class="brand-badge">
+                <span></span> Kanri Official Legal Policy
+            </div>
+            <h1>Privacy Policy</h1>
+            <p class="subtitle">Complete transparency on data sovereignty, on-device operations, and cloud backup
+                security.</p>
+            <div class="meta-bar">
+                <div><strong>Effective Date:</strong> September 26, 2026</div>
+                <div><strong>Application:</strong> Kanri (com.omkarnub.kanri)</div>
+                <div><strong>Architecture:</strong> 100% Offline-First</div>
+            </div>
+        </header>
+
+        <div class="pillars-grid">
+            <div class="pillar-card">
+                <div class="pillar-title">Telemetry</div>
+                <div class="pillar-val">Zero Trackers</div>
+            </div>
+            <div class="pillar-card">
+                <div class="pillar-title">Financial Records</div>
+                <div class="pillar-val">100% On-Device</div>
+            </div>
+            <div class="pillar-card">
+                <div class="pillar-title">Cloud Scope</div>
+                <div class="pillar-val">drive.file Only</div>
+            </div>
+            <div class="pillar-card">
+                <div class="pillar-title">Backup Security</div>
+                <div class="pillar-val">Client-Side AES</div>
+            </div>
+        </div>
+
+        <section>
+            <h2><span class="section-num">01.</span> Core Architectural Commitment</h2>
+            <p><strong>Kanri</strong> is designed from the ground up as a private, offline-first personal financial
+                manager. Unlike traditional financial applications that require account creation, maintain central
+                database servers, and harvest user transaction data, Kanri operates strictly on your personal device.
+            </p>
+            <div class="callout">
+                <strong>Our Absolute Privacy Promise:</strong> We do not operate proprietary user servers. We do not
+                store, view, sell, monetize, or transmit your transaction logs, account balances, merchant names, or
+                financial habits. Your data belongs exclusively to you.
+            </div>
+        </section>
+
+        <section>
+            <h2><span class="section-num">02.</span> Data Stored on Your Device</h2>
+            <p>All data created while using Kanri is stored locally in private application sandbox storage utilizing
+                encrypted Room/SQLite databases:</p>
+            <ul>
+                <li><strong>Ledger Transactions:</strong> Amount, timestamp, merchant/payee title, category
+                    classification, notes, payment mode (UPI, Card, Cash, NetBanking).</li>
+                <li><strong>Budgets & Goals:</strong> Monthly budget thresholds, category spending limits, and savings
+                    goals.</li>
+                <li><strong>User Profile:</strong> Locally assigned display name, optional date of birth, and locally
+                    cached avatar image.</li>
+                <li><strong>Application Preferences:</strong> Theme selection, biometric lock state, and category
+                    customization rules.</li>
+            </ul>
+        </section>
+
+        <section>
+            <h2><span class="section-num">03.</span> Device Permissions & Purpose</h2>
+            <p>Kanri requests specific Android permissions strictly to deliver core on-device expense tracking features.
+                None of these permissions are used to transmit data off your device.</p>
+
+            <div class="table-wrap">
+                <table>
+                    <thead>
+                        <tr>
+                            <th>Android Permission</th>
+                            <th>Purpose & Scope of Use</th>
+                            <th>Network Transmission</th>
+                        </tr>
+                    </thead>
+                    <tbody>
+                        <tr>
+                            <td><code>RECEIVE_SMS</code><br><code>READ_SMS</code></td>
+                            <td>
+                                <strong>Automatic Spend Detection:</strong> Scans incoming transactional bank SMS
+                                notifications (e.g. debits, card spends, UPI receipts) using local on-device regular
+                                expression engines to auto-log expenses. Personal messages and OTPs are ignored.
+                            </td>
+                            <td><strong>None.</strong> 100% processed locally in memory. Never uploaded to any external
+                                server.</td>
+                        </tr>
+                        <tr>
+                            <td><code>SYSTEM_ALERT_WINDOW</code></td>
+                            <td>
+                                <strong>Instant Transaction Popups:</strong> Displays a floating category chip
+                                immediately following a detected payment so you can assign categories in 1 tap without
+                                opening the full application.
+                            </td>
+                            <td><strong>None.</strong> Purely a local window manager display.</td>
+                        </tr>
+                        <tr>
+                            <td><code>USE_BIOMETRIC</code><br><code>USE_FINGERPRINT</code></td>
+                            <td>
+                                <strong>App Lock Protection:</strong> Authenticates the user using Android's native
+                                hardware BiometricPrompt before granting access to your ledger.
+                            </td>
+                            <td><strong>None.</strong> Biometric keys are managed strictly by your phone's hardware
+                                security module (Keystore/TEE).</td>
+                        </tr>
+                        <tr>
+                            <td><code>INTERNET</code></td>
+                            <td>
+                                <strong>Optional Cloud Backup Only:</strong> Allows communication directly with Google
+                                Drive API when you choose to connect your Google account for personal cloud backups.
+                            </td>
+                            <td>Direct TLS connection to Google Drive API only. Zero custom server communication.</td>
+                        </tr>
+                    </tbody>
+                </table>
+            </div>
+        </section>
+
+        <section>
+            <h2><span class="section-num">04.</span> Google Drive & OAuth Scopes</h2>
+            <p>Kanri offers an optional Cloud Backup mode. When enabled, your ledger is backed up into your personal
+                Google Drive account.</p>
+
+            <h3>The Restricted <code>drive.file</code> Scope</h3>
+            <p>Kanri requests strictly the limited scope <code>https://www.googleapis.com/auth/drive.file</code>. This
+                scope provides minimal necessary access:</p>
+            <ul>
+                <li><strong>Exclusive File Access:</strong> Kanri can <em>only</em> see, read, and modify the specific
+                    encrypted backup file (<code>kanri_backup.enc</code>) created by Kanri itself.</li>
+                <li><strong>Zero Access to Other Files:</strong> Kanri cannot access, read, view, list, or delete your
+                    photos, documents, spreadsheets, or any other files stored in your Google Drive.</li>
+            </ul>
+
+            <h3>Client-Side Encryption</h3>
+            <p>Before any backup file is uploaded to your Google Drive, it is encrypted on your device using
+                industry-standard client-side encryption. Even when stored on Google Drive, your financial transactions
+                cannot be read without your application keys.</p>
+
+            <h3>Disconnection & Revocation</h3>
+            <p>You can disconnect your Google account anytime in <em>Settings > Storage & Backup Mode</em>, switch to
+                <strong>Fully Offline</strong> mode, or revoke Kanri's access entirely via your <a
+                    href="https://myaccount.google.com/permissions" target="_blank"
+                    style="color:var(--text-primary);">Google Account Security Dashboard</a>.
+            </p>
+        </section>
+
+        <section>
+            <h2><span class="section-num">05.</span> Third-Party SDKs & Telemetry</h2>
+            <p>To ensure uncompromising user privacy, Kanri implements a strict zero-telemetry policy:</p>
+            <ul>
+                <li><strong>No Analytics SDKs:</strong> We do not integrate Google Analytics, Firebase Analytics,
+                    Mixpanel, or Flurry.</li>
+                <li><strong>No Advertising SDKs:</strong> There are no ad networks, banner ads, tracking beacons, or
+                    Advertising ID collectors.</li>
+                <li><strong>Local Crash Diagnostics:</strong> Any application error logs are written solely to internal
+                    device cache for the user's inspection and are never broadcast automatically over the network.</li>
+            </ul>
+        </section>
+
+        <section>
+            <h2><span class="section-num">06.</span> Data Ownership, Deletion & Export</h2>
+            <p>You maintain complete ownership of your data at all times:</p>
+            <ul>
+                <li><strong>Instant Data Deletion:</strong> You can completely erase all transactions, budgets, custom
+                    categories, and cached profile information at any moment by navigating to <em>Settings > Danger Zone
+                        > Reset All Data</em>.</li>
+                <li><strong>Local File Export:</strong> You can export your complete ledger at any time in open formats
+                    (Encrypted JSON backup, PDF statements, and CSV spreadsheets) to your phone's Downloads directory.
+                </li>
+            </ul>
+        </section>
+
+        <section>
+            <h2><span class="section-num">07.</span> Children's Privacy</h2>
+            <p>Kanri is not directed toward children under the age of 13. We do not knowingly collect or solicit
+                personal data from children. Because Kanri operates on-device without user account registration, no age
+                verification is conducted on external servers.</p>
+        </section>
+
+        <section>
+            <h2><span class="section-num">08.</span> Policy Updates</h2>
+            <p>If we update this Privacy Policy to reflect application improvements or regulatory requirements, the
+                updated version will be posted at this URL and announced within the app's release notes. The revised
+                policy will be effective immediately upon posting.</p>
+        </section>
+
+        <section>
+            <h2><span class="section-num">09.</span> Contact & Developer Inquiries</h2>
+            <p>If you have any questions regarding this Privacy Policy or your data sovereignty while using Kanri,
+                please contact:</p>
+            <div class="callout">
+                <strong>Kanri Developer Support</strong><br>
+                Email: <a href="mailto:support@kanri.app"
+                    style="color:var(--text-primary); text-decoration: underline;">support@kanri.app</a><br>
+                Project Repository: <a href="https://github.com/omkarnub/Kanri" target="_blank"
+                    style="color:var(--text-primary); text-decoration: underline;">https://github.com/omkarnub/Kanri</a>
+            </div>
+        </section>
+
+        <footer>
+            <p>&copy; 2026 Kanri. All rights reserved. Built with privacy and offline-first principles.</p>
+        </footer>
+    </div>
+</body>
+
+</html>

@@ -1,0 +1,88 @@
+<?xml version="1.0" encoding="utf-8"?>
+<LinearLayout xmlns:android="http://schemas.android.com/apk/res/android"
+    android:id="@+id/widget_quick_add_root"
+    android:layout_width="match_parent"
+    android:layout_height="match_parent"
+    android:background="@drawable/widget_glass_card"
+    android:gravity="center_vertical"
+    android:orientation="vertical"
+    android:padding="12dp">
+
+    <!-- Header -->
+    <TextView
+        android:id="@+id/widget_quick_add_header"
+        android:layout_width="match_parent"
+        android:layout_height="wrap_content"
+        android:fontFamily="@font/google_sans_bold"
+        android:letterSpacing="0.08"
+        android:text="QUICK RECORD"
+        android:textColor="#FFFFFF"
+        android:textSize="11sp" />
+
+    <!-- Dual Buttons Row -->
+    <LinearLayout
+        android:layout_width="match_parent"
+        android:layout_height="0dp"
+        android:layout_marginTop="8dp"
+        android:layout_weight="1"
+        android:orientation="horizontal">
+
+        <!-- Add Expense Button -->
+        <LinearLayout
+            android:id="@+id/widget_btn_add_expense"
+            android:layout_width="0dp"
+            android:layout_height="match_parent"
+            android:layout_marginEnd="5dp"
+            android:layout_weight="1"
+            android:background="@drawable/widget_glass_btn_white"
+            android:gravity="center"
+            android:orientation="horizontal">
+
+            <ImageView
+                android:layout_width="16dp"
+                android:layout_height="16dp"
+                android:contentDescription="Add Expense"
+                android:src="@drawable/ic_widget_add"
+                android:tint="#FFFFFF" />
+
+            <TextView
+                android:layout_width="wrap_content"
+                android:layout_height="wrap_content"
+                android:layout_marginStart="6dp"
+                android:fontFamily="@font/google_sans_bold"
+                android:text="Expense"
+                android:textColor="#FFFFFF"
+                android:textSize="12.5sp" />
+        </LinearLayout>
+
+        <!-- Add Income Button -->
+        <LinearLayout
+            android:id="@+id/widget_btn_add_income"
+            android:layout_width="0dp"
+            android:layout_height="match_parent"
+            android:layout_marginStart="5dp"
+            android:layout_weight="1"
+            android:background="@drawable/widget_glass_btn_white"
+            android:gravity="center"
+            android:orientation="horizontal">
+
+            <ImageView
+                android:layout_width="16dp"
+                android:layout_height="16dp"
+                android:contentDescription="Add Income"
+                android:src="@drawable/ic_widget_add"
+                android:tint="#FFFFFF" />
+
+            <TextView
+                android:layout_width="wrap_content"
+                android:layout_height="wrap_content"
+                android:layout_marginStart="6dp"
+                android:fontFamily="@font/google_sans_bold"
+                android:text="Income"
+                android:textColor="#FFFFFF"
+                android:textSize="12.5sp" />
+        </LinearLayout>
+
+    </LinearLayout>
+
+</LinearLayout>

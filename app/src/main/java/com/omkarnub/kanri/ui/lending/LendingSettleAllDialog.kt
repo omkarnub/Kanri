@@ -34,8 +34,10 @@ import androidx.compose.ui.unit.sp
 import com.omkarnub.kanri.ui.common.LocalHazeState
 import com.omkarnub.kanri.ui.common.rememberKanriGlassTheme
 import com.omkarnub.kanri.util.CurrencyUtils
+import dev.chrisbanes.haze.ExperimentalHazeApi
 import dev.chrisbanes.haze.hazeChild
 
+@OptIn(ExperimentalHazeApi::class)
 @Composable
 fun LendingSettleAllDialog(
     person: PersonSummary,
@@ -54,7 +56,7 @@ fun LendingSettleAllDialog(
         Box(
             modifier = Modifier
                 .fillMaxSize()
-                .background(Color.Black.copy(alpha = 0.55f))
+                .background(Color.Black.copy(alpha = 0.65f))
                 .clickable(
                     interactionSource = remember { MutableInteractionSource() },
                     indication = null,
@@ -74,7 +76,12 @@ fun LendingSettleAllDialog(
                     .clip(RoundedCornerShape(24.dp))
                     .then(
                         if (hazeState != null) {
-                            Modifier.hazeChild(state = hazeState, style = glassTheme.popupHazeStyle)
+                            Modifier.hazeChild(
+                                state = hazeState,
+                                style = glassTheme.popupHazeStyle
+                            ) {
+                                canDrawArea = { true }
+                            }
                         } else {
                             Modifier
                         }

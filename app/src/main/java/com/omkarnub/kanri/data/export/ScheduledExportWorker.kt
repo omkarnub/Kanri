@@ -74,6 +74,16 @@ class ScheduledExportWorker(
                 Log.w(TAG, "Could not copy exports to public Downloads: ${e.message}")
             }
 
+            // If Cloud Backup mode is active, upload encrypted backup to Google Drive
+            val cloudPrefs = com.omkarnub.kanri.data.cloud.CloudBackupPreferences.getInstance(applicationContext)
+            if (cloudPrefs.backupMode == com.omkarnub.kanri.data.cloud.BackupMode.CLOUD && !cloudPrefs.accountEmail.isNullOrBlank()) {
+                try {
+                    com.omkarnub.kanri.data.cloud.CloudBackupManager.getInstance(applicationContext).performCloudBackup()
+                } catch (e: Exception) {
+                    Log.w(TAG, "Cloud backup during scheduled export failed: ${e.message}")
+                }
+            }
+
             fireCompletionNotification(pdfFile, range.label)
             Log.d(TAG, "Scheduled export completed successfully: ${pdfFile.absolutePath}")
             Result.success()

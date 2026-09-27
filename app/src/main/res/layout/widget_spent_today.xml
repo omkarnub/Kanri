@@ -1,0 +1,47 @@
+<?xml version="1.0" encoding="utf-8"?>
+<LinearLayout xmlns:android="http://schemas.android.com/apk/res/android"
+    android:id="@+id/widget_spent_today_root"
+    android:layout_width="match_parent"
+    android:layout_height="match_parent"
+    android:background="@drawable/widget_glass_card"
+    android:gravity="center_vertical"
+    android:orientation="vertical"
+    android:padding="14dp">
+
+    <!-- Header Row -->
+    <TextView
+        android:layout_width="match_parent"
+        android:layout_height="wrap_content"
+        android:fontFamily="@font/google_sans_bold"
+        android:letterSpacing="0.08"
+        android:text="SPENT TODAY"
+        android:textColor="#FFFFFF"
+        android:textSize="11sp" />
+
+    <!-- Large Amount -->
+    <TextView
+        android:id="@+id/widget_today_amount"
+        android:layout_width="wrap_content"
+        android:layout_height="wrap_content"
+        android:layout_marginTop="6dp"
+        android:ellipsize="end"
+        android:fontFamily="@font/google_sans_bold"
+        android:maxLines="1"
+        android:text="₹0"
+        android:textColor="#FFFFFF"
+        android:textSize="22sp" />
+
+    <!-- Status subtitle -->
+    <TextView
+        android:id="@+id/widget_today_status"
+        android:layout_width="match_parent"
+        android:layout_height="wrap_content"
+        android:layout_marginTop="2dp"
+        android:ellipsize="end"
+        android:fontFamily="@font/google_sans_medium"
+        android:singleLine="true"
+        android:text="No spends recorded today"
+        android:textColor="#B3FFFFFF"
+        android:textSize="11sp" />
+
+</LinearLayout>

@@ -46,6 +46,7 @@ import androidx.compose.ui.unit.dp
 import androidx.compose.ui.unit.sp
 import com.omkarnub.kanri.ui.insights.InsightsMode
 import com.omkarnub.kanri.ui.insights.InsightsRange
+import com.omkarnub.kanri.util.rememberKanriHaptics
 import java.time.Instant
 import java.time.LocalDate
 import java.time.ZoneId
@@ -64,6 +65,7 @@ fun InsightsRangeBar(
     earliestTxMillis: Long? = null
 ) {
     var showCustomDatePicker by remember { mutableStateOf(false) }
+    val haptics = rememberKanriHaptics()
 
     Surface(
         modifier = modifier
@@ -116,6 +118,7 @@ fun InsightsRangeBar(
                             .clip(RoundedCornerShape(10.dp))
                             .background(bgColor)
                             .clickable(role = Role.Tab) {
+                                haptics.tick()
                                 when (label) {
                                     "Month" -> onRangeSelected(InsightsRange.Month())
                                     "30D" -> onRangeSelected(InsightsRange.Days30)
@@ -166,7 +169,10 @@ fun InsightsRangeBar(
                         .height(34.dp)
                         .clip(RoundedCornerShape(10.dp))
                         .background(expenseBg)
-                        .clickable(role = Role.RadioButton) { onModeSelected(InsightsMode.EXPENSE) }
+                        .clickable(role = Role.RadioButton) {
+                            haptics.tick()
+                            onModeSelected(InsightsMode.EXPENSE)
+                        }
                         .semantics {
                             this.role = Role.RadioButton
                             this.contentDescription = "Expense mode, ${if (isExpense) "active" else "inactive"}"
@@ -195,7 +201,10 @@ fun InsightsRangeBar(
                         .height(34.dp)
                         .clip(RoundedCornerShape(10.dp))
                         .background(incomeBg)
-                        .clickable(role = Role.RadioButton) { onModeSelected(InsightsMode.INCOME) }
+                        .clickable(role = Role.RadioButton) {
+                            haptics.tick()
+                            onModeSelected(InsightsMode.INCOME)
+                        }
                         .semantics {
                             this.role = Role.RadioButton
                             this.contentDescription = "Income mode, ${if (isIncome) "active" else "inactive"}"

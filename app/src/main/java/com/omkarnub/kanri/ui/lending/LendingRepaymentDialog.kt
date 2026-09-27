@@ -28,7 +28,9 @@ import androidx.compose.material.icons.Icons
 import androidx.compose.material.icons.filled.Add
 import androidx.compose.material.icons.filled.Close
 import androidx.compose.material.icons.filled.Edit
+import androidx.compose.material.icons.filled.Payments
 import androidx.compose.material.icons.filled.Remove
+import androidx.compose.ui.platform.LocalContext
 import androidx.compose.material3.Button
 import androidx.compose.material3.ButtonDefaults
 import androidx.compose.material3.Icon
@@ -61,12 +63,14 @@ import com.omkarnub.kanri.ui.common.AnimatedNumberText
 import com.omkarnub.kanri.ui.common.LocalHazeState
 import com.omkarnub.kanri.ui.common.rememberKanriGlassTheme
 import com.omkarnub.kanri.util.CurrencyUtils
+import dev.chrisbanes.haze.ExperimentalHazeApi
 import dev.chrisbanes.haze.hazeChild
 import kotlin.math.min
 
 private val SageGreen = Color(0xFF30A46C)
 private val ExpenseRed = Color(0xFFE54D2E)
 
+@OptIn(ExperimentalHazeApi::class)
 @Composable
 fun LendingRepaymentDialog(
     personName: String,
@@ -79,6 +83,7 @@ fun LendingRepaymentDialog(
 ) {
     BackHandler(onBack = onDismiss)
 
+    val context = LocalContext.current
     val hazeState = LocalHazeState.current
     val glassTheme = rememberKanriGlassTheme()
 
@@ -109,11 +114,11 @@ fun LendingRepaymentDialog(
     Box(
         modifier = Modifier.fillMaxSize(),
         contentAlignment = Alignment.Center
-    ) {
+    ) {        // Backdrop Scrim
         Box(
             modifier = Modifier
                 .fillMaxSize()
-                .background(Color.Black.copy(alpha = 0.55f))
+                .background(Color.Black.copy(alpha = 0.65f))
                 .clickable(
                     interactionSource = remember { MutableInteractionSource() },
                     indication = null,
@@ -121,6 +126,7 @@ fun LendingRepaymentDialog(
                 )
         )
 
+        // Frosted Dialog Card
         Box(
             modifier = Modifier
                 .fillMaxSize()
@@ -143,7 +149,9 @@ fun LendingRepaymentDialog(
                             Modifier.hazeChild(
                                 state = hazeState,
                                 style = glassTheme.popupHazeStyle
-                            )
+                            ) {
+                                canDrawArea = { true }
+                            }
                         } else {
                             Modifier
                         }
@@ -471,6 +479,36 @@ fun LendingRepaymentDialog(
                             text = "Record Repayment",
                             style = MaterialTheme.typography.titleMedium.copy(fontWeight = FontWeight.Bold)
                         )
+                    }
+
+                    // UPI Pay Button (when paying what you borrowed)
+                    if (selectedDirection.equals("BORROWED", ignoreCase = true)) {
+                        Spacer(modifier = Modifier.height(10.dp))
+                        androidx.compose.material3.OutlinedButton(
+                            onClick = {
+                                LendingUpiHelper.launchUpiPayment(
+                                    context = context,
+                                    personName = personName,
+                                    amount = amount,
+                                    note = note.ifBlank { null }
+                                )
+                            },
+                            shape = RoundedCornerShape(16.dp),
+                            modifier = Modifier
+                                .fillMaxWidth()
+                                .height(48.dp)
+                        ) {
+                            Icon(
+                                imageVector = Icons.Default.Payments,
+                                contentDescription = null,
+                                modifier = Modifier.size(18.dp)
+                            )
+                            Spacer(modifier = Modifier.width(8.dp))
+                            Text(
+                                text = "Pay with UPI (GPay / PhonePe / Paytm)",
+                                style = MaterialTheme.typography.bodyMedium.copy(fontWeight = FontWeight.SemiBold)
+                            )
+                        }
                     }
                 }
             }

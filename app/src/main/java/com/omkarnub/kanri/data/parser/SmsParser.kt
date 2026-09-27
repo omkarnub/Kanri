@@ -24,38 +24,83 @@ data class ParsedTransaction(
     val refNo: String?,
     val account: String?,
     val rawText: String,
-    val timestamp: Long = System.currentTimeMillis()
+    val timestamp: Long = System.currentTimeMillis(),
+    val balance: Double? = null,
+    val creditLimit: Double? = null,
+    val isCard: Boolean = false,
+    val isRefund: Boolean = false
 )
 
 object SmsParser {
 
     private val KNOWN_BANKS = mapOf(
+        "SBI" to "State Bank of India",
         "BOB" to "Bank of Baroda",
         "BARODA" to "Bank of Baroda",
-        "SBI" to "State Bank of India",
         "HDFC" to "HDFC Bank",
         "ICICI" to "ICICI Bank",
         "AXIS" to "Axis Bank",
         "KOTAK" to "Kotak Mahindra Bank",
         "PNB" to "Punjab National Bank",
         "CANARA" to "Canara Bank",
-        "UNIONB" to "Union Bank",
+        "UNIONB" to "Union Bank of India",
+        "BOI" to "Bank of India",
+        "IDFC" to "IDFC First Bank",
+        "YESBNK" to "Yes Bank",
         "INDUS" to "IndusInd Bank",
+        "FEDBNK" to "Federal Bank",
+        "RBLBNK" to "RBL Bank",
+        "IDBI" to "IDBI Bank",
+        "CENTBK" to "Central Bank of India",
+        "UCO" to "UCO Bank",
+        "MAHA" to "Bank of Maharashtra",
         "PAYTM" to "Paytm Payments Bank",
         "AIRTEL" to "Airtel Payments Bank",
-        "FAMPAY" to "FamPay"
+        "JIO" to "Jio Payments Bank",
+        "SRSWAT" to "Saraswat Bank",
+        "COSMOS" to "Cosmos Bank",
+        "FAMPAY" to "FamPay",
+        "CRED" to "CRED",
+        "ONECRD" to "OneCard",
+        "SLICEC" to "Slice"
     )
 
-    fun parse(body: String, sender: String? = null): ParsedTransaction? {
+    // Regex for extracting balances
+    private val BALANCE_PATTERN = Pattern.compile(
+        """(?i)(?:avl(?:bl)?\s*(?:bal|amt|balance)|available\s*(?:bal|balance|limit)|a/c\s*bal|ac\s*bal|total\s*bal|bal(?:ance)?|updated\s*bal(?:ance)?|new\s*bal(?:ance)?|remaining\s*bal(?:ance)?)[\s:]+(?:(?:is\s+)?(?:rs\.?|inr|₹)\s*)?([0-9,]+(?:\.\d{1,2})?)"""
+    )
+
+    // Regex for extracting credit limits
+    private val CREDIT_LIMIT_PATTERN = Pattern.compile(
+        """(?i)(?:available\s*credit\s*limit|avl\s*limit|available\s*limit|credit\s*limit)[\s:]+(?:(?:rs\.?|inr|₹)\s*)?([0-9,]+(?:\.\d{1,2})?)"""
+    )
+
+    // Regex for extracting account masks
+    private val ACCOUNT_PATTERN = Pattern.compile(
+        """(?i)(?:A/c|Account|acct|acc\.?|Card)\s*(?:no\.?)?\s*(?:ending\s+)?(?:with\s+)?(?:\.\.\.\s*|X+|\*+)?(\d{3,6})"""
+    )
+
+    fun parse(body: String, sender: String? = null, timestamp: Long = System.currentTimeMillis()): ParsedTransaction? {
         val trimmed = body.trim()
         if (trimmed.isEmpty()) return null
 
-        // Ignore common OTP and non-transactional messages
+        // 1. Strict Negative Filtering (Ignore OTP, payment requests, bills due, pre-approved loans, mandates, failed txns)
         if (isNonTransactional(trimmed)) return null
 
+        // 2. Transaction Type Detection (Debit vs Credit vs Refund)
         val type = detectTransactionType(trimmed) ?: return null
-        val amount = extractAmount(trimmed) ?: return null
+        val isRefund = detectIsRefund(trimmed)
+
+        // 3. Balance and Limit Extraction (Disambiguate before extracting transaction amount)
+        val balance = extractBalance(trimmed)
+        val creditLimit = extractCreditLimit(trimmed)
+
+        // 4. Amount Extraction (Filtered to ensure it doesn't match the balance)
+        val amount = extractAmount(trimmed, balance, creditLimit) ?: return null
+
+        // 5. Metadata Extraction
         val sourceType = detectSourceType(trimmed)
+        val isCard = sourceType == SourceType.CARD || trimmed.contains("Card", ignoreCase = true)
         val bank = detectBank(trimmed, sender)
         val refNo = extractRefNo(trimmed)
         val account = extractAccount(trimmed)
@@ -69,38 +114,63 @@ object SmsParser {
             bank = bank,
             refNo = refNo,
             account = account,
-            rawText = trimmed
+            rawText = trimmed,
+            timestamp = timestamp,
+            balance = balance,
+            creditLimit = creditLimit,
+            isCard = isCard,
+            isRefund = isRefund
         )
+    }
+
+    private fun detectIsRefund(body: String): Boolean {
+        val lower = body.lowercase()
+        return lower.contains("refunded to") ||
+                lower.contains("refund of") ||
+                lower.contains("refund for") ||
+                lower.contains("credited back") ||
+                lower.contains("has been reversed") ||
+                lower.contains("is reversed") ||
+                lower.contains("reversal of") ||
+                (lower.contains("reversal") && lower.contains("credited"))
     }
 
     private fun detectTransactionType(body: String): TransactionType? {
         val lower = body.lowercase()
 
-        // Actual reversals and refunds (exclude disclaimers like "will be automatically reversed within 48 hours")
-        val isActualRefundOrReversal = lower.contains("refunded to") ||
-                lower.contains("refund of") ||
-                lower.contains("credited back") ||
-                lower.contains("has been reversed") ||
-                lower.contains("is reversed") ||
-                lower.contains("reversal of") ||
-                (lower.contains("reversed") && !lower.contains("will be") && !lower.contains("in case"))
+        // 1. Reversals & Refunds are always credited to user
+        if (detectIsRefund(body)) {
+            return TransactionType.CREDIT
+        }
 
-        if (isActualRefundOrReversal) {
+        // Exclude disclaimers like "will be automatically reversed within 48 hours"
+        val isActualReversal = (lower.contains("reversed") || lower.contains("reversal")) &&
+                !lower.contains("will be") &&
+                !lower.contains("in case") &&
+                !lower.contains("if not")
+
+        if (isActualReversal) {
             return TransactionType.CREDIT
         }
 
         val isDebit = lower.contains("debited") ||
                 lower.contains("withdrawn") ||
+                lower.contains("withdrew") ||
                 lower.contains("spent") ||
                 lower.contains("sent rs") ||
                 lower.contains("sent inr") ||
                 lower.contains("sent to") ||
                 lower.contains("you sent") ||
                 lower.contains("money sent") ||
-                lower.contains("paid rs") ||
-                lower.contains("paid inr") ||
-                lower.contains("paid to") ||
-                lower.startsWith("paid ")
+                (lower.contains("paid rs") && !lower.contains("fampaid")) ||
+                (lower.contains("paid inr") && !lower.contains("fampaid")) ||
+                (lower.contains("paid to") && !lower.contains("fampaid")) ||
+                (lower.startsWith("paid ") && !lower.contains("fampaid")) ||
+                lower.contains("paying to") ||
+                lower.contains("deducted") ||
+                lower.contains("purchase of") ||
+                lower.contains("used at") ||
+                lower.contains("charged")
 
         val isCredit = lower.contains("credited") ||
                 lower.contains("deposited") ||
@@ -108,9 +178,43 @@ object SmsParser {
                 lower.contains("received inr") ||
                 lower.contains("received from") ||
                 lower.contains("you received") ||
-                lower.contains("money received")
+                lower.contains("money received") ||
+                lower.contains("salary credited") ||
+                lower.contains("cashback received") ||
+                lower.contains("added to your account") ||
+                lower.contains("added to a/c") ||
+                lower.contains("fampaid") ||
+                lower.contains("#fampaid") ||
+                lower.contains("you got") ||
+                lower.contains("sent you") ||
+                lower.contains("sent to you") ||
+                lower.contains("paid you")
 
         return when {
+            // Ambiguity: "debited for Rs 850 ... and credited to VPA swiggy@icici"
+            // The user's account was debited, and the merchant's VPA was credited.
+            isDebit && isCredit -> {
+                if (lower.contains("debited from") ||
+                    lower.contains("a/c is debited") ||
+                    lower.contains("a/c debited") ||
+                    lower.contains("is debited for") ||
+                    lower.contains("debited with") ||
+                    lower.contains("account debited")
+                ) {
+                    TransactionType.DEBIT
+                } else if (lower.contains("credited to your") ||
+                    lower.contains("credited to a/c") ||
+                    lower.contains("a/c is credited") ||
+                    lower.contains("a/c credited") ||
+                    lower.contains("credited with") ||
+                    lower.contains("fampaid") ||
+                    lower.contains("sent you")
+                ) {
+                    TransactionType.CREDIT
+                } else {
+                    TransactionType.DEBIT
+                }
+            }
             isDebit -> TransactionType.DEBIT
             isCredit -> TransactionType.CREDIT
             else -> null
@@ -120,23 +224,100 @@ object SmsParser {
     private fun isNonTransactional(body: String): Boolean {
         val lower = body.lowercase()
 
-        // Declined or failed transactions without successful debit
-        if ((lower.contains("declined") || lower.contains("transaction failed")) &&
-            !lower.contains("debited") && !lower.contains("credited")
-        ) {
+        // 1. Declined or failed transactions
+        if (lower.contains("declined") || lower.contains("transaction failed") || lower.contains("txn failed") || lower.contains("failed to transfer")) {
+            if (!lower.contains("debited") && !lower.contains("credited") && !lower.contains("withdrawn")) {
+                return true
+            }
+            if (lower.contains("declined due to") || lower.contains("declined as") || lower.contains("declined on")) {
+                return true
+            }
+        }
+
+        // 1b. Collect requests & payment requests from strangers/scammers
+        if (lower.contains("requested") || lower.contains("request from") || lower.contains("payment request") || lower.contains("collect request")) {
+            if (!lower.contains("debited") && !lower.contains("credited")) {
+                return true
+            }
+        }
+
+        // 2. Pure OTP or login authentication messages
+        val hasOtp = lower.contains("otp") ||
+                lower.contains("one time password") ||
+                lower.contains("verification code") ||
+                lower.contains("security code") ||
+                lower.contains("login pin") ||
+                lower.contains("secret code") ||
+                lower.contains("do not share with anyone")
+
+        if (hasOtp && !lower.contains("debited") && !lower.contains("credited") && !lower.contains("withdrawn")) {
             return true
         }
 
-        // Pure OTP or login messages
-        if ((lower.contains("otp") || lower.contains("verification code")) &&
+        // 3. Payment Request & Collect Request Messages (Not an actual completed transaction)
+        val isPaymentRequest = lower.contains("has requested") ||
+                lower.contains("payment request") ||
+                lower.contains("collect request") ||
+                lower.contains("requesting payment") ||
+                lower.contains("requested money") ||
+                lower.contains("request to pay") ||
+                lower.contains("requests rs") ||
+                lower.contains("approve payment") ||
+                lower.contains("ignore if already paid")
+
+        if (isPaymentRequest) return true
+
+        // 4. Credit Card Bill Due & Minimum Amount Due Reminders
+        val isBillReminder = (lower.contains("is due") ||
+                lower.contains("bill due") ||
+                lower.contains("payment due") ||
+                lower.contains("min amount due") ||
+                lower.contains("minimum amount due") ||
+                lower.contains("total due") ||
+                lower.contains("is overdue") ||
+                lower.contains("in arrears") ||
+                lower.contains("pls pay min") ||
+                (lower.contains("pay by") && lower.contains("due"))) &&
+                !lower.contains("debited") && !lower.contains("withdrawn") && !lower.contains("credited")
+
+        if (isBillReminder) return true
+
+        // 5. Mandate & Subscription Creation / Scheduled Debits
+        val isMandateAlert = (lower.contains("e-mandate") ||
+                lower.contains("upi-mandate") ||
+                (lower.contains("mandate") && (lower.contains("created") || lower.contains("set for") || lower.contains("registered")))) &&
+                !lower.contains("debited") && !lower.contains("withdrawn") && !lower.contains("credited")
+
+        if (isMandateAlert) return true
+
+        if (lower.contains("will be debited") && !lower.contains("has been debited") && !lower.contains("is debited")) {
+            return true
+        }
+
+        // 6. E-Statements
+        if ((lower.contains("e-statement") || lower.contains("statement of your") || lower.contains("stmt")) &&
             !lower.contains("debited") && !lower.contains("credited") && !lower.contains("withdrawn")
         ) {
             return true
         }
-        // Promotional messages
-        if (lower.contains("pre-approved loan") || lower.contains("apply now") || lower.contains("win cash")) {
+
+        // 7. Promotional / Loans / Marketing
+        if (lower.contains("pre-approved loan") ||
+            lower.contains("pre-approved personal loan") ||
+            lower.contains("apply now") ||
+            lower.contains("win cash") ||
+            lower.contains("cashback offer") ||
+            lower.contains("congratulations! you are eligible") ||
+            lower.contains("scratch card awaits")
+        ) {
             return true
         }
+
+        // 8. Account Opening Confirmation
+        if (lower.contains("we are pleased to inform that") || lower.contains("account has been opened")) {
+            return true
+        }
+
         return false
     }
 
@@ -155,7 +336,7 @@ object SmsParser {
             return matchedByBody.bankName
         }
 
-        // Priority 3: Fallback check
+        // Priority 3: Fallback check against known bank list
         val bodyUpper = body.uppercase()
         for ((code, name) in KNOWN_BANKS) {
             if (bodyUpper.contains("$code BANK") || bodyUpper.contains("BANK OF $code") || bodyUpper.contains(" $code ")) {
@@ -173,37 +354,83 @@ object SmsParser {
     private fun detectSourceType(body: String): SourceType {
         val lower = body.lowercase()
         return when {
-            lower.contains("atm") -> SourceType.ATM
-            lower.contains("upi") || lower.contains("vpa") || lower.contains("@") -> SourceType.UPI
-            lower.contains("credit card") || lower.contains("debit card") || lower.contains("spent") || lower.contains("pos") -> SourceType.CARD
-            lower.contains("imps") || lower.contains("neft") || lower.contains("rtgs") -> SourceType.BANK_TRANSFER
+            lower.contains("atm") || lower.contains("cash withdrawal") || lower.contains("cash wdl") -> SourceType.ATM
+            lower.contains("upi") || lower.contains("vpa") || lower.contains("@") || lower.contains("gpay") || lower.contains("phonepe") || lower.contains("bhim") -> SourceType.UPI
+            lower.contains("credit card") || lower.contains("debit card") || lower.contains("spent") || lower.contains("card ending") || lower.contains("pos") || lower.contains("swipe") -> SourceType.CARD
+            lower.contains("imps") || lower.contains("neft") || lower.contains("rtgs") || lower.contains("netbanking") || lower.contains("inb") || lower.contains("fund transfer") -> SourceType.BANK_TRANSFER
             else -> SourceType.UNKNOWN
         }
     }
 
-    private fun extractAmount(body: String): Double? {
-        // Pattern 1: Rs. 4000.00 / INR 500 / Rs 1,500.00 / ₹500
-        val p1 = Pattern.compile("""(?:Rs\.?|INR|₹)\s*([\d,]+(?:\.\d+)?)""", Pattern.CASE_INSENSITIVE)
+    fun extractBalance(body: String): Double? {
+        val m = BALANCE_PATTERN.matcher(body)
+        if (m.find()) {
+            val raw = m.group(1)?.replace(",", "") ?: return null
+            return raw.toDoubleOrNull()
+        }
+        return null
+    }
+
+    fun extractCreditLimit(body: String): Double? {
+        val m = CREDIT_LIMIT_PATTERN.matcher(body)
+        if (m.find()) {
+            val raw = m.group(1)?.replace(",", "") ?: return null
+            return raw.toDoubleOrNull()
+        }
+        return null
+    }
+
+    private fun extractAmount(body: String, balance: Double?, creditLimit: Double?): Double? {
+        // Pattern 1: Explicit currency symbol prefix (Rs. / INR / ₹)
+        val p1 = Pattern.compile("""(?:Rs\.?|INR|₹)\s*([\d,]+(?:\.\d{1,2})?)""", Pattern.CASE_INSENSITIVE)
         val m1 = p1.matcher(body)
-        if (m1.find()) {
+        val candidateAmounts = mutableListOf<Double>()
+        while (m1.find()) {
             val amt = parseAmount(m1.group(1))
-            if (amt != null) return amt
+            if (amt != null && amt > 0.0) {
+                candidateAmounts.add(amt)
+            }
         }
 
-        // Pattern 2: debited by 500.0 / credited by 1200.0 / debited for Rs... / debited with INR...
-        val p2 = Pattern.compile("""(?:debited|credited|withdrawn|spent|paid|sent|received)\s+(?:by|for|with|of)?\s*(?:Rs\.?|INR|₹)?\s*([\d,]+(?:\.\d+)?)""", Pattern.CASE_INSENSITIVE)
-        val m2 = p2.matcher(body)
-        if (m2.find()) {
-            val amt = parseAmount(m2.group(1))
-            if (amt != null) return amt
+        // Return first currency amount that is NOT balance or credit limit
+        for (amt in candidateAmounts) {
+            if (amt != balance && amt != creditLimit) {
+                return amt
+            }
+        }
+
+        // Pattern 2: Verb-coupled without currency (e.g. "debited by 500.00" or "credited by 1200.00")
+        val verbPattern = Pattern.compile(
+            """(?i)(?:debited|credited|withdrawn|spent|paid|sent|received)\s+(?:by|for|with|of)\s*(?:Rs\.?|INR|₹)?\s*([0-9,]+(?:\.\d{1,2})?)"""
+        )
+        val vm = verbPattern.matcher(body)
+        while (vm.find()) {
+            val amt = parseAmount(vm.group(1))
+            if (amt != null && amt != balance && amt != creditLimit && amt > 0.0) {
+                return amt
+            }
+        }
+
+        // Pattern 3: Trailing currency symbol (e.g. "500.00 Rs" or "250 INR")
+        val p3 = Pattern.compile("""([\d,]+(?:\.\d{1,2})?)\s*(?:Rs\.?|INR|₹)""", Pattern.CASE_INSENSITIVE)
+        val m3 = p3.matcher(body)
+        while (m3.find()) {
+            val amt = parseAmount(m3.group(1))
+            if (amt != null && amt != balance && amt != creditLimit && amt > 0.0) {
+                return amt
+            }
+        }
+
+        if (candidateAmounts.isNotEmpty()) {
+            return candidateAmounts.first()
         }
 
         return null
     }
 
-    private fun extractRefNo(body: String): String? {
+    fun extractRefNo(body: String): String? {
         val pattern = Pattern.compile(
-            """\b(?:UPI\s+Ref(?:\s+no)?|Ref(?:no|\.|\s+no)?|UTR|Txn\s*ID|UPI\/)\b\s*[:#.\/]?\s*([0-9a-zA-Z]+)""",
+            """\b(?:UPI\s+Ref(?:\s+no)?|UPI\s*[:\/]|Ref(?:no|\.|\s+no)?|UTR|Txn\s*ID|Transaction\s*ID|RRN)\b\s*[:#.\/]?\s*([0-9a-zA-Z]{6,25})""",
             Pattern.CASE_INSENSITIVE
         )
         val matcher = pattern.matcher(body)
@@ -213,42 +440,72 @@ object SmsParser {
         return null
     }
 
-
-    private fun extractAccount(body: String): String? {
-        // "A/c ... 8477", "A/C X8477", "Credit Card ending 1234", "A/C *1234", "A/c no. XX3948"
-        val pattern = Pattern.compile(
-            """(?:A/c|Account|acct|acc\.?|Card)\s*(?:no\.?)?\s*(?:ending\s+)?(?:with\s+)?(\.{2,}\s*\d+|[xX*]+\s*\d+|\d{4,})""",
-            Pattern.CASE_INSENSITIVE
-        )
-        val matcher = pattern.matcher(body)
-        if (matcher.find()) {
-            return matcher.group(1)?.trim()
+    fun extractAccount(body: String): String? {
+        val pattern = ACCOUNT_PATTERN.matcher(body)
+        if (pattern.find()) {
+            val digits = pattern.group(1)?.trim() ?: return null
+            val cleanDigits = digits.filter { it.isDigit() }
+            return if (cleanDigits.length >= 4) "••" + cleanDigits.takeLast(4) else "••$cleanDigits"
         }
         return null
     }
 
     private fun extractCounterparty(body: String, sourceType: SourceType): String? {
+        // ATM Transactions
         if (sourceType == SourceType.ATM) {
             val tidPattern = Pattern.compile("""at\s+ATM\s+(?:TID\s+)?([A-Za-z0-9]+)""", Pattern.CASE_INSENSITIVE)
             val tidMatcher = tidPattern.matcher(body)
             if (tidMatcher.find()) {
                 return "ATM TID ${tidMatcher.group(1)}"
             }
+            val locPattern = Pattern.compile("""at\s+ATM\s+([A-Za-z0-9\s]+?)(?:\s+Ref|\s+Avl|\s*\.|$)""", Pattern.CASE_INSENSITIVE)
+            val locMatcher = locPattern.matcher(body)
+            if (locMatcher.find()) {
+                val loc = locMatcher.group(1)?.trim() ?: ""
+                return if (loc.isNotEmpty()) "ATM $loc" else "ATM"
+            }
             return "ATM"
+        }
+
+        // Strategy 1: VPA with bracketed Display Name -> e.g. "VPA swiggy@icici (Bundl Technologies)"
+        // or check if bracketed text is a reference number like (UPI Ref no 123456789012)
+        val vpaDisplayPattern = Pattern.compile(
+            """VPA\s+([^@\s]+@[^\s]+)\s*\(([^)]+)\)""",
+            Pattern.CASE_INSENSITIVE
+        )
+        val vpaDisplayMatcher = vpaDisplayPattern.matcher(body)
+        if (vpaDisplayMatcher.find()) {
+            val vpa = vpaDisplayMatcher.group(1)
+            val insideParens = vpaDisplayMatcher.group(2)?.trim()
+            val lowerParens = insideParens?.lowercase() ?: ""
+            val isReferenceInParens = lowerParens.contains("ref") ||
+                    lowerParens.contains("upi") ||
+                    lowerParens.contains("rrn") ||
+                    lowerParens.contains("txn") ||
+                    (insideParens != null && insideParens.count { it.isDigit() } >= 6)
+
+            if (!isReferenceInParens && !insideParens.isNullOrBlank()) {
+                val rawName = cleanCounterparty(insideParens)
+                if (isValidCounterparty(rawName)) {
+                    return rawName
+                }
+            } else if (!vpa.isNullOrBlank()) {
+                return cleanCounterparty(vpa)
+            }
         }
 
         val delimiter = """(?=\s+(?:on|via|ref|refno|upi|using|from|order|purchase|\()|\s*[\.,;]|$)"""
 
         val patterns = listOf(
-            // "Info: UPI/Apollo Pharmacy" or "Info: Dominos"
+            // "Info: UPI/Apollo Pharmacy" or "Info: Dominos" or "Info: SALARY-Google"
             Pattern.compile("""(?:Info:\s*UPI\/|Info:\s*)([A-Za-z0-9.\-_&']+(?:\s+[A-Za-z0-9.\-_&']+)*?)$delimiter""", Pattern.CASE_INSENSITIVE),
             // "to swiggy@icici on 12-09-26" or "to Rohit Kumar Refno..." or "towards Amazon Pay..."
             Pattern.compile("""(?:trf\s+to|towards\s+|paid\s+to|to\s+(?:VPA\s+)?|to\s+)([A-Za-z0-9.\-_@]+(?:\s+[A-Za-z0-9.\-_&']+)*?)$delimiter""", Pattern.CASE_INSENSITIVE),
             // "Transferred to Uber"
             Pattern.compile("""(?:Transferred\s+to\s+)([A-Za-z0-9.\-_&']+(?:\s+[A-Za-z0-9.\-_&']+)*?)$delimiter""", Pattern.CASE_INSENSITIVE),
-            // "for Swiggy order..." or "for D-Mart purchase..."
+            // "refund for Swiggy order..." or "for D-Mart purchase..."
             Pattern.compile("""(?:refund\s+for|for\s+)([A-Za-z0-9.\-_@]+(?:\s+[A-Za-z0-9.\-_&']+)*?)$delimiter""", Pattern.CASE_INSENSITIVE),
-            // "from transfer from John Doe (UPI..." or "from friend@upi"
+            // "transfer from John Doe (UPI..." or "from friend@upi"
             Pattern.compile("""(?:transfer\s+from|from\s+)([A-Za-z0-9.\-_@]+(?:\s+[A-Za-z0-9.\-_&']+)*?)$delimiter""", Pattern.CASE_INSENSITIVE),
             // "by Vikas" or "by Neha" (excluding amounts like "by Rs" / "by INR")
             Pattern.compile("""(?:by\s+(?!Rs|INR|₹|\d))([A-Za-z0-9.\-_&']+(?:\s+[A-Za-z0-9.\-_&']+)*?)$delimiter""", Pattern.CASE_INSENSITIVE),
@@ -260,17 +517,23 @@ object SmsParser {
             val matcher = pattern.matcher(body)
             if (matcher.find()) {
                 val candidate = cleanCounterparty(matcher.group(1))
-                if (!candidate.isNullOrBlank() &&
-                    !candidate.equals("ATM", ignoreCase = true) &&
-                    !candidate.startsWith("Rs", ignoreCase = true) &&
-                    !candidate.startsWith("INR", ignoreCase = true)
-                ) {
+                if (isValidCounterparty(candidate)) {
                     return candidate
                 }
             }
         }
 
         return null
+    }
+
+    private fun isValidCounterparty(name: String?): Boolean {
+        if (name.isNullOrBlank()) return false
+        val lower = name.lowercase().trim()
+        val junkKeywords = setOf("atm", "upi", "inr", "rs", "bank", "account", "a/c", "card", "transaction", "payment", "customer", "dear")
+        if (junkKeywords.contains(lower)) return false
+        if (lower.startsWith("rs") || lower.startsWith("inr") || lower.startsWith("₹")) return false
+        if (name.all { it.isDigit() || it == '-' || it == '.' }) return false
+        return true
     }
 
     private fun parseAmount(str: String?): Double? {
@@ -287,10 +550,21 @@ object SmsParser {
         var cleaned = party.trim()
 
         // Strip leading prefixes
-        val removePrefixes = listOf("to ", "from ", "VPA ", "vpa ", "transfer from ", "by ", "by transfer from ", "through UPI from ", "through UPI to ")
+        val removePrefixes = listOf(
+            "to ", "from ", "VPA ", "vpa ", "transfer from ", "by ", "by transfer from ",
+            "through UPI from ", "through UPI to ", "UPI/", "UPI-", "POS/", "ECOM/", "INB/", "NEFT/", "IMPS/"
+        )
         for (prefix in removePrefixes) {
             if (cleaned.startsWith(prefix, ignoreCase = true)) {
                 cleaned = cleaned.substring(prefix.length).trim()
+            }
+        }
+
+        // Strip corporate legal suffixes like "Pvt Ltd", "Private Limited", "LLP", "Ltd"
+        val corporateSuffixes = listOf(" Pvt Ltd", " Private Limited", " Pvt. Ltd.", " LLP", " Ltd.", " Ltd")
+        for (suffix in corporateSuffixes) {
+            if (cleaned.endsWith(suffix, ignoreCase = true)) {
+                cleaned = cleaned.substring(0, cleaned.length - suffix.length).trim()
             }
         }
 
@@ -300,4 +574,3 @@ object SmsParser {
         return cleaned.ifEmpty { null }
     }
 }
-

@@ -63,6 +63,7 @@ import androidx.compose.ui.unit.dp
 import androidx.compose.ui.unit.sp
 import com.omkarnub.kanri.data.db.KanriDatabase
 import com.omkarnub.kanri.data.db.RecurringPaymentEntity
+import com.omkarnub.kanri.util.rememberKanriHaptics
 import kotlinx.coroutines.Dispatchers
 import kotlinx.coroutines.launch
 import java.text.NumberFormat
@@ -81,6 +82,7 @@ fun RecurringPaymentsSheet(
     val context = LocalContext.current
     val scope = rememberCoroutineScope()
     val db = remember { KanriDatabase.getDatabase(context) }
+    val haptics = rememberKanriHaptics()
 
     val subscriptionsFlow = remember { db.recurringPaymentDao().getAllRecurringPayments() }
     val subscriptions by subscriptionsFlow.collectAsState(initial = emptyList())
@@ -163,6 +165,7 @@ fun RecurringPaymentsSheet(
 
                 Row {
                     IconButton(onClick = {
+                        haptics.click()
                         prefillCandidate = null
                         showAddDialog = true
                     }) {
@@ -172,7 +175,10 @@ fun RecurringPaymentsSheet(
                             tint = MaterialTheme.colorScheme.onSurface
                         )
                     }
-                    IconButton(onClick = onDismiss) {
+                    IconButton(onClick = {
+                        haptics.tick()
+                        onDismiss()
+                    }) {
                         Icon(
                             imageVector = Icons.Default.Close,
                             contentDescription = "Close",
@@ -267,6 +273,7 @@ fun RecurringPaymentsSheet(
                                 Spacer(modifier = Modifier.height(6.dp))
                                 Button(
                                     onClick = {
+                                        haptics.click()
                                         prefillCandidate = candidate
                                         showAddDialog = true
                                     },
@@ -316,6 +323,7 @@ fun RecurringPaymentsSheet(
                         Spacer(modifier = Modifier.height(10.dp))
                         Button(
                             onClick = {
+                                haptics.click()
                                 prefillCandidate = null
                                 showAddDialog = true
                             },
@@ -442,6 +450,7 @@ fun RecurringPaymentsSheet(
                                 Column(horizontalAlignment = Alignment.End) {
                                     Button(
                                         onClick = {
+                                            haptics.success()
                                             scope.launch(Dispatchers.IO) {
                                                 val nextDue = RecurringPaymentCalculator.advanceDueDate(
                                                     item.nextDueTimestamp,
@@ -475,7 +484,10 @@ fun RecurringPaymentsSheet(
                                     }
                                     Spacer(modifier = Modifier.height(6.dp))
                                     IconButton(
-                                        onClick = { itemToDelete = item },
+                                        onClick = {
+                                            haptics.warning()
+                                            itemToDelete = item
+                                        },
                                         modifier = Modifier.size(24.dp)
                                     ) {
                                         Icon(
@@ -530,6 +542,7 @@ fun RecurringPaymentsSheet(
             confirmButton = {
                 Button(
                     onClick = {
+                        haptics.warning()
                         scope.launch(Dispatchers.IO) {
                             db.recurringPaymentDao().delete(target)
                         }
@@ -556,6 +569,7 @@ fun AddSubscriptionDialog(
     onDismiss: () -> Unit,
     onConfirm: (title: String, amount: Double, billingCycle: String, nextDueTimestamp: Long) -> Unit
 ) {
+    val haptics = rememberKanriHaptics()
     var title by remember { mutableStateOf(initialTitle) }
     var amountStr by remember { mutableStateOf(initialAmount) }
     var selectedCycle by remember { mutableStateOf("MONTHLY") }
@@ -600,6 +614,7 @@ fun AddSubscriptionDialog(
                             modifier = Modifier
                                 .weight(1f)
                                 .clickable {
+                                    haptics.tick()
                                     selectedCycle = cycle
                                     daysOffset = when (cycle) {
                                         "WEEKLY" -> 7
@@ -662,6 +677,7 @@ fun AddSubscriptionDialog(
                 onClick = {
                     val amount = amountStr.toDoubleOrNull() ?: 0.0
                     if (title.isNotBlank() && amount > 0.0) {
+                        haptics.success()
                         val cal = Calendar.getInstance()
                         cal.add(Calendar.DAY_OF_YEAR, daysOffset)
                         onConfirm(title.trim(), amount, selectedCycle, cal.timeInMillis)
@@ -677,7 +693,10 @@ fun AddSubscriptionDialog(
             }
         },
         dismissButton = {
-            TextButton(onClick = onDismiss) {
+            TextButton(onClick = {
+                haptics.tick()
+                onDismiss()
+            }) {
                 Text("Cancel", color = MaterialTheme.colorScheme.onSurfaceVariant)
             }
         }

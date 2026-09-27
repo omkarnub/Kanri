@@ -35,6 +35,8 @@ open class MainActivity : FragmentActivity() {
 
         SecurityManager.init(applicationContext)
         ExportScheduler.init(applicationContext)
+        com.omkarnub.kanri.data.lending.LendingReminderScheduler.init(applicationContext)
+        com.omkarnub.kanri.widget.KanriWidgetActions.handleIntent(intent)
 
         setContent {
             KanriTheme {
@@ -78,6 +80,12 @@ open class MainActivity : FragmentActivity() {
     override fun onStart() {
         super.onStart()
         SecurityManager.onAppForegrounded()
+    }
+
+    override fun onNewIntent(intent: android.content.Intent) {
+        super.onNewIntent(intent)
+        setIntent(intent)
+        com.omkarnub.kanri.widget.KanriWidgetActions.handleIntent(intent)
     }
 
     override fun onStop() {

@@ -35,8 +35,6 @@ import androidx.compose.ui.text.font.FontWeight
 import androidx.compose.ui.unit.dp
 import androidx.compose.ui.unit.sp
 
-private val ColorAmberBadge = Color(0xFFF5A524)
-
 @Composable
 fun NeedsReviewCard(
     reviewCount: Int,

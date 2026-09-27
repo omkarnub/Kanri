@@ -60,6 +60,7 @@ import androidx.compose.ui.unit.sp
 import com.omkarnub.kanri.data.backup.BackupRepository
 import com.omkarnub.kanri.data.backup.BackupStats
 import com.omkarnub.kanri.data.security.SecurityManager
+import com.omkarnub.kanri.util.rememberKanriHaptics
 import kotlinx.coroutines.launch
 import java.text.SimpleDateFormat
 import java.util.Date
@@ -75,6 +76,7 @@ fun BackupRestoreSheet(
     val context = LocalContext.current
     val repository = remember { BackupRepository(context) }
     val coroutineScope = rememberCoroutineScope()
+    val haptics = rememberKanriHaptics()
 
     var isProcessing by remember { mutableStateOf(false) }
     var successStats by remember { mutableStateOf<BackupStats?>(null) }
@@ -96,8 +98,10 @@ fun BackupRestoreSheet(
                 result.onSuccess { stats ->
                     successStats = stats
                     successOperation = "Export"
+                    haptics.success()
                     Toast.makeText(context, "Backup exported successfully!", Toast.LENGTH_SHORT).show()
                 }.onFailure { error ->
+                    haptics.warning()
                     errorMessage = "Export failed: ${error.localizedMessage}"
                 }
             }
@@ -280,6 +284,7 @@ fun BackupRestoreSheet(
 
                     Button(
                         onClick = {
+                            haptics.primaryAction()
                             SecurityManager.isTemporarilyExempt = true
                             val timeStamp = SimpleDateFormat("yyyyMMdd_HHmm", Locale.getDefault()).format(Date())
                             val defaultName = "kanri_backup_$timeStamp.json"
@@ -358,6 +363,7 @@ fun BackupRestoreSheet(
 
                     OutlinedButton(
                         onClick = {
+                            haptics.click()
                             SecurityManager.isTemporarilyExempt = true
                             restoreLauncher.launch(arrayOf("application/json", "*/*"))
                         },
@@ -416,6 +422,7 @@ fun BackupRestoreSheet(
             confirmButton = {
                 Button(
                     onClick = {
+                        haptics.warning()
                         val uri = pendingRestoreUri
                         pendingRestoreUri = null
                         if (uri != null) {
@@ -428,8 +435,10 @@ fun BackupRestoreSheet(
                                 result.onSuccess { stats ->
                                     successStats = stats
                                     successOperation = "Restore"
+                                    haptics.success()
                                     Toast.makeText(context, "Database restored successfully!", Toast.LENGTH_LONG).show()
                                 }.onFailure { error ->
+                                    haptics.warning()
                                     errorMessage = "Restore failed: ${error.localizedMessage}"
                                 }
                             }

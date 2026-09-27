@@ -1,6 +1,7 @@
 package com.omkarnub.kanri.data.parser
 
 import org.junit.Assert.assertEquals
+import org.junit.Assert.assertFalse
 import org.junit.Assert.assertNotNull
 import org.junit.Assert.assertNull
 import org.junit.Assert.assertTrue
@@ -22,6 +23,22 @@ class NotificationParserTest {
         assertEquals(SourceType.UPI, parsed.sourceType)
         assertEquals("Rahul Sharma", parsed.counterparty)
         assertEquals("Google Pay", parsed.bank)
+    }
+
+    @Test
+    fun testGPay_debitFormat_parsesCorrectly() {
+        val parsed = NotificationParser.parse(
+            packageName = NotificationParser.PKG_GPAY,
+            title = "Payment successful",
+            text = "Payment of ₹150 to Swiggy successful via UPI Ref 9876543210"
+        )
+
+        assertNotNull(parsed)
+        assertEquals(150.0, parsed!!.amount, 0.001)
+        assertEquals(TransactionType.DEBIT, parsed.type)
+        assertEquals("Swiggy", parsed.counterparty)
+        assertEquals("Google Pay", parsed.bank)
+        assertEquals("9876543210", parsed.refNo)
     }
 
     @Test
@@ -68,59 +85,64 @@ class NotificationParserTest {
     }
 
     @Test
-    fun testPhonePe_paymentOfReceivedFrom_parsesCorrectly() {
+    fun testPhonePe_debitFormat_parsesCorrectly() {
         val parsed = NotificationParser.parse(
             packageName = NotificationParser.PKG_PHONEPE,
-            title = "Payment of ₹300 received from Suresh",
-            text = "Transaction ID: TXN123456789"
+            title = "Transaction Successful",
+            text = "Paid ₹450 to Starbucks via UPI. Ref 11223344"
         )
 
         assertNotNull(parsed)
-        assertEquals(300.0, parsed!!.amount, 0.001)
-        assertEquals("Suresh", parsed.counterparty)
-        assertEquals("TXN123456789", parsed.refNo)
+        assertEquals(450.0, parsed!!.amount, 0.001)
+        assertEquals(TransactionType.DEBIT, parsed.type)
+        assertEquals("Starbucks", parsed.counterparty)
+        assertEquals("PhonePe", parsed.bank)
+        assertEquals("11223344", parsed.refNo)
     }
 
     @Test
-    fun testPaytm_receivedRsFormat_parsesCorrectly() {
+    fun testPaytm_debitFormat_parsesCorrectly() {
         val parsed = NotificationParser.parse(
             packageName = NotificationParser.PKG_PAYTM,
-            title = "Money Received",
-            text = "Received Rs. 850 from Ramesh via UPI Ref 4455667788"
+            title = "Payment to Chai Point",
+            text = "Paid ₹75 to Chai Point using Paytm UPI"
         )
 
         assertNotNull(parsed)
-        assertEquals(850.0, parsed!!.amount, 0.001)
-        assertEquals("Ramesh", parsed.counterparty)
+        assertEquals(75.0, parsed!!.amount, 0.001)
+        assertEquals(TransactionType.DEBIT, parsed.type)
+        assertEquals("Chai Point", parsed.counterparty)
         assertEquals("Paytm", parsed.bank)
-        assertEquals("4455667788", parsed.refNo)
     }
 
     @Test
-    fun testPaytm_addedToBalanceFormat_parsesCorrectly() {
+    fun testCred_debitFormat_parsesCorrectly() {
         val parsed = NotificationParser.parse(
-            packageName = NotificationParser.PKG_PAYTM,
-            title = "Paytm Wallet",
-            text = "Rs. 250 added to your Paytm Balance"
+            packageName = NotificationParser.PKG_CRED,
+            title = "Payment Successful",
+            text = "₹1,200 paid to Zomato using CRED pay"
         )
 
         assertNotNull(parsed)
-        assertEquals(250.0, parsed!!.amount, 0.001)
+        assertEquals(1200.0, parsed!!.amount, 0.001)
+        assertEquals(TransactionType.DEBIT, parsed.type)
+        assertEquals("Zomato", parsed.counterparty)
+        assertEquals("CRED", parsed.bank)
+    }
+
+    @Test
+    fun testFamPay_gotFamPaidFormat_parsesAsCredit() {
+        val parsed = NotificationParser.parse(
+            packageName = NotificationParser.PKG_FAMPAY,
+            title = "YOU GOT #FAMPAID",
+            text = "XYZ SENT YOU ₹1"
+        )
+
+        assertNotNull(parsed)
+        assertEquals(1.0, parsed!!.amount, 0.001)
         assertEquals(TransactionType.CREDIT, parsed.type)
-    }
-
-    @Test
-    fun testAmazonPay_cashback_parsesCorrectly() {
-        val parsed = NotificationParser.parse(
-            packageName = NotificationParser.PKG_AMAZON_IN,
-            title = "Amazon Pay",
-            text = "Amazon Pay cashback: ₹25 credited"
-        )
-
-        assertNotNull(parsed)
-        assertEquals(25.0, parsed!!.amount, 0.001)
-        assertEquals("Cashback & Rewards", parsed.counterparty)
-        assertEquals("Amazon Pay", parsed.bank)
+        assertEquals("XYZ", parsed.counterparty)
+        assertEquals("FamPay", parsed.bank)
     }
 
     @Test
@@ -133,8 +155,43 @@ class NotificationParserTest {
 
         assertNotNull(parsed)
         assertEquals(250.0, parsed!!.amount, 0.001)
+        assertEquals(TransactionType.CREDIT, parsed.type)
         assertEquals("Sneha", parsed.counterparty)
         assertEquals("FamPay", parsed.bank)
+    }
+
+    @Test
+    fun testPackageDetection_smsAndPaymentApps() {
+        assertTrue(NotificationParser.isPackageSupported(NotificationParser.PKG_GPAY))
+        assertTrue(NotificationParser.isPackageSupported(NotificationParser.PKG_PHONEPE))
+        assertTrue(NotificationParser.isPackageSupported(NotificationParser.PKG_GOOGLE_MESSAGES))
+        assertTrue(NotificationParser.isPackageSupported(NotificationParser.PKG_SAMSUNG_MESSAGING))
+        assertTrue(NotificationParser.isPackageSupported(NotificationParser.PKG_HDFC))
+
+        // WhatsApp and Amazon must NOT be supported as payment interceptors
+        assertFalse(NotificationParser.isPackageSupported("com.whatsapp"))
+        assertFalse(NotificationParser.isPackageSupported("com.whatsapp.w4b"))
+        assertFalse(NotificationParser.isPackageSupported("in.amazon.mShop.android.shopping"))
+
+        assertTrue(NotificationParser.isSmsApp(NotificationParser.PKG_GOOGLE_MESSAGES))
+        assertTrue(NotificationParser.isSmsApp(NotificationParser.PKG_SAMSUNG_MESSAGING))
+        assertFalse(NotificationParser.isSmsApp(NotificationParser.PKG_GPAY))
+    }
+
+    @Test
+    fun testSmsNotification_parsedViaSmsParserWithoutSmsPermission() {
+        // Simulates Google Messages notification from bank SMS
+        val title = "VK-HDFCBK"
+        val body = "Rs 850.00 debited from A/c XX4321 on 26-SEP-26 to SWIGGY. Ref 987654. Avl Bal Rs 15,200.00"
+
+        val parsed = SmsParser.parse(body = body, sender = title)
+        assertNotNull(parsed)
+        assertEquals(850.0, parsed!!.amount, 0.001)
+        assertEquals(TransactionType.DEBIT, parsed.type)
+        assertEquals("HDFC Bank", parsed.bank)
+        assertEquals("SWIGGY", parsed.counterparty)
+        assertEquals("987654", parsed.refNo)
+        assertEquals(15200.0, parsed.balance!!, 0.001)
     }
 
     @Test
@@ -146,6 +203,29 @@ class NotificationParserTest {
             text = "Your Google Pay OTP is 123456. Do not share it."
         )
         assertNull(otp)
+
+        // Failed / Declined Payment (Must NOT be recorded as expense)
+        val failedPayment = NotificationParser.parse(
+            packageName = NotificationParser.PKG_GPAY,
+            title = "Google Pay",
+            text = "Payment of ₹500 to Starbucks failed"
+        )
+        assertNull(failedPayment)
+
+        val declinedTxn = NotificationParser.parse(
+            packageName = NotificationParser.PKG_PHONEPE,
+            title = "PhonePe",
+            text = "Transaction declined: Insufficient funds for payment of ₹250 to Chai Point"
+        )
+        assertNull(declinedTxn)
+
+        // Collect request / scam (Must NOT be recorded)
+        val collectRequest = NotificationParser.parse(
+            packageName = NotificationParser.PKG_PHONEPE,
+            title = "Payment Request",
+            text = "Rohan requested ₹2,000 from you on PhonePe"
+        )
+        assertNull(collectRequest)
 
         // Promotional discount
         val promo = NotificationParser.parse(

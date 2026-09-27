@@ -94,6 +94,11 @@ dependencies {
     implementation(libs.androidx.graphics.path)
     implementation(libs.androidx.security.crypto)
     implementation(libs.androidx.work.runtime.ktx)
+    implementation(libs.androidx.credentials)
+    implementation(libs.androidx.credentials.play.services)
+    implementation(libs.googleid)
+    implementation(libs.play.services.auth)
+    implementation(libs.kotlinx.coroutines.play.services)
     implementation("dev.chrisbanes.haze:haze:1.3.1")
     implementation("androidx.datastore:datastore-preferences:1.1.1")
 

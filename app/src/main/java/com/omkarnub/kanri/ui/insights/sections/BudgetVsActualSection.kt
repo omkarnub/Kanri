@@ -56,7 +56,6 @@ import kotlin.math.abs
 
 private val ExpenseRed = Color(0xFFE54D2E)
 private val WarningAmber = Color(0xFFF5A524)
-private val IncomeSage = Color(0xFF30A46C)
 
 @Composable
 fun BudgetVsActualSection(

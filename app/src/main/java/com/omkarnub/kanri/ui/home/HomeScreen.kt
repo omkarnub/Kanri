@@ -17,6 +17,7 @@ import androidx.compose.foundation.border
 import androidx.compose.foundation.clickable
 import androidx.compose.ui.graphics.graphicsLayer
 import kotlinx.coroutines.launch
+import androidx.compose.runtime.rememberCoroutineScope
 import com.omkarnub.kanri.ui.theme.ExpenseRed
 import com.omkarnub.kanri.ui.theme.IncomeGreen
 import com.omkarnub.kanri.util.CurrencyUtils
@@ -86,6 +87,7 @@ import androidx.compose.ui.draw.clip
 import androidx.compose.ui.graphics.Brush
 import androidx.compose.ui.graphics.Color
 import androidx.compose.ui.graphics.StrokeCap
+import androidx.compose.ui.graphics.asImageBitmap
 import androidx.compose.ui.graphics.drawscope.Stroke
 import androidx.compose.ui.graphics.vector.ImageVector
 import androidx.compose.ui.res.painterResource
@@ -127,16 +129,25 @@ private const val DEFAULT_USER_NAME = "Alex"
 @OptIn(ExperimentalMaterial3Api::class)
 @Composable
 fun HomeScreen(
-    onOpenSettings: () -> Unit = {},
+    onOpenProfile: () -> Unit = {},
+    onOpenSettings: () -> Unit = onOpenProfile,
     onNavigateToHistory: () -> Unit = {},
     onNavigateToLending: () -> Unit = {},
     onNavigateToInsights: () -> Unit = {},
+    onTransactionClick: (TransactionWithCategory) -> Unit = {},
     modifier: Modifier = Modifier,
     viewModel: HomeViewModel = viewModel()
 ) {
+    val context = LocalContext.current
+    val haptics = com.omkarnub.kanri.util.rememberKanriHaptics()
+    val profilePrefs = remember { com.omkarnub.kanri.data.profile.UserProfilePreferences.getInstance(context) }
+    val currentUserName by profilePrefs.userNameFlow.collectAsState()
+    val profilePhotoPath by profilePrefs.profilePhotoPathFlow.collectAsState()
+
     val state by viewModel.uiState.collectAsState()
     val greetingResult by viewModel.greeting.collectAsState()
     var selectedTransactionForCategory by remember { mutableStateOf<TransactionWithCategory?>(null) }
+    var lendingEntryForTransaction by remember { mutableStateOf<TransactionWithCategory?>(null) }
     var showNeedsReviewSheet by remember { mutableStateOf(false) }
     var hasDismissedBudgetPrompt by rememberSaveable { mutableStateOf(false) }
 
@@ -242,6 +253,10 @@ fun HomeScreen(
                     note = note,
                     bulkUpdate = false
                 )
+            },
+            onOpenLendBorrow = { tx ->
+                lendingEntryForTransaction = TransactionWithCategory(transaction = tx, category = null)
+                showNeedsReviewSheet = false
             }
         )
     }
@@ -260,7 +275,18 @@ fun HomeScreen(
                     bulkUpdate = true
                 )
                 selectedTransactionForCategory = null
+            },
+            onOpenLendBorrow = {
+                lendingEntryForTransaction = target
+                selectedTransactionForCategory = null
             }
+        )
+    }
+
+    lendingEntryForTransaction?.let { target ->
+        com.omkarnub.kanri.ui.lending.LendingTransactionBridgeDialog(
+            targetTransaction = target,
+            onDismiss = { lendingEntryForTransaction = null }
         )
     }
 
@@ -294,7 +320,7 @@ fun HomeScreen(
                 Spacer(modifier = Modifier.height(2.dp))
 
                 // =========================================================================
-                // 1 & 2. TOP HEADER ROW: KANRI LOGO (Left) & DEMO PROFILE ICON (Right)
+                // 1 & 2. TOP HEADER ROW: KANRI LOGO (Left) & USER PROFILE ICON (Right)
                 // =========================================================================
                 Row(
                     modifier = Modifier
@@ -306,19 +332,19 @@ fun HomeScreen(
                     horizontalArrangement = Arrangement.SpaceBetween,
                     verticalAlignment = Alignment.CenterVertically
                 ) {
-                    // 1 - KANRI LOGO
+                    // 1 - KANRI LOGO (Left)
                     Text(
                         text = "KANRI",
                         style = MaterialTheme.typography.titleLarge.copy(
                             fontFamily = com.omkarnub.kanri.ui.theme.Panchang,
                             fontWeight = FontWeight.Bold,
-                            letterSpacing = 2.4.sp,
-                            fontSize = 19.sp
+                            letterSpacing = 1.8.sp,
+                            fontSize = 16.sp
                         ),
                         color = MaterialTheme.colorScheme.onSurface
                     )
 
-                    // 2 - DEMO PROFILE ICON (will be customized later)
+                    // 2 - USER PROFILE ICON (Right)
                     Box(
                         modifier = Modifier
                             .size(38.dp)
@@ -329,15 +355,39 @@ fun HomeScreen(
                                 MaterialTheme.colorScheme.outlineVariant,
                                 CircleShape
                             )
-                            .clickable(onClick = onOpenSettings),
+                            .clickable {
+                                haptics.click()
+                                onOpenProfile()
+                            },
                         contentAlignment = Alignment.Center
                     ) {
-                        Icon(
-                            imageVector = Icons.Default.Person,
-                            contentDescription = "Profile (Demo)",
-                            tint = MaterialTheme.colorScheme.onSurfaceVariant,
-                            modifier = Modifier.size(20.dp)
-                        )
+                        val photoBitmap = remember(profilePhotoPath) {
+                            if (profilePhotoPath != null && java.io.File(profilePhotoPath!!).exists()) {
+                                try {
+                                    android.graphics.BitmapFactory.decodeFile(profilePhotoPath)?.asImageBitmap()
+                                } catch (e: Exception) {
+                                    null
+                                }
+                            } else null
+                        }
+
+                        if (photoBitmap != null) {
+                            androidx.compose.foundation.Image(
+                                bitmap = photoBitmap,
+                                contentDescription = "User Profile",
+                                contentScale = androidx.compose.ui.layout.ContentScale.Crop,
+                                modifier = Modifier.fillMaxSize()
+                            )
+                        } else {
+                            Text(
+                                text = currentUserName.take(1).uppercase(),
+                                style = MaterialTheme.typography.titleSmall.copy(
+                                    fontWeight = FontWeight.Bold,
+                                    fontSize = 15.sp
+                                ),
+                                color = MaterialTheme.colorScheme.onSurface
+                            )
+                        }
                     }
                 }
 
@@ -404,6 +454,7 @@ fun HomeScreen(
                     }
                 )
 
+
                 // =========================================================================
                 // 4.2. LEND & BORROW QUICK PULSE
                 // =========================================================================
@@ -422,7 +473,7 @@ fun HomeScreen(
                 // =========================================================================
                 RecentTransactionsSection(
                     transactions = state.transactions.take(3),
-                    onTransactionClick = { selectedTransactionForCategory = it },
+                    onTransactionClick = onTransactionClick,
                     onSeeMoreClick = onNavigateToHistory,
                     modifier = Modifier.graphicsLayer {
                         alpha = transactionsEntrance.value
@@ -603,17 +654,6 @@ private fun EmptyTransactionsCard(onSeeMoreClick: () -> Unit) {
         }
     }
 }
-
-private fun getGreetingForCurrentTime(): String {
-    val hour = Calendar.getInstance().get(Calendar.HOUR_OF_DAY)
-    return when (hour) {
-        in 5..11 -> "Good morning"
-        in 12..16 -> "Good afternoon"
-        in 17..21 -> "Good evening"
-        else -> "Good night"
-    }
-}
-
 
 @Composable
 fun TransactionListItem(

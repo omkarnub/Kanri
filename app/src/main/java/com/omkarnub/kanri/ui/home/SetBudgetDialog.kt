@@ -55,6 +55,7 @@ import androidx.compose.ui.window.DialogProperties
 import com.omkarnub.kanri.ui.common.AnimatedNumberText
 import com.omkarnub.kanri.ui.common.rememberKanriGlassTheme
 import com.omkarnub.kanri.util.CurrencyUtils
+import com.omkarnub.kanri.util.rememberKanriHaptics
 
 /**
  * Set Budget Dialog:
@@ -73,6 +74,7 @@ fun SetBudgetDialog(
     category: com.omkarnub.kanri.data.db.CategoryEntity? = null
 ) {
     val glassTheme = rememberKanriGlassTheme()
+    val haptics = rememberKanriHaptics()
 
     var budgetAmount by remember(currentBudget) {
         mutableDoubleStateOf(if (currentBudget > 0) currentBudget else if (category != null) 3000.0 else 20000.0)
@@ -150,6 +152,7 @@ fun SetBudgetDialog(
                         // Decrease Button [-]
                         IconButton(
                             onClick = {
+                                haptics.tick()
                                 val next = (budgetAmount - 1000.0).coerceAtLeast(100.0)
                                 budgetAmount = next
                                 customText = next.toLong().toString()
@@ -261,6 +264,7 @@ fun SetBudgetDialog(
                         // Increase Button [+]
                         IconButton(
                             onClick = {
+                                haptics.tick()
                                 val next = budgetAmount + 1000.0
                                 budgetAmount = next
                                 customText = next.toLong().toString()
@@ -301,6 +305,7 @@ fun SetBudgetDialog(
                                 .weight(1f)
                                 .clip(RoundedCornerShape(10.dp))
                                 .clickable {
+                                    haptics.tick()
                                     budgetAmount += inc
                                     customText = budgetAmount.toLong().toString()
                                     isManualInput = false
@@ -341,7 +346,10 @@ fun SetBudgetDialog(
                     horizontalArrangement = Arrangement.End,
                     verticalAlignment = Alignment.CenterVertically
                 ) {
-                    TextButton(onClick = onDismiss) {
+                    TextButton(onClick = {
+                        haptics.tick()
+                        onDismiss()
+                    }) {
                         Text(
                             text = "Maybe Later",
                             color = MaterialTheme.colorScheme.onSurfaceVariant,
@@ -352,9 +360,11 @@ fun SetBudgetDialog(
                     Button(
                         onClick = {
                             if (budgetAmount > 0) {
+                                haptics.success()
                                 onSaveBudget(budgetAmount)
                                 onDismiss()
                             } else {
+                                haptics.warning()
                                 isError = true
                             }
                         },

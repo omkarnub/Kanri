@@ -1,0 +1,74 @@
+<?xml version="1.0" encoding="utf-8"?>
+<LinearLayout xmlns:android="http://schemas.android.com/apk/res/android"
+    android:id="@+id/widget_goals_ring_root"
+    android:layout_width="match_parent"
+    android:layout_height="match_parent"
+    android:background="@drawable/widget_glass_card"
+    android:gravity="center"
+    android:orientation="vertical"
+    android:padding="14dp">
+
+    <!-- Header -->
+    <LinearLayout
+        android:id="@+id/widget_goals_ring_header"
+        android:layout_width="match_parent"
+        android:layout_height="wrap_content"
+        android:gravity="center_vertical"
+        android:orientation="horizontal">
+
+        <TextView
+            android:layout_width="0dp"
+            android:layout_height="wrap_content"
+            android:layout_weight="1"
+            android:fontFamily="@font/google_sans_bold"
+            android:letterSpacing="0.08"
+            android:text="SAVINGS GOAL"
+            android:textColor="#FFFFFF"
+            android:textSize="11sp" />
+
+        <ImageView
+            android:layout_width="14dp"
+            android:layout_height="14dp"
+            android:contentDescription="Arrow"
+            android:src="@drawable/ic_widget_arrow_right"
+            android:tint="#FFFFFF" />
+    </LinearLayout>
+
+    <!-- Goal Ring Canvas rendered Bitmap -->
+    <ImageView
+        android:id="@+id/widget_goal_ring_image"
+        android:layout_width="match_parent"
+        android:layout_height="0dp"
+        android:layout_marginTop="4dp"
+        android:layout_marginBottom="4dp"
+        android:layout_weight="1"
+        android:src="@drawable/preview_goal_ring"
+        android:contentDescription="Goal Ring Chart"
+        android:scaleType="fitCenter" />
+
+    <!-- Goal Title & Amount details -->
+    <TextView
+        android:id="@+id/widget_goal_title"
+        android:layout_width="match_parent"
+        android:layout_height="wrap_content"
+        android:ellipsize="end"
+        android:fontFamily="@font/google_sans_bold"
+        android:gravity="center"
+        android:maxLines="1"
+        android:text="New Laptop"
+        android:textColor="#FFFFFF"
+        android:textSize="12sp" />
+
+    <TextView
+        android:id="@+id/widget_goal_amounts"
+        android:layout_width="match_parent"
+        android:layout_height="wrap_content"
+        android:layout_marginTop="1dp"
+        android:fontFamily="@font/google_sans_medium"
+        android:gravity="center"
+        android:singleLine="true"
+        android:text="₹35,000 of ₹70,000"
+        android:textColor="#B3FFFFFF"
+        android:textSize="10.5sp" />
+
+</LinearLayout>

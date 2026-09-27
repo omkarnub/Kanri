@@ -157,7 +157,7 @@ class InstantPopupService : Service() {
             PixelFormat.TRANSLUCENT
         ).apply {
             gravity = Gravity.TOP
-            y = 120 // Positioned right below status bar
+            y = 110 // Positioned right below the status bar like a heads-up notification
         }
 
         val composeView = ComposeView(this).apply {
@@ -187,7 +187,7 @@ class InstantPopupService : Service() {
                         bank = bank,
                         sourceType = sourceType,
                         categories = categories,
-                        autoDismissSeconds = 8,
+                        autoDismissSeconds = 10,
                         onCategorySelected = { catId ->
                             serviceScope.launch(Dispatchers.IO) {
                                 if (txId > 0L) {

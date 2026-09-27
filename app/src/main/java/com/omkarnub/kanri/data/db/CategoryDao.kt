@@ -39,6 +39,15 @@ interface CategoryDao {
     @Query("SELECT * FROM counterparty_category_map")
     suspend fun getAllMappings(): List<CounterpartyCategoryMapEntity>
 
+    @Query("SELECT * FROM counterparty_category_map ORDER BY counterparty ASC")
+    fun getAllMappingsFlow(): Flow<List<CounterpartyCategoryMapEntity>>
+
+    @Query("SELECT * FROM counterparty_category_map WHERE :counterparty LIKE '%' || counterparty || '%' ORDER BY length(counterparty) DESC LIMIT 1")
+    suspend fun findSmartRuleForCounterparty(counterparty: String): CounterpartyCategoryMapEntity?
+
+    @Query("DELETE FROM counterparty_category_map WHERE counterparty = :counterparty")
+    suspend fun deleteMapping(counterparty: String)
+
     @Insert(onConflict = OnConflictStrategy.REPLACE)
     suspend fun insertMappings(mappings: List<CounterpartyCategoryMapEntity>)
 

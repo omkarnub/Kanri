@@ -1,12 +1,14 @@
 <?xml version="1.0" encoding="utf-8"?>
 <manifest xmlns:android="http://schemas.android.com/apk/res/android"
     xmlns:tools="http://schemas.android.com/tools">
-    <uses-permission android:name="android.permission.RECEIVE_SMS" />
-    <uses-permission android:name="android.permission.READ_SMS" />
+
     <uses-permission android:name="android.permission.SYSTEM_ALERT_WINDOW" />
     <uses-permission android:name="android.permission.POST_NOTIFICATIONS" />
     <uses-permission android:name="android.permission.FOREGROUND_SERVICE" />
     <uses-permission android:name="android.permission.FOREGROUND_SERVICE_SPECIAL_USE" />
+    <uses-permission android:name="android.permission.INTERNET" />
+    <uses-permission android:name="android.permission.ACCESS_NETWORK_STATE" />
+    <uses-permission android:name="android.permission.VIBRATE" />
 
     <application
         android:name=".KanriApplication"
@@ -93,13 +95,7 @@
             </intent-filter>
         </activity>
 
-        <receiver
-            android:name=".SmsReceiver"
-            android:exported="true">
-            <intent-filter>
-                <action android:name="android.provider.Telephony.SMS_RECEIVED" />
-            </intent-filter>
-        </receiver>
+
 
         <service
             android:name=".ui.popup.InstantPopupService"
@@ -123,15 +119,109 @@
                 <action android:name="android.service.notification.NotificationListenerService" />
             </intent-filter>
         </service>
+
+        <!-- Quick Settings Tile -->
+        <service
+            android:name=".service.QuickAddTileService"
+            android:label="@string/quick_add_tile_label"
+            android:icon="@drawable/ic_widget_add"
+            android:permission="android.permission.BIND_QUICK_SETTINGS_TILE"
+            android:exported="true">
+            <intent-filter>
+                <action android:name="android.service.quicksettings.action.QS_TILE" />
+            </intent-filter>
+        </service>
+
+
+        <!-- 1. Budget Ring Chart Widget -->
         <receiver
-            android:name=".widget.KanriAppWidgetProvider"
+            android:name=".widget.BudgetRingWidgetProvider"
+            android:label="@string/widget_budget_ring_name"
             android:exported="true">
             <intent-filter>
                 <action android:name="android.appwidget.action.APPWIDGET_UPDATE" />
             </intent-filter>
             <meta-data
                 android:name="android.appwidget.provider"
-                android:resource="@xml/kanri_widget_info" />
+                android:resource="@xml/widget_budget_ring_info" />
+        </receiver>
+
+        <!-- 2. Budget Progress Bar Widget -->
+        <receiver
+            android:name=".widget.BudgetProgressWidgetProvider"
+            android:label="@string/widget_budget_progress_name"
+            android:exported="true">
+            <intent-filter>
+                <action android:name="android.appwidget.action.APPWIDGET_UPDATE" />
+            </intent-filter>
+            <meta-data
+                android:name="android.appwidget.provider"
+                android:resource="@xml/widget_budget_progress_info" />
+        </receiver>
+
+        <!-- 3. Lend and Borrow Dues Widget -->
+        <receiver
+            android:name=".widget.LendBorrowWidgetProvider"
+            android:label="@string/widget_lend_borrow_name"
+            android:exported="true">
+            <intent-filter>
+                <action android:name="android.appwidget.action.APPWIDGET_UPDATE" />
+            </intent-filter>
+            <meta-data
+                android:name="android.appwidget.provider"
+                android:resource="@xml/widget_lend_borrow_info" />
+        </receiver>
+
+        <!-- 4. Savings Goals Ring Widget -->
+        <receiver
+            android:name=".widget.GoalsRingWidgetProvider"
+            android:label="@string/widget_goals_ring_name"
+            android:exported="true">
+            <intent-filter>
+                <action android:name="android.appwidget.action.APPWIDGET_UPDATE" />
+            </intent-filter>
+            <meta-data
+                android:name="android.appwidget.provider"
+                android:resource="@xml/widget_goals_ring_info" />
+        </receiver>
+
+        <!-- 5. Split The Bill Widget -->
+        <receiver
+            android:name=".widget.SplitBillWidgetProvider"
+            android:label="@string/widget_split_bill_name"
+            android:exported="true">
+            <intent-filter>
+                <action android:name="android.appwidget.action.APPWIDGET_UPDATE" />
+            </intent-filter>
+            <meta-data
+                android:name="android.appwidget.provider"
+                android:resource="@xml/widget_split_bill_info" />
+        </receiver>
+
+        <!-- 6. Quick Add Expense and Income Widget -->
+        <receiver
+            android:name=".widget.QuickAddWidgetProvider"
+            android:label="@string/widget_quick_add_name"
+            android:exported="true">
+            <intent-filter>
+                <action android:name="android.appwidget.action.APPWIDGET_UPDATE" />
+            </intent-filter>
+            <meta-data
+                android:name="android.appwidget.provider"
+                android:resource="@xml/widget_quick_add_info" />
+        </receiver>
+
+        <!-- 7. Money Spent Today Widget -->
+        <receiver
+            android:name=".widget.MoneySpentTodayWidgetProvider"
+            android:label="@string/widget_spent_today_name"
+            android:exported="true">
+            <intent-filter>
+                <action android:name="android.appwidget.action.APPWIDGET_UPDATE" />
+            </intent-filter>
+            <meta-data
+                android:name="android.appwidget.provider"
+                android:resource="@xml/widget_spent_today_info" />
         </receiver>
 
         <provider

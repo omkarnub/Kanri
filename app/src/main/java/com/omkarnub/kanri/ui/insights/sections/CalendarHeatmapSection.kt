@@ -44,6 +44,7 @@ import com.omkarnub.kanri.ui.home.formatCurrency
 import com.omkarnub.kanri.ui.insights.CalendarDayData
 import com.omkarnub.kanri.ui.insights.CalendarHeatmapData
 import com.omkarnub.kanri.ui.insights.InsightsMode
+import com.omkarnub.kanri.util.rememberKanriHaptics
 import java.time.LocalDate
 import java.time.format.DateTimeFormatter
 
@@ -58,6 +59,7 @@ fun CalendarHeatmapSection(
 ) {
     var selectedDay by remember { mutableStateOf<CalendarDayData?>(null) }
     val textMeasurer = rememberTextMeasurer()
+    val haptics = rememberKanriHaptics()
 
     val onSurface = MaterialTheme.colorScheme.onSurface
     val onSurfaceVariant = MaterialTheme.colorScheme.onSurfaceVariant
@@ -182,6 +184,7 @@ fun CalendarHeatmapSection(
 
                             val dayIndex = cellIndex - leadingOffset
                             if (dayIndex in data.days.indices) {
+                                haptics.tick()
                                 selectedDay = data.days[dayIndex]
                             } else {
                                 selectedDay = null
@@ -330,7 +333,10 @@ fun CalendarHeatmapSection(
 
                         if (sel.hasSpend) {
                             TextButton(
-                                onClick = { onViewDayInHistory(sel.date) },
+                                onClick = {
+                                    haptics.click()
+                                    onViewDayInHistory(sel.date)
+                                },
                                 contentPadding = androidx.compose.foundation.layout.PaddingValues(horizontal = 8.dp, vertical = 0.dp)
                             ) {
                                 Text("View history", fontSize = 11.sp, fontWeight = FontWeight.SemiBold)

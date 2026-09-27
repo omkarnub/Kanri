@@ -3,11 +3,10 @@
 -keep class com.omkarnub.kanri.data.parser.** { *; }
 -keep class com.omkarnub.kanri.KanriApplication { *; }
 -keep class com.omkarnub.kanri.MainActivity { *; }
--keep class com.omkarnub.kanri.SmsReceiver { *; }
 -keep class com.omkarnub.kanri.ui.popup.InstantPopupService { *; }
 -keep class com.omkarnub.kanri.ui.popup.InstantPopupReceiver { *; }
 -keep class com.omkarnub.kanri.ui.notification.KanriNotificationListenerService { *; }
--keep class com.omkarnub.kanri.widget.KanriAppWidgetProvider { *; }
+-keep class com.omkarnub.kanri.widget.** { *; }
 -keep class net.sqlcipher.** { *; }
 -keep class net.zetetic.** { *; }
 -keep class androidx.work.** { *; }

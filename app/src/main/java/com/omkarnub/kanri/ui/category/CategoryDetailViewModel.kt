@@ -166,6 +166,7 @@ class CategoryDetailViewModel(application: Application) : AndroidViewModel(appli
     ) {
         viewModelScope.launch {
             transactionDao.updateCategoryAndNotes(transactionId, newCategoryId, note)
+            com.omkarnub.kanri.data.lending.LendingTransactionSyncHelper.onTransactionCategoryChanged(transactionId, newCategoryId, db, getApplication())
             if (applyToAll && !counterparty.isNullOrBlank()) {
                 transactionDao.updateCategoryForCounterparty(counterparty, newCategoryId)
                 categoryDao.setMapping(

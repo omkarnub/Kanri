@@ -1,3 +1,17 @@
 <resources>
     <string name="app_name">Kanri</string>
+    <!-- Google Sign-In: Replace with your Web Application Client ID from Google Cloud Console -->
+    <string name="google_web_client_id">17780156416-fjke0vo6lf1uqfmjce9vg6rqbf4qclmm.apps.googleusercontent.com</string>
+
+    <string name="widget_budget_ring_name">Budget Ring Chart</string>
+    <string name="widget_budget_progress_name">Budget Progress Bar</string>
+    <string name="widget_lend_borrow_name">Lend &amp; Borrow Dues</string>
+    <string name="widget_goals_ring_name">Savings Goals Ring</string>
+    <string name="widget_split_bill_name">Split The Bill</string>
+    <string name="widget_quick_add_name">Quick Add Expense/Income</string>
+    <string name="widget_spent_today_name">Money Spent Today</string>
+
+    <!-- Quick Settings Tile -->
+    <string name="quick_add_tile_label">Quick Add</string>
+    <string name="quick_add_tile_subtitle">Log Expense</string>
 </resources>

@@ -234,7 +234,7 @@ fun TimelineRowItem(
             }
 
             // Subtitle: Date & Status
-            val dateStr = LendingDateFormatters.formatMedium(record.date)
+            val dateStr = LendingDateFormatters.formatDateTime(record.date)
             Row(
                 verticalAlignment = Alignment.CenterVertically,
                 horizontalArrangement = Arrangement.spacedBy(6.dp)

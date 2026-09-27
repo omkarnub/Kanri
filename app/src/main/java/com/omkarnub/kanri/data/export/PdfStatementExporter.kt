@@ -22,7 +22,6 @@ object PdfStatementExporter {
 
     private val amountFormat = DecimalFormat("₹#,##0.00")
     private val dateFormat = SimpleDateFormat("dd MMM yyyy", Locale.getDefault())
-    private val timeFormat = SimpleDateFormat("hh:mm a", Locale.getDefault())
 
     fun exportPdf(
         transactions: List<TransactionWithCategory>,

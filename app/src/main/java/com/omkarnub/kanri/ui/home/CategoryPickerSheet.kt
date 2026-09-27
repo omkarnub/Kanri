@@ -46,11 +46,21 @@ import androidx.compose.material3.Icon
 import androidx.compose.material3.IconButton
 import androidx.compose.material3.MaterialTheme
 import androidx.compose.material3.ModalBottomSheet
+import androidx.compose.material3.rememberModalBottomSheetState
 import androidx.compose.material3.OutlinedTextField
 import androidx.compose.material3.OutlinedTextFieldDefaults
 import androidx.compose.material3.Surface
 import androidx.compose.material3.Text
-import androidx.compose.material3.rememberModalBottomSheetState
+import androidx.compose.foundation.horizontalScroll
+import androidx.compose.foundation.rememberScrollState
+import androidx.compose.material3.Switch
+import androidx.compose.material3.SwitchDefaults
+import androidx.compose.runtime.collectAsState
+import androidx.compose.ui.text.input.KeyboardType
+import com.omkarnub.kanri.data.db.SavingsGoalContributionEntity
+import com.omkarnub.kanri.util.rememberKanriHaptics
+import com.omkarnub.kanri.ui.savings.GoalIcon
+import com.omkarnub.kanri.ui.theme.GoogleSansFlex
 import androidx.compose.runtime.Composable
 import androidx.compose.runtime.getValue
 import androidx.compose.runtime.mutableStateOf
@@ -159,18 +169,33 @@ fun CategoryPickerSheet(
     targetTransaction: TransactionWithCategory,
     categories: List<CategoryEntity>,
     onDismiss: () -> Unit,
-    onCategorySelected: (categoryId: Long, note: String?) -> Unit
+    onCategorySelected: (categoryId: Long, note: String?) -> Unit,
+    onOpenLendBorrow: ((TransactionWithCategory) -> Unit)? = null
 ) {
     val sheetState = rememberModalBottomSheetState(skipPartiallyExpanded = true)
     val context = LocalContext.current
     val coroutineScope = rememberCoroutineScope()
     val focusManager = LocalFocusManager.current
+    val haptics = rememberKanriHaptics()
 
     var chosenCategoryId by remember(targetTransaction) {
         mutableStateOf<Long?>(targetTransaction.category?.id)
     }
     var noteText by remember(targetTransaction) {
         mutableStateOf(targetTransaction.transaction.notes ?: "")
+    }
+
+    val isIncome = targetTransaction.transaction.type.equals("CREDIT", ignoreCase = true)
+    val db = remember { KanriDatabase.getDatabase(context) }
+    val activeGoalsFlow = remember { db.savingsGoalDao().getActiveGoals() }
+    val activeGoals by activeGoalsFlow.collectAsState(initial = emptyList())
+
+    var isAllocateToGoalEnabled by remember { mutableStateOf(false) }
+    var selectedGoalId by remember(activeGoals) {
+        mutableStateOf<Long?>(activeGoals.firstOrNull()?.id)
+    }
+    var allocatedGoalAmountStr by remember(targetTransaction) {
+        mutableStateOf(targetTransaction.transaction.amount.toInt().toString())
     }
 
     var isSearchOpen by remember { mutableStateOf(false) }
@@ -308,6 +333,7 @@ fun CategoryPickerSheet(
                                 // Search Icon Button
                                 IconButton(
                                     onClick = {
+                                        haptics.tick()
                                         isSearchOpen = !isSearchOpen
                                         if (!isSearchOpen) searchQuery = ""
                                     },
@@ -323,7 +349,10 @@ fun CategoryPickerSheet(
 
                                 // + Button: Create Custom Category
                                 IconButton(
-                                    onClick = { isCreatingCategory = true },
+                                    onClick = {
+                                        haptics.click()
+                                        isCreatingCategory = true
+                                    },
                                     modifier = Modifier.size(36.dp)
                                 ) {
                                     Icon(
@@ -418,7 +447,12 @@ fun CategoryPickerSheet(
                                             .fillMaxWidth()
                                             .clip(RoundedCornerShape(14.dp))
                                             .clickable {
+                                                haptics.click()
                                                 chosenCategoryId = cat.id
+                                                val isLendBorrow = cat.name.contains("lend", ignoreCase = true) || cat.name.contains("borrow", ignoreCase = true)
+                                                if (isLendBorrow && onOpenLendBorrow != null) {
+                                                    onOpenLendBorrow(targetTransaction)
+                                                }
                                             }
                                     ) {
                                         Row(
@@ -456,7 +490,183 @@ fun CategoryPickerSheet(
                             }
                         }
 
-                        Spacer(modifier = Modifier.height(14.dp))
+                        // ==========================================
+                        // OPTION: ADD INCOME TO SAVINGS GOAL
+                        // ==========================================
+                        if (isIncome && activeGoals.isNotEmpty()) {
+                            Spacer(modifier = Modifier.height(10.dp))
+                            Surface(
+                                shape = RoundedCornerShape(14.dp),
+                                color = MaterialTheme.colorScheme.surfaceVariant.copy(alpha = 0.45f),
+                                border = BorderStroke(
+                                    1.dp,
+                                    if (isAllocateToGoalEnabled) MaterialTheme.colorScheme.onSurface else MaterialTheme.colorScheme.outlineVariant
+                                ),
+                                modifier = Modifier.fillMaxWidth()
+                            ) {
+                                Column(modifier = Modifier.padding(12.dp)) {
+                                    Row(
+                                        modifier = Modifier
+                                            .fillMaxWidth()
+                                            .clickable { isAllocateToGoalEnabled = !isAllocateToGoalEnabled },
+                                        verticalAlignment = Alignment.CenterVertically,
+                                        horizontalArrangement = Arrangement.SpaceBetween
+                                    ) {
+                                        Row(
+                                            verticalAlignment = Alignment.CenterVertically,
+                                            horizontalArrangement = Arrangement.spacedBy(10.dp),
+                                            modifier = Modifier.weight(1f)
+                                        ) {
+                                            Surface(
+                                                shape = CircleShape,
+                                                color = if (isAllocateToGoalEnabled) MaterialTheme.colorScheme.onSurface else MaterialTheme.colorScheme.surface,
+                                                modifier = Modifier.size(32.dp)
+                                            ) {
+                                                Box(contentAlignment = Alignment.Center) {
+                                                    GoalIcon(
+                                                        iconKey = "savings",
+                                                        tint = if (isAllocateToGoalEnabled) MaterialTheme.colorScheme.surface else MaterialTheme.colorScheme.onSurface,
+                                                        modifier = Modifier.size(17.dp)
+                                                    )
+                                                }
+                                            }
+                                            Column {
+                                                Text(
+                                                    text = "Add to Savings Goal",
+                                                    fontFamily = GoogleSansFlex,
+                                                    style = MaterialTheme.typography.bodyMedium.copy(fontWeight = FontWeight.Bold),
+                                                    color = MaterialTheme.colorScheme.onSurface
+                                                )
+                                                Text(
+                                                    text = "Allocate this income as savings for a goal",
+                                                    fontFamily = GoogleSansFlex,
+                                                    style = MaterialTheme.typography.bodySmall,
+                                                    color = MaterialTheme.colorScheme.onSurfaceVariant
+                                                )
+                                            }
+                                        }
+                                        Switch(
+                                            checked = isAllocateToGoalEnabled,
+                                            onCheckedChange = { isAllocateToGoalEnabled = it },
+                                            colors = SwitchDefaults.colors(
+                                                checkedThumbColor = MaterialTheme.colorScheme.surface,
+                                                checkedTrackColor = MaterialTheme.colorScheme.onSurface,
+                                                uncheckedThumbColor = MaterialTheme.colorScheme.outline,
+                                                uncheckedTrackColor = MaterialTheme.colorScheme.surfaceVariant
+                                            )
+                                        )
+                                    }
+
+                                    if (isAllocateToGoalEnabled) {
+                                        Spacer(modifier = Modifier.height(10.dp))
+
+                                        // Goal Chips
+                                        Text(
+                                            text = "SELECT GOAL:",
+                                            fontFamily = GoogleSansFlex,
+                                            fontSize = 10.sp,
+                                            fontWeight = FontWeight.Bold,
+                                            letterSpacing = 1.sp,
+                                            color = MaterialTheme.colorScheme.onSurfaceVariant
+                                        )
+                                        Spacer(modifier = Modifier.height(6.dp))
+
+                                        Row(
+                                            modifier = Modifier
+                                                .fillMaxWidth()
+                                                .horizontalScroll(rememberScrollState()),
+                                            horizontalArrangement = Arrangement.spacedBy(8.dp)
+                                        ) {
+                                            activeGoals.forEach { g ->
+                                                val isGoalSelected = selectedGoalId == g.id
+                                                Surface(
+                                                    shape = RoundedCornerShape(12.dp),
+                                                    color = if (isGoalSelected) MaterialTheme.colorScheme.onSurface else MaterialTheme.colorScheme.surface,
+                                                    border = BorderStroke(
+                                                        1.dp,
+                                                        if (isGoalSelected) MaterialTheme.colorScheme.onSurface else MaterialTheme.colorScheme.outlineVariant
+                                                    ),
+                                                    modifier = Modifier
+                                                        .clip(RoundedCornerShape(12.dp))
+                                                        .clickable {
+                                                            haptics.tick()
+                                                            selectedGoalId = g.id
+                                                        }
+                                                ) {
+                                                    Row(
+                                                        modifier = Modifier.padding(horizontal = 10.dp, vertical = 7.dp),
+                                                        verticalAlignment = Alignment.CenterVertically,
+                                                        horizontalArrangement = Arrangement.spacedBy(6.dp)
+                                                    ) {
+                                                        GoalIcon(
+                                                            iconKey = g.emoji,
+                                                            tint = if (isGoalSelected) MaterialTheme.colorScheme.surface else MaterialTheme.colorScheme.onSurface,
+                                                            modifier = Modifier.size(16.dp)
+                                                        )
+                                                        Text(
+                                                            text = g.title,
+                                                            fontFamily = GoogleSansFlex,
+                                                            fontSize = 12.sp,
+                                                            fontWeight = if (isGoalSelected) FontWeight.Bold else FontWeight.Medium,
+                                                            color = if (isGoalSelected) MaterialTheme.colorScheme.surface else MaterialTheme.colorScheme.onSurface
+                                                        )
+                                                    }
+                                                }
+                                            }
+                                        }
+
+                                        Spacer(modifier = Modifier.height(8.dp))
+
+                                        // Amount to allocate input
+                                        Row(
+                                            modifier = Modifier.fillMaxWidth(),
+                                            verticalAlignment = Alignment.CenterVertically,
+                                            horizontalArrangement = Arrangement.spacedBy(8.dp)
+                                        ) {
+                                            OutlinedTextField(
+                                                value = allocatedGoalAmountStr,
+                                                onValueChange = { allocatedGoalAmountStr = it },
+                                                label = { Text("Amount to Save (₹)", fontFamily = GoogleSansFlex, fontSize = 11.sp) },
+                                                keyboardOptions = KeyboardOptions(keyboardType = KeyboardType.Number),
+                                                singleLine = true,
+                                                shape = RoundedCornerShape(12.dp),
+                                                colors = OutlinedTextFieldDefaults.colors(
+                                                    focusedContainerColor = MaterialTheme.colorScheme.surface,
+                                                    unfocusedContainerColor = MaterialTheme.colorScheme.surface,
+                                                    focusedBorderColor = MaterialTheme.colorScheme.onSurface,
+                                                    unfocusedBorderColor = MaterialTheme.colorScheme.outlineVariant
+                                                ),
+                                                textStyle = MaterialTheme.typography.bodyMedium.copy(fontFamily = GoogleSansFlex, fontSize = 13.sp),
+                                                modifier = Modifier.weight(1f)
+                                            )
+
+                                            Surface(
+                                                shape = RoundedCornerShape(10.dp),
+                                                color = MaterialTheme.colorScheme.surface,
+                                                border = BorderStroke(0.8.dp, MaterialTheme.colorScheme.outlineVariant),
+                                                modifier = Modifier
+                                                    .clip(RoundedCornerShape(10.dp))
+                                                    .clickable {
+                                                        haptics.tick()
+                                                        allocatedGoalAmountStr = targetTransaction.transaction.amount.toInt().toString()
+                                                    }
+                                            ) {
+                                                Text(
+                                                    text = "Full ₹${targetTransaction.transaction.amount.toInt()}",
+                                                    fontFamily = GoogleSansFlex,
+                                                    fontSize = 11.sp,
+                                                    fontWeight = FontWeight.SemiBold,
+                                                    color = MaterialTheme.colorScheme.onSurface,
+                                                    modifier = Modifier.padding(horizontal = 8.dp, vertical = 10.dp)
+                                                )
+                                            }
+                                        }
+                                    }
+                                }
+                            }
+                        }
+
+                        Spacer(modifier = Modifier.height(12.dp))
 
                         // ==========================================
                         // TEXT INPUT BOX ABOVE CONFIRM BUTTON
@@ -475,6 +685,7 @@ fun CategoryPickerSheet(
                                     } else {
                                         "Add a note to remember (Optional)..."
                                     },
+                                    fontFamily = GoogleSansFlex,
                                     fontSize = 13.sp
                                 )
                             },
@@ -488,7 +699,7 @@ fun CategoryPickerSheet(
                             },
                             singleLine = true,
                             shape = RoundedCornerShape(12.dp),
-                            textStyle = MaterialTheme.typography.bodyMedium.copy(fontSize = 13.5.sp),
+                            textStyle = MaterialTheme.typography.bodyMedium.copy(fontFamily = GoogleSansFlex, fontSize = 13.5.sp),
                             keyboardOptions = KeyboardOptions(imeAction = ImeAction.Done),
                             keyboardActions = KeyboardActions(onDone = { focusManager.clearFocus() }),
                             colors = OutlinedTextFieldDefaults.colors(
@@ -504,8 +715,45 @@ fun CategoryPickerSheet(
                         // Confirm Button
                         Button(
                             onClick = {
+                                haptics.success()
                                 chosenCategoryId?.let { catId ->
-                                    onCategorySelected(catId, noteText.trim().ifBlank { null })
+                                    val chosenCat = allCategories.firstOrNull { it.id == catId }
+                                    val isLendBorrow = chosenCat?.name?.contains("lend", ignoreCase = true) == true ||
+                                            chosenCat?.name?.contains("borrow", ignoreCase = true) == true
+                                    if (isLendBorrow && onOpenLendBorrow != null) {
+                                        onOpenLendBorrow(targetTransaction)
+                                    } else {
+                                        var finalNote = noteText.trim().ifBlank { null }
+                                        if (isAllocateToGoalEnabled && selectedGoalId != null) {
+                                            val allocAmount = allocatedGoalAmountStr.toDoubleOrNull() ?: 0.0
+                                            val chosenGoal = activeGoals.find { it.id == selectedGoalId }
+                                            if (allocAmount > 0.0 && chosenGoal != null) {
+                                                coroutineScope.launch(Dispatchers.IO) {
+                                                    val newTotal = chosenGoal.currentAmount + allocAmount
+                                                    val isDone = chosenGoal.targetAmount > 0 && newTotal >= chosenGoal.targetAmount
+                                                    db.savingsGoalDao().updateProgress(chosenGoal.id, newTotal, isDone)
+                                                    val payeeName = targetTransaction.transaction.counterparty?.ifBlank { "Income" } ?: "Income"
+                                                    db.savingsGoalDao().insertContribution(
+                                                        SavingsGoalContributionEntity(
+                                                            goalId = chosenGoal.id,
+                                                            amount = allocAmount,
+                                                            timestamp = System.currentTimeMillis(),
+                                                            note = "Income allocation ($payeeName)",
+                                                            sourceTransactionId = targetTransaction.transaction.id
+                                                        )
+                                                    )
+                                                }
+                                                val goalTag = "[Saved ₹${allocAmount.toInt()} for ${chosenGoal.title}]"
+                                                finalNote = if (finalNote != null) "$goalTag $finalNote" else goalTag
+                                                android.widget.Toast.makeText(
+                                                    context,
+                                                    "₹${allocAmount.toInt()} allocated to ${chosenGoal.title}",
+                                                    android.widget.Toast.LENGTH_SHORT
+                                                ).show()
+                                            }
+                                        }
+                                        onCategorySelected(catId, finalNote)
+                                    }
                                 }
                             },
                             enabled = isConfirmEnabled,
@@ -522,6 +770,7 @@ fun CategoryPickerSheet(
                         ) {
                             Text(
                                 text = "Confirm",
+                                fontFamily = GoogleSansFlex,
                                 style = MaterialTheme.typography.titleMedium.copy(
                                     fontWeight = FontWeight.SemiBold,
                                     fontSize = 15.sp
@@ -543,6 +792,7 @@ fun CreateCustomCategoryView(
     onBack: () -> Unit,
     onCategoryCreated: (CategoryEntity) -> Unit
 ) {
+    val haptics = rememberKanriHaptics()
     var name by remember { mutableStateOf("") }
     var selectedIconName by remember { mutableStateOf(AVAILABLE_CATEGORY_ICONS.first().iconName) }
 
@@ -553,7 +803,10 @@ fun CreateCustomCategoryView(
             modifier = Modifier.fillMaxWidth()
         ) {
             IconButton(
-                onClick = onBack,
+                onClick = {
+                    haptics.tick()
+                    onBack()
+                },
                 modifier = Modifier.size(36.dp)
             ) {
                 Icon(
@@ -612,7 +865,10 @@ fun CreateCustomCategoryView(
                     modifier = Modifier
                         .size(48.dp)
                         .clip(RoundedCornerShape(12.dp))
-                        .clickable { selectedIconName = iconOpt.iconName }
+                        .clickable {
+                            haptics.tick()
+                            selectedIconName = iconOpt.iconName
+                        }
                 ) {
                     Box(contentAlignment = Alignment.Center) {
                         CategoryIcon(
@@ -632,6 +888,7 @@ fun CreateCustomCategoryView(
         Button(
             onClick = {
                 if (name.trim().isNotBlank()) {
+                    haptics.success()
                     onCategoryCreated(
                         CategoryEntity(
                             name = name.trim(),
