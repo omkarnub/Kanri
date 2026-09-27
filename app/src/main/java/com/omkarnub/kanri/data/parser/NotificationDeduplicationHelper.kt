@@ -10,6 +10,19 @@ sealed class DeduplicationResult {
     data class SkippedDuplicate(val existingId: Long) : DeduplicationResult()
 }
 
+/**
+ * Deduplication Engine for Kanri's dual SMS and Notification pipelines.
+ *
+ * Rules:
+ * 1. SMS is primary for all Debits. NotificationListener is supplementary for Credits/Rewards only.
+ * 2. When both an SMS and a notification fire for the same incoming payment:
+ *    - If amount matches and timestamps are within 5 minutes (+/- 300,000 ms), they are merged
+ *      into a single transaction rather than creating duplicates.
+ *    - If notification arrived first, subsequent bank SMS enriches the bank institution, refNo, and raw SMS.
+ *    - If bank SMS arrived first, subsequent notification enriches the payee/counterparty display name.
+ * 3. If amounts differ or timestamps are > 5 minutes apart, they are kept as separate entries.
+ * 4. Exact ref_no (UTR) match always deduplicates.
+ */
 object NotificationDeduplicationHelper {
 
     const val DEDUPE_WINDOW_MS = 5 * 60 * 1000L // 5 minutes sliding window
@@ -23,10 +36,22 @@ object NotificationDeduplicationHelper {
         if (!parsed.refNo.isNullOrBlank()) {
             val existingByRef = dao.findByRefNo(parsed.refNo)
             if (existingByRef != null) {
+                var enriched = false
                 if (shouldEnrich(existingByRef.counterparty, parsed.counterparty)) {
                     val enrichedName = parsed.counterparty!!
                     dao.enrichCounterpartyIfEmpty(existingByRef.id, enrichedName, enrichedName)
-                    return DeduplicationResult.Enriched(existingByRef.id, enrichedName)
+                    enriched = true
+                }
+                if (!parsed.bank.isNullOrBlank() && (existingByRef.bank == null || isPaymentAppBank(existingByRef.bank))) {
+                    dao.enrichBankIfGeneric(existingByRef.id, parsed.bank)
+                    enriched = true
+                }
+                if (parsed.rawText.isNotBlank() && isBankSms(parsed.rawText)) {
+                    dao.enrichRawSmsIfFromNotification(existingByRef.id, parsed.rawText)
+                    enriched = true
+                }
+                if (enriched) {
+                    return DeduplicationResult.Enriched(existingByRef.id, parsed.counterparty ?: existingByRef.counterparty ?: "")
                 }
                 return DeduplicationResult.SkippedDuplicate(existingByRef.id)
             }
@@ -63,6 +88,14 @@ object NotificationDeduplicationHelper {
             }
             if (!parsed.refNo.isNullOrBlank() && existingMatch.refNo.isNullOrBlank()) {
                 dao.enrichRefNoIfEmpty(existingMatch.id, parsed.refNo)
+                enriched = true
+            }
+            if (!parsed.bank.isNullOrBlank() && (existingMatch.bank == null || isPaymentAppBank(existingMatch.bank))) {
+                dao.enrichBankIfGeneric(existingMatch.id, parsed.bank)
+                enriched = true
+            }
+            if (parsed.rawText.isNotBlank() && isBankSms(parsed.rawText)) {
+                dao.enrichRawSmsIfFromNotification(existingMatch.id, parsed.rawText)
                 enriched = true
             }
             if (enriched) {
@@ -123,7 +156,7 @@ object NotificationDeduplicationHelper {
         if (incomingCounterparty.isNullOrBlank()) return false
         if (existingCounterparty.isNullOrBlank()) return true
         val existingLower = existingCounterparty.trim().lowercase()
-        return existingLower == "upi" || existingLower == "upi payment" || existingLower == "bank transfer"
+        return isGenericMerchant(existingLower) && !isGenericMerchant(incomingCounterparty)
     }
 
     private fun isGenericMerchant(name: String?): Boolean {
@@ -132,5 +165,19 @@ object NotificationDeduplicationHelper {
         return lower == "upi" || lower == "upi payment" || lower == "bank transfer" ||
                 lower == "expense" || lower == "income" || lower == "unknown" ||
                 lower == "payment" || lower == "upi credit"
+    }
+
+    private fun isPaymentAppBank(bank: String?): Boolean {
+        if (bank.isNullOrBlank()) return true
+        val lower = bank.trim().lowercase()
+        return lower == "google pay" || lower == "paytm" || lower == "phonepe" ||
+                lower == "fampay" || lower == "bhim upi" || lower == "amazon pay" ||
+                lower == "payment"
+    }
+
+    private fun isBankSms(text: String): Boolean {
+        val lower = text.lowercase()
+        return lower.contains("debited") || lower.contains("credited") || lower.contains("a/c") ||
+                lower.contains("account") || lower.contains("withdrawn") || lower.contains("spent")
     }
 }

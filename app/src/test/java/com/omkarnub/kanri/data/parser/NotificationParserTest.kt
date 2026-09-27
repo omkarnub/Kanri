@@ -168,10 +168,11 @@ class NotificationParserTest {
         assertTrue(NotificationParser.isPackageSupported(NotificationParser.PKG_SAMSUNG_MESSAGING))
         assertTrue(NotificationParser.isPackageSupported(NotificationParser.PKG_HDFC))
 
-        // WhatsApp and Amazon must NOT be supported as payment interceptors
+        // WhatsApp must NOT be supported as payment interceptors
         assertFalse(NotificationParser.isPackageSupported("com.whatsapp"))
         assertFalse(NotificationParser.isPackageSupported("com.whatsapp.w4b"))
-        assertFalse(NotificationParser.isPackageSupported("in.amazon.mShop.android.shopping"))
+        assertTrue(NotificationParser.isPackageSupported(NotificationParser.PKG_AMAZON_IN))
+        assertTrue(NotificationParser.isReceiveAppSupported(NotificationParser.PKG_AMAZON_IN))
 
         assertTrue(NotificationParser.isSmsApp(NotificationParser.PKG_GOOGLE_MESSAGES))
         assertTrue(NotificationParser.isSmsApp(NotificationParser.PKG_SAMSUNG_MESSAGING))

@@ -23,6 +23,10 @@ import com.omkarnub.kanri.ui.theme.ThemePreferences
 
 open class MainActivity : FragmentActivity() {
 
+    private val smsPermissionLauncher = registerForActivityResult(
+        androidx.activity.result.contract.ActivityResultContracts.RequestMultiplePermissions()
+    ) { _ -> }
+
     override fun onCreate(savedInstanceState: Bundle?) {
         val themePrefs = ThemePreferences.getInstance(applicationContext)
         if (themePrefs.themeMode == ThemeMode.LIGHT) {
@@ -37,6 +41,16 @@ open class MainActivity : FragmentActivity() {
         ExportScheduler.init(applicationContext)
         com.omkarnub.kanri.data.lending.LendingReminderScheduler.init(applicationContext)
         com.omkarnub.kanri.widget.KanriWidgetActions.handleIntent(intent)
+
+        if (!com.omkarnub.kanri.util.SmsPermissionHelper.hasSmsPermissions(this)) {
+            smsPermissionLauncher.launch(
+                arrayOf(
+                    android.Manifest.permission.RECEIVE_SMS,
+                    android.Manifest.permission.READ_SMS
+                )
+            )
+        }
+        com.omkarnub.kanri.util.BatteryOptimizationHelper.promptOnceIfAppropriate(this)
 
         setContent {
             KanriTheme {

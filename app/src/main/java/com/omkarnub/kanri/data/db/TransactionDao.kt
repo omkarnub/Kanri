@@ -102,6 +102,12 @@ interface TransactionDao {
     @Query("UPDATE transactions SET ref_no = :refNo WHERE id = :id AND (ref_no IS NULL OR ref_no = '')")
     suspend fun enrichRefNoIfEmpty(id: Long, refNo: String)
 
+    @Query("UPDATE transactions SET bank = :bank WHERE id = :id AND (bank IS NULL OR bank = '' OR bank = 'Google Pay' OR bank = 'Paytm' OR bank = 'PhonePe' OR bank = 'FamPay' OR bank = 'BHIM UPI' OR bank = 'Amazon Pay' OR bank = 'Payment')")
+    suspend fun enrichBankIfGeneric(id: Long, bank: String)
+
+    @Query("UPDATE transactions SET raw_sms = :rawSms WHERE id = :id AND (raw_sms IS NULL OR (raw_sms NOT LIKE '%debited%' AND raw_sms NOT LIKE '%credited%' AND raw_sms NOT LIKE '%A/c%' AND raw_sms NOT LIKE '%withdrawn%' AND raw_sms NOT LIKE '%spent%'))")
+    suspend fun enrichRawSmsIfFromNotification(id: Long, rawSms: String)
+
     @Query("SELECT COUNT(*) FROM transactions")
     suspend fun getCount(): Int
 

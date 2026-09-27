@@ -1648,7 +1648,7 @@ fun SettingsScreen(
 @Composable
 private fun PermissionsStatusOverview(context: Context) {
     val haptics = rememberKanriHaptics()
-
+    val isSmsAllowed = com.omkarnub.kanri.util.SmsPermissionHelper.hasSmsPermissions(context)
     val isNotificationAccessAllowed = NotificationAccessHelper.isNotificationAccessGranted(context)
 
     val isNotifAllowed = if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.TIRAMISU) {
@@ -1663,12 +1663,33 @@ private fun PermissionsStatusOverview(context: Context) {
     val isBatteryUnrestricted = powerManager?.isIgnoringBatteryOptimizations(context.packageName) == true
 
     Column(verticalArrangement = Arrangement.spacedBy(8.dp)) {
-        PermissionItemRow(name = "Payment Notification Listener", isAllowed = isNotificationAccessAllowed)
+        PermissionItemRow(name = "Bank SMS Detection (Primary)", isAllowed = isSmsAllowed)
+        PermissionItemRow(name = "Payment Notification Listener (Supplementary)", isAllowed = isNotificationAccessAllowed)
         PermissionItemRow(name = "Transaction Notifications", isAllowed = isNotifAllowed)
         PermissionItemRow(name = "Instant Floating Overlay", isAllowed = isOverlayAllowed)
         PermissionItemRow(name = "Background Battery", isAllowed = isBatteryUnrestricted, allowedLabel = "Unrestricted", deniedLabel = "Optimized")
 
         Spacer(modifier = Modifier.height(4.dp))
+
+        if (!isSmsAllowed) {
+            Button(
+                onClick = {
+                    haptics.click()
+                    if (context is android.app.Activity) {
+                        com.omkarnub.kanri.util.SmsPermissionHelper.requestSmsPermissions(context)
+                    } else {
+                        val intent = Intent(Settings.ACTION_APPLICATION_DETAILS_SETTINGS).apply {
+                            data = Uri.fromParts("package", context.packageName, null)
+                        }
+                        context.startActivity(intent)
+                    }
+                },
+                modifier = Modifier.fillMaxWidth(),
+                shape = RoundedCornerShape(10.dp)
+            ) {
+                Text("Enable Bank SMS Detection", fontSize = 12.sp)
+            }
+        }
 
         if (!isNotificationAccessAllowed) {
             Button(

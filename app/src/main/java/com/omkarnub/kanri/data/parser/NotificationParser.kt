@@ -10,6 +10,8 @@ object NotificationParser {
     const val PKG_PAYTM = "net.one97.paytm"
     const val PKG_FAMPAY = "com.fampay.in"
     const val PKG_BHIM = "in.org.npci.upiapp"
+    const val PKG_AMAZON_IN = "in.amazon.mShop.android.shopping"
+    const val PKG_AMAZON_GLOBAL = "com.amazon.mShop.android.shopping"
     const val PKG_CRED = "com.dreamplug.androidapp"
     const val PKG_NAVI = "com.naviapp"
     const val PKG_JUPITER = "money.jupiter"
@@ -37,6 +39,23 @@ object NotificationParser {
     const val PKG_IDFC = "com.idfcfirstbank.optimus"
     const val PKG_INDUSIND = "com.indusind.mobile"
 
+    /**
+     * Supplementary packages for incoming money and reward alerts only.
+     * Core Principle: SMS is the only authoritative source for debits.
+     * NotificationListenerService is strictly scoped to these packages for incoming credits/rewards.
+     */
+    val SUPPORTED_RECEIVE_PACKAGES = setOf(
+        PKG_GPAY,
+        PKG_AMAZON_IN,
+        PKG_AMAZON_GLOBAL,
+        PKG_PAYTM,
+        PKG_FAMPAY,
+        PKG_PHONEPE,
+        PKG_BHIM
+    )
+
+    fun isReceiveAppSupported(packageName: String): Boolean = SUPPORTED_RECEIVE_PACKAGES.contains(packageName)
+
     val SUPPORTED_SMS_PACKAGES = setOf(
         PKG_GOOGLE_MESSAGES,
         PKG_SAMSUNG_MESSAGING,
@@ -54,6 +73,8 @@ object NotificationParser {
         PKG_PAYTM,
         PKG_FAMPAY,
         PKG_BHIM,
+        PKG_AMAZON_IN,
+        PKG_AMAZON_GLOBAL,
         PKG_CRED,
         PKG_NAVI,
         PKG_JUPITER,
@@ -83,6 +104,7 @@ object NotificationParser {
             PKG_PAYTM -> "Paytm"
             PKG_FAMPAY -> "FamPay"
             PKG_BHIM -> "BHIM UPI"
+            PKG_AMAZON_IN, PKG_AMAZON_GLOBAL -> "Amazon Pay"
             PKG_CRED -> "CRED"
             PKG_NAVI -> "Navi"
             PKG_JUPITER -> "Jupiter"

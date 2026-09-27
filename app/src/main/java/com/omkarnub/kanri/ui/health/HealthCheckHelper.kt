@@ -26,6 +26,7 @@ data class HealthStatus(
 object HealthCheckHelper {
 
     fun checkHealth(context: Context): HealthStatus {
+        val smsHealthy = com.omkarnub.kanri.util.SmsPermissionHelper.hasSmsPermissions(context)
         val enabledListeners = NotificationManagerCompat.getEnabledListenerPackages(context)
         val notificationListenerHealthy = enabledListeners.contains(context.packageName)
 
@@ -36,12 +37,20 @@ object HealthCheckHelper {
 
         val items = listOf(
             HealthCheckItem(
+                id = "sms",
+                title = "Bank SMS Detection (Primary)",
+                description = if (smsHealthy) "Bulletproof real-time bank debit & credit SMS capture active" else "SMS permissions missing. Sent payments (UPI/Card/ATM) cannot be auto-detected.",
+                isHealthy = smsHealthy,
+                actionLabel = "Grant SMS",
+                isCritical = true
+            ),
+            HealthCheckItem(
                 id = "notification",
-                title = "Payment & Bank Alert Listener",
-                description = if (notificationListenerHealthy) "Actively detecting UPI and banking spend alerts on-device" else "Notification access paused. Transactions won't auto-log.",
+                title = "Payment Apps Listener (Supplementary)",
+                description = if (notificationListenerHealthy) "Actively detecting incoming money & rewards from GPay, Paytm, Amazon Pay" else "Notification access paused. Incoming payments won't auto-log.",
                 isHealthy = notificationListenerHealthy,
                 actionLabel = "Grant Access",
-                isCritical = true
+                isCritical = false
             ),
             HealthCheckItem(
                 id = "overlay",
@@ -65,7 +74,8 @@ object HealthCheckHelper {
         val hasAny = items.any { !it.isHealthy }
 
         val summary = when {
-            !notificationListenerHealthy -> "Notification access paused: Transaction alerts from payment apps won't auto-log."
+            !smsHealthy -> "SMS permission missing: Bank debit alerts for sent payments won't auto-log."
+            !notificationListenerHealthy -> "Notification access paused: Incoming money alerts from payment apps won't auto-log."
             !overlayHealthy -> "Instant floating overlay disabled: Tap to allow display over other apps."
             !batteryHealthy -> "Battery optimization active: Android may sleep background listeners."
             else -> null
@@ -81,6 +91,19 @@ object HealthCheckHelper {
 
     fun openAction(context: Context, itemId: String) {
         when (itemId) {
+            "sms" -> {
+                if (context is android.app.Activity) {
+                    com.omkarnub.kanri.util.SmsPermissionHelper.requestSmsPermissions(context)
+                } else {
+                    val intent = Intent(
+                        Settings.ACTION_APPLICATION_DETAILS_SETTINGS,
+                        Uri.parse("package:${context.packageName}")
+                    ).apply {
+                        addFlags(Intent.FLAG_ACTIVITY_NEW_TASK)
+                    }
+                    context.startActivity(intent)
+                }
+            }
             "notification" -> {
                 val intent = Intent(Settings.ACTION_NOTIFICATION_LISTENER_SETTINGS).apply {
                     addFlags(Intent.FLAG_ACTIVITY_NEW_TASK)

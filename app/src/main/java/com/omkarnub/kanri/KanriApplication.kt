@@ -11,5 +11,6 @@ class KanriApplication : Application() {
         CrashLogger.install(this)
         DailyReminderScheduler.init(this)
         com.omkarnub.kanri.widget.MidnightWidgetResetWorker.schedule(this)
+        com.omkarnub.kanri.ui.notification.NotificationListenerWatchdogWorker.schedule(this)
     }
 }
