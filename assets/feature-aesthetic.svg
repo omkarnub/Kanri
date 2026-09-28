@@ -1,0 +1,19 @@
+<svg width="72" height="72" viewBox="0 0 72 72" fill="none" xmlns="http://www.w3.org/2000/svg" shape-rendering="crispEdges">
+  <!-- Matte Dark Canvas -->
+  <rect x="16" y="16" width="40" height="40" rx="4" fill="#1E1E1E"/>
+  <rect x="20" y="20" width="32" height="32" fill="#121212"/>
+  
+  <!-- Frosted glass accent layer -->
+  <rect x="24" y="24" width="24" height="24" fill="#30A46C" fill-opacity="0.3"/>
+  <rect x="28" y="28" width="16" height="16" fill="#30A46C"/>
+  <rect x="32" y="32" width="8" height="8" fill="#6EE7B7"/>
+  
+  <!-- Type font pixel 'A' / glyph -->
+  <rect x="34" y="34" width="4" height="4" fill="#FFFFFF"/>
+  
+  <!-- Glowing accents -->
+  <rect x="8" y="14" width="4" height="4" fill="#30A46C"/>
+  <rect x="60" y="48" width="4" height="4" fill="#34D399"/>
+  <rect x="12" y="50" width="4" height="4" fill="#10B981"/>
+  <rect x="56" y="18" width="4" height="4" fill="#A7F3D0"/>
+</svg>

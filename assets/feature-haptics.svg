@@ -1,0 +1,21 @@
+<svg width="72" height="72" viewBox="0 0 72 72" fill="none" xmlns="http://www.w3.org/2000/svg" shape-rendering="crispEdges">
+  <!-- Phone Body -->
+  <rect x="24" y="12" width="24" height="48" rx="4" fill="#334155"/>
+  <rect x="28" y="16" width="16" height="40" fill="#0F172A"/>
+  
+  <!-- Phone screen element -->
+  <rect x="32" y="24" width="8" height="8" fill="#30A46C"/>
+  <rect x="34" y="48" width="4" height="4" fill="#64748B"/>
+  
+  <!-- Vibration waves Left -->
+  <rect x="16" y="24" width="4" height="4" fill="#38BDF8"/>
+  <rect x="12" y="28" width="4" height="16" fill="#38BDF8"/>
+  <rect x="16" y="44" width="4" height="4" fill="#38BDF8"/>
+  <rect x="8" y="32" width="4" height="8" fill="#0284C7"/>
+  
+  <!-- Vibration waves Right -->
+  <rect x="52" y="24" width="4" height="4" fill="#38BDF8"/>
+  <rect x="56" y="28" width="4" height="16" fill="#38BDF8"/>
+  <rect x="52" y="44" width="4" height="4" fill="#38BDF8"/>
+  <rect x="60" y="32" width="4" height="8" fill="#0284C7"/>
+</svg>
