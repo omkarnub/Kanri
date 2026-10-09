@@ -15,6 +15,7 @@
 
   [![Latest release](https://img.shields.io/github/v/release/omkarnub/Kanri?style=for-the-badge&color=30A46C&label=Release)](https://github.com/omkarnub/Kanri/releases/latest)
   [![Downloads](https://img.shields.io/github/downloads/omkarnub/Kanri/total?style=for-the-badge&color=30A46C&label=Downloads)](https://github.com/omkarnub/Kanri/releases)
+  [![License](https://img.shields.io/badge/License-GPL%203.0-30A46C?style=for-the-badge)](LICENSE)
   [![Platform](https://img.shields.io/badge/Android-8.0%2B-3DDC84?style=for-the-badge&logo=android&logoColor=white)](#installation)
   [![Encryption](https://img.shields.io/badge/SQLCipher-AES--256-121212?style=for-the-badge)](#privacy--security)
 </div>
@@ -202,7 +203,7 @@ Issues and pull requests are welcome. For anything larger than a small fix, open
 
 ## License :page_facing_up:
 
-See [LICENSE](LICENSE) for terms.
+This project is licensed under the **GNU General Public License v3.0** (GPL-3.0). See the [LICENSE](LICENSE) file for the full license text.
 
 ## Star History :star2:
 
