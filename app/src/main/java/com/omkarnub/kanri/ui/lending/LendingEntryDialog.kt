@@ -110,7 +110,7 @@ fun LendingEntryDialog(
     recentPeople: List<String> = emptyList(),
     allPeople: List<PersonSummary> = emptyList(),
     onDismiss: () -> Unit,
-    onSave: (personName: String, amount: Double, type: String, date: Long, dueDate: Long?, notes: String?) -> Unit
+    onSave: (personName: String, amount: Double, type: String, date: Long, dueDate: Long?, notes: String?, wallet: String) -> Unit
 ) {
     BackHandler(onBack = onDismiss)
 
@@ -130,6 +130,7 @@ fun LendingEntryDialog(
     var notes by remember { mutableStateOf(existingEntry?.lending?.notes ?: (initialNotes ?: "")) }
     var entryDate by remember { mutableLongStateOf(existingEntry?.lending?.date ?: initialDate) }
     var dueDate by remember { mutableStateOf<Long?>(existingEntry?.lending?.dueDate ?: initialDueDate) }
+    var selectedWallet by remember { mutableStateOf("NONE") }
 
     var showEntryDatePicker by remember { mutableStateOf(false) }
     var showCustomDueDatePicker by remember { mutableStateOf(false) }
@@ -1050,6 +1051,55 @@ fun LendingEntryDialog(
                         }
                     }
 
+                    if (!isEditing) {
+                        Spacer(modifier = Modifier.height(14.dp))
+                        Column(
+                            modifier = Modifier.fillMaxWidth(),
+                            verticalArrangement = Arrangement.spacedBy(6.dp)
+                        ) {
+                            Text(
+                                text = if (type == "LENT") "WALLET (MONEY GIVEN FROM)" else "WALLET (MONEY RECEIVED INTO)",
+                                style = MaterialTheme.typography.labelSmall.copy(
+                                    fontWeight = FontWeight.Bold,
+                                    letterSpacing = 1.1.sp,
+                                    fontSize = 10.5.sp
+                                ),
+                                color = MaterialTheme.colorScheme.onSurfaceVariant
+                            )
+
+                            Row(
+                                modifier = Modifier.fillMaxWidth(),
+                                horizontalArrangement = Arrangement.spacedBy(6.dp)
+                            ) {
+                                listOf(
+                                    "NONE" to "Don't affect balances",
+                                    "CASH" to "Cash",
+                                    "ONLINE" to "Online"
+                                ).forEach { (key, label) ->
+                                    val isSelected = selectedWallet == key
+                                    Surface(
+                                        shape = RoundedCornerShape(12.dp),
+                                        color = if (isSelected) MaterialTheme.colorScheme.onSurface else MaterialTheme.colorScheme.onSurface.copy(alpha = 0.05f),
+                                        border = if (!isSelected) BorderStroke(0.8.dp, MaterialTheme.colorScheme.outlineVariant) else null,
+                                        modifier = Modifier
+                                            .clip(RoundedCornerShape(12.dp))
+                                            .clickable { selectedWallet = key }
+                                    ) {
+                                        Text(
+                                            text = label,
+                                            style = MaterialTheme.typography.labelSmall.copy(
+                                                fontWeight = if (isSelected) FontWeight.Bold else FontWeight.Medium,
+                                                fontSize = 11.5.sp
+                                            ),
+                                            color = if (isSelected) MaterialTheme.colorScheme.surface else MaterialTheme.colorScheme.onSurfaceVariant,
+                                            modifier = Modifier.padding(horizontal = 10.dp, vertical = 6.dp)
+                                        )
+                                    }
+                                }
+                            }
+                        }
+                    }
+
                     Spacer(modifier = Modifier.height(14.dp))
 
                     // Note Input
@@ -1072,7 +1122,7 @@ fun LendingEntryDialog(
                     Button(
                         onClick = {
                             if (isValid) {
-                                onSave(personName.trim(), amount, type, entryDate, dueDate, notes.ifBlank { null })
+                                onSave(personName.trim(), amount, type, entryDate, dueDate, notes.ifBlank { null }, selectedWallet)
                             }
                         },
                         enabled = isValid,

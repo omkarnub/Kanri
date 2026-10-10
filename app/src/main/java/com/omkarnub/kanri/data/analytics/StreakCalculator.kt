@@ -54,9 +54,9 @@ object StreakCalculator {
             )
         }
 
-        // Expenses only: filter type == "DEBIT"
+        // Expenses only: filter type == "DEBIT" (excluding transfers)
         val debitTransactions = transactions.filter {
-            it.type.equals("DEBIT", ignoreCase = true)
+            it.type.equals("DEBIT", ignoreCase = true) && !it.isTransfer
         }
 
         // Find earliest transaction timestamp (any type: establishes user start date)

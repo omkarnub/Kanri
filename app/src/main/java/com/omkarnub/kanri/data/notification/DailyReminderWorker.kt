@@ -55,12 +55,12 @@ class DailyReminderWorker(
 
             // 1. Count uncategorized (needs_review or no category) transactions
             val allTx = db.transactionDao().getTransactionsWithCategoryBetweenSync(todayStart, todayEnd)
-            val uncategorizedCount = allTx.count { it.transaction.categoryId == null }
-            val needsReviewCount = allTx.count { it.transaction.needsReview }
+            val uncategorizedCount = allTx.count { it.transaction.categoryId == null && !it.transaction.isTransfer }
+            val needsReviewCount = allTx.count { it.transaction.needsReview && !it.transaction.isTransfer }
             val totalToReview = maxOf(uncategorizedCount, needsReviewCount)
 
             // 2. Check if no transactions at all today
-            val todayTxCount = allTx.size
+            val todayTxCount = allTx.count { !it.transaction.isTransfer }
 
             // 3. Overdue / due-soon lending
             val openLending = db.lendingDao().getAllRecordsWithRepaymentsSync()

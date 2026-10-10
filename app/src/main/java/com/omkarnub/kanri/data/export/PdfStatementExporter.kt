@@ -192,6 +192,7 @@ object PdfStatementExporter {
             canvas.drawLine(MARGIN, currentY + rowHeight, MARGIN + CONTENT_WIDTH, currentY + rowHeight, paint)
 
             val t = item.transaction
+            val isTransfer = t.isTransfer
             val isDebit = t.type.equals("DEBIT", ignoreCase = true)
 
             // Date
@@ -203,13 +204,21 @@ object PdfStatementExporter {
             // Description / Counterparty
             paint.color = Color.rgb(15, 23, 42)
             paint.typeface = Typeface.create(Typeface.DEFAULT, Typeface.BOLD)
-            val desc = t.counterparty?.take(22) ?: (t.bank ?: "Manual")
+            val desc = if (isTransfer) {
+                "Transfer (${t.wallet} → ${t.transferToWallet ?: ""})".take(22)
+            } else {
+                t.counterparty?.take(22) ?: (t.bank ?: "Manual")
+            }
             canvas.drawText(desc, MARGIN + 75f, currentY + 16f, paint)
 
             // Category
             paint.typeface = Typeface.create(Typeface.DEFAULT, Typeface.NORMAL)
             paint.color = Color.rgb(100, 116, 139)
-            val cat = (item.category?.name ?: "Uncategorized").take(18)
+            val cat = if (isTransfer) {
+                "Transfer"
+            } else {
+                (item.category?.name ?: "Uncategorized").take(18)
+            }
             canvas.drawText(cat, MARGIN + 215f, currentY + 16f, paint)
 
             // Source
@@ -219,8 +228,8 @@ object PdfStatementExporter {
             // Amount
             paint.typeface = Typeface.create(Typeface.DEFAULT, Typeface.BOLD)
             paint.textSize = 9.5f
-            val prefix = if (isDebit) "- " else "+ "
-            paint.color = if (isDebit) Color.rgb(220, 38, 38) else Color.rgb(22, 163, 74)
+            val prefix = if (isTransfer) "⇄ " else if (isDebit) "- " else "+ "
+            paint.color = if (isTransfer) Color.rgb(71, 85, 105) else if (isDebit) Color.rgb(220, 38, 38) else Color.rgb(22, 163, 74)
             val amtText = prefix + amountFormat.format(t.amount)
             val amtWidth = paint.measureText(amtText)
             canvas.drawText(amtText, MARGIN + CONTENT_WIDTH - 8f - amtWidth, currentY + 16f, paint)

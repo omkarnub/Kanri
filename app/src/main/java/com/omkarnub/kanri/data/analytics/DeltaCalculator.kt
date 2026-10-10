@@ -39,9 +39,9 @@ object DeltaCalculator {
         transactions: List<TransactionEntity>,
         nowCalendar: Calendar = Calendar.getInstance()
     ): Delta {
-        // Expenses only: filter type == "DEBIT"
+        // Expenses only: filter type == "DEBIT" (excluding transfers)
         val expenseTransactions = transactions.filter {
-            it.type.equals("DEBIT", ignoreCase = true)
+            it.type.equals("DEBIT", ignoreCase = true) && !it.isTransfer
         }
 
         val currentYear = nowCalendar.get(Calendar.YEAR)

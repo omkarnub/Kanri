@@ -41,16 +41,31 @@ import androidx.compose.foundation.shape.CircleShape
 import androidx.compose.foundation.shape.RoundedCornerShape
 import androidx.compose.foundation.text.KeyboardActions
 import androidx.compose.foundation.text.KeyboardOptions
-import androidx.compose.material.icons.Icons
+import androidx.compose.material.icons.filled.AccountBalanceWallet
 import androidx.compose.material.icons.filled.Bolt
 import androidx.compose.material.icons.filled.CameraAlt
 import androidx.compose.material.icons.filled.Check
 import androidx.compose.material.icons.filled.Close
 import androidx.compose.material.icons.filled.Fingerprint
+import androidx.compose.material.icons.Icons
 import androidx.compose.material.icons.filled.Notifications
 import androidx.compose.material.icons.filled.Person
+import androidx.compose.material.icons.filled.PowerSettingsNew
 import androidx.compose.material.icons.filled.Sms
+import androidx.compose.material3.FilterChip
+import androidx.compose.material3.Surface
+import androidx.compose.foundation.rememberScrollState
+import androidx.compose.foundation.verticalScroll
+import androidx.compose.runtime.rememberCoroutineScope
+import androidx.compose.ui.text.input.KeyboardType
+import com.omkarnub.kanri.util.rememberKanriHaptics
+import kotlinx.coroutines.launch
 import com.omkarnub.kanri.util.SmsPermissionHelper
+import android.content.Intent
+import android.os.Build
+import android.provider.Settings
+import androidx.core.app.NotificationManagerCompat
+import com.omkarnub.kanri.util.BatteryOptimizationHelper
 import androidx.compose.material3.Button
 import androidx.compose.material3.ButtonDefaults
 import androidx.compose.material3.Icon
@@ -127,6 +142,17 @@ fun OnboardingScreen(
     var hasOverlayPermission by remember {
         mutableStateOf(OverlayPermissionHelper.canDrawOverlays(context))
     }
+    var hasBatteryExemption by remember {
+        mutableStateOf(BatteryOptimizationHelper.isIgnoringBatteryOptimizations(context))
+    }
+    var hasNotificationPermission by remember {
+        mutableStateOf(NotificationManagerCompat.from(context).areNotificationsEnabled())
+    }
+    val postNotificationLauncher = rememberLauncherForActivityResult(
+        ActivityResultContracts.RequestPermission()
+    ) {
+        hasNotificationPermission = NotificationManagerCompat.from(context).areNotificationsEnabled()
+    }
 
     val lifecycleOwner = LocalLifecycleOwner.current
     DisposableEffect(lifecycleOwner) {
@@ -135,6 +161,8 @@ fun OnboardingScreen(
                 hasSmsPermission = SmsPermissionHelper.hasSmsPermissions(context)
                 hasNotificationAccess = NotificationAccessHelper.isNotificationAccessGranted(context)
                 hasOverlayPermission = OverlayPermissionHelper.canDrawOverlays(context)
+                hasBatteryExemption = BatteryOptimizationHelper.isIgnoringBatteryOptimizations(context)
+                hasNotificationPermission = NotificationManagerCompat.from(context).areNotificationsEnabled()
             }
         }
         lifecycleOwner.lifecycle.addObserver(observer)
@@ -143,8 +171,8 @@ fun OnboardingScreen(
         }
     }
 
-    // Total slides: 0=hero, 1=profile-setup, 2=sms, 3=notification, 4=overlay, 5=security
-    val totalSlides = 6
+    // Total slides: 0=hero, 1=profile-setup, 2=wallets, 3=sms, 4=notification-listener, 5=overlay, 6=battery, 7=notifications, 8=security
+    val totalSlides = 9
 
     // Helper to finish onboarding in offline-first mode
     fun finishOnboarding() {
@@ -195,7 +223,12 @@ fun OnboardingScreen(
                     onContinue = { currentSlide = 2 }
                 )
 
-                2 -> PermissionSlide(
+                2 -> WalletSetupSlide(
+                    onContinue = { currentSlide = 3 },
+                    onSkip = { currentSlide = 3 }
+                )
+
+                3 -> PermissionSlide(
                     icon = Icons.Default.Sms,
                     title = "Bank SMS Detection",
                     description = "Primary detection engine: Intercepts bank debit & credit alerts 100% offline. The only reliable source for sent payments (UPI, ATM, cards).",
@@ -210,13 +243,13 @@ fun OnboardingScreen(
                             )
                         )
                     },
-                    slideIndex = 2,
+                    slideIndex = 3,
                     totalSlides = totalSlides,
-                    onNext = { currentSlide = 3 },
-                    onSkip = { currentSlide = 3 }
+                    onNext = { currentSlide = 4 },
+                    onSkip = { currentSlide = 4 }
                 )
 
-                3 -> PermissionSlide(
+                4 -> PermissionSlide(
                     icon = Icons.Default.Notifications,
                     title = "Payment Apps Listener",
                     description = "Supplementary engine: Catches incoming money notifications and reward scratch cards from Google Pay, Amazon Pay, Paytm & FamPay.",
@@ -226,22 +259,6 @@ fun OnboardingScreen(
                     onGrant = {
                         NotificationAccessHelper.openNotificationAccessSettings(context)
                     },
-                    slideIndex = 3,
-                    totalSlides = totalSlides,
-                    onNext = { currentSlide = 4 },
-                    onSkip = { currentSlide = 4 }
-                )
-
-                4 -> PermissionSlide(
-                    icon = Icons.Default.Bolt,
-                    title = "Display Overlay",
-                    description = "Show a quick receipt popup right after you pay, so you can categorize with a single tap.",
-                    isGranted = hasOverlayPermission,
-                    grantLabel = "Enable Overlay",
-                    grantedLabel = "Overlay Enabled",
-                    onGrant = {
-                        OverlayPermissionHelper.requestOverlayPermission(context)
-                    },
                     slideIndex = 4,
                     totalSlides = totalSlides,
                     onNext = { currentSlide = 5 },
@@ -249,6 +266,61 @@ fun OnboardingScreen(
                 )
 
                 5 -> PermissionSlide(
+                    icon = Icons.Default.Bolt,
+                    title = "Display Overlay",
+                    description = "Show a proper on-screen popup right after you pay, so you can review and categorize your transactions instantly.",
+                    isGranted = hasOverlayPermission,
+                    grantLabel = "Enable Overlay",
+                    grantedLabel = "Overlay Enabled",
+                    onGrant = {
+                        OverlayPermissionHelper.requestOverlayPermission(context)
+                    },
+                    slideIndex = 5,
+                    totalSlides = totalSlides,
+                    onNext = { currentSlide = 6 },
+                    onSkip = { currentSlide = 6 }
+                )
+
+                6 -> PermissionSlide(
+                    icon = Icons.Default.PowerSettingsNew,
+                    title = "Run in Background",
+                    description = "Allow Kanri to run unrestricted in the background so Android never puts SMS detection or payment monitors to sleep.",
+                    isGranted = hasBatteryExemption,
+                    grantLabel = "Allow Background Run",
+                    grantedLabel = "Background Run Active",
+                    onGrant = {
+                        BatteryOptimizationHelper.requestIgnoreBatteryOptimizations(context)
+                    },
+                    slideIndex = 6,
+                    totalSlides = totalSlides,
+                    onNext = { currentSlide = 7 },
+                    onSkip = { currentSlide = 7 }
+                )
+
+                7 -> PermissionSlide(
+                    icon = Icons.Default.Notifications,
+                    title = "System Notifications",
+                    description = "Receive instant transaction alerts, reminders, and backup status notifications right on your phone.",
+                    isGranted = hasNotificationPermission,
+                    grantLabel = "Enable Notifications",
+                    grantedLabel = "Notifications Active",
+                    onGrant = {
+                        if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.TIRAMISU) {
+                            postNotificationLauncher.launch(Manifest.permission.POST_NOTIFICATIONS)
+                        } else {
+                            val intent = Intent(Settings.ACTION_APP_NOTIFICATION_SETTINGS).apply {
+                                putExtra(Settings.EXTRA_APP_PACKAGE, context.packageName)
+                            }
+                            context.startActivity(intent)
+                        }
+                    },
+                    slideIndex = 7,
+                    totalSlides = totalSlides,
+                    onNext = { currentSlide = 8 },
+                    onSkip = { currentSlide = 8 }
+                )
+
+                8 -> PermissionSlide(
                     icon = Icons.Default.Fingerprint,
                     title = "Device Lock",
                     description = "Require biometric or device credential authentication every time Kanri opens.",
@@ -260,7 +332,7 @@ fun OnboardingScreen(
                         isLockConfigured = newState
                         securityPrefs.isLockEnabled = newState
                     },
-                    slideIndex = 5,
+                    slideIndex = 8,
                     totalSlides = totalSlides,
                     onNext = { finishOnboarding() },
                     onSkip = { finishOnboarding() },
@@ -560,7 +632,201 @@ private fun ProfileSetupSlide(
     }
 }
 
-// ─── Slides 2–4: Permission Slides ──────────────────────────────────────
+// ─── Slide 2: Wallet Setup (Personalization) ──────────────────────────────
+
+@Composable
+private fun WalletSetupSlide(
+    onContinue: () -> Unit,
+    onSkip: () -> Unit
+) {
+    val context = LocalContext.current
+    val scope = rememberCoroutineScope()
+    val haptics = rememberKanriHaptics()
+    val walletRepo = remember { com.omkarnub.kanri.data.wallet.WalletRepository(context) }
+
+    var cashInput by remember { mutableStateOf("") }
+    var onlineInput by remember { mutableStateOf("") }
+    var atmMode by remember { mutableStateOf(com.omkarnub.kanri.data.wallet.AtmWithdrawalMode.TRANSFER) }
+    var isSaving by remember { mutableStateOf(false) }
+
+    Box(
+        modifier = Modifier
+            .fillMaxSize()
+            .padding(horizontal = 28.dp),
+        contentAlignment = Alignment.Center
+    ) {
+        Column(
+            horizontalAlignment = Alignment.CenterHorizontally,
+            verticalArrangement = Arrangement.Center,
+            modifier = Modifier
+                .fillMaxWidth()
+                .verticalScroll(rememberScrollState())
+        ) {
+            Box(
+                modifier = Modifier
+                    .size(64.dp)
+                    .clip(CircleShape)
+                    .background(MaterialTheme.colorScheme.surfaceVariant)
+                    .border(1.dp, MaterialTheme.colorScheme.outlineVariant, CircleShape),
+                contentAlignment = Alignment.Center
+            ) {
+                Icon(
+                    imageVector = Icons.Default.AccountBalanceWallet,
+                    contentDescription = null,
+                    tint = MaterialTheme.colorScheme.primary,
+                    modifier = Modifier.size(30.dp)
+                )
+            }
+
+            Spacer(modifier = Modifier.height(16.dp))
+
+            Text(
+                text = "Wallet Balances",
+                fontFamily = Panchang,
+                fontWeight = FontWeight.Bold,
+                fontSize = 20.sp,
+                color = MaterialTheme.colorScheme.onBackground,
+                textAlign = TextAlign.Center
+            )
+
+            Spacer(modifier = Modifier.height(8.dp))
+
+            Text(
+                text = "What's in your wallet and your bank right now? An optional baseline to track cash vs online money live.",
+                fontSize = 13.5.sp,
+                lineHeight = 19.sp,
+                color = MaterialTheme.colorScheme.onSurfaceVariant,
+                textAlign = TextAlign.Center,
+                modifier = Modifier.padding(horizontal = 6.dp)
+            )
+
+            Spacer(modifier = Modifier.height(28.dp))
+
+            OutlinedTextField(
+                value = cashInput,
+                onValueChange = { cashInput = it.filter { ch -> ch.isDigit() || ch == '.' } },
+                label = { Text("Cash Balance (In Hand)") },
+                prefix = { Text("₹ ", fontWeight = FontWeight.Bold) },
+                singleLine = true,
+                keyboardOptions = KeyboardOptions(keyboardType = KeyboardType.Decimal),
+                shape = RoundedCornerShape(14.dp),
+                colors = OutlinedTextFieldDefaults.colors(
+                    focusedBorderColor = MaterialTheme.colorScheme.onSurface,
+                    unfocusedBorderColor = MaterialTheme.colorScheme.outlineVariant
+                ),
+                modifier = Modifier.fillMaxWidth()
+            )
+
+            Spacer(modifier = Modifier.height(14.dp))
+
+            OutlinedTextField(
+                value = onlineInput,
+                onValueChange = { onlineInput = it.filter { ch -> ch.isDigit() || ch == '.' } },
+                label = { Text("Online Balance (Bank / UPI)") },
+                prefix = { Text("₹ ", fontWeight = FontWeight.Bold) },
+                singleLine = true,
+                keyboardOptions = KeyboardOptions(keyboardType = KeyboardType.Decimal),
+                shape = RoundedCornerShape(14.dp),
+                colors = OutlinedTextFieldDefaults.colors(
+                    focusedBorderColor = MaterialTheme.colorScheme.onSurface,
+                    unfocusedBorderColor = MaterialTheme.colorScheme.outlineVariant
+                ),
+                modifier = Modifier.fillMaxWidth()
+            )
+
+            Spacer(modifier = Modifier.height(18.dp))
+
+            // ATM mode choice
+            Surface(
+                modifier = Modifier.fillMaxWidth(),
+                shape = RoundedCornerShape(14.dp),
+                color = MaterialTheme.colorScheme.surfaceVariant.copy(alpha = 0.45f),
+                border = BorderStroke(0.5.dp, MaterialTheme.colorScheme.outlineVariant)
+            ) {
+                Column(modifier = Modifier.padding(14.dp)) {
+                    Text(
+                        text = "ATM WITHDRAWALS",
+                        fontSize = 11.sp,
+                        fontWeight = FontWeight.Bold,
+                        letterSpacing = 0.8.sp,
+                        color = MaterialTheme.colorScheme.onSurfaceVariant
+                    )
+                    Spacer(modifier = Modifier.height(4.dp))
+                    Text(
+                        text = if (atmMode == com.omkarnub.kanri.data.wallet.AtmWithdrawalMode.TRANSFER)
+                            "Move money to Cash (recommended)"
+                        else
+                            "Count as spending (no Cash credit)",
+                        fontSize = 12.5.sp,
+                        fontWeight = FontWeight.Medium,
+                        color = MaterialTheme.colorScheme.onSurface
+                    )
+                    Spacer(modifier = Modifier.height(8.dp))
+                    Row(horizontalArrangement = Arrangement.spacedBy(8.dp)) {
+                        FilterChip(
+                            selected = atmMode == com.omkarnub.kanri.data.wallet.AtmWithdrawalMode.TRANSFER,
+                            onClick = { atmMode = com.omkarnub.kanri.data.wallet.AtmWithdrawalMode.TRANSFER },
+                            label = { Text("Move to Cash") }
+                        )
+                        FilterChip(
+                            selected = atmMode == com.omkarnub.kanri.data.wallet.AtmWithdrawalMode.SPENDING,
+                            onClick = { atmMode = com.omkarnub.kanri.data.wallet.AtmWithdrawalMode.SPENDING },
+                            label = { Text("Count as Spend") }
+                        )
+                    }
+                }
+            }
+
+            Spacer(modifier = Modifier.height(28.dp))
+
+            Button(
+                onClick = {
+                    val cash = cashInput.toDoubleOrNull() ?: 0.0
+                    val online = onlineInput.toDoubleOrNull() ?: 0.0
+                    haptics.click()
+                    isSaving = true
+                    scope.launch {
+                        walletRepo.setup(cash, online, atmMode)
+                        isSaving = false
+                        onContinue()
+                    }
+                },
+                enabled = !isSaving,
+                modifier = Modifier
+                    .fillMaxWidth()
+                    .height(50.dp),
+                shape = RoundedCornerShape(14.dp),
+                colors = ButtonDefaults.buttonColors(
+                    containerColor = MaterialTheme.colorScheme.onBackground,
+                    contentColor = MaterialTheme.colorScheme.background
+                )
+            ) {
+                Text(
+                    text = if (isSaving) "Saving..." else "Save Balances & Continue",
+                    fontWeight = FontWeight.Bold,
+                    fontSize = 14.sp
+                )
+            }
+
+            Spacer(modifier = Modifier.height(10.dp))
+
+            TextButton(
+                onClick = {
+                    haptics.click()
+                    onSkip()
+                }
+            ) {
+                Text(
+                    text = "Set Up Later",
+                    fontSize = 13.sp,
+                    color = MaterialTheme.colorScheme.onSurfaceVariant
+                )
+            }
+        }
+    }
+}
+
+// ─── Slides 3–8: Permission Slides ──────────────────────────────────────
 
 @Composable
 private fun PermissionSlide(

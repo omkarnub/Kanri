@@ -61,15 +61,27 @@ object InstantPopupNotificationHelper {
             PendingIntent.FLAG_UPDATE_CURRENT or PendingIntent.FLAG_IMMUTABLE
         )
 
-        val title = if (isDebit) {
-            "💸 ${formatCurrency(amount)} spent" + if (counterparty.isNotBlank()) " at $counterparty" else ""
+        val walletPrefs = com.omkarnub.kanri.data.wallet.WalletPreferences.getInstance(context)
+        val isWalletConfigured = walletPrefs.isWalletSetupCompleted
+        val atmMode = walletPrefs.atmWithdrawalMode
+        val isAtmTransfer = isDebit && sourceType.equals("ATM", ignoreCase = true) && atmMode == com.omkarnub.kanri.data.wallet.AtmWithdrawalMode.TRANSFER
+
+        val title = if (isAtmTransfer) {
+            "ATM Cash Withdrawal"
+        } else if (isDebit) {
+            val walletSuffix = if (isWalletConfigured) " · Online" else ""
+            "💸 ${formatCurrency(amount)}$walletSuffix spent" + if (counterparty.isNotBlank()) " at $counterparty" else ""
         } else {
-            "💰 ${formatCurrency(amount)} received" + if (counterparty.isNotBlank()) " from $counterparty" else ""
+            val walletSuffix = if (isWalletConfigured) " · Online" else ""
+            "💰 ${formatCurrency(amount)}$walletSuffix received" + if (counterparty.isNotBlank()) " from $counterparty" else ""
         }
 
-        val details = buildString {
+        val details = if (isAtmTransfer) {
+            "₹${formatCurrency(amount)} withdrawn → added to Cash"
+        } else buildString {
             if (!bank.isNullOrBlank()) append(bank).append(" • ")
             append(sourceType)
+            if (isWalletConfigured) append(" • Online")
             append(" — Tap a category below:")
         }
 
@@ -81,22 +93,24 @@ object InstantPopupNotificationHelper {
             .setAutoCancel(true)
             .setContentIntent(openAppPendingIntent)
 
-        // Add 1-tap category action chips
-        for ((catId, catLabel) in categoryOptions.take(3)) {
-            val actionIntent = Intent(context, InstantPopupReceiver::class.java).apply {
-                action = InstantPopupReceiver.ACTION_CATEGORIZE
-                putExtra(InstantPopupReceiver.EXTRA_TX_ID, txId)
-                putExtra(InstantPopupReceiver.EXTRA_CATEGORY_ID, catId)
-                putExtra(InstantPopupReceiver.EXTRA_COUNTERPARTY, counterparty)
-                putExtra(InstantPopupReceiver.EXTRA_NOTIFICATION_ID, notificationId)
+        // Add 1-tap category action chips only if not an ATM transfer
+        if (!isAtmTransfer) {
+            for ((catId, catLabel) in categoryOptions.take(3)) {
+                val actionIntent = Intent(context, InstantPopupReceiver::class.java).apply {
+                    action = InstantPopupReceiver.ACTION_CATEGORIZE
+                    putExtra(InstantPopupReceiver.EXTRA_TX_ID, txId)
+                    putExtra(InstantPopupReceiver.EXTRA_CATEGORY_ID, catId)
+                    putExtra(InstantPopupReceiver.EXTRA_COUNTERPARTY, counterparty)
+                    putExtra(InstantPopupReceiver.EXTRA_NOTIFICATION_ID, notificationId)
+                }
+                val pendingAction = PendingIntent.getBroadcast(
+                    context,
+                    (notificationId * 10 + catId).toInt(),
+                    actionIntent,
+                    PendingIntent.FLAG_UPDATE_CURRENT or PendingIntent.FLAG_IMMUTABLE
+                )
+                builder.addAction(0, catLabel, pendingAction)
             }
-            val pendingAction = PendingIntent.getBroadcast(
-                context,
-                (notificationId * 10 + catId).toInt(),
-                actionIntent,
-                PendingIntent.FLAG_UPDATE_CURRENT or PendingIntent.FLAG_IMMUTABLE
-            )
-            builder.addAction(0, catLabel, pendingAction)
         }
 
         // Dismiss action

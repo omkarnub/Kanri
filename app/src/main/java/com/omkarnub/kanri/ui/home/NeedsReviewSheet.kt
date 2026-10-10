@@ -108,7 +108,8 @@ fun NeedsReviewSheet(
     categories: List<CategoryEntity>,
     onDismiss: () -> Unit,
     onAssignCategory: (transactionId: Long, counterparty: String?, categoryId: Long, note: String?) -> Unit,
-    onOpenLendBorrow: ((TransactionEntity) -> Unit)? = null
+    onOpenLendBorrow: ((TransactionEntity) -> Unit)? = null,
+    onConvertToTransfer: ((transactionId: Long, wallet: String, transferToWallet: String) -> Unit)? = null
 ) {
     val sheetState = rememberModalBottomSheetState(skipPartiallyExpanded = true)
     val context = LocalContext.current
@@ -395,6 +396,61 @@ fun NeedsReviewSheet(
                                             tint = MaterialTheme.colorScheme.primary,
                                             modifier = Modifier.size(22.dp)
                                         )
+                                    }
+                                }
+                            }
+
+                            val isCashDeposit = targetTx.reviewReason?.contains("cash deposit", ignoreCase = true) == true ||
+                                (!targetTx.isTransfer && targetTx.type.equals("CREDIT", ignoreCase = true) &&
+                                 (targetTx.rawSms.contains("CDM", ignoreCase = true) || targetTx.rawSms.contains("cash deposit", ignoreCase = true)))
+                            val isAtmSpend = !targetTx.isTransfer && targetTx.sourceType.equals("ATM", ignoreCase = true) && targetTx.type.equals("DEBIT", ignoreCase = true)
+
+                            if (isCashDeposit || isAtmSpend) {
+                                Spacer(modifier = Modifier.height(10.dp))
+                                Surface(
+                                    modifier = Modifier.fillMaxWidth(),
+                                    shape = RoundedCornerShape(14.dp),
+                                    color = MaterialTheme.colorScheme.surfaceVariant.copy(alpha = 0.5f),
+                                    border = BorderStroke(1.dp, MaterialTheme.colorScheme.primary.copy(alpha = 0.5f))
+                                ) {
+                                    Row(
+                                        modifier = Modifier
+                                            .fillMaxWidth()
+                                            .padding(12.dp),
+                                        verticalAlignment = Alignment.CenterVertically,
+                                        horizontalArrangement = Arrangement.SpaceBetween
+                                    ) {
+                                        Column(modifier = Modifier.weight(1f)) {
+                                            Text(
+                                                text = if (isCashDeposit) "Convert to Cash Deposit" else "Convert to Cash Withdrawal",
+                                                style = MaterialTheme.typography.labelLarge.copy(fontWeight = FontWeight.Bold),
+                                                color = MaterialTheme.colorScheme.onSurface
+                                            )
+                                            Text(
+                                                text = if (isCashDeposit) "Move money: Cash → Online" else "Move money: Online → Cash",
+                                                style = MaterialTheme.typography.bodySmall,
+                                                color = MaterialTheme.colorScheme.onSurfaceVariant
+                                            )
+                                        }
+                                        Spacer(modifier = Modifier.width(8.dp))
+                                        Button(
+                                            onClick = {
+                                                haptics.click()
+                                                if (isCashDeposit) {
+                                                    onConvertToTransfer?.invoke(targetTx.id, "CASH", "ONLINE")
+                                                } else {
+                                                    onConvertToTransfer?.invoke(targetTx.id, "ONLINE", "CASH")
+                                                }
+                                                selectedTransaction = null
+                                            },
+                                            shape = RoundedCornerShape(10.dp),
+                                            colors = ButtonDefaults.buttonColors(
+                                                containerColor = MaterialTheme.colorScheme.onSurface,
+                                                contentColor = MaterialTheme.colorScheme.surface
+                                            )
+                                        ) {
+                                            Text("Convert", style = MaterialTheme.typography.labelSmall.copy(fontWeight = FontWeight.Bold))
+                                        }
                                     }
                                 }
                             }

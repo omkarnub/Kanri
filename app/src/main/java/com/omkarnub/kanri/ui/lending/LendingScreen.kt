@@ -462,7 +462,7 @@ fun LendingScreen(
                     showAddEntryDialog = false
                     editingEntry = null
                 },
-                onSave = { personName, amount, type, date, dueDate, notes ->
+                onSave = { personName, amount, type, date, dueDate, notes, wallet ->
                     haptics.success()
                     if (editingEntry != null) {
                         hubViewModel.editEntry(
@@ -481,7 +481,8 @@ fun LendingScreen(
                             type = type,
                             date = date,
                             dueDate = dueDate,
-                            notes = notes
+                            notes = notes,
+                            wallet = wallet
                         )
                     }
                     showAddEntryDialog = false

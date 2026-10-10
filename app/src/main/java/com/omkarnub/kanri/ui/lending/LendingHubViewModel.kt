@@ -180,7 +180,8 @@ class LendingHubViewModel @JvmOverloads constructor(
         type: String,
         date: Long = timeProvider(),
         dueDate: Long? = null,
-        notes: String? = null
+        notes: String? = null,
+        wallet: String = "NONE"
     ) {
         val normalizedName = cleanPersonName(personName)
         require(normalizedName.isNotEmpty()) { "Person name cannot be blank" }
@@ -201,7 +202,7 @@ class LendingHubViewModel @JvmOverloads constructor(
                     notes = notes?.trim()?.ifBlank { null }
                 )
             )
-            LendingTransactionSyncHelper.syncLendingRecord(recordId, db, getApplication())
+            LendingTransactionSyncHelper.syncLendingRecord(recordId, db, getApplication(), wallet)
             if (dueDate != null) {
                 com.omkarnub.kanri.data.lending.LendingReminderScheduler.checkNow(getApplication())
             }

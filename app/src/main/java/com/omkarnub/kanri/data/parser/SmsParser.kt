@@ -12,7 +12,8 @@ enum class SourceType {
     ATM,
     CARD,
     BANK_TRANSFER,
-    UNKNOWN
+    UNKNOWN,
+    WALLET_TRANSFER
 }
 
 data class ParsedTransaction(
@@ -154,7 +155,18 @@ object SmsParser {
             return TransactionType.CREDIT
         }
 
-        val isDebit = lower.contains("debited") ||
+        // Check for Dr. / Dr patterns (Debit)
+        val hasDrPattern = Pattern.compile(
+            """(?i)(?:\bdr\.?\s+(?:from|by|for|with|of|to)\b|(?:rs\.?|inr|₹)\s*[\d,]+(?:\.\d{1,2})?\s+(?:is\s+)?dr\.?\b|\bdr\.?\s*(?:by|for|with|of|:)?\s*(?:rs\.?|inr|₹)\b|\b(?:a/c|ac|account)\b[^\n\r]*?\b(?:is\s+)?dr\.?\b|\bdr\s*:\s*(?:rs\.?|inr|₹)?\s*[\d,]+)"""
+        ).matcher(body).find()
+
+        // Check for Cr. / Cr patterns (Credit)
+        val hasCrPattern = Pattern.compile(
+            """(?i)(?:\bcr\.?\s+(?:to|in|by|for|with|of)\s+(?:your\s+)?(?:a/c|ac|account)\b|(?:rs\.?|inr|₹)\s*[\d,]+(?:\.\d{1,2})?\s+(?:is\s+)?cr\.?\b|\bcr\.?\s*(?:by|for|with|of|:)?\s*(?:rs\.?|inr|₹)\b|\b(?:a/c|ac|account)\b[^\n\r]*?\b(?:is\s+)?cr\.?\b|\bcr\s*:\s*(?:rs\.?|inr|₹)?\s*[\d,]+)"""
+        ).matcher(body).find()
+
+        val isDebit = hasDrPattern ||
+                lower.contains("debited") ||
                 lower.contains("withdrawn") ||
                 lower.contains("withdrew") ||
                 lower.contains("spent") ||
@@ -173,7 +185,8 @@ object SmsParser {
                 lower.contains("used at") ||
                 lower.contains("charged")
 
-        val isCredit = lower.contains("credited") ||
+        val isCredit = hasCrPattern ||
+                lower.contains("credited") ||
                 lower.contains("deposited") ||
                 lower.contains("received rs") ||
                 lower.contains("received inr") ||
@@ -192,26 +205,41 @@ object SmsParser {
                 lower.contains("paid you")
 
         return when {
-            // Ambiguity: "debited for Rs 850 ... and credited to VPA swiggy@icici"
+            // Ambiguity: "debited for Rs 850 ... and credited to VPA swiggy@icici" or "Dr. from A/C ... and Cr. to VPA"
             // The user's account was debited, and the merchant's VPA was credited.
             isDebit && isCredit -> {
-                if (lower.contains("debited from") ||
+                val userAccountDebited = lower.contains("debited from your") ||
+                    lower.contains("debited from a/c") ||
+                    lower.contains("debited from account") ||
+                    lower.contains("debited from ac") ||
                     lower.contains("a/c is debited") ||
                     lower.contains("a/c debited") ||
                     lower.contains("is debited for") ||
                     lower.contains("debited with") ||
-                    lower.contains("account debited")
-                ) {
-                    TransactionType.DEBIT
-                } else if (lower.contains("credited to your") ||
+                    lower.contains("debited for") ||
+                    lower.contains("account debited") ||
+                    Pattern.compile("""(?i)\bdebited\s+from\s+(?:a/c|ac|account)\b""").matcher(body).find() ||
+                    Pattern.compile("""(?i)\bdr\.?\s+from\s+(?:a/c|ac|account)\b""").matcher(body).find() ||
+                    Pattern.compile("""(?i)\b(?:a/c|ac|account)\b(?:\s+(?:no\.?|number|ending\s+(?:in|with)))?\s*[:\s]*[0-9*xX.-]*\s+(?:is\s+)?dr\.?\b""").matcher(body).find()
+
+                val userAccountCredited = lower.contains("credited to your") ||
                     lower.contains("credited to a/c") ||
+                    lower.contains("credited to account") ||
+                    lower.contains("credited to ac") ||
                     lower.contains("a/c is credited") ||
                     lower.contains("a/c credited") ||
                     lower.contains("credited with") ||
                     lower.contains("fampaid") ||
-                    lower.contains("sent you")
-                ) {
+                    lower.contains("sent you") ||
+                    Pattern.compile("""(?i)\bcr\.?\s+(?:to|in)\s+(?:your\s+)?(?:a/c|ac|account)\b""").matcher(body).find() ||
+                    Pattern.compile("""(?i)\b(?:a/c|ac|account)\b(?:\s+(?:no\.?|number|ending\s+(?:in|with)))?\s*[:\s]*[0-9*xX.-]*\s+(?:is\s+)?cr\.?\b""").matcher(body).find()
+
+                if (userAccountDebited && !userAccountCredited) {
+                    TransactionType.DEBIT
+                } else if (userAccountCredited && !userAccountDebited) {
                     TransactionType.CREDIT
+                } else if (userAccountDebited) {
+                    TransactionType.DEBIT
                 } else {
                     TransactionType.DEBIT
                 }
@@ -338,14 +366,14 @@ object SmsParser {
         }
 
         // Priority 3: Fallback check against known bank list
-        val bodyUpper = body.uppercase()
+        val bodyWithoutVpa = body.uppercase().replace(Regex("""[A-Z0-9.\-_]+@[A-Z0-9.\-_]+"""), " ")
         for ((code, name) in KNOWN_BANKS) {
-            if (bodyUpper.contains("$code BANK") || bodyUpper.contains("BANK OF $code") || bodyUpper.contains(" $code ")) {
+            if (bodyWithoutVpa.contains("$code BANK") || bodyWithoutVpa.contains("BANK OF $code") || bodyWithoutVpa.contains(" $code ")) {
                 return name
             }
         }
         for ((code, name) in KNOWN_BANKS) {
-            if (bodyUpper.contains(code)) {
+            if (Regex("""\b${Regex.escape(code)}\b""").containsMatchIn(bodyWithoutVpa)) {
                 return name
             }
         }
@@ -470,6 +498,29 @@ object SmsParser {
             } catch (_: Exception) {}
         }
 
+        // Pattern 1b: Year-first e.g. 2026:10:10 02:44:01 or 2026-10-10 02:44:01 or 2026/10/10
+        val yearFirstPattern = Pattern.compile(
+            """\b(\d{4})[:\-/](\d{1,2})[:\-/](\d{1,2})(?:\s+(\d{1,2}):(\d{2})(?::(\d{2}))?)?\b"""
+        )
+        val ym = yearFirstPattern.matcher(body)
+        if (ym.find()) {
+            try {
+                val year = ym.group(1)!!.toInt()
+                val month = ym.group(2)!!.toInt()
+                val day = ym.group(3)!!.toInt()
+                val hour = ym.group(4)?.toIntOrNull() ?: 12
+                val min = ym.group(5)?.toIntOrNull() ?: 0
+                val sec = ym.group(6)?.toIntOrNull() ?: 0
+
+                if (day in 1..31 && month in 1..12 && year in 2020..2035) {
+                    val cal = java.util.Calendar.getInstance()
+                    cal.set(year, month - 1, day, hour, min, sec)
+                    cal.set(java.util.Calendar.MILLISECOND, 0)
+                    return cal.timeInMillis
+                }
+            } catch (_: Exception) {}
+        }
+
         // Pattern 2: e.g. 15Sep26, 15-Sep-2026, 12-Sep-26, 15 Sep 2026
         val alphaDatePattern = Pattern.compile(
             """\b(\d{1,2})[-/\s]?(Jan|Feb|Mar|Apr|May|Jun|Jul|Aug|Sep|Oct|Nov|Dec)[a-z]*[-/\s]?(\d{2,4})?(?:\s+(\d{1,2}):(\d{2})(?::(\d{2}))?)?\b""",
@@ -570,6 +621,10 @@ object SmsParser {
         val delimiter = """(?=\s+(?:on|via|ref|refno|upi|using|from|order|purchase|\()|\s*[\.,;]|$)"""
 
         val patterns = listOf(
+            // "Cr. to 9307704640-2.wallet@phonepe" or "Cr. to vishalkolhekar09-1@okaxis" or "Dr. to merchant@upi"
+            Pattern.compile("""(?:\bCr\.?\s+to|\bDr\.?\s+to)\s+(?!A/C|A\/c|Account|ac\b)([A-Za-z0-9.\-_@]+(?:\s+[A-Za-z0-9.\-_&']+)*?)$delimiter""", Pattern.CASE_INSENSITIVE),
+            // "Dr. from sender@upi" or "Cr. from friend@okaxis" (excluding account masks like A/C)
+            Pattern.compile("""(?:\bCr\.?\s+from|\bDr\.?\s+from)\s+(?!A/C|A\/c|Account|ac\b)([A-Za-z0-9.\-_@]+(?:\s+[A-Za-z0-9.\-_&']+)*?)$delimiter""", Pattern.CASE_INSENSITIVE),
             // "Info: UPI/Apollo Pharmacy" or "Info: Dominos" or "Info: SALARY-Google"
             Pattern.compile("""(?:Info:\s*UPI\/|Info:\s*)([A-Za-z0-9.\-_&']+(?:\s+[A-Za-z0-9.\-_&']+)*?)$delimiter""", Pattern.CASE_INSENSITIVE),
             // "by transfer to Flipkart" or "transfer to Uber"
@@ -580,8 +635,8 @@ object SmsParser {
             Pattern.compile("""(?:Transferred\s+to\s+)([A-Za-z0-9.\-_&']+(?:\s+[A-Za-z0-9.\-_&']+)*?)$delimiter""", Pattern.CASE_INSENSITIVE),
             // "refund for Swiggy order..." or "for D-Mart purchase..."
             Pattern.compile("""(?:refund\s+for|for\s+)([A-Za-z0-9.\-_@]+(?:\s+[A-Za-z0-9.\-_&']+)*?)$delimiter""", Pattern.CASE_INSENSITIVE),
-            // "by transfer from Ramesh" or "transfer from John Doe (UPI..." or "from friend@upi"
-            Pattern.compile("""(?:by\s+transfer\s+from|transfer\s+from|from\s+)([A-Za-z0-9.\-_@]+(?:\s+[A-Za-z0-9.\-_&']+)*?)$delimiter""", Pattern.CASE_INSENSITIVE),
+            // "by transfer from Ramesh" or "transfer from John Doe (UPI..." or "from friend@upi" (excluding user account)
+            Pattern.compile("""(?:by\s+transfer\s+from|transfer\s+from|from\s+)(?!A/C|A\/c|Account|ac\b)([A-Za-z0-9.\-_@]+(?:\s+[A-Za-z0-9.\-_&']+)*?)$delimiter""", Pattern.CASE_INSENSITIVE),
             // "by Vikas" or "by Neha" (excluding amounts like "by Rs" / "by INR")
             Pattern.compile("""(?:by\s+(?!Rs|INR|₹|\d))([A-Za-z0-9.\-_&']+(?:\s+[A-Za-z0-9.\-_&']+)*?)$delimiter""", Pattern.CASE_INSENSITIVE),
             // "at STARBUCKS on 14-09-26"
@@ -626,6 +681,7 @@ object SmsParser {
 
         // Strip leading prefixes
         val removePrefixes = listOf(
+            "Cr. to ", "Cr to ", "Dr. to ", "Dr to ", "Cr. from ", "Cr from ", "Dr. from ", "Dr from ",
             "to ", "from ", "VPA ", "vpa ", "by transfer to ", "transfer to ", "by transfer from ", "transfer from ", "by ",
             "through UPI from ", "through UPI to ", "UPI/", "UPI-", "POS/", "ECOM/", "INB/", "NEFT/", "IMPS/"
         )

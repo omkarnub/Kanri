@@ -83,7 +83,8 @@ class LendingViewModel(application: Application) : AndroidViewModel(application)
         amount: Double,
         type: String,
         dueDate: Long? = null,
-        notes: String? = null
+        notes: String? = null,
+        wallet: String = "NONE"
     ) {
         viewModelScope.launch {
             val record = LendingEntity(
@@ -96,7 +97,7 @@ class LendingViewModel(application: Application) : AndroidViewModel(application)
                 notes = notes?.trim()?.ifBlank { null }
             )
             val recordId = lendingDao.insert(record)
-            LendingTransactionSyncHelper.syncLendingRecord(recordId, db, getApplication())
+            LendingTransactionSyncHelper.syncLendingRecord(recordId, db, getApplication(), wallet)
         }
     }
 

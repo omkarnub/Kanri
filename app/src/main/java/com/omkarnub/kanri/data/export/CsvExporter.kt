@@ -34,7 +34,7 @@ object CsvExporter {
         sb.append("# Total Records: ").append(transactions.size).append("\n#\n")
 
         // Column Headers
-        sb.append("Date,Time,Type,Amount (INR),Category,Counterparty,Source,Bank,Reference No,Notes\n")
+        sb.append("Date,Time,Type,Amount (INR),Category,Counterparty,Source,Bank,Reference No,Notes,Wallet,Transfer To Wallet\n")
 
         var totalDebit = 0.0
         var totalCredit = 0.0
@@ -42,22 +42,30 @@ object CsvExporter {
         // Rows
         for (item in transactions) {
             val t = item.transaction
-            val catName = item.category?.name ?: "Uncategorized"
+            val catName = if (t.isTransfer) {
+                "Transfer (${t.wallet} → ${t.transferToWallet ?: ""})"
+            } else {
+                item.category?.name ?: "Uncategorized"
+            }
 
             val dateStr = dateFormat.format(Date(t.timestamp))
             val timeStr = timeFormat.format(Date(t.timestamp))
-            val typeStr = t.type
+            val typeStr = if (t.isTransfer) "TRANSFER" else t.type
             val amountStr = amountFormat.format(t.amount)
             val counterpartyStr = t.counterparty ?: ""
             val sourceStr = t.sourceType
             val bankStr = t.bank ?: ""
             val refNoStr = t.refNo ?: ""
             val notesStr = t.notes ?: t.displayName ?: ""
+            val walletStr = t.wallet
+            val transferToStr = t.transferToWallet ?: ""
 
-            if (t.type.equals("DEBIT", ignoreCase = true)) {
-                totalDebit += t.amount
-            } else {
-                totalCredit += t.amount
+            if (!t.isTransfer) {
+                if (t.type.equals("DEBIT", ignoreCase = true)) {
+                    totalDebit += t.amount
+                } else if (t.type.equals("CREDIT", ignoreCase = true)) {
+                    totalCredit += t.amount
+                }
             }
 
             sb.append(escapeCsv(dateStr)).append(",")
@@ -69,7 +77,9 @@ object CsvExporter {
                 .append(escapeCsv(sourceStr)).append(",")
                 .append(escapeCsv(bankStr)).append(",")
                 .append(escapeCsv(refNoStr)).append(",")
-                .append(escapeCsv(notesStr)).append("\n")
+                .append(escapeCsv(notesStr)).append(",")
+                .append(escapeCsv(walletStr)).append(",")
+                .append(escapeCsv(transferToStr)).append("\n")
         }
 
         // Summary Rows
@@ -88,9 +98,10 @@ object CsvExporter {
         var debit = 0.0
         var credit = 0.0
         for (item in transactions) {
+            if (item.transaction.isTransfer) continue
             if (item.transaction.type.equals("DEBIT", ignoreCase = true)) {
                 debit += item.transaction.amount
-            } else {
+            } else if (item.transaction.type.equals("CREDIT", ignoreCase = true)) {
                 credit += item.transaction.amount
             }
         }
@@ -108,9 +119,12 @@ object CsvExporter {
      * and escape internal quotes by doubling them.
      */
     fun escapeCsv(value: String): String {
-        if (value.contains(",") || value.contains("\"") || value.contains("\n") || value.contains("\r")) {
-            return "\"" + value.replace("\"", "\"\"") + "\""
+        val str = value.trim()
+        val containsSpecial = str.contains(',') || str.contains('"') || str.contains('\n') || str.contains('\r')
+        return if (containsSpecial) {
+            "\"" + str.replace("\"", "\"\"") + "\""
+        } else {
+            str
         }
-        return value
     }
 }

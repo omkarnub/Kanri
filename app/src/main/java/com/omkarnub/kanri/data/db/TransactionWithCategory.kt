@@ -12,4 +12,7 @@ data class TransactionWithCategory(
         entityColumn = "id"
     )
     val category: CategoryEntity? = null
-)
+) {
+    val isTransfer: Boolean
+        get() = transaction.isTransfer
+}

@@ -281,8 +281,8 @@ fun MainNavigationScreen(
                 initialType = addTransactionInitialType,
                 categories = homeState.categories,
                 onDismiss = { showAddTransactionDialog = false },
-                onConfirm = { amount, type, counterparty, sourceType, categoryId ->
-                    homeViewModel.addManualTransaction(amount, type, counterparty, sourceType, categoryId)
+                onConfirm = { amount, type, counterparty, sourceType, categoryId, wallet ->
+                    homeViewModel.addManualTransaction(amount, type, counterparty, sourceType, categoryId, wallet)
                     showAddTransactionDialog = false
                 },
                 onOpenLendBorrow = { amount, type, counterparty, note ->
@@ -301,8 +301,8 @@ fun MainNavigationScreen(
         if (showAddLendingDialog) {
             com.omkarnub.kanri.ui.lending.LendingEntryDialog(
                 onDismiss = { showAddLendingDialog = false },
-                onSave = { personName, amount, type, date, dueDate, notes ->
-                    lendingViewModel.addRecord(personName, amount, type, dueDate, notes)
+                onSave = { personName, amount, type, date, dueDate, notes, wallet ->
+                    lendingViewModel.addRecord(personName, amount, type, dueDate, notes, wallet)
                     showAddLendingDialog = false
                 },
                 initialType = addLendingInitialType,

@@ -53,10 +53,16 @@ import androidx.compose.material.icons.filled.HealthAndSafety
 import androidx.compose.material.icons.filled.Lock
 import androidx.compose.material.icons.filled.PowerSettingsNew
 import androidx.compose.material.icons.filled.Refresh
+import androidx.compose.material.icons.filled.AccountBalanceWallet
 import androidx.compose.material.icons.filled.Security
 import androidx.compose.material.icons.filled.Shield
 import androidx.compose.material.icons.filled.Tune
 import androidx.compose.material.icons.filled.Warning
+import com.omkarnub.kanri.ui.wallet.WalletSetupDialog
+import com.omkarnub.kanri.ui.wallet.CorrectBalanceDialog
+import com.omkarnub.kanri.data.wallet.WalletRepository
+import com.omkarnub.kanri.data.wallet.WalletPreferences
+import com.omkarnub.kanri.data.wallet.AtmWithdrawalMode
 import androidx.activity.compose.rememberLauncherForActivityResult
 import androidx.activity.result.IntentSenderRequest
 import androidx.activity.result.contract.ActivityResultContracts
@@ -205,6 +211,17 @@ fun SettingsScreen(
     var showRestoreFromCloudDialog by remember { mutableStateOf(false) }
     var restorePassphraseInput by remember { mutableStateOf("") }
     var isCloudActionInProgress by remember { mutableStateOf(false) }
+
+    // Wallets & Balances
+    val walletRepo = remember { WalletRepository(context) }
+    val walletPrefs = remember { WalletPreferences.getInstance(context) }
+    val isWalletConfigured by walletRepo.isConfigured().collectAsState(initial = false)
+    val balances by walletRepo.observeBalances().collectAsState(initial = null)
+    val atmMode by walletPrefs.atmWithdrawalModeFlow.collectAsState()
+
+    var showWalletSetupDialog by remember { mutableStateOf(false) }
+    var walletToCorrect by remember { mutableStateOf<String?>(null) }
+    var showResetWalletsDialog by remember { mutableStateOf(false) }
 
     val driveConsentLauncher = rememberLauncherForActivityResult(
         contract = ActivityResultContracts.StartIntentSenderForResult()
@@ -682,6 +699,72 @@ fun SettingsScreen(
         )
     }
 
+    // Wallets & Balances Dialogs
+    if (showWalletSetupDialog) {
+        WalletSetupDialog(
+            initialCash = balances?.cash ?: 0.0,
+            initialOnline = balances?.online ?: 0.0,
+            initialAtmMode = atmMode,
+            isInitialSetup = !isWalletConfigured,
+            onDismiss = { showWalletSetupDialog = false },
+            onConfirm = { cash, online, mode ->
+                scope.launch {
+                    walletRepo.setup(cash, online, mode)
+                    showWalletSetupDialog = false
+                    Toast.makeText(context, "Wallet balances updated", Toast.LENGTH_SHORT).show()
+                }
+            }
+        )
+    }
+
+    if (walletToCorrect != null) {
+        val targetWallet = walletToCorrect!!
+        val currentBal = if (targetWallet == "CASH") balances?.cash ?: 0.0 else balances?.online ?: 0.0
+        CorrectBalanceDialog(
+            wallet = targetWallet,
+            currentBalance = currentBal,
+            onDismiss = { walletToCorrect = null },
+            onConfirm = { desired ->
+                scope.launch {
+                    walletRepo.correct(targetWallet, desired)
+                    walletToCorrect = null
+                    Toast.makeText(context, "Balance corrected", Toast.LENGTH_SHORT).show()
+                }
+            }
+        )
+    }
+
+    if (showResetWalletsDialog) {
+        AlertDialog(
+            onDismissRequest = { showResetWalletsDialog = false },
+            icon = { Icon(Icons.Default.Refresh, contentDescription = null, tint = MaterialTheme.colorScheme.error) },
+            title = { Text("Reset Balances?", fontWeight = FontWeight.Bold) },
+            text = {
+                Text("This will clear your Cash and Online opening balances and return to unconfigured state. None of your transactions will be deleted.")
+            },
+            confirmButton = {
+                Button(
+                    onClick = {
+                        haptics.warning()
+                        scope.launch {
+                            walletRepo.reset()
+                            showResetWalletsDialog = false
+                            Toast.makeText(context, "Wallet balances reset", Toast.LENGTH_SHORT).show()
+                        }
+                    },
+                    colors = ButtonDefaults.buttonColors(containerColor = MaterialTheme.colorScheme.error)
+                ) {
+                    Text("Reset")
+                }
+            },
+            dismissButton = {
+                TextButton(onClick = { showResetWalletsDialog = false }) {
+                    Text("Cancel")
+                }
+            }
+        )
+    }
+
     // =========================================================================
     // MAIN SETTINGS LAYOUT
     // =========================================================================
@@ -717,6 +800,189 @@ fun SettingsScreen(
                 .padding(horizontal = 16.dp, vertical = 10.dp),
             verticalArrangement = Arrangement.spacedBy(16.dp)
         ) {
+            // -----------------------------------------------------------------
+            // BALANCES & WALLETS
+            // -----------------------------------------------------------------
+            SettingsSectionHeader(title = "BALANCES & WALLETS", icon = Icons.Default.AccountBalanceWallet)
+            Card(
+                modifier = Modifier.fillMaxWidth(),
+                shape = RoundedCornerShape(18.dp),
+                colors = CardDefaults.cardColors(containerColor = MaterialTheme.colorScheme.surface),
+                border = BorderStroke(1.dp, MaterialTheme.colorScheme.outlineVariant)
+            ) {
+                Column(modifier = Modifier.padding(16.dp)) {
+                    // Status & Balances
+                    Row(
+                        modifier = Modifier.fillMaxWidth(),
+                        horizontalArrangement = Arrangement.SpaceBetween,
+                        verticalAlignment = Alignment.CenterVertically
+                    ) {
+                        Column(modifier = Modifier.weight(1f)) {
+                            Text(
+                                text = if (isWalletConfigured) "Wallet Tracking Active" else "Balances Not Configured",
+                                fontWeight = FontWeight.SemiBold,
+                                fontSize = 15.sp,
+                                color = MaterialTheme.colorScheme.onSurface
+                            )
+                            Text(
+                                text = if (isWalletConfigured && balances != null)
+                                    "Cash: ${com.omkarnub.kanri.util.CurrencyUtils.formatCurrency(balances!!.cash)} • Online: ${com.omkarnub.kanri.util.CurrencyUtils.formatCurrency(balances!!.online)}"
+                                else
+                                    "Set up Cash and Online balances to track money in hand vs bank",
+                                fontSize = 12.sp,
+                                color = MaterialTheme.colorScheme.onSurfaceVariant
+                            )
+                        }
+                        TextButton(
+                            onClick = {
+                                haptics.click()
+                                showWalletSetupDialog = true
+                            }
+                        ) {
+                            Text(if (isWalletConfigured) "Edit Baselines" else "Set Up")
+                        }
+                    }
+
+                    if (isWalletConfigured) {
+                        HorizontalDivider(
+                            modifier = Modifier.padding(vertical = 12.dp),
+                            color = MaterialTheme.colorScheme.outlineVariant.copy(alpha = 0.5f)
+                        )
+
+                        // Correct Live Balance
+                        Row(
+                            modifier = Modifier.fillMaxWidth(),
+                            horizontalArrangement = Arrangement.SpaceBetween,
+                            verticalAlignment = Alignment.CenterVertically
+                        ) {
+                            Column(modifier = Modifier.weight(1f)) {
+                                Text(
+                                    text = "Correct Balance",
+                                    fontWeight = FontWeight.SemiBold,
+                                    fontSize = 15.sp,
+                                    color = MaterialTheme.colorScheme.onSurface
+                                )
+                                Text(
+                                    text = "Adjust opening amount to match your actual balance right now",
+                                    fontSize = 12.sp,
+                                    color = MaterialTheme.colorScheme.onSurfaceVariant
+                                )
+                            }
+                            Row(horizontalArrangement = Arrangement.spacedBy(6.dp)) {
+                                OutlinedButton(
+                                    onClick = {
+                                        haptics.click()
+                                        walletToCorrect = "CASH"
+                                    },
+                                    contentPadding = androidx.compose.foundation.layout.PaddingValues(horizontal = 10.dp, vertical = 6.dp)
+                                ) {
+                                    Text("Cash", fontSize = 12.sp)
+                                }
+                                OutlinedButton(
+                                    onClick = {
+                                        haptics.click()
+                                        walletToCorrect = "ONLINE"
+                                    },
+                                    contentPadding = androidx.compose.foundation.layout.PaddingValues(horizontal = 10.dp, vertical = 6.dp)
+                                ) {
+                                    Text("Online", fontSize = 12.sp)
+                                }
+                            }
+                        }
+
+                        HorizontalDivider(
+                            modifier = Modifier.padding(vertical = 12.dp),
+                            color = MaterialTheme.colorScheme.outlineVariant.copy(alpha = 0.5f)
+                        )
+
+                        // ATM Withdrawal Mode
+                        Column(modifier = Modifier.fillMaxWidth()) {
+                            Row(
+                                modifier = Modifier.fillMaxWidth(),
+                                horizontalArrangement = Arrangement.SpaceBetween,
+                                verticalAlignment = Alignment.CenterVertically
+                            ) {
+                                Column(modifier = Modifier.weight(1f)) {
+                                    Text(
+                                        text = "ATM Withdrawal Handling",
+                                        fontWeight = FontWeight.SemiBold,
+                                        fontSize = 15.sp,
+                                        color = MaterialTheme.colorScheme.onSurface
+                                    )
+                                    Text(
+                                        text = if (atmMode == AtmWithdrawalMode.TRANSFER)
+                                            "Move money to Cash (excluded from spending)"
+                                        else
+                                            "Count as spending (no Cash credit)",
+                                        fontSize = 12.sp,
+                                        color = MaterialTheme.colorScheme.onSurfaceVariant
+                                    )
+                                }
+                            }
+                            Spacer(modifier = Modifier.height(8.dp))
+                            Row(horizontalArrangement = Arrangement.spacedBy(8.dp)) {
+                                FilterChip(
+                                    selected = atmMode == AtmWithdrawalMode.TRANSFER,
+                                    onClick = {
+                                        haptics.click()
+                                        scope.launch {
+                                            walletRepo.setAtmWithdrawalMode(AtmWithdrawalMode.TRANSFER)
+                                            Toast.makeText(context, "ATM mode: Move money to Cash", Toast.LENGTH_SHORT).show()
+                                        }
+                                    },
+                                    label = { Text("Move to Cash (Transfer)") }
+                                )
+                                FilterChip(
+                                    selected = atmMode == AtmWithdrawalMode.SPENDING,
+                                    onClick = {
+                                        haptics.click()
+                                        scope.launch {
+                                            walletRepo.setAtmWithdrawalMode(AtmWithdrawalMode.SPENDING)
+                                            Toast.makeText(context, "ATM mode: Count as spending", Toast.LENGTH_SHORT).show()
+                                        }
+                                    },
+                                    label = { Text("Count as Spending") }
+                                )
+                            }
+                        }
+
+                        HorizontalDivider(
+                            modifier = Modifier.padding(vertical = 12.dp),
+                            color = MaterialTheme.colorScheme.outlineVariant.copy(alpha = 0.5f)
+                        )
+
+                        // Reset Balances
+                        Row(
+                            modifier = Modifier.fillMaxWidth(),
+                            horizontalArrangement = Arrangement.SpaceBetween,
+                            verticalAlignment = Alignment.CenterVertically
+                        ) {
+                            Column(modifier = Modifier.weight(1f)) {
+                                Text(
+                                    text = "Reset Balances",
+                                    fontWeight = FontWeight.SemiBold,
+                                    fontSize = 15.sp,
+                                    color = MaterialTheme.colorScheme.error
+                                )
+                                Text(
+                                    text = "Clear opening balances without deleting any transactions",
+                                    fontSize = 12.sp,
+                                    color = MaterialTheme.colorScheme.onSurfaceVariant
+                                )
+                            }
+                            TextButton(
+                                onClick = {
+                                    haptics.warning()
+                                    showResetWalletsDialog = true
+                                }
+                            ) {
+                                Text("Reset", color = MaterialTheme.colorScheme.error)
+                            }
+                        }
+                    }
+                }
+            }
+
             // -----------------------------------------------------------------
             // 1 & 3: SECURITY & PERMISSIONS
             // -----------------------------------------------------------------

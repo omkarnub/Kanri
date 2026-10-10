@@ -113,7 +113,7 @@
 68. **Haptic Feedback Utility (`KanriHaptics.kt`)** — Unified haptic response engine delivering light clicks, medium clicks, double clicks, and error shakes across tabs, steppers, and dialogs.
 69. **Custom Category Management (`CategoryPickerSheet.kt`, `CategoryDao.kt`)** — Full user-created custom expense/income categories with custom naming, hex color selection, and vector SVG icon assignment (`is_custom = 1`).
 70. **Redesigned 5-Step Luxury Onboarding & Mesh Gradient Engine (`OnboardingScreen.kt`, `GrainGradientBackground.kt`)** — Reimagined onboarding flow featuring a dynamic Canvas film-grain noise and multi-point animated mesh gradient background, interactive selection cards, deferred respectful permission handling, offline vs cloud mode selection, and personalized financial baseline setup (name, avatar, currency, monthly budget).
-71. **Optional End-to-End Encrypted Cloud Backup via Google Drive AppData (`GoogleDriveBackupManager.kt`, `CloudBackupPreferences.kt`, `CloudSyncCard.kt`)** — 100% private, zero third-party cloud infrastructure. Backups are encrypted locally with AES-GCM (Tink PBKDF2) using the user's master key and uploaded strictly to the user's hidden Google Drive `appDataFolder` (`drive.appdata` scope), with automated background sync, manual restore, and one-tap offline-only fallback.
+71. **Optional End-to-End Encrypted Cloud Backup via Google Drive (`GoogleDriveBackupManager.kt`, `CloudBackupPreferences.kt`, `CloudSyncCard.kt`)** — 100% private, zero third-party cloud infrastructure. Backups are encrypted locally with AES-GCM (Tink PBKDF2) using the user's master key and uploaded directly to the user's personal Google Drive via the restricted `drive.file` scope (`https://www.googleapis.com/auth/drive.file`), ensuring Kanri can strictly read/write only its own backup file (`kanri_backup.enc`) with zero access to any personal photos, documents, or other folders, complete with automated background sync, manual restore, and one-tap offline-only fallback.
 72. **Dedicated Privacy Policy Center & Transparency Architecture (`PRIVACY_POLICY.md`, `PrivacyPolicyDialog.kt`)** — Transparent in-app privacy center detailing local storage guarantees, encryption mechanisms, zero third-party trackers, and scoped permission usage, backed by full root documentation in `PRIVACY_POLICY.md`.
 73. **7 Dedicated Glanceable Android Home Screen Widgets & Live Canvas Engine (`KanriWidgetsUpdater.kt`, `WidgetCanvasRenderer.kt`, `KanriWidgetActions.kt`)** — Comprehensive suite of 7 specialized Android AppWidgets:
     - *Money Spent Today Widget* (`MoneySpentTodayWidgetProvider`) — Today's spend total, transaction count, and instant '+' launch action.
@@ -132,15 +132,32 @@
     - Retroactive categorization engine (`applyCategoryToMatchingTransactions`) updating historical transactions in 1 tap.
     - Full management hub in Settings with rule counts, category badges, and edit/delete modal dialogs.
 76. **Centralized Widget Event Bus (`KanriWidgetActions.kt`, `KanriWidgetsUpdater.kt`)** — Dispatches targeted broadcast intents (`ACTION_EXPENSE_ADDED`, `ACTION_UPDATE_ALL`) and synchronizes AppWidgetManager state across all 7 providers.
-77. **36 Comprehensive Unit Test Suites (232+ Unit Tests)** — Complete coverage of all business logic, parsers, cryptographic routines, cloud sync states, merchant rules, widget layouts, deduplication logic, and financial health calculators with 100% pass rate.
-78. **Hardened SMS Receiver Pipeline (`SmsReceiver.kt`)** — Upgraded to `goAsync()` with priority 999 intent filter, ensuring Kanri's SMS processor runs before other SMS apps. Multi-part PDU concatenation now operates within a `goAsync()` coroutine scope for reliable background processing.
-79. **Boot Persistence Engine (`BootReceiver.kt`)** — Manifest-registered `BOOT_COMPLETED` BroadcastReceiver that re-initializes all background monitors (NotificationListenerService watchdog, widget midnight reset, lending reminder scheduler, daily reminder scheduler) after device reboot, ensuring zero-gap detection without requiring manual app launch.
-80. **Notification Listener Watchdog (`NotificationListenerWatchdogWorker.kt`)** — 15-minute periodic WorkManager watchdog that detects silently disconnected `NotificationListenerService` (common on MIUI, ColorOS, FunTouchOS battery savers) and triggers automatic rebind to restore payment notification capture without user intervention.
-81. **Midnight Widget Auto-Reset (`MidnightWidgetResetWorker.kt`)** — WorkManager periodic worker firing 5 seconds past midnight to refresh all 7 home screen widgets, ensuring "Money Spent Today" and daily counters reset cleanly at the start of each new day.
-82. **Daily 9 PM Smart Reminder Notifications (`DailyReminderScheduler.kt`, `DailyReminderWorker.kt`)** — End-of-day WorkManager worker that checks for uncategorized transactions, zero-transaction days, and approaching lending dues, dispatching contextual notification reminders to maintain financial tracking discipline.
-83. **Cross-Channel 5-Minute Sliding Window Deduplication (`NotificationDeduplicationHelper.kt`)** — Enhanced two-way deduplication engine using a 5-minute sliding timestamp window to prevent duplicate entries when both an SMS alert and a UPI app notification arrive for the same transaction, with cross-channel metadata enrichment.
-84. **Battery Optimization Exemption Helper (`BatteryOptimizationHelper.kt`)** — Guided prompt requesting battery optimization exemption for Kanri so that background services (SMS receiver, notification listener, widget updater) are not silently killed by Android Doze or OEM battery savers.
-85. **Development Capture Logger (`DevCaptureLogger.kt`)** — Structured development-time logging utility that captures SMS and notification payloads to local encrypted files for debugging parser failures and missed transaction patterns.
+77. **36 Comprehensive Unit Test Suites (234+ Unit Tests)** — Complete coverage of all business logic, parsers, cryptographic routines, cloud sync states, merchant rules, widget layouts, deduplication logic, and financial health calculators with 100% pass rate.
+78. **Flawless Indian Banking & Bank of Baroda Dr./Cr. SMS Detection (`SmsParser.kt`, `BankSmsPatterns.kt`)** —
+    - Fixed transaction detection for Indian banks (Bank of Baroda, SBI, Canara Bank, etc.) using abbreviated `Dr.` / `Dr` (debit) and `Cr.` / `Cr` (credit) notation instead of verbose verbs.
+    - Added dual-party transaction polarity resolution (`Dr. from A/C... and Cr. to <VPA>` vs `Cr. to A/C... and Dr. from <VPA>`) to accurately categorize user account debits vs credits without clause ambiguity.
+    - Added VPA handle stripping prior to bank name scanning to prevent recipient UPI addresses (e.g. `user@okaxis`, `user@icici`) from falsely matching Axis Bank or ICICI Bank.
+    - Added trailing signature matching (`-BOB`, `/5000-BOB`, `-SBI`) for bank recognition.
+    - Added year-first timestamp parsing (`YYYY:MM:DD HH:MM:SS`, `YYYY-MM-DD`) ensuring exact transaction second precision for BOB and other banking SMS timestamps.
+    - Refined counterparty extraction to parse `Cr. to <VPA>` and `Dr. from <sender>` while excluding user account masks (`A/C`). Verified with 100% pass rate in `SmsParserTest.kt`.
+79. **Hardened SMS Receiver Pipeline (`SmsReceiver.kt`)** — Upgraded to `goAsync()` with priority 999 intent filter, ensuring Kanri's SMS processor runs before other SMS apps. Multi-part PDU concatenation now operates within a `goAsync()` coroutine scope for reliable background processing.
+80. **Boot Persistence Engine (`BootReceiver.kt`)** — Manifest-registered `BOOT_COMPLETED` BroadcastReceiver that re-initializes all background monitors (NotificationListenerService watchdog, widget midnight reset, lending reminder scheduler, daily reminder scheduler) after device reboot, ensuring zero-gap detection without requiring manual app launch.
+81. **Notification Listener Watchdog (`NotificationListenerWatchdogWorker.kt`)** — 15-minute periodic WorkManager watchdog that detects silently disconnected `NotificationListenerService` (common on MIUI, ColorOS, FunTouchOS battery savers) and triggers automatic rebind to restore payment notification capture without user intervention.
+82. **Midnight Widget Auto-Reset (`MidnightWidgetResetWorker.kt`)** — WorkManager periodic worker firing 5 seconds past midnight to refresh all 7 home screen widgets, ensuring "Money Spent Today" and daily counters reset cleanly at the start of each new day.
+83. **Daily 9 PM Smart Reminder Notifications (`DailyReminderScheduler.kt`, `DailyReminderWorker.kt`)** — End-of-day WorkManager worker that checks for uncategorized transactions, zero-transaction days, and approaching lending dues, dispatching contextual notification reminders to maintain financial tracking discipline.
+84. **Cross-Channel 5-Minute Sliding Window Deduplication (`NotificationDeduplicationHelper.kt`)** — Enhanced two-way deduplication engine using a 5-minute sliding timestamp window to prevent duplicate entries when both an SMS alert and a UPI app notification arrive for the same transaction, with cross-channel metadata enrichment.
+85. **Battery Optimization Exemption Helper (`BatteryOptimizationHelper.kt`)** — Guided prompt requesting battery optimization exemption for Kanri so that background services (SMS receiver, notification listener, widget updater) are not silently killed by Android Doze or OEM battery savers.
+86. **Development Capture Logger (`DevCaptureLogger.kt`)** — Structured development-time logging utility that captures SMS and notification payloads to local encrypted files for debugging parser failures and missed transaction patterns.
+87. **Wallet Balances Engine & Liquid Cash/Bank Tracking (`WalletBalanceCalculator.kt`, `WalletRepository.kt`, `WalletResolver.kt`, `WheresMyMoneyCard.kt`, `WalletSheet.kt`)** — Complete dual-wallet tracking (Cash Balance + Online Balance) strictly derived from:
+    $$\text{walletBalance}(w) = \text{opening\_amount}(w) + \sum\text{credits}(w) - \sum\text{debits}(w) + \sum\text{transfers\_into}(w) - \sum\text{transfers\_out\_of}(w)$$
+    where $\text{timestamp} \ge \text{opening\_timestamp}$ and $\text{is\_duplicate} = 0$.
+    - **Zero Stored Totals & Zero Drift:** Running balances are never stored; every query recomputes balances deterministically with round-to-paise precision (never displays `-0.00`).
+    - **Room Schema Version 11 & SQLCipher Migration:** Created `wallet_balances` table (`wallet_id`, `opening_amount`, `opening_timestamp`), added `wallet` and `transfer_to_wallet` columns with `index_transactions_wallet` index on `transactions`. Automated `MIGRATION_10_11` backfilling `wallet = 'CASH'` for historical cash transactions and `'ONLINE'` for bank/UPI.
+    - **ATM Withdrawal Mode:** Configurable toggle (`SPENDING` vs `TRANSFER` into Cash) with atomic historical rewrite across ATM debit records.
+    - **Transfer Isolation:** Internal transfers are completely excluded from spending totals, income, cash flow, category breakdowns, payees, streaks, budgets, health score, heatmaps, and widgets.
+    - **Luxury UI Integration:** `WheresMyMoneyCard` with `AnimatedNumberText`, split ratio bar, and negative balance indicators; frosted glass `WalletSheet`; `CorrectBalanceDialog` (with mathematical opening adjustment preview); `MoveMoneyDialog`; `WalletSetupDialog`; and skippable onboarding step.
+    - **One-Tap Conversions:** Instant conversion to cash deposit/withdrawal from `TransactionDetailScreen` and `NeedsReviewSheet`.
+    - **Encrypted Backup & Reset:** Full backup format v3 serialization/restoration and factory reset cleanup.
 
 ---
 
@@ -309,7 +326,7 @@ Central user identity and system preferences hub:
 
 ### 2.9 Settings Hub (`SettingsScreen.kt`)
 Consolidated preferences and administrative tools:
-- **Cloud Sync (`CloudSyncCard.kt`):** Optional Google Drive AppData backup integration with end-to-end client-side encryption (Tink AES-GCM + PBKDF2), automated daily background sync, account switcher, manual restore modal, and one-tap offline-only fallback.
+- **Cloud Sync (`CloudSyncCard.kt`):** Optional Google Drive backup integration with end-to-end client-side encryption (Tink AES-GCM + PBKDF2), restricted strictly to `drive.file` scope, automated daily background sync, account switcher, manual restore modal, and one-tap offline-only fallback.
 - **Automations & Rules:** Direct entry point to Smart Merchant Rule Editor (`SmartMerchantRulesScreen.kt`) displaying real-time active rule count badge.
 - **Security & Privacy:** Biometric lock toggle, auto-lock timeout (Immediate, 30s, 1m, 5m, 15m), native device credentials, and in-app Privacy Policy dialog (`PrivacyPolicyDialog.kt`).
 - **Quick Settings Tile:** Tile status indicator and configuration shortcut for Android notification shade quick-add access.
@@ -398,7 +415,7 @@ Luxury 5-step onboarding walkthrough:
 - **Mesh Gradient Engine (`GrainGradientBackground.kt`):** Custom Canvas shader rendering continuous animated multi-point color gradient combined with film-grain noise.
 - **Step 1 — Welcome & Philosophy:** Luxury monochrome wordmark, privacy manifesto, and 100% offline commitment.
 - **Step 2 — Detection Power:** How SMS and notification detection work locally without cloud ingestion.
-- **Step 3 — Mode Selection:** Strict Offline Mode vs Optional Encrypted Google Drive AppData Sync.
+- **Step 3 — Mode Selection:** Strict Offline Mode vs Optional Encrypted Google Drive Sync (`drive.file` scope).
 - **Step 4 — Permissions:** In-context explanations for SMS and Notification listener permissions with respectful skip options.
 - **Step 5 — Personalization:** User name, optional profile avatar, currency display, and initial monthly budget target.
 
@@ -406,14 +423,14 @@ Luxury 5-step onboarding walkthrough:
 
 ### 2.15 Optional Encrypted Cloud Backup Engine (`GoogleDriveBackupManager.kt`)
 Zero-knowledge, client-side encrypted backup synchronization:
-- **Private Drive AppData:** Operates strictly within Google Drive's hidden `appDataFolder` (`drive.appdata` scope) — invisible in standard Drive UI and inaccessible to other apps.
+- **Restricted `drive.file` Scope:** Operates strictly within Google Drive's restricted `drive.file` scope (`https://www.googleapis.com/auth/drive.file`) — Kanri can only read and write its own `kanri_backup.enc` file and has zero access or visibility into personal files, folders, photos, or documents stored in Google Drive.
 - **Client-Side Cryptography:** Payloads are encrypted with AES-GCM (Tink PBKDF2) using the user's master key before network transit.
 - **Automated WorkManager Sync:** Periodic background worker performing scheduled backups when connected to unmetered Wi-Fi.
 - **Instant Fallback:** Users can switch back to 100% offline mode at any time with a single toggle.
 
 ---
 
-## 3. Active Database Architecture (Room Version 10) 🗄️
+## 3. Active Database Architecture (Room Version 11) 🗄️
 
 Kanri uses **Room 2.8.5** secured with **SQLCipher 4.6.1** AES-256 encryption at rest. The database passphrase is automatically generated and protected inside the **Android Keystore** (`DatabaseKeyManager.kt`).
 
@@ -425,7 +442,7 @@ Kanri uses **Room 2.8.5** secured with **SQLCipher 4.6.1** AES-256 encryption at
 | `id` | INTEGER (PK) | No | Auto | Primary key |
 | `type` | TEXT | No | — | "DEBIT" or "CREDIT" |
 | `amount` | REAL | No | — | Transaction amount |
-| `source_type` | TEXT | No | — | "UPI", "ATM", "CARD", "BANK_TRANSFER", "CASH", "UNKNOWN" |
+| `source_type` | TEXT | No | — | "UPI", "ATM", "CARD", "BANK_TRANSFER", "CASH", "WALLET_TRANSFER", "UNKNOWN" |
 | `counterparty` | TEXT | Yes | NULL | VPA, merchant name, account number, or ATM TID |
 | `display_name` | TEXT | Yes | NULL | Normalized display merchant name |
 | `bank` | TEXT | Yes | NULL | Bank institution name (e.g. "HDFC", "SBI", "KOTAK") |
@@ -438,6 +455,10 @@ Kanri uses **Room 2.8.5** secured with **SQLCipher 4.6.1** AES-256 encryption at
 | `needs_review` | INTEGER | No | 0 | Flag indicating transaction requires user verification |
 | `review_reason` | TEXT | Yes | NULL | Reason for review (e.g. "Unknown payee", "Zero amount") |
 | `notes` | TEXT | Yes | NULL | User-provided notes |
+| `wallet` | TEXT | No | "ONLINE" | Active wallet ("CASH" or "ONLINE") |
+| `transfer_to_wallet`| TEXT | Yes | NULL | Destination wallet if internal transfer (e.g. "CASH"), else NULL |
+
+*Index: `index_transactions_wallet` on `wallet`.*
 
 #### 2. `categories`
 | Column | Type | Nullable | Default | Description |
@@ -523,6 +544,13 @@ Kanri uses **Room 2.8.5** secured with **SQLCipher 4.6.1** AES-256 encryption at
 
 *Index: `index_savings_goal_contributions_goal_id` on `goal_id`.*
 
+#### 10. `wallet_balances`
+| Column | Type | Nullable | Default | Description |
+| :--- | :--- | :--- | :--- | :--- |
+| `wallet_id` | TEXT (PK) | No | — | "CASH" or "ONLINE" |
+| `opening_amount` | REAL | No | — | Initial baseline balance (paise precision) |
+| `opening_timestamp`| INTEGER | No | — | Cutoff epoch milliseconds for balance derivation |
+
 ---
 
 ### 3.2 Migration History
@@ -532,25 +560,26 @@ Kanri uses **Room 2.8.5** secured with **SQLCipher 4.6.1** AES-256 encryption at
 - **`MIGRATION_7_8`:** Added `is_custom` (`INTEGER NOT NULL DEFAULT 0`) to `categories`.
 - **`MIGRATION_8_9`:** Added `original_amount` (`REAL DEFAULT NULL`) to `lending_records`. Created `lending_repayments` table with cascade foreign key and index on `lending_id`.
 - **`MIGRATION_9_10`:** Created `savings_goal_contributions` table with cascade foreign key and index on `goal_id`.
+- **`MIGRATION_10_11`:** Added `wallet` (`TEXT NOT NULL DEFAULT 'ONLINE'`) and `transfer_to_wallet` (`TEXT DEFAULT NULL`) to `transactions`. Created `index_transactions_wallet` on `transactions(wallet)`. Created `wallet_balances` table (`wallet_id TEXT PRIMARY KEY NOT NULL, opening_amount REAL NOT NULL, opening_timestamp INTEGER NOT NULL`). Backfilled `wallet = 'CASH'` for `source_type = 'CASH'`, and `ONLINE` for all other source types.
 
 ---
 
-## 4. Comprehensive Test Suite (36 Test Suites) 🧪
+## 4. Comprehensive Test Suite (42 Test Suites, 270 Tests) 🧪
 
-The repository maintains **36 unit and integration test suites** (232+ individual tests) verifying financial accuracy, cryptographic integrity, background services, deduplication logic, and UI state:
+The repository maintains **42 unit and integration test suites** (270 individual tests, 100% pass rate) verifying financial accuracy, cryptographic integrity, background services, deduplication logic, and UI state:
 
 1. **`DeltaCalculatorTest.kt`** — Validates month-over-month spend delta calculations, zero spending baselines, and percentage bounds.
 2. **`FinancialHealthCalculatorTest.kt`** — Validates the 4 financial health pillars (Savings Rate, Budget Utilization, Spend Velocity, Debt Burden), edge cases (zero income, over-budget), letter grade assignments, and diagnostic feedback generation.
 3. **`StreakCalculatorTest.kt`** — Tests calculation of consecutive no-spend days, timezone boundaries, same-day multiple spend events, and milestone celebration logic.
 4. **`BackupCryptoTest.kt`** — Verifies AES-GCM encryption/decryption of backup JSON payloads, PBKDF2 key derivation, wrong password rejection, and payload tampering detection.
-5. **`BackupJsonParserTest.kt`** — Tests full JSON serialization and deserialization across all entities (transactions, categories, budgets, lending, goals, contributions).
+5. **`BackupJsonParserTest.kt`** — Tests full JSON serialization and deserialization across all entities (transactions, categories, budgets, lending, goals, contributions, wallet balances).
 6. **`LendingBackupTest.kt`** — Validates backup/restore integrity specifically for lending records, partial repayments, and foreign key relationships.
 7. **`BudgetCalculatorTest.kt`** — Tests safe-to-spend allowance per day calculations, days remaining countdowns, and over-budget transition thresholds.
 8. **`CloudBackupTest.kt`** — Tests optional encrypted Google Drive backup serialization, AES-GCM Tink envelope encryption, and local fallback states.
-9. **`DriveSyncTest.kt`** — Tests Google Drive REST v3 AppData folder synchronization, conflict detection, and network error recovery.
-10. **`GoogleAuthTest.kt`** — Validates Google Sign-In intent handling, token acquisition, and permission scope boundaries (`drive.appdata`).
+9. **`DriveSyncTest.kt`** — Tests Google Drive REST v3 file synchronization, conflict detection, and network error recovery.
+10. **`GoogleAuthTest.kt`** — Validates Google Sign-In intent handling, token acquisition, and permission scope boundaries (verifying that the scope is strictly restricted to `drive.file` and never requests broad drive access or `drive.appdata`).
 11. **`CrashLoggerTest.kt`** — Validates local disk crash file writing, exception stack formatting, file pruning, and sensitive data redaction.
-12. **`DatabaseMigrationTest.kt`** — Verifies Room migrations 5$\rightarrow$6, 6$\rightarrow$7, 7$\rightarrow$8, 8$\rightarrow$9, and 9$\rightarrow$10 under SQLite and SQLCipher.
+12. **`DatabaseMigrationTest.kt`** — Verifies Room migrations 5$\rightarrow$6, 6$\rightarrow$7, 7$\rightarrow$8, 8$\rightarrow$9, 9$\rightarrow$10, and 10$\rightarrow$11 under SQLite and SQLCipher.
 13. **`MerchantRulesTest.kt`** — Validates smart keyword substring matching, case insensitivity, longest-match priority, retroactive Room update contracts, and tile action contracts.
 14. **`CsvExporterTest.kt`** — Verifies RFC 4180 CSV generation, column headers, currency formatting, multiline note escaping, and special character sanitization.
 15. **`ExportSchedulerTest.kt`** — Tests WorkManager export job scheduling, recurring intervals, and constraint validation.
@@ -575,6 +604,12 @@ The repository maintains **36 unit and integration test suites** (232+ individua
 34. **`WidgetBreakpointTest.kt`** — Verifies RemoteViews layout selection across Small (1x1), Medium (2x2), Large (4x2+), and all 7 dedicated widget providers.
 35. **`DeduplicationLogicTest.kt`** — Validates the cross-channel 5-minute sliding window deduplication engine, two-way SMS/notification matching, enrichment merging, duplicate suppression, and edge cases around timing boundaries.
 36. **`ExampleUnitTest.kt`** — Base environment validation test.
+37. **`WalletBalanceCalculatorTest.kt`** — Validates the wallet balance formula, cutoff timestamp filtering, duplicate exclusions, internal transfers, tie-breaking on id, negative balance handling, `balanceAfter`, and mathematical opening balance adjustment formulas.
+38. **`WalletResolverTest.kt`** — Verifies deterministic wallet assignment across UPI, Card, Net Banking, Cash, Refunds, CDM cash deposits, ATM withdrawals (under both SPENDING and TRANSFER modes), and explicit manual user overrides.
+39. **`AtmModeSwitchTest.kt`** — Validates atomic rewriting of ATM debit transactions between spending and transfers into cash while strictly preserving manual entries and other sources.
+40. **`WalletMigrationTest.kt`** — Validates Room migration 10$\rightarrow$11, column additions, index creation, table creation, and historical data backfill.
+41. **`WalletRepositoryTest.kt`** — Tests setup, balance correction, money movement, ATM mode switching, factory reset, and live StateFlow emissions.
+42. **`TransferExclusionTest.kt`** — Verifies that internal wallet transfers are strictly excluded from streak calculations, month-over-month deltas, CSV statement spend totals, and search aggregate metrics.
 
 ---
 
@@ -598,11 +633,12 @@ The repository maintains **36 unit and integration test suites** (232+ individua
 ### Phase 2: Intelligence & Advanced Automations
 - [x] **Smart Merchant Rule Editor:** Expose a screen in Settings where users can view and edit custom keyword auto-categorization rules (e.g. "If merchant contains 'Starbucks', categorize as 'Food & Dining'").
 - [x] **Glanceable Multi-Widget Suite (7 Dedicated Widgets):** Replaced legacy widget with 7 dedicated Android AppWidgets for Today's Spend, Budget Progress, Budget Ring, Goals Ring, Lend/Borrow, Split Bill, and Quick Add.
-- [x] **Optional Encrypted Google Drive AppData Backup:** 100% private, client-side encrypted backup sync via Google Drive hidden AppData folder with automated background sync.
+- [x] **Optional Encrypted Google Drive Backup:** 100% private, client-side encrypted backup sync via Google Drive restricted `drive.file` scope with automated background sync.
 - [ ] **Predictive Cash Flow Forecasting:** Expand the Month-End Projection model into a 30-day forward-looking cash flow forecast that accounts for upcoming recurring subscriptions and expected debt repayments.
 - [ ] **Bill Splitting via QR Code / Local Share:** Generate offline QR codes or use Android Nearby Share to transfer bill split breakdowns directly to other Kanri users without cloud intermediation.
 
 ### Phase 3: Hardware & Ecosystem Integrations
 - [ ] **Wear OS Companion App:** Glanceable today's spend counter, safe-to-spend allowance, and voice/numpad quick transaction entry on Wear OS smartwatches.
-- [ ] **Android 15 Edge-to-Edge Compliance & Predictive Back:** Deepen predictive back gesture animations across all sub-screens and dialogs.
+- [x] **Android 15 Edge-to-Edge Compliance:** Native edge-to-edge layout enabled with `enableEdgeToEdge()` and window insets handling.
+- [ ] **Predictive Back Gesture Animations:** Deepen Android 14+ predictive back gesture transitions across all sub-screens and dialogs.
 - [ ] **Automated Bi-Directional Backup Sync via SAF Local Provider:** Support user-configured local folder auto-sync (e.g. syncing encrypted backups to a local Syncthing or SD card folder automatically upon change).

@@ -233,4 +233,26 @@ class StreakCalculatorTest {
         assertFalse(yesterdayItem.isToday)
         assertFalse(yesterdayItem.isNoSpend) // Sep 19 had spend
     }
+
+    @Test
+    fun calculateStreak_transferDebit_doesNotBreakStreak() {
+        val nowCal = Calendar.getInstance().apply {
+            set(2026, Calendar.SEPTEMBER, 20, 15, 0, 0)
+        }
+
+        // Transfer debit on Sep 19
+        val transferTx = createTx(5000.0, "DEBIT", 2026, 9, 19).copy(
+            wallet = "ONLINE",
+            transferToWallet = "CASH"
+        )
+        // Normal first transaction on Sep 10
+        val baseTx = createTx(100.0, "DEBIT", 2026, 9, 10)
+
+        val state = StreakCalculator.calculateStreak(listOf(baseTx, transferTx), nowCal)
+
+        // Yesterday (Sep 19) should remain a no-spend day because transfers are excluded
+        val yesterdayItem = state.last7Days[5]
+        assertTrue("Transfer debit on Sep 19 must not break no-spend streak", yesterdayItem.isNoSpend)
+        assertEquals(10, state.currentStreak) // Sep 11 to Sep 20 = 10 days
+    }
 }

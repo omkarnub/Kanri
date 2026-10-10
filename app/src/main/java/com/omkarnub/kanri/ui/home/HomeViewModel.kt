@@ -115,7 +115,9 @@ data class HomeUiState(
             monthIncome = 0.0,
             monthlyBudget = BudgetCalculator.DEFAULT_MONTHLY_BUDGET,
             daysRemaining = 1
-        )
+        ),
+    // Feature: Wallet Balances
+    val walletBalances: com.omkarnub.kanri.data.wallet.WalletBalances = com.omkarnub.kanri.data.wallet.WalletBalances()
 )
 
 class HomeViewModel(application: Application) : AndroidViewModel(application) {
@@ -128,6 +130,7 @@ class HomeViewModel(application: Application) : AndroidViewModel(application) {
     private val savingsGoalDao = db.savingsGoalDao()
     private val streakDataStore = StreakDataStore(application)
     private val greetingDataStore = GreetingDataStore(application)
+    val walletRepository = com.omkarnub.kanri.data.wallet.WalletRepository(application)
 
     private val currentMonthKey = BudgetCalculator.getCurrentMonthKey()
 
@@ -209,7 +212,8 @@ class HomeViewModel(application: Application) : AndroidViewModel(application) {
         streakState,
         streakDataStore.lastCelebratedMilestone,
         lendingDao.getTotalLentPending(),
-        lendingDao.getTotalBorrowedPending()
+        lendingDao.getTotalBorrowedPending(),
+        walletRepository.observeBalances()
     ) { args: Array<Any?> ->
         val txList = args[0] as List<TransactionWithCategory>
         val catList = args[1] as List<CategoryEntity>
@@ -221,6 +225,7 @@ class HomeViewModel(application: Application) : AndroidViewModel(application) {
         val lastCelebrated = args[7] as Int
         val lentPending = (args[8] as? Double) ?: 0.0
         val borrowedPending = (args[9] as? Double) ?: 0.0
+        val balances = args[10] as? com.omkarnub.kanri.data.wallet.WalletBalances ?: com.omkarnub.kanri.data.wallet.WalletBalances()
 
         val startOfToday = getStartOfTodayMillis()
         val startOfMonth = BudgetCalculator.getStartOfMonthMillis()
@@ -234,6 +239,9 @@ class HomeViewModel(application: Application) : AndroidViewModel(application) {
 
         for (item in txList) {
             val tx = item.transaction
+            // Transfers do not affect spending or income
+            if (tx.isTransfer) continue
+
             if (tx.timestamp >= startOfToday) {
                 if (tx.type.equals("DEBIT", ignoreCase = true)) {
                     spentToday += tx.amount
@@ -351,7 +359,8 @@ class HomeViewModel(application: Application) : AndroidViewModel(application) {
                 daysRemaining = daysLeft,
                 totalBorrowed = borrowedPending,
                 totalLent = lentPending
-            )
+            ),
+            walletBalances = balances
         )
     }.stateIn(
         scope = viewModelScope,
@@ -399,7 +408,7 @@ class HomeViewModel(application: Application) : AndroidViewModel(application) {
         }.timeInMillis
 
         val prevSpent = transactions
-            .filter { it.type.equals("DEBIT", ignoreCase = true) && it.timestamp in startPrev..endPrev }
+            .filter { !it.isTransfer && it.type.equals("DEBIT", ignoreCase = true) && it.timestamp in startPrev..endPrev }
             .sumOf { it.amount }
 
         return if (prevSpent > 0.0) prevSpent else null
@@ -541,13 +550,22 @@ class HomeViewModel(application: Application) : AndroidViewModel(application) {
         type: String,
         counterparty: String,
         sourceType: String,
-        categoryId: Long? = null
+        categoryId: Long? = null,
+        walletChoice: String? = null
     ) {
         viewModelScope.launch {
             val resolvedCategoryId = categoryId ?: if (!counterparty.isBlank()) {
                 (categoryDao.findSmartRuleForCounterparty(counterparty.trim())
                     ?: categoryDao.getMappingForCounterparty(counterparty.trim()))?.categoryId
             } else null
+
+            val atmMode = com.omkarnub.kanri.data.wallet.WalletPreferences.getInstance(getApplication()).atmWithdrawalMode
+            val resolvedWallet = com.omkarnub.kanri.data.wallet.WalletResolver.resolve(
+                sourceType = sourceType,
+                type = type,
+                userChoice = walletChoice,
+                atmMode = atmMode
+            )
 
             val entity = TransactionEntity(
                 type = type.uppercase(),
@@ -560,11 +578,69 @@ class HomeViewModel(application: Application) : AndroidViewModel(application) {
                 timestamp = System.currentTimeMillis(),
                 categoryId = resolvedCategoryId,
                 rawSms = "Manual entry: $counterparty",
-                isManualEntry = true
+                isManualEntry = true,
+                wallet = resolvedWallet.wallet,
+                transferToWallet = resolvedWallet.transferToWallet
             )
             transactionDao.insert(entity)
             com.omkarnub.kanri.widget.KanriWidgetsUpdater.updateAllWidgets(getApplication())
         }
+    }
+
+    fun setupWallets(
+        cash: Double,
+        online: Double,
+        atmMode: com.omkarnub.kanri.data.wallet.AtmWithdrawalMode = com.omkarnub.kanri.data.wallet.AtmWithdrawalMode.TRANSFER
+    ) {
+        viewModelScope.launch {
+            walletRepository.setup(cash, online, atmMode)
+            com.omkarnub.kanri.widget.KanriWidgetsUpdater.updateAllWidgets(getApplication())
+        }
+    }
+
+    fun correctWalletBalance(wallet: String, desiredBalance: Double) {
+        viewModelScope.launch {
+            walletRepository.correct(wallet, desiredBalance)
+            com.omkarnub.kanri.widget.KanriWidgetsUpdater.updateAllWidgets(getApplication())
+        }
+    }
+
+    fun moveMoney(
+        fromWallet: String,
+        toWallet: String,
+        amount: Double,
+        timestamp: Long = System.currentTimeMillis(),
+        note: String? = null
+    ) {
+        viewModelScope.launch {
+            walletRepository.moveMoney(fromWallet, toWallet, amount, timestamp, note)
+            com.omkarnub.kanri.widget.KanriWidgetsUpdater.updateAllWidgets(getApplication())
+        }
+    }
+
+    fun editOpeningBalances(cash: Double, online: Double) {
+        viewModelScope.launch {
+            walletRepository.setup(cash, online)
+            com.omkarnub.kanri.widget.KanriWidgetsUpdater.updateAllWidgets(getApplication())
+        }
+    }
+
+    fun convertToTransfer(transactionId: Long, wallet: String, transferToWallet: String) {
+        viewModelScope.launch {
+            walletRepository.convertToTransfer(transactionId, wallet, transferToWallet)
+            com.omkarnub.kanri.widget.KanriWidgetsUpdater.updateAllWidgets(getApplication())
+        }
+    }
+
+    fun updateTransactionWallet(transactionId: Long, wallet: String) {
+        viewModelScope.launch {
+            transactionDao.updateWallet(transactionId, wallet.uppercase().trim())
+            com.omkarnub.kanri.widget.KanriWidgetsUpdater.updateAllWidgets(getApplication())
+        }
+    }
+
+    suspend fun getBalanceAfter(wallet: String, transaction: TransactionEntity): Double? {
+        return walletRepository.getBalanceAfter(wallet, transaction)
     }
 
     fun observeTransactionWithCategory(id: Long): Flow<TransactionWithCategory?> {
@@ -582,7 +658,9 @@ class HomeViewModel(application: Application) : AndroidViewModel(application) {
         bank: String?,
         refNo: String?,
         notes: String?,
-        timestamp: Long
+        timestamp: Long,
+        wallet: String? = null,
+        transferToWallet: String? = null
     ) {
         viewModelScope.launch {
             val existing = transactionDao.getTransactionById(transactionId) ?: return@launch
@@ -596,7 +674,9 @@ class HomeViewModel(application: Application) : AndroidViewModel(application) {
                 bank = bank?.trim(),
                 refNo = refNo?.trim(),
                 notes = notes?.trim(),
-                timestamp = timestamp
+                timestamp = timestamp,
+                wallet = wallet ?: existing.wallet,
+                transferToWallet = transferToWallet ?: existing.transferToWallet
             )
             transactionDao.insert(updated)
 

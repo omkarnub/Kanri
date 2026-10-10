@@ -121,7 +121,7 @@ fun LendingTransactionBridgeDialog(
                     recentPeople = recentPeople,
                     allPeople = allPeople,
                     onDismiss = onDismiss,
-                    onSave = { personName, amount, type, date, dueDate, notes ->
+                    onSave = { personName, amount, type, date, dueDate, notes, _ ->
                         coroutineScope.launch {
                             val catId = LendingTransactionSyncHelper.getOrCreateLendBorrowCategoryId(db.categoryDao())
                             val recordId = if (existingEntry != null) {

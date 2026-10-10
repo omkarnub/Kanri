@@ -21,6 +21,7 @@
 All data created during your use of Kanri resides in private application sandbox storage utilizing encrypted Room/SQLite database architectures:
 
 - **Transactions:** Timestamp, amount, transaction notes, merchant name, category classification, and payment mode (UPI, Debit/Credit Card, NetBanking, Cash).
+- **Wallet Balances:** Balances are entered by the user and calculated locally; no balance data leaves the device.
 - **Budgets:** Monthly spending limits and category budgets.
 - **User Profile:** Locally customized display name, optional date of birth, and cached avatar image.
 - **Application Preferences:** Theme preference, device lock settings, and custom category rules.
@@ -36,6 +37,8 @@ Kanri requests specific Android permissions strictly to support on-device expens
 | **SMS Detection** | `RECEIVE_SMS`<br>`READ_SMS` | Scans incoming bank transactional SMS notifications locally on-device using regex engines to auto-log expenses without manual input. | **None.** Processed purely in memory. Never uploaded. |
 | **Instant Overlay** | `SYSTEM_ALERT_WINDOW` | Displays a lightweight floating category chip right after a detected payment so you can assign categories in 1 tap. | **None.** Purely local window manager drawing. |
 | **App Security** | `USE_BIOMETRIC`<br>`USE_FINGERPRINT` | Protects app entry using native Android BiometricPrompt hardware security. | **None.** Managed strictly by device Keystore/TEE. |
+| **Reminders & Alerts** | `POST_NOTIFICATIONS` | Delivers local daily review nudges at 9 PM and approaching lending repayment alerts. | **None.** Dispatched strictly on-device via WorkManager. |
+| **Boot Persistence** | `RECEIVE_BOOT_COMPLETED` | Restores widget update intervals and background reminder schedulers after device restart. | **None.** Purely local broadcast receiver. |
 | **Drive Backup** | `INTERNET` | Communicates directly with Google Drive API when the user explicitly chooses Cloud Backup mode. | Direct TLS connection to Google Drive API only. Zero custom server communication. |
 
 ---

@@ -178,4 +178,104 @@ class BackupJsonParserTest {
         assertEquals(0, restored.lendingRecords.size)
         assertEquals(0, restored.counterpartyMappings.size)
     }
+
+    @Test
+    fun testWalletBalancesSerializationAndDeserialization() {
+        val payload = BackupPayload(
+            version = 3,
+            createdAt = 1726560000000L,
+            appVersion = "1.1.0",
+            transactions = listOf(
+                TransactionEntity(
+                    id = 1L,
+                    type = "DEBIT",
+                    amount = 500.0,
+                    sourceType = "ATM",
+                    counterparty = "ATM Cash",
+                    wallet = "ONLINE",
+                    transferToWallet = "CASH",
+                    timestamp = 1726500000000L
+                ),
+                TransactionEntity(
+                    id = 2L,
+                    type = "CREDIT",
+                    amount = 1000.0,
+                    sourceType = "CASH",
+                    counterparty = "Friend",
+                    wallet = "CASH",
+                    transferToWallet = null,
+                    timestamp = 1726500001000L
+                )
+            ),
+            categories = emptyList(),
+            budgets = emptyList(),
+            lendingRecords = emptyList(),
+            counterpartyMappings = emptyList(),
+            walletBalances = listOf(
+                com.omkarnub.kanri.data.db.WalletBalanceEntity(
+                    walletId = "CASH",
+                    openingAmount = 2500.0,
+                    openingTimestamp = 1726400000000L
+                ),
+                com.omkarnub.kanri.data.db.WalletBalanceEntity(
+                    walletId = "ONLINE",
+                    openingAmount = 15000.0,
+                    openingTimestamp = 1726400000000L
+                )
+            )
+        )
+
+        val json = BackupJsonParser.toJson(payload)
+        assertTrue(json.contains("walletBalances"))
+        assertTrue(json.contains("ONLINE"))
+        assertTrue(json.contains("CASH"))
+        assertTrue(json.contains("transferToWallet"))
+
+        val restored = BackupJsonParser.fromJson(json)
+        assertEquals(2, restored.transactions.size)
+        assertEquals("ONLINE", restored.transactions[0].wallet)
+        assertEquals("CASH", restored.transactions[0].transferToWallet)
+        assertEquals("CASH", restored.transactions[1].wallet)
+        assertNull(restored.transactions[1].transferToWallet)
+
+        assertEquals(2, restored.walletBalances.size)
+        val cashWallet = restored.walletBalances.find { it.walletId == "CASH" }
+        assertNotNull(cashWallet)
+        assertEquals(2500.0, cashWallet!!.openingAmount, 0.001)
+
+        val onlineWallet = restored.walletBalances.find { it.walletId == "ONLINE" }
+        assertNotNull(onlineWallet)
+        assertEquals(15000.0, onlineWallet!!.openingAmount, 0.001)
+    }
+
+    @Test
+    fun testLegacyBackupTolerantOfMissingWalletFields() {
+        val legacyJson = """
+            {
+                "version": 1,
+                "createdAt": 1726560000000,
+                "appVersion": "1.0.0",
+                "transactions": [
+                    {
+                        "id": 1,
+                        "type": "DEBIT",
+                        "amount": 200.0,
+                        "sourceType": "UPI",
+                        "timestamp": 1726500000000
+                    }
+                ],
+                "categories": [],
+                "budgets": [],
+                "lendingRecords": [],
+                "counterpartyMappings": []
+            }
+        """.trimIndent()
+
+        val restored = BackupJsonParser.fromJson(legacyJson)
+        assertEquals(1, restored.transactions.size)
+        // Default values should be assigned safely
+        assertEquals("ONLINE", restored.transactions[0].wallet)
+        assertNull(restored.transactions[0].transferToWallet)
+        assertTrue(restored.walletBalances.isEmpty())
+    }
 }

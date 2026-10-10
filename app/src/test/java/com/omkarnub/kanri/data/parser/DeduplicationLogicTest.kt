@@ -101,6 +101,7 @@ class DeduplicationLogicTest {
         override suspend fun clearAllReviewFlags() {}
         override suspend fun updateCategoryId(transactionId: Long, categoryId: Long) {}
         override suspend fun updateCategoryAndNotes(transactionId: Long, categoryId: Long, notes: String?) {}
+        override suspend fun updateNotes(transactionId: Long, notes: String?) {}
         override suspend fun updateCategoryForCounterparty(counterparty: String, categoryId: Long) {}
         override suspend fun applyCategoryToMatchingTransactions(keyword: String, categoryId: Long): Int = 0
         override suspend fun countTransactionsMatchingKeyword(keyword: String): Int = 0
@@ -121,6 +122,41 @@ class DeduplicationLogicTest {
         override suspend fun getCategorySpendAggregates(type: String, startTime: Long, endTime: Long): List<CategorySpendAggregate> = emptyList()
         override suspend fun getBiggestTransactionsWithCategory(type: String, startTime: Long, endTime: Long, limit: Int): List<TransactionWithCategory> = emptyList()
         override suspend fun getBiggestSingleExpenseSync(): TransactionEntity? = null
+        override fun observeWalletTransactions(): Flow<List<com.omkarnub.kanri.data.wallet.WalletTxnRow>> = emptyFlow()
+        override suspend fun getWalletTransactionsSync(): List<com.omkarnub.kanri.data.wallet.WalletTxnRow> = transactions.map {
+            com.omkarnub.kanri.data.wallet.WalletTxnRow(it.id, it.type, it.amount, it.wallet, it.transferToWallet, it.timestamp, it.isDuplicate)
+        }
+        override suspend fun rewriteAtmTransfers(targetTransferWallet: String?): Int {
+            var count = 0
+            val updated = transactions.map {
+                if (it.sourceType == "ATM" && it.type.equals("DEBIT", ignoreCase = true) && !it.isManualEntry) {
+                    count++
+                    it.copy(transferToWallet = targetTransferWallet)
+                } else it
+            }
+            transactions.clear()
+            transactions.addAll(updated)
+            return count
+        }
+        override suspend fun convertTransactionToTransfer(id: Long, wallet: String, transferToWallet: String): Int {
+            val idx = transactions.indexOfFirst { it.id == id }
+            return if (idx != -1) {
+                transactions[idx] = transactions[idx].copy(wallet = wallet, transferToWallet = transferToWallet, categoryId = null, needsReview = false, reviewReason = null)
+                1
+            } else 0
+        }
+        override suspend fun updateWallet(id: Long, wallet: String) {
+            val idx = transactions.indexOfFirst { it.id == id }
+            if (idx != -1) {
+                transactions[idx] = transactions[idx].copy(wallet = wallet)
+            }
+        }
+        override suspend fun updateWalletAndTransfer(id: Long, wallet: String, transferToWallet: String?) {
+            val idx = transactions.indexOfFirst { it.id == id }
+            if (idx != -1) {
+                transactions[idx] = transactions[idx].copy(wallet = wallet, transferToWallet = transferToWallet)
+            }
+        }
     }
 
     private class FakeCategoryDao : CategoryDao {
@@ -342,5 +378,39 @@ class DeduplicationLogicTest {
         val res2 = NotificationDeduplicationHelper.processIncomingTransaction(dao, categoryDao, tx2)
         assertTrue("Different UTRs must not be merged", res2 is DeduplicationResult.Inserted)
         assertEquals(2, dao.transactions.size)
+    }
+
+    @Test
+    fun testUpiCreditDeduplication_duplicateIgnoredByWalletBalances() = runBlocking {
+        val rows = listOf(
+            com.omkarnub.kanri.data.wallet.WalletTxnRow(
+                id = 1L,
+                type = "CREDIT",
+                amount = 1500.0,
+                wallet = "ONLINE",
+                transferToWallet = null,
+                timestamp = 1700000000000L,
+                isDuplicate = false
+            ),
+            com.omkarnub.kanri.data.wallet.WalletTxnRow(
+                id = 2L,
+                type = "CREDIT",
+                amount = 1500.0,
+                wallet = "ONLINE",
+                transferToWallet = null,
+                timestamp = 1700000010000L,
+                isDuplicate = true // Duplicate row from notification dedupe
+            )
+        )
+
+        val balance = com.omkarnub.kanri.data.wallet.WalletBalanceCalculator.balance(
+            wallet = "ONLINE",
+            openingAmount = 10000.0,
+            openingTimestamp = 1699990000000L,
+            transactions = rows
+        )
+
+        // 10,000 + 1,500 = 11,500 (duplicate 1,500 row strictly ignored)
+        assertEquals(11500.0, balance, 0.001)
     }
 }

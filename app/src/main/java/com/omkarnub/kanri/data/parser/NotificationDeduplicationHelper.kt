@@ -30,7 +30,8 @@ object NotificationDeduplicationHelper {
     suspend fun processIncomingTransaction(
         dao: TransactionDao,
         categoryDao: CategoryDao,
-        parsed: ParsedTransaction
+        parsed: ParsedTransaction,
+        atmMode: com.omkarnub.kanri.data.wallet.AtmWithdrawalMode = com.omkarnub.kanri.data.wallet.AtmWithdrawalMode.SPENDING
     ): DeduplicationResult {
         // 1. Check exact ref_no if present
         if (!parsed.refNo.isNullOrBlank()) {
@@ -104,15 +105,25 @@ object NotificationDeduplicationHelper {
             return DeduplicationResult.SkippedDuplicate(existingMatch.id)
         }
 
+        val resolvedWallet = com.omkarnub.kanri.data.wallet.WalletResolver.resolve(
+            sourceType = parsed.sourceType.name,
+            type = parsed.type.name,
+            atmMode = atmMode,
+            isRefund = parsed.isRefund
+        )
+        val isTransfer = resolvedWallet.transferToWallet != null
+
         // 3. New unique transaction -> check for auto-assigned category
         var categoryId: Long? = null
-        if (parsed.sourceType == SourceType.ATM) {
-            val atmCat = categoryDao.getCategoryByName("Cash & ATM")
-            categoryId = atmCat?.id
-        } else if (!parsed.counterparty.isNullOrBlank()) {
-            val mapping = categoryDao.findSmartRuleForCounterparty(parsed.counterparty)
-                ?: categoryDao.getMappingForCounterparty(parsed.counterparty)
-            categoryId = mapping?.categoryId
+        if (!isTransfer) {
+            if (parsed.sourceType == SourceType.ATM) {
+                val atmCat = categoryDao.getCategoryByName("Cash & ATM")
+                categoryId = atmCat?.id
+            } else if (!parsed.counterparty.isNullOrBlank()) {
+                val mapping = categoryDao.findSmartRuleForCounterparty(parsed.counterparty)
+                    ?: categoryDao.getMappingForCounterparty(parsed.counterparty)
+                categoryId = mapping?.categoryId
+            }
         }
 
         // Evaluate review criteria
@@ -125,7 +136,15 @@ object NotificationDeduplicationHelper {
                 parsed.counterparty.trim().equals("bank transfer", ignoreCase = true)
         val isLowConfidence = parsed.sourceType == SourceType.UNKNOWN || (parsed.bank == null && parsed.refNo == null)
 
+        val isCashDepositCredit = parsed.type == TransactionType.CREDIT && (
+                parsed.rawText.contains("cdm", ignoreCase = true) ||
+                        parsed.rawText.contains("cash deposit", ignoreCase = true) ||
+                        parsed.rawText.contains("deposited in cash", ignoreCase = true)
+                )
+
         val (needsReview, reviewReason) = when {
+            isTransfer -> false to null
+            isCashDepositCredit -> true to "Looks like a cash deposit"
             hasDifferentRefNo -> true to "Probable duplicate (same amount within 5m)"
             isMerchantEmptyOrUnknown -> true to "Merchant unknown or missing"
             isUncategorizedOrOther -> true to "Uncategorized or Other category"
@@ -145,7 +164,9 @@ object NotificationDeduplicationHelper {
             categoryId = categoryId,
             rawSms = parsed.rawText,
             needsReview = needsReview,
-            reviewReason = reviewReason
+            reviewReason = reviewReason,
+            wallet = resolvedWallet.wallet,
+            transferToWallet = resolvedWallet.transferToWallet
         )
 
         val insertedId = dao.insert(entity)

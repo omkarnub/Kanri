@@ -112,8 +112,11 @@ import com.omkarnub.kanri.ui.greeting.GreetingHeader
 import com.omkarnub.kanri.ui.health.DiagnosticsSheet
 import com.omkarnub.kanri.ui.health.HealthCheckBanner
 import com.omkarnub.kanri.ui.health.HealthCheckHelper
-import com.omkarnub.kanri.ui.recurring.RecurringPaymentsSheet
-import com.omkarnub.kanri.ui.savings.SavingsGoalsSheet
+import com.omkarnub.kanri.ui.wallet.CorrectBalanceDialog
+import com.omkarnub.kanri.ui.wallet.MoveMoneyDialog
+import com.omkarnub.kanri.ui.wallet.WalletSetupDialog
+import com.omkarnub.kanri.ui.wallet.WalletSheet
+import androidx.compose.material.icons.filled.SwapHoriz
 import java.text.NumberFormat
 import java.text.SimpleDateFormat
 import java.util.Calendar
@@ -151,6 +154,13 @@ fun HomeScreen(
     var showNeedsReviewSheet by remember { mutableStateOf(false) }
     var hasDismissedBudgetPrompt by rememberSaveable { mutableStateOf(false) }
 
+    // Wallet Balances dialog states
+    var showWalletSheet by remember { mutableStateOf(false) }
+    var showWalletSetupDialog by remember { mutableStateOf(false) }
+    var isEditingBaselines by remember { mutableStateOf(false) }
+    var showMoveMoneyDialog by remember { mutableStateOf(false) }
+    var correctingWallet by remember { mutableStateOf<Pair<String, Double>?>(null) }
+
     if (!state.isLoading && !state.hasBudget && !hasDismissedBudgetPrompt) {
         SetBudgetDialog(
             currentBudget = state.monthlyBudget,
@@ -169,6 +179,7 @@ fun HomeScreen(
     val dateFade = remember { Animatable(0f) }
     val needsReviewEntrance = remember { Animatable(0f) }
     val visualizerEntrance = remember { Animatable(0f) }
+    val walletEntrance = remember { Animatable(0f) }
     val transactionsEntrance = remember { Animatable(0f) }
     val safeSpendEntrance = remember { Animatable(0f) }
     val streakEntrance = remember { Animatable(0f) }
@@ -208,6 +219,13 @@ fun HomeScreen(
             visualizerEntrance.animateTo(
                 1f,
                 animationSpec = tween(durationMillis = 200, delayMillis = 50, easing = FastOutSlowInEasing)
+            )
+        }
+        // 5.1. Where's My Money Card
+        launch {
+            walletEntrance.animateTo(
+                1f,
+                animationSpec = tween(durationMillis = 400, delayMillis = 180, easing = FastOutSlowInEasing)
             )
         }
         // 6. Recent Transactions List
@@ -257,6 +275,9 @@ fun HomeScreen(
             onOpenLendBorrow = { tx ->
                 lendingEntryForTransaction = TransactionWithCategory(transaction = tx, category = null)
                 showNeedsReviewSheet = false
+            },
+            onConvertToTransfer = { txId, wallet, transferToWallet ->
+                viewModel.convertToTransfer(txId, wallet, transferToWallet)
             }
         )
     }
@@ -287,6 +308,67 @@ fun HomeScreen(
         com.omkarnub.kanri.ui.lending.LendingTransactionBridgeDialog(
             targetTransaction = target,
             onDismiss = { lendingEntryForTransaction = null }
+        )
+    }
+
+    if (showWalletSheet) {
+        WalletSheet(
+            balances = state.walletBalances,
+            recentTransactions = state.transactions,
+            onDismiss = { showWalletSheet = false },
+            onCorrectBalanceClick = { wallet, current ->
+                correctingWallet = wallet to current
+            },
+            onMoveMoneyClick = {
+                showMoveMoneyDialog = true
+            },
+            onEditOpeningBalancesClick = {
+                isEditingBaselines = true
+                showWalletSetupDialog = true
+            },
+            onNavigateToFilteredHistory = {
+                showWalletSheet = false
+                onNavigateToHistory()
+            },
+            onTransactionClick = { tx ->
+                showWalletSheet = false
+                onTransactionClick(tx)
+            }
+        )
+    }
+
+    if (showWalletSetupDialog) {
+        WalletSetupDialog(
+            initialCash = if (isEditingBaselines) state.walletBalances.cash else 0.0,
+            initialOnline = if (isEditingBaselines) state.walletBalances.online else 0.0,
+            isInitialSetup = !isEditingBaselines,
+            onDismiss = { showWalletSetupDialog = false },
+            onConfirm = { cash, online, atmMode ->
+                viewModel.setupWallets(cash, online, atmMode)
+                showWalletSetupDialog = false
+            }
+        )
+    }
+
+    if (showMoveMoneyDialog) {
+        MoveMoneyDialog(
+            onDismiss = { showMoveMoneyDialog = false },
+            onConfirm = { from, to, amount, timestamp, note ->
+                viewModel.moveMoney(from, to, amount, timestamp, note)
+                showMoveMoneyDialog = false
+            }
+        )
+    }
+
+    correctingWallet?.let { (wallet, current) ->
+        CorrectBalanceDialog(
+            wallet = wallet,
+            currentBalance = current,
+            onDismiss = { correctingWallet = null },
+            onConfirm = { desired ->
+                viewModel.correctWalletBalance(wallet, desired)
+                correctingWallet = null
+            }
         )
     }
 
@@ -437,6 +519,25 @@ fun HomeScreen(
                         monthDelta = state.monthDelta,
                         onSelectMonth = { year, month -> viewModel.selectMonth(year, month) },
                         onUpdateBudget = { newLimit -> viewModel.updateMonthlyBudget(newLimit) }
+                    )
+                }
+
+                // =========================================================================
+                // 4.05. "WHERE'S MY MONEY" (WALLET BALANCES: CASH + ONLINE)
+                // =========================================================================
+                Box(
+                    modifier = Modifier.graphicsLayer {
+                        alpha = walletEntrance.value
+                        translationY = (1f - walletEntrance.value) * 20.dp.toPx()
+                    }
+                ) {
+                    WheresMyMoneyCard(
+                        balances = state.walletBalances,
+                        onClick = { showWalletSheet = true },
+                        onSetupClick = {
+                            isEditingBaselines = false
+                            showWalletSetupDialog = true
+                        }
                     )
                 }
 
@@ -664,9 +765,13 @@ fun TransactionListItem(
 ) {
     val transaction = item.transaction
     val category = item.category
+    val isTransfer = transaction.isTransfer
     val isDebit = transaction.type.equals("DEBIT", ignoreCase = true)
-    val amountColor = if (isDebit) ExpenseRed else IncomeGreen
-    val amountPrefix = if (isDebit) "- " else "+ "
+    val amountColor = if (isTransfer) MaterialTheme.colorScheme.onSurface else if (isDebit) ExpenseRed else IncomeGreen
+    val amountPrefix = if (isTransfer) "⇄ " else if (isDebit) "- " else "+ "
+
+    val context = androidx.compose.ui.platform.LocalContext.current
+    val isWalletSetup = remember { com.omkarnub.kanri.data.wallet.WalletPreferences.getInstance(context).isWalletSetupCompleted }
 
     Column(
         modifier = modifier
@@ -688,7 +793,14 @@ fun TransactionListItem(
                     .background(MaterialTheme.colorScheme.surfaceVariant.copy(alpha = 0.65f)),
                 contentAlignment = Alignment.Center
             ) {
-                if (category != null) {
+                if (isTransfer) {
+                    Icon(
+                        imageVector = Icons.Default.SwapHoriz,
+                        contentDescription = "Transfer",
+                        tint = MaterialTheme.colorScheme.primary,
+                        modifier = Modifier.size(20.dp)
+                    )
+                } else if (category != null) {
                     CategoryIcon(
                         categoryName = category.name,
                         iconName = category.iconName,
@@ -709,7 +821,11 @@ fun TransactionListItem(
 
             // Details Column
             Column(modifier = Modifier.weight(1f)) {
-                val title = transaction.counterparty?.takeIf { it.isNotBlank() } ?: (if (isDebit) "Expense" else "Income")
+                val title = if (isTransfer) {
+                    "Transfer: ${transaction.wallet} → ${transaction.transferToWallet}"
+                } else {
+                    transaction.counterparty?.takeIf { it.isNotBlank() } ?: (if (isDebit) "Expense" else "Income")
+                }
                 Text(
                     text = title,
                     style = MaterialTheme.typography.bodyLarge.copy(
@@ -729,13 +845,13 @@ fun TransactionListItem(
                 ) {
                     // Badge for Source
                     Text(
-                        text = transaction.sourceType,
+                        text = if (isTransfer) "TRANSFER" else transaction.sourceType,
                         style = MaterialTheme.typography.labelSmall,
                         color = MaterialTheme.colorScheme.onSurfaceVariant.copy(alpha = 0.7f),
                         fontWeight = FontWeight.Medium
                     )
 
-                    if (!transaction.bank.isNullOrBlank()) {
+                    if (!transaction.bank.isNullOrBlank() && !isTransfer) {
                         Text(
                             text = "•",
                             style = MaterialTheme.typography.labelSmall,
@@ -764,42 +880,84 @@ fun TransactionListItem(
 
                 Spacer(modifier = Modifier.height(4.dp))
 
-                // Category Tag (Monochrome theme)
-                if (category != null) {
-                    Surface(
-                        shape = RoundedCornerShape(6.dp),
-                        color = MaterialTheme.colorScheme.surfaceVariant.copy(alpha = 0.5f),
-                        border = BorderStroke(0.5.dp, MaterialTheme.colorScheme.outlineVariant.copy(alpha = 0.6f))
-                    ) {
-                        Row(
-                            verticalAlignment = Alignment.CenterVertically,
-                            modifier = Modifier.padding(horizontal = 6.dp, vertical = 2.dp)
+                // Tags row (Category Tag + Wallet Pill)
+                Row(
+                    verticalAlignment = Alignment.CenterVertically,
+                    horizontalArrangement = Arrangement.spacedBy(6.dp)
+                ) {
+                    if (isTransfer) {
+                        Surface(
+                            shape = RoundedCornerShape(6.dp),
+                            color = MaterialTheme.colorScheme.surfaceVariant,
+                            border = BorderStroke(0.5.dp, MaterialTheme.colorScheme.outlineVariant)
                         ) {
                             Text(
-                                text = category.name,
+                                text = "Transfer",
                                 style = MaterialTheme.typography.labelSmall.copy(
                                     fontSize = 10.5.sp,
-                                    fontWeight = FontWeight.Medium
+                                    fontWeight = FontWeight.Bold
                                 ),
-                                color = MaterialTheme.colorScheme.onSurfaceVariant
+                                color = MaterialTheme.colorScheme.primary,
+                                modifier = Modifier.padding(horizontal = 6.dp, vertical = 2.dp)
                             )
                         }
-                    }
-                } else {
-                    Surface(
-                        shape = RoundedCornerShape(6.dp),
-                        color = MaterialTheme.colorScheme.surfaceVariant.copy(alpha = 0.35f),
-                        border = BorderStroke(0.5.dp, MaterialTheme.colorScheme.outline.copy(alpha = 0.3f))
-                    ) {
-                        Text(
-                            text = "+ Categorize",
-                            style = MaterialTheme.typography.labelSmall.copy(
-                                fontSize = 10.5.sp,
-                                fontWeight = FontWeight.Normal
-                            ),
-                            color = MaterialTheme.colorScheme.onSurfaceVariant,
-                            modifier = Modifier.padding(horizontal = 6.dp, vertical = 2.dp)
-                        )
+                    } else {
+                        if (category != null) {
+                            Surface(
+                                shape = RoundedCornerShape(6.dp),
+                                color = MaterialTheme.colorScheme.surfaceVariant.copy(alpha = 0.5f),
+                                border = BorderStroke(0.5.dp, MaterialTheme.colorScheme.outlineVariant.copy(alpha = 0.6f))
+                            ) {
+                                Text(
+                                    text = category.name,
+                                    style = MaterialTheme.typography.labelSmall.copy(
+                                        fontSize = 10.5.sp,
+                                        fontWeight = FontWeight.Medium
+                                    ),
+                                    color = MaterialTheme.colorScheme.onSurfaceVariant,
+                                    modifier = Modifier.padding(horizontal = 6.dp, vertical = 2.dp)
+                                )
+                            }
+                        } else {
+                            Surface(
+                                shape = RoundedCornerShape(6.dp),
+                                color = MaterialTheme.colorScheme.surfaceVariant.copy(alpha = 0.35f),
+                                border = BorderStroke(0.5.dp, MaterialTheme.colorScheme.outline.copy(alpha = 0.3f))
+                            ) {
+                                Text(
+                                    text = "+ Categorize",
+                                    style = MaterialTheme.typography.labelSmall.copy(
+                                        fontSize = 10.5.sp,
+                                        fontWeight = FontWeight.Normal
+                                    ),
+                                    color = MaterialTheme.colorScheme.onSurfaceVariant,
+                                    modifier = Modifier.padding(horizontal = 6.dp, vertical = 2.dp)
+                                )
+                            }
+                        }
+
+                        // Wallet Pill (Only visible when wallet setup is completed)
+                        if (isWalletSetup) {
+                            Surface(
+                                shape = RoundedCornerShape(6.dp),
+                                color = MaterialTheme.colorScheme.surfaceVariant.copy(alpha = 0.4f),
+                                border = BorderStroke(0.5.dp, MaterialTheme.colorScheme.outlineVariant.copy(alpha = 0.4f))
+                            ) {
+                                Text(
+                                    text = when (transaction.wallet) {
+                                        "CASH" -> "Cash"
+                                        "ONLINE" -> "Online"
+                                        else -> "Excluded"
+                                    },
+                                    style = MaterialTheme.typography.labelSmall.copy(
+                                        fontSize = 10.sp,
+                                        fontWeight = FontWeight.Medium
+                                    ),
+                                    color = MaterialTheme.colorScheme.onSurfaceVariant.copy(alpha = 0.8f),
+                                    modifier = Modifier.padding(horizontal = 5.dp, vertical = 2.dp)
+                                )
+                            }
+                        }
                     }
                 }
             }
@@ -1041,6 +1199,7 @@ fun getSourceIcon(sourceType: String): ImageVector {
         "CARD" -> Icons.Default.CreditCard
         "BANK_TRANSFER" -> Icons.Default.AccountBalance
         "CASH" -> Icons.Default.Payments
+        "WALLET_TRANSFER" -> Icons.Default.SwapHoriz
         else -> Icons.Default.Payments // UPI or default
     }
 }

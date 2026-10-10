@@ -41,4 +41,11 @@ class DatabaseMigrationTest {
         val emptyFile = tempFolder.newFile("empty.db")
         assertFalse(KanriDatabase.isDatabaseUnencrypted(emptyFile))
     }
+
+    @Test
+    fun testMigration10_11VersionContract() {
+        val migration = KanriDatabase.MIGRATION_10_11
+        org.junit.Assert.assertEquals(10, migration.startVersion)
+        org.junit.Assert.assertEquals(11, migration.endVersion)
+    }
 }

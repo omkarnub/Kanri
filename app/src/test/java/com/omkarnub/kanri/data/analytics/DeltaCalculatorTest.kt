@@ -190,4 +190,29 @@ class DeltaCalculatorTest {
         val down = delta as Delta.Down
         assertEquals(50, down.percent)
     }
+
+    @Test
+    fun calculateDelta_ignoresTransfers() {
+        val nowCal = Calendar.getInstance().apply {
+            set(2026, Calendar.SEPTEMBER, 20, 12, 0, 0)
+        }
+
+        val transactions = listOf(
+            createTx(1000.0, "DEBIT", 2026, 9, 5),
+            createTx(10000.0, "DEBIT", 2026, 9, 12).copy(wallet = "ONLINE", transferToWallet = "CASH"), // Transfer must be ignored
+            createTx(2000.0, "DEBIT", 2026, 8, 5)
+        )
+
+        val delta = DeltaCalculator.calculateDelta(
+            selectedYear = 2026,
+            selectedMonth = 9,
+            transactions = transactions,
+            nowCalendar = nowCal
+        )
+
+        // 1,000 vs 2,000 = -50% (Down) despite the 10,000 transfer
+        assertTrue(delta is Delta.Down)
+        val down = delta as Delta.Down
+        assertEquals(50, down.percent)
+    }
 }

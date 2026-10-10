@@ -73,7 +73,7 @@ class BudgetProgressWidgetProvider : AppWidgetProvider() {
 
                 val monthTx = db.transactionDao().getTransactionsWithCategoryBetweenSync(monthStart, now.timeInMillis)
                 val monthSpent = monthTx
-                    .filter { it.transaction.type.equals("DEBIT", ignoreCase = true) }
+                    .filter { it.transaction.type.equals("DEBIT", ignoreCase = true) && !it.transaction.isTransfer }
                     .sumOf { it.transaction.amount }
 
                 val remainingBudget = (budgetLimit - monthSpent).coerceAtLeast(0.0)

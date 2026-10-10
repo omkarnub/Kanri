@@ -509,4 +509,82 @@ class SmsParserTest {
         assertEquals("123456789012", SmsParser.extractRefNo("transfer via UTR 123456789012 successful"))
         assertEquals("425678912345", SmsParser.extractRefNo("Payment done. Txn ID: 425678912345."))
     }
+
+    @Test
+    fun testBobDrFromAndCrToDebitSmsAlerts() {
+        // Real-world Bank of Baroda UPI debit alert #1
+        val sms1 = "Rs.15.00 Dr. from A/C XXXXXX8477 and Cr. to 9307704640-2.wallet@phonepe. Ref:628383921336. AvlBal:Rs755.00(2026:10:10 02:44:01). Not you? Call 18005700/5000-BOB"
+        val r1 = SmsParser.parse(sms1, sender = "BZ-BOBTXN")
+        assertNotNull("Should parse BOB UPI debit alert #1", r1)
+        assertEquals(TransactionType.DEBIT, r1!!.type)
+        assertEquals(15.0, r1.amount, 0.001)
+        assertEquals(SourceType.UPI, r1.sourceType)
+        assertEquals("9307704640-2.wallet@phonepe", r1.counterparty)
+        assertEquals("628383921336", r1.refNo)
+        assertEquals("••8477", r1.account)
+        assertEquals("Bank of Baroda", r1.bank)
+        assertEquals(755.0, r1.balance!!, 0.001)
+        val cal1 = java.util.Calendar.getInstance().apply { timeInMillis = r1.timestamp }
+        assertEquals(2026, cal1.get(java.util.Calendar.YEAR))
+        assertEquals(java.util.Calendar.OCTOBER, cal1.get(java.util.Calendar.MONTH))
+        assertEquals(10, cal1.get(java.util.Calendar.DAY_OF_MONTH))
+        assertEquals(2, cal1.get(java.util.Calendar.HOUR_OF_DAY))
+        assertEquals(44, cal1.get(java.util.Calendar.MINUTE))
+        assertEquals(1, cal1.get(java.util.Calendar.SECOND))
+
+        // Real-world Bank of Baroda UPI debit alert #2
+        val sms2 = "Rs.20.00 Dr. from A/C XXXXXX8477 and Cr. to vishalkolhekar09-1@okaxis. Ref:628327885354. AvlBal:Rs595.00(2026:10:10 03:01:38). Not you? Call 18005700/5000-BOB"
+        val r2 = SmsParser.parse(sms2) // without sender header
+        assertNotNull("Should parse BOB UPI debit alert #2", r2)
+        assertEquals(TransactionType.DEBIT, r2!!.type)
+        assertEquals(20.0, r2.amount, 0.001)
+        assertEquals(SourceType.UPI, r2.sourceType)
+        assertEquals("vishalkolhekar09-1@okaxis", r2.counterparty)
+        assertEquals("628327885354", r2.refNo)
+        assertEquals("••8477", r2.account)
+        assertEquals("Bank of Baroda", r2.bank)
+        assertEquals(595.0, r2.balance!!, 0.001)
+
+        // Real-world Bank of Baroda UPI debit alert #3
+        val sms3 = "Rs.35.00 Dr. from A/C XXXXXX8477 and Cr. to paytm.s2x4b81@pty. Ref:628328537357. AvlBal:Rs560.00(2026:10:10 10:02:38). Not you? Call 18005700/5000-BOB"
+        val r3 = SmsParser.parse(sms3)
+        assertNotNull("Should parse BOB UPI debit alert #3", r3)
+        assertEquals(TransactionType.DEBIT, r3!!.type)
+        assertEquals(35.0, r3.amount, 0.001)
+        assertEquals(SourceType.UPI, r3.sourceType)
+        assertEquals("paytm.s2x4b81@pty", r3.counterparty)
+        assertEquals("628328537357", r3.refNo)
+        assertEquals("••8477", r3.account)
+        assertEquals("Bank of Baroda", r3.bank)
+        assertEquals(560.0, r3.balance!!, 0.001)
+    }
+
+    @Test
+    fun testIndianBanksDrCrVariations() {
+        // Canara Bank Dr format
+        val canara = "Dear Customer, Rs.500.00 Dr from A/C ...1234 on 10-Oct-26. UPI: Ref 123456789012. Avl Bal: Rs 4500.00-Canara Bank"
+        val rCanara = SmsParser.parse(canara)
+        assertNotNull(rCanara)
+        assertEquals(TransactionType.DEBIT, rCanara!!.type)
+        assertEquals(500.0, rCanara.amount, 0.001)
+        assertEquals("Canara Bank", rCanara.bank)
+
+        // SBI is Dr. by format
+        val sbi = "Your A/C ...8477 is Dr. by Rs.200.00 on 10/10/26 towards swiggy@icici Ref 425678912345-SBI"
+        val rSbi = SmsParser.parse(sbi)
+        assertNotNull(rSbi)
+        assertEquals(TransactionType.DEBIT, rSbi!!.type)
+        assertEquals(200.0, rSbi.amount, 0.001)
+        assertEquals("swiggy@icici", rSbi.counterparty)
+        assertEquals("State Bank of India", rSbi.bank)
+
+        // Incoming credit via UPI (Cr. to A/C and Dr. from sender)
+        val creditUpi = "Rs.500.00 Cr. to A/C XXXXXX8477 and Dr. from friend@upi. Ref:628383921999. AvlBal:Rs1255.00(2026:10:10 11:22:33)-BOB"
+        val rCredit = SmsParser.parse(creditUpi)
+        assertNotNull(rCredit)
+        assertEquals(TransactionType.CREDIT, rCredit!!.type)
+        assertEquals(500.0, rCredit.amount, 0.001)
+        assertEquals("friend@upi", rCredit.counterparty)
+        assertEquals("Bank of Baroda", rCredit.bank)
+    }
 }

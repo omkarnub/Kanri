@@ -60,6 +60,7 @@ fun SearchFilterSheet(
     onSourceToggle: (String) -> Unit,
     onAmountPresetSelect: (AmountRangePreset) -> Unit,
     onSortSelect: (SortOption) -> Unit,
+    onWalletFilterSelect: (WalletFilter) -> Unit = {},
     onResetAll: () -> Unit
 ) {
     val sheetState = rememberModalBottomSheetState(skipPartiallyExpanded = true)
@@ -166,6 +167,42 @@ fun SearchFilterSheet(
                                     TransactionTypeFilter.DEBIT -> "Spent"
                                     TransactionTypeFilter.CREDIT -> "Received"
                                 },
+                                style = MaterialTheme.typography.bodyMedium,
+                                fontWeight = if (isSelected) FontWeight.Bold else FontWeight.Medium,
+                                color = if (isSelected) MaterialTheme.colorScheme.onPrimary else MaterialTheme.colorScheme.onSurfaceVariant
+                            )
+                        }
+                    }
+                }
+            }
+
+            Spacer(modifier = Modifier.height(18.dp))
+
+            // 1.5. Wallet & Balances Filter
+            FilterSectionHeader(title = "Wallet")
+            Row(
+                modifier = Modifier.fillMaxWidth(),
+                horizontalArrangement = Arrangement.spacedBy(8.dp)
+            ) {
+                WalletFilter.entries.forEach { filter ->
+                    val isSelected = uiState.walletFilter == filter
+                    Surface(
+                        modifier = Modifier
+                            .weight(1f)
+                            .clickable { onWalletFilterSelect(filter) },
+                        shape = RoundedCornerShape(10.dp),
+                        color = if (isSelected) MaterialTheme.colorScheme.primary else MaterialTheme.colorScheme.surfaceVariant,
+                        border = BorderStroke(
+                            1.dp,
+                            if (isSelected) MaterialTheme.colorScheme.primary else MaterialTheme.colorScheme.outlineVariant
+                        )
+                    ) {
+                        Box(
+                            modifier = Modifier.padding(vertical = 10.dp),
+                            contentAlignment = Alignment.Center
+                        ) {
+                            Text(
+                                text = filter.displayName,
                                 style = MaterialTheme.typography.bodyMedium,
                                 fontWeight = if (isSelected) FontWeight.Bold else FontWeight.Medium,
                                 color = if (isSelected) MaterialTheme.colorScheme.onPrimary else MaterialTheme.colorScheme.onSurfaceVariant

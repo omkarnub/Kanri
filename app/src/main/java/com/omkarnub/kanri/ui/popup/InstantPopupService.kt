@@ -12,6 +12,9 @@ import android.os.Build
 import android.os.IBinder
 import android.view.Gravity
 import android.view.WindowManager
+import androidx.compose.foundation.background
+import androidx.compose.foundation.clickable
+import androidx.compose.foundation.layout.fillMaxSize
 import androidx.compose.runtime.getValue
 import androidx.compose.runtime.setValue
 import androidx.compose.ui.platform.ComposeView
@@ -144,20 +147,18 @@ class InstantPopupService : Service() {
 
         val params = WindowManager.LayoutParams(
             WindowManager.LayoutParams.MATCH_PARENT,
-            WindowManager.LayoutParams.WRAP_CONTENT,
+            WindowManager.LayoutParams.MATCH_PARENT,
             if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.O) {
                 WindowManager.LayoutParams.TYPE_APPLICATION_OVERLAY
             } else {
                 @Suppress("DEPRECATION")
                 WindowManager.LayoutParams.TYPE_PHONE
             },
-            WindowManager.LayoutParams.FLAG_NOT_FOCUSABLE or
-                WindowManager.LayoutParams.FLAG_LAYOUT_IN_SCREEN or
-                WindowManager.LayoutParams.FLAG_LAYOUT_NO_LIMITS,
+            WindowManager.LayoutParams.FLAG_LAYOUT_IN_SCREEN,
             PixelFormat.TRANSLUCENT
         ).apply {
-            gravity = Gravity.TOP
-            y = 110 // Positioned right below the status bar like a heads-up notification
+            gravity = Gravity.CENTER
+            softInputMode = WindowManager.LayoutParams.SOFT_INPUT_ADJUST_RESIZE
         }
 
         val composeView = ComposeView(this).apply {
@@ -180,46 +181,62 @@ class InstantPopupService : Service() {
                         categories = cats
                     }
 
-                    InstantPopupCard(
-                        amount = amount,
-                        isDebit = isDebit,
-                        counterparty = counterparty,
-                        bank = bank,
-                        sourceType = sourceType,
-                        categories = categories,
-                        autoDismissSeconds = 10,
-                        onCategorySelected = { catId ->
-                            serviceScope.launch(Dispatchers.IO) {
-                                if (txId > 0L) {
-                                    db.transactionDao().updateCategoryId(txId, catId)
-                                    if (counterparty.isNotBlank()) {
-                                        db.transactionDao().updateCategoryForCounterparty(counterparty, catId)
-                                        db.categoryDao().setMapping(
-                                            CounterpartyCategoryMapEntity(
-                                                counterparty = counterparty.trim().lowercase(),
-                                                categoryId = catId
-                                            )
-                                        )
+                    androidx.compose.foundation.layout.Box(
+                        modifier = androidx.compose.ui.Modifier
+                            .fillMaxSize()
+                            .background(androidx.compose.ui.graphics.Color.Black.copy(alpha = 0.55f))
+                            .clickable(
+                                interactionSource = androidx.compose.runtime.remember { androidx.compose.foundation.interaction.MutableInteractionSource() },
+                                indication = null
+                            ) {
+                                stopSelf()
+                            },
+                        contentAlignment = androidx.compose.ui.Alignment.Center
+                    ) {
+                        InstantPopupCard(
+                            amount = amount,
+                            isDebit = isDebit,
+                            counterparty = counterparty,
+                            bank = bank,
+                            sourceType = sourceType,
+                            categories = categories,
+                            onDone = { catId, note ->
+                                serviceScope.launch(Dispatchers.IO) {
+                                    if (txId > 0L) {
+                                        val cleanNote = note.trim().ifEmpty { null }
+                                        if (catId != null) {
+                                            db.transactionDao().updateCategoryAndNotes(txId, catId, cleanNote)
+                                            if (counterparty.isNotBlank()) {
+                                                db.transactionDao().updateCategoryForCounterparty(counterparty, catId)
+                                                db.categoryDao().setMapping(
+                                                    CounterpartyCategoryMapEntity(
+                                                        counterparty = counterparty.trim().lowercase(),
+                                                        categoryId = catId
+                                                    )
+                                                )
+                                            }
+                                        } else if (cleanNote != null) {
+                                            db.transactionDao().updateNotes(txId, cleanNote)
+                                        }
+                                    }
+                                    withContext(Dispatchers.Main) {
+                                        stopSelf()
                                     }
                                 }
-                                delay(1200)
-                                withContext(Dispatchers.Main) {
-                                    stopSelf()
+                            },
+                            onOpenInApp = {
+                                val openIntent = (packageManager.getLaunchIntentForPackage(packageName)
+                                    ?: Intent(this@InstantPopupService, MainActivity::class.java)).apply {
+                                    addFlags(Intent.FLAG_ACTIVITY_NEW_TASK or Intent.FLAG_ACTIVITY_CLEAR_TOP)
                                 }
+                                startActivity(openIntent)
+                                stopSelf()
+                            },
+                            onDismiss = {
+                                stopSelf()
                             }
-                        },
-                        onOpenInApp = {
-                            val openIntent = (packageManager.getLaunchIntentForPackage(packageName)
-                                ?: Intent(this@InstantPopupService, MainActivity::class.java)).apply {
-                                addFlags(Intent.FLAG_ACTIVITY_NEW_TASK or Intent.FLAG_ACTIVITY_CLEAR_TOP)
-                            }
-                            startActivity(openIntent)
-                            stopSelf()
-                        },
-                        onDismiss = {
-                            stopSelf()
-                        }
-                    )
+                        )
+                    }
                 }
             }
         }

@@ -40,9 +40,17 @@ enum class SortOption(val displayName: String) {
     AMOUNT_ASC("Lowest Amount")
 }
 
+enum class WalletFilter(val displayName: String) {
+    ALL("All Wallets"),
+    CASH("Cash"),
+    ONLINE("Online"),
+    TRANSFERS("Transfers")
+}
+
 data class SearchUiState(
     val query: String = "",
     val typeFilter: TransactionTypeFilter = TransactionTypeFilter.ALL,
+    val walletFilter: WalletFilter = WalletFilter.ALL,
     val datePreset: DateRangePreset = DateRangePreset.ALL_TIME,
     val customStartDate: Long? = null,
     val customEndDate: Long? = null,
@@ -56,6 +64,7 @@ data class SearchUiState(
     val availableCategories: List<CategoryEntity> = emptyList(),
     val totalSpent: Double = 0.0,
     val totalReceived: Double = 0.0,
+    val totalTransfers: Double = 0.0,
     val netAmount: Double = 0.0,
     val isLoading: Boolean = false
 ) {
@@ -63,6 +72,7 @@ data class SearchUiState(
         get() {
             var count = 0
             if (typeFilter != TransactionTypeFilter.ALL) count++
+            if (walletFilter != WalletFilter.ALL) count++
             if (datePreset != DateRangePreset.ALL_TIME) count++
             if (selectedCategoryIds.isNotEmpty()) count++
             if (selectedSourceTypes.isNotEmpty()) count++
@@ -185,9 +195,18 @@ object SearchFilterUtils {
         categoryIds: Set<Long>,
         sourceTypes: Set<String>,
         minAmount: Double?,
-        maxAmount: Double?
+        maxAmount: Double?,
+        walletFilter: WalletFilter = WalletFilter.ALL
     ): Boolean {
         val tx = item.transaction
+
+        // Wallet check
+        when (walletFilter) {
+            WalletFilter.ALL -> Unit
+            WalletFilter.CASH -> if (tx.wallet != "CASH" && tx.transferToWallet != "CASH") return false
+            WalletFilter.ONLINE -> if (tx.wallet != "ONLINE" && tx.transferToWallet != "ONLINE") return false
+            WalletFilter.TRANSFERS -> if (!tx.isTransfer) return false
+        }
 
         // Query check
         if (!matchesQuery(item, query)) return false
