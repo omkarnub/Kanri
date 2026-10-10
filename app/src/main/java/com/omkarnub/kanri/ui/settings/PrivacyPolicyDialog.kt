@@ -126,7 +126,7 @@ fun PrivacyPolicyDialog(
                 // Section 1: Core Philosophy
                 PolicySection(
                     title = "1. Data Sovereignty & Offline Architecture",
-                    body = "Kanri is architected with strict data sovereignty. We do not operate proprietary user servers. All transactions, accounts, budgets, and categories are stored solely inside your device's private sandbox database. Your financial records are never harvested, monitored, sold, or shared."
+                    body = "Kanri is architected with strict data sovereignty. We do not operate proprietary user servers. All transactions, accounts, budgets, and categories are stored solely inside your device's private sandbox database. Balances are entered by the user and calculated locally; no balance data leaves the device. Your financial records are never harvested, monitored, sold, or shared."
                 )
 
                 // Section 2: Permissions Transparency

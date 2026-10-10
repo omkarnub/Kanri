@@ -27,8 +27,11 @@ object CurrencyUtils {
      * Example: formatCurrency(123456.78) -> "₹1,23,456.78"
      */
     fun formatCurrency(amount: Double, includeDecimals: Boolean = true): String {
+        if (amount.isNaN() || amount.isInfinite() || abs(amount) < 0.0001) {
+            return if (includeDecimals) "₹0.00" else "₹0"
+        }
         val formatter = if (includeDecimals) currencyFormatterWithDecimals else currencyFormatterWithoutDecimals
-        return "₹${formatter.format(amount)}"
+        return if (amount < 0) "-₹${formatter.format(abs(amount))}" else "₹${formatter.format(amount)}"
     }
 
     /**

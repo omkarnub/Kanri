@@ -66,7 +66,7 @@ class MoneySpentTodayWidgetProvider : AppWidgetProvider() {
                 val todayEnd = cal.timeInMillis
 
                 val todayTx = db.transactionDao().getTransactionsWithCategoryBetweenSync(todayStart, todayEnd)
-                val debitTx = todayTx.filter { it.transaction.type.equals("DEBIT", ignoreCase = true) }
+                val debitTx = todayTx.filter { it.transaction.type.equals("DEBIT", ignoreCase = true) && !it.transaction.isTransfer }
                 val todaySpent = debitTx.sumOf { it.transaction.amount }
 
                 for (widgetId in appWidgetIds) {

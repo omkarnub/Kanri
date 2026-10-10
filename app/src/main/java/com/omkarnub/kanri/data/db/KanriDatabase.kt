@@ -26,14 +26,16 @@ import androidx.room.migration.Migration
         LendingRepaymentEntity::class,
         RecurringPaymentEntity::class,
         SavingsGoalEntity::class,
-        SavingsGoalContributionEntity::class
+        SavingsGoalContributionEntity::class,
+        WalletBalanceEntity::class
     ],
-    version = 10,
+    version = 11,
     exportSchema = false
 )
 abstract class KanriDatabase : RoomDatabase() {
 
     abstract fun transactionDao(): TransactionDao
+    abstract fun walletDao(): WalletDao
     abstract fun categoryDao(): CategoryDao
     abstract fun budgetDao(): BudgetDao
     abstract fun lendingDao(): LendingDao
@@ -101,6 +103,27 @@ abstract class KanriDatabase : RoomDatabase() {
             }
         }
 
+        val MIGRATION_10_11 = object : Migration(10, 11) {
+            override fun migrate(db: SupportSQLiteDatabase) {
+                db.execSQL(
+                    """
+                    CREATE TABLE IF NOT EXISTS wallet_balances (
+                        wallet_id TEXT PRIMARY KEY NOT NULL,
+                        opening_amount REAL NOT NULL,
+                        opening_timestamp INTEGER NOT NULL
+                    )
+                    """.trimIndent()
+                )
+                db.execSQL("ALTER TABLE transactions ADD COLUMN wallet TEXT NOT NULL DEFAULT 'ONLINE'")
+                db.execSQL("ALTER TABLE transactions ADD COLUMN transfer_to_wallet TEXT DEFAULT NULL")
+                db.execSQL("CREATE INDEX IF NOT EXISTS index_transactions_wallet ON transactions (wallet)")
+
+                // Backfill existing data
+                db.execSQL("UPDATE transactions SET wallet = 'CASH' WHERE source_type = 'CASH'")
+                db.execSQL("UPDATE transactions SET wallet = 'ONLINE' WHERE source_type != 'CASH'")
+            }
+        }
+
         val DEFAULT_CATEGORIES = listOf(
             CategoryEntity(name = "Auto / Taxi Fare", colorHex = "#F59E0B", iconName = "taxi"),
             CategoryEntity(name = "Food & Dining", colorHex = "#FF7043", iconName = "restaurant"),
@@ -144,7 +167,7 @@ abstract class KanriDatabase : RoomDatabase() {
                     KanriDatabase::class.java,
                     "kanri_database"
                 )
-                    .addMigrations(MIGRATION_5_6, MIGRATION_6_7, MIGRATION_7_8, MIGRATION_8_9, MIGRATION_9_10)
+                    .addMigrations(MIGRATION_5_6, MIGRATION_6_7, MIGRATION_7_8, MIGRATION_8_9, MIGRATION_9_10, MIGRATION_10_11)
                     .fallbackToDestructiveMigration(dropAllTables = false)
                     .addCallback(object : Callback() {
                         override fun onCreate(db: SupportSQLiteDatabase) {

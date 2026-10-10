@@ -35,7 +35,9 @@ import androidx.compose.material.icons.Icons
 import androidx.compose.material.icons.automirrored.filled.ArrowBack
 import androidx.compose.material.icons.automirrored.filled.ReceiptLong
 import androidx.compose.material.icons.filled.AccountBalance
+import androidx.compose.material.icons.filled.AccountBalanceWallet
 import androidx.compose.material.icons.filled.CalendarToday
+import androidx.compose.runtime.LaunchedEffect
 import androidx.compose.material.icons.filled.Check
 import androidx.compose.material.icons.filled.CheckCircleOutline
 import androidx.compose.material.icons.filled.Close
@@ -159,13 +161,26 @@ fun TransactionDetailScreen(
         } else {
             val tx = item!!.transaction
             val category = item!!.category
+            val isTransfer = tx.isTransfer
             val isDebit = tx.type.equals("DEBIT", ignoreCase = true)
-            val merchantTitle = tx.counterparty?.takeIf { it.isNotBlank() }
-                ?: tx.displayName?.takeIf { it.isNotBlank() }
-                ?: if (isDebit) "Expense" else "Income"
+            val merchantTitle = when {
+                isTransfer -> "Transfer: ${tx.wallet} → ${tx.transferToWallet}"
+                else -> tx.counterparty?.takeIf { it.isNotBlank() }
+                    ?: tx.displayName?.takeIf { it.isNotBlank() }
+                    ?: if (isDebit) "Expense" else "Income"
+            }
 
             val formattedAmount = CurrencyUtils.formatCurrency(tx.amount)
-            val signPrefix = if (isDebit) "- " else "+ "
+            val signPrefix = when {
+                isTransfer -> "⇄ "
+                isDebit -> "- "
+                else -> "+ "
+            }
+
+            var balanceAfter by remember { mutableStateOf<Double?>(null) }
+            LaunchedEffect(tx.id, tx.wallet, tx.amount, tx.type, tx.timestamp, homeUiState.walletBalances) {
+                balanceAfter = viewModel.getBalanceAfter(tx.wallet, tx)
+            }
 
             Column(
                 modifier = Modifier
@@ -311,10 +326,16 @@ fun TransactionDetailScreen(
                                         modifier = Modifier
                                             .size(7.dp)
                                             .clip(CircleShape)
-                                            .background(if (isDebit) ExpenseRed else IncomeGreen)
+                                            .background(
+                                                if (isTransfer) MaterialTheme.colorScheme.onSurfaceVariant
+                                                else if (isDebit) ExpenseRed
+                                                else IncomeGreen
+                                            )
                                     )
                                     Text(
-                                        text = if (isDebit) "EXPENSE • DEBIT" else "INCOME • CREDIT",
+                                        text = if (isTransfer) "TRANSFER • ${tx.wallet} → ${tx.transferToWallet}"
+                                            else if (isDebit) "EXPENSE • DEBIT"
+                                            else "INCOME • CREDIT",
                                         style = MaterialTheme.typography.labelSmall.copy(
                                             fontWeight = FontWeight.Bold,
                                             letterSpacing = 0.8.sp,
@@ -365,6 +386,27 @@ fun TransactionDetailScreen(
                                 color = MaterialTheme.colorScheme.outline,
                                 textAlign = TextAlign.Center
                             )
+
+                            if (balanceAfter != null && homeUiState.walletBalances.isConfigured && tx.wallet != "NONE") {
+                                Spacer(modifier = Modifier.height(10.dp))
+                                val walletLabel = if (tx.wallet.equals("CASH", ignoreCase = true)) "Cash" else "Online"
+                                Surface(
+                                    shape = RoundedCornerShape(100.dp),
+                                    color = MaterialTheme.colorScheme.surfaceVariant.copy(alpha = 0.45f),
+                                    border = BorderStroke(0.5.dp, MaterialTheme.colorScheme.outlineVariant)
+                                ) {
+                                    Text(
+                                        text = "$walletLabel balance after this payment: ${CurrencyUtils.formatCurrency(balanceAfter!!)}",
+                                        style = MaterialTheme.typography.labelSmall.copy(
+                                            fontSize = 11.5.sp,
+                                            fontWeight = FontWeight.Medium
+                                        ),
+                                        color = MaterialTheme.colorScheme.onSurfaceVariant,
+                                        modifier = Modifier.padding(horizontal = 12.dp, vertical = 5.dp),
+                                        textAlign = TextAlign.Center
+                                    )
+                                }
+                            }
                         }
                     }
 
@@ -516,6 +558,99 @@ fun TransactionDetailScreen(
                         }
                     }
 
+                    // Convert Action Banner for Cash Deposit or ATM Spending
+                    val isCashDepositCandidate = (tx.reviewReason?.contains("cash deposit", ignoreCase = true) == true) ||
+                        (!isTransfer && !isDebit && (tx.rawSms.contains("CDM", ignoreCase = true) || tx.rawSms.contains("cash deposit", ignoreCase = true) || tx.rawSms.contains("deposited in cash", ignoreCase = true)))
+                    val isAtmWithdrawalCandidate = !isTransfer && tx.sourceType.equals("ATM", ignoreCase = true) && isDebit
+
+                    if (isCashDepositCandidate) {
+                        Surface(
+                            modifier = Modifier.fillMaxWidth(),
+                            shape = RoundedCornerShape(16.dp),
+                            color = MaterialTheme.colorScheme.surfaceContainer,
+                            border = BorderStroke(1.dp, MaterialTheme.colorScheme.primary.copy(alpha = 0.5f))
+                        ) {
+                            Row(
+                                modifier = Modifier
+                                    .fillMaxWidth()
+                                    .padding(14.dp),
+                                verticalAlignment = Alignment.CenterVertically,
+                                horizontalArrangement = Arrangement.SpaceBetween
+                            ) {
+                                Column(modifier = Modifier.weight(1f)) {
+                                    Text(
+                                        text = "Cash Deposit Detected",
+                                        style = MaterialTheme.typography.labelLarge.copy(fontWeight = FontWeight.Bold),
+                                        color = MaterialTheme.colorScheme.onSurface
+                                    )
+                                    Text(
+                                        text = "Convert to transfer from Cash to Online to prevent double counting.",
+                                        style = MaterialTheme.typography.bodySmall,
+                                        color = MaterialTheme.colorScheme.outline
+                                    )
+                                }
+                                Spacer(modifier = Modifier.width(8.dp))
+                                Button(
+                                    onClick = {
+                                        haptics.click()
+                                        viewModel.convertToTransfer(tx.id, "CASH", "ONLINE")
+                                        Toast.makeText(context, "Converted to cash deposit transfer", Toast.LENGTH_SHORT).show()
+                                    },
+                                    shape = RoundedCornerShape(10.dp),
+                                    colors = ButtonDefaults.buttonColors(
+                                        containerColor = MaterialTheme.colorScheme.onSurface,
+                                        contentColor = MaterialTheme.colorScheme.surface
+                                    )
+                                ) {
+                                    Text("Convert", style = MaterialTheme.typography.labelSmall.copy(fontWeight = FontWeight.Bold))
+                                }
+                            }
+                        }
+                    } else if (isAtmWithdrawalCandidate) {
+                        Surface(
+                            modifier = Modifier.fillMaxWidth(),
+                            shape = RoundedCornerShape(16.dp),
+                            color = MaterialTheme.colorScheme.surfaceContainer,
+                            border = BorderStroke(1.dp, MaterialTheme.colorScheme.primary.copy(alpha = 0.5f))
+                        ) {
+                            Row(
+                                modifier = Modifier
+                                    .fillMaxWidth()
+                                    .padding(14.dp),
+                                verticalAlignment = Alignment.CenterVertically,
+                                horizontalArrangement = Arrangement.SpaceBetween
+                            ) {
+                                Column(modifier = Modifier.weight(1f)) {
+                                    Text(
+                                        text = "ATM Cash Withdrawal",
+                                        style = MaterialTheme.typography.labelLarge.copy(fontWeight = FontWeight.Bold),
+                                        color = MaterialTheme.colorScheme.onSurface
+                                    )
+                                    Text(
+                                        text = "Convert to transfer from Online to Cash wallet.",
+                                        style = MaterialTheme.typography.bodySmall,
+                                        color = MaterialTheme.colorScheme.outline
+                                    )
+                                }
+                                Spacer(modifier = Modifier.width(8.dp))
+                                Button(
+                                    onClick = {
+                                        haptics.click()
+                                        viewModel.convertToTransfer(tx.id, "ONLINE", "CASH")
+                                        Toast.makeText(context, "Converted to cash withdrawal transfer", Toast.LENGTH_SHORT).show()
+                                    },
+                                    shape = RoundedCornerShape(10.dp),
+                                    colors = ButtonDefaults.buttonColors(
+                                        containerColor = MaterialTheme.colorScheme.onSurface,
+                                        contentColor = MaterialTheme.colorScheme.surface
+                                    )
+                                ) {
+                                    Text("Convert", style = MaterialTheme.typography.labelSmall.copy(fontWeight = FontWeight.Bold))
+                                }
+                            }
+                        }
+                    }
+
                     // =============================================================
                     // STRUCTURED DETAILS BENTO (All Transaction Metadata)
                     // =============================================================
@@ -528,7 +663,88 @@ fun TransactionDetailScreen(
                         border = BorderStroke(0.5.dp, MaterialTheme.colorScheme.outlineVariant)
                     ) {
                         Column(modifier = Modifier.fillMaxWidth()) {
-                            // 1. Category Row (Clickable to change category)
+                            // 1. Wallet Row
+                            DetailRowItem(
+                                icon = {
+                                    Icon(
+                                        imageVector = Icons.Default.AccountBalanceWallet,
+                                        contentDescription = null,
+                                        tint = MaterialTheme.colorScheme.onSurface,
+                                        modifier = Modifier.size(18.dp)
+                                    )
+                                },
+                                label = "Wallet",
+                                value = when {
+                                    isTransfer -> "Transfer (${tx.wallet} → ${tx.transferToWallet})"
+                                    tx.wallet.equals("CASH", ignoreCase = true) -> "Cash"
+                                    tx.wallet.equals("ONLINE", ignoreCase = true) -> "Online (Bank / UPI)"
+                                    else -> "Not from balances (Excluded)"
+                                },
+                                trailingAction = if (!isTransfer) {
+                                    {
+                                        var showWalletMenu by remember { mutableStateOf(false) }
+                                        Box {
+                                            Surface(
+                                                shape = RoundedCornerShape(6.dp),
+                                                color = MaterialTheme.colorScheme.surfaceVariant.copy(alpha = 0.5f),
+                                                border = BorderStroke(0.5.dp, MaterialTheme.colorScheme.outlineVariant),
+                                                modifier = Modifier.clickable {
+                                                    haptics.click()
+                                                    showWalletMenu = true
+                                                }
+                                            ) {
+                                                Text(
+                                                    text = "Change",
+                                                    style = MaterialTheme.typography.labelSmall.copy(
+                                                        fontSize = 11.sp,
+                                                        fontWeight = FontWeight.SemiBold
+                                                    ),
+                                                    color = MaterialTheme.colorScheme.onSurfaceVariant,
+                                                    modifier = Modifier.padding(horizontal = 8.dp, vertical = 4.dp)
+                                                )
+                                            }
+
+                                            androidx.compose.material3.DropdownMenu(
+                                                expanded = showWalletMenu,
+                                                onDismissRequest = { showWalletMenu = false }
+                                            ) {
+                                                androidx.compose.material3.DropdownMenuItem(
+                                                    text = { Text("Cash") },
+                                                    onClick = {
+                                                        haptics.click()
+                                                        showWalletMenu = false
+                                                        viewModel.updateTransactionWallet(tx.id, "CASH")
+                                                    }
+                                                )
+                                                androidx.compose.material3.DropdownMenuItem(
+                                                    text = { Text("Online (Bank / UPI)") },
+                                                    onClick = {
+                                                        haptics.click()
+                                                        showWalletMenu = false
+                                                        viewModel.updateTransactionWallet(tx.id, "ONLINE")
+                                                    }
+                                                )
+                                                androidx.compose.material3.DropdownMenuItem(
+                                                    text = { Text("Not from balances") },
+                                                    onClick = {
+                                                        haptics.click()
+                                                        showWalletMenu = false
+                                                        viewModel.updateTransactionWallet(tx.id, "NONE")
+                                                    }
+                                                )
+                                            }
+                                        }
+                                    }
+                                } else null
+                            )
+
+                            HorizontalDivider(
+                                modifier = Modifier.padding(horizontal = 16.dp),
+                                thickness = 0.5.dp,
+                                color = MaterialTheme.colorScheme.outlineVariant.copy(alpha = 0.5f)
+                            )
+
+                            // 2. Category Row (Clickable to change category)
                             DetailRowItem(
                                 icon = {
                                     if (category != null) {
@@ -846,8 +1062,9 @@ fun TransactionDetailScreen(
                     transaction = tx,
                     currentCategory = category,
                     availableCategories = homeUiState.categories,
+                    walletBalances = homeUiState.walletBalances,
                     onDismiss = { showEditSheet = false },
-                    onSave = { updatedAmount, updatedType, updatedTitle, updatedCatId, updatedSource, updatedBank, updatedRef, updatedNotes, updatedTimestamp ->
+                    onSave = { updatedAmount, updatedType, updatedTitle, updatedCatId, updatedSource, updatedBank, updatedRef, updatedNotes, updatedTimestamp, updatedWallet ->
                         viewModel.updateTransaction(
                             transactionId = tx.id,
                             amount = updatedAmount,
@@ -859,7 +1076,8 @@ fun TransactionDetailScreen(
                             bank = updatedBank,
                             refNo = updatedRef,
                             notes = updatedNotes,
-                            timestamp = updatedTimestamp
+                            timestamp = updatedTimestamp,
+                            wallet = updatedWallet
                         )
                         showEditSheet = false
                         haptics.click()
@@ -1023,6 +1241,7 @@ private fun EditTransactionSheet(
     transaction: TransactionEntity,
     currentCategory: CategoryEntity?,
     availableCategories: List<CategoryEntity>,
+    walletBalances: com.omkarnub.kanri.data.wallet.WalletBalances? = null,
     onDismiss: () -> Unit,
     onSave: (
         amount: Double,
@@ -1033,7 +1252,8 @@ private fun EditTransactionSheet(
         bank: String?,
         refNo: String?,
         notes: String?,
-        timestamp: Long
+        timestamp: Long,
+        wallet: String
     ) -> Unit
 ) {
     val haptics = rememberKanriHaptics()
@@ -1045,6 +1265,7 @@ private fun EditTransactionSheet(
     var titleText by remember { mutableStateOf(transaction.counterparty ?: transaction.displayName ?: "") }
     var selectedCategoryId by remember { mutableStateOf(transaction.categoryId) }
     var selectedSourceType by remember { mutableStateOf(transaction.sourceType.uppercase()) }
+    var selectedWallet by remember { mutableStateOf(transaction.wallet.uppercase()) }
     var bankText by remember { mutableStateOf(transaction.bank ?: "") }
     var refNoText by remember { mutableStateOf(transaction.refNo ?: "") }
     var notesText by remember { mutableStateOf(transaction.notes ?: "") }
@@ -1282,6 +1503,64 @@ private fun EditTransactionSheet(
                 }
             }
 
+            // 5b. Wallet Selector
+            Column(verticalArrangement = Arrangement.spacedBy(8.dp)) {
+                Text(
+                    text = "Wallet",
+                    style = MaterialTheme.typography.labelMedium.copy(
+                        fontWeight = FontWeight.SemiBold
+                    ),
+                    color = MaterialTheme.colorScheme.onSurface
+                )
+
+                Row(
+                    modifier = Modifier.fillMaxWidth(),
+                    horizontalArrangement = Arrangement.spacedBy(8.dp)
+                ) {
+                    FilterChip(
+                        selected = selectedWallet == "CASH",
+                        onClick = {
+                            haptics.click()
+                            selectedWallet = "CASH"
+                        },
+                        label = { Text("Cash") },
+                        colors = FilterChipDefaults.filterChipColors(
+                            selectedContainerColor = MaterialTheme.colorScheme.onSurface,
+                            selectedLabelColor = MaterialTheme.colorScheme.surface
+                        ),
+                        shape = RoundedCornerShape(10.dp)
+                    )
+
+                    FilterChip(
+                        selected = selectedWallet == "ONLINE",
+                        onClick = {
+                            haptics.click()
+                            selectedWallet = "ONLINE"
+                        },
+                        label = { Text("Online (Bank / UPI)") },
+                        colors = FilterChipDefaults.filterChipColors(
+                            selectedContainerColor = MaterialTheme.colorScheme.onSurface,
+                            selectedLabelColor = MaterialTheme.colorScheme.surface
+                        ),
+                        shape = RoundedCornerShape(10.dp)
+                    )
+
+                    FilterChip(
+                        selected = selectedWallet == "NONE",
+                        onClick = {
+                            haptics.click()
+                            selectedWallet = "NONE"
+                        },
+                        label = { Text("Not from balances") },
+                        colors = FilterChipDefaults.filterChipColors(
+                            selectedContainerColor = MaterialTheme.colorScheme.onSurface,
+                            selectedLabelColor = MaterialTheme.colorScheme.surface
+                        ),
+                        shape = RoundedCornerShape(10.dp)
+                    )
+                }
+            }
+
             // 6. Bank Name & Reference Number (2 columns)
             Row(
                 modifier = Modifier.fillMaxWidth(),
@@ -1367,6 +1646,16 @@ private fun EditTransactionSheet(
                 }
             }
 
+            val openingTs = if (selectedWallet == "CASH") walletBalances?.cashOpeningTimestamp else walletBalances?.onlineOpeningTimestamp
+            if (selectedWallet != "NONE" && openingTs != null && timestampMillis < openingTs) {
+                Spacer(modifier = Modifier.height(4.dp))
+                Text(
+                    text = "Backdated entry: falls before wallet baseline was set; will not move balances.",
+                    style = MaterialTheme.typography.bodySmall,
+                    color = MaterialTheme.colorScheme.outline
+                )
+            }
+
             // 8. Notes
             OutlinedTextField(
                 value = notesText,
@@ -1395,7 +1684,8 @@ private fun EditTransactionSheet(
                         bankText.trim().ifEmpty { null },
                         refNoText.trim().ifEmpty { null },
                         notesText.trim().ifEmpty { null },
-                        timestampMillis
+                        timestampMillis,
+                        selectedWallet
                     )
                 },
                 modifier = Modifier

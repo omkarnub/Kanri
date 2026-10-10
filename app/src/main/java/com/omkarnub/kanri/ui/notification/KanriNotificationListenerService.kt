@@ -152,10 +152,12 @@ class KanriNotificationListenerService : NotificationListenerService() {
         serviceScope.launch {
             try {
                 val db = KanriDatabase.getDatabase(applicationContext)
+                val atmMode = com.omkarnub.kanri.data.wallet.WalletPreferences.getInstance(applicationContext).atmWithdrawalMode
                 val result = NotificationDeduplicationHelper.processIncomingTransaction(
                     dao = db.transactionDao(),
                     categoryDao = db.categoryDao(),
-                    parsed = parsed
+                    parsed = parsed,
+                    atmMode = atmMode
                 )
 
                 when (result) {

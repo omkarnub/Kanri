@@ -180,4 +180,37 @@ class SearchFilterTest {
         assertNull(start)
         assertNull(end)
     }
+
+    @Test
+    fun testWalletFilter() {
+        val cashTx = createTx(id = 1, type = "DEBIT", amount = 100.0, counterparty = "Chai").let {
+            it.copy(transaction = it.transaction.copy(wallet = "CASH"))
+        }
+        val onlineTx = createTx(id = 2, type = "DEBIT", amount = 500.0, counterparty = "Amazon").let {
+            it.copy(transaction = it.transaction.copy(wallet = "ONLINE"))
+        }
+        val transferTx = createTx(id = 3, type = "DEBIT", amount = 2000.0, counterparty = "ATM").let {
+            it.copy(transaction = it.transaction.copy(wallet = "ONLINE", transferToWallet = "CASH"))
+        }
+
+        // ALL
+        assertTrue(SearchFilterUtils.matchesFilter(cashTx, "", TransactionTypeFilter.ALL, null, null, emptySet(), emptySet(), null, null, WalletFilter.ALL))
+        assertTrue(SearchFilterUtils.matchesFilter(onlineTx, "", TransactionTypeFilter.ALL, null, null, emptySet(), emptySet(), null, null, WalletFilter.ALL))
+        assertTrue(SearchFilterUtils.matchesFilter(transferTx, "", TransactionTypeFilter.ALL, null, null, emptySet(), emptySet(), null, null, WalletFilter.ALL))
+
+        // CASH
+        assertTrue(SearchFilterUtils.matchesFilter(cashTx, "", TransactionTypeFilter.ALL, null, null, emptySet(), emptySet(), null, null, WalletFilter.CASH))
+        assertFalse(SearchFilterUtils.matchesFilter(onlineTx, "", TransactionTypeFilter.ALL, null, null, emptySet(), emptySet(), null, null, WalletFilter.CASH))
+        assertTrue(SearchFilterUtils.matchesFilter(transferTx, "", TransactionTypeFilter.ALL, null, null, emptySet(), emptySet(), null, null, WalletFilter.CASH))
+
+        // ONLINE
+        assertFalse(SearchFilterUtils.matchesFilter(cashTx, "", TransactionTypeFilter.ALL, null, null, emptySet(), emptySet(), null, null, WalletFilter.ONLINE))
+        assertTrue(SearchFilterUtils.matchesFilter(onlineTx, "", TransactionTypeFilter.ALL, null, null, emptySet(), emptySet(), null, null, WalletFilter.ONLINE))
+        assertTrue(SearchFilterUtils.matchesFilter(transferTx, "", TransactionTypeFilter.ALL, null, null, emptySet(), emptySet(), null, null, WalletFilter.ONLINE))
+
+        // TRANSFERS
+        assertFalse(SearchFilterUtils.matchesFilter(cashTx, "", TransactionTypeFilter.ALL, null, null, emptySet(), emptySet(), null, null, WalletFilter.TRANSFERS))
+        assertFalse(SearchFilterUtils.matchesFilter(onlineTx, "", TransactionTypeFilter.ALL, null, null, emptySet(), emptySet(), null, null, WalletFilter.TRANSFERS))
+        assertTrue(SearchFilterUtils.matchesFilter(transferTx, "", TransactionTypeFilter.ALL, null, null, emptySet(), emptySet(), null, null, WalletFilter.TRANSFERS))
+    }
 }

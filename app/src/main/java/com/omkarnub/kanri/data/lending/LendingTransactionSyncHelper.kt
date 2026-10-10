@@ -52,7 +52,8 @@ object LendingTransactionSyncHelper {
     suspend fun syncLendingRecord(
         recordId: Long,
         db: KanriDatabase,
-        context: Context? = null
+        context: Context? = null,
+        wallet: String? = null
     ): Long? = withContext(Dispatchers.IO) {
         val record = db.lendingDao().getRecordById(recordId) ?: return@withContext null
         val catId = getOrCreateLendBorrowCategoryId(db.categoryDao())
@@ -77,7 +78,8 @@ object LendingTransactionSyncHelper {
                 rawSms = if (existing.rawSms.isNotBlank() && existing.sourceType != SOURCE_TYPE_LENDING) existing.rawSms else "${if (isLent) "Lent to" else "Borrowed from"} ${record.personName}",
                 isManualEntry = existing.isManualEntry,
                 notes = record.notes,
-                needsReview = false
+                needsReview = false,
+                wallet = wallet ?: existing.wallet
             )
             db.transactionDao().insert(updated)
             if (record.linkedTransactionId != updated.id) {
@@ -97,7 +99,8 @@ object LendingTransactionSyncHelper {
                 categoryId = catId,
                 rawSms = "${if (isLent) "Lent to" else "Borrowed from"} ${record.personName}",
                 isManualEntry = true,
-                notes = record.notes
+                notes = record.notes,
+                wallet = wallet ?: "NONE"
             )
             val insertedId = db.transactionDao().insert(newTx)
             db.lendingDao().update(record.copy(linkedTransactionId = insertedId))
@@ -126,6 +129,10 @@ object LendingTransactionSyncHelper {
         val refNo = "${REF_PREFIX_REPAY}${repayment.id}"
         val rawSms = if (isLent) "Repayment received from ${record.personName}" else "Repaid ${record.personName}"
 
+        val linkedTx = record.linkedTransactionId?.let { db.transactionDao().getTransactionById(it) }
+            ?: db.transactionDao().findByRefNo("${REF_PREFIX_RECORD}${record.id}")
+        val inheritedWallet = linkedTx?.wallet ?: "NONE"
+
         val existing = db.transactionDao().findByRefNo(refNo)
         val txId = if (existing != null) {
             val updated = existing.copy(
@@ -139,7 +146,8 @@ object LendingTransactionSyncHelper {
                 categoryId = catId,
                 rawSms = rawSms,
                 isManualEntry = true,
-                notes = repayment.note
+                notes = repayment.note,
+                wallet = inheritedWallet
             )
             db.transactionDao().insert(updated)
             updated.id
@@ -156,7 +164,8 @@ object LendingTransactionSyncHelper {
                 categoryId = catId,
                 rawSms = rawSms,
                 isManualEntry = true,
-                notes = repayment.note
+                notes = repayment.note,
+                wallet = inheritedWallet
             )
             db.transactionDao().insert(newTx)
         }

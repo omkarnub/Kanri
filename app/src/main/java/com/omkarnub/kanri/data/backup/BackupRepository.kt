@@ -4,10 +4,9 @@ import android.content.Context
 import android.net.Uri
 import androidx.room.withTransaction
 import com.omkarnub.kanri.data.db.KanriDatabase
+import com.omkarnub.kanri.data.wallet.WalletPreferences
 import kotlinx.coroutines.Dispatchers
 import kotlinx.coroutines.withContext
-import java.io.BufferedReader
-import java.io.InputStreamReader
 
 class BackupRepository(private val context: Context) {
 
@@ -20,6 +19,7 @@ class BackupRepository(private val context: Context) {
         val lending = db.lendingDao().getAllRecordsSync()
         val repayments = db.lendingDao().getAllRepaymentsSync()
         val mappings = db.categoryDao().getAllMappings()
+        val walletBalances = db.walletDao().getBalancesSync()
 
         BackupPayload(
             transactions = txs,
@@ -27,7 +27,8 @@ class BackupRepository(private val context: Context) {
             budgets = budgets,
             lendingRecords = lending,
             counterpartyMappings = mappings,
-            lendingRepayments = repayments
+            lendingRepayments = repayments,
+            walletBalances = walletBalances
         )
     }
 
@@ -52,7 +53,8 @@ class BackupRepository(private val context: Context) {
                 budgetCount = payload.budgets.size,
                 lendingCount = payload.lendingRecords.size,
                 mappingCount = payload.counterpartyMappings.size,
-                repaymentCount = payload.lendingRepayments.size
+                repaymentCount = payload.lendingRepayments.size,
+                walletCount = payload.walletBalances.size
             )
             Result.success(stats)
         } catch (e: Exception) {
@@ -101,6 +103,7 @@ class BackupRepository(private val context: Context) {
                     db.lendingDao().deleteAllRecords()
                     db.categoryDao().deleteAllMappings()
                     db.categoryDao().deleteAllCategories()
+                    db.walletDao().deleteAll()
                 }
 
                 if (payload.categories.isNotEmpty()) {
@@ -121,6 +124,10 @@ class BackupRepository(private val context: Context) {
                 if (payload.counterpartyMappings.isNotEmpty()) {
                     db.categoryDao().insertMappings(payload.counterpartyMappings)
                 }
+                if (payload.walletBalances.isNotEmpty()) {
+                    db.walletDao().insertAll(payload.walletBalances)
+                    WalletPreferences.getInstance(context).isWalletSetupCompleted = true
+                }
             }
 
             val stats = BackupStats(
@@ -129,7 +136,8 @@ class BackupRepository(private val context: Context) {
                 budgetCount = payload.budgets.size,
                 lendingCount = payload.lendingRecords.size,
                 mappingCount = payload.counterpartyMappings.size,
-                repaymentCount = payload.lendingRepayments.size
+                repaymentCount = payload.lendingRepayments.size,
+                walletCount = payload.walletBalances.size
             )
             Result.success(stats)
         } catch (e: Exception) {

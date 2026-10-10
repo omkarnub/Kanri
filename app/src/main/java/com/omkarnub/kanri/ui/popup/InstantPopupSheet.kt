@@ -510,10 +510,12 @@ private fun triggerTestGPayReceived(context: Context) {
         )
         if (parsed != null) {
             val db = KanriDatabase.getDatabase(context)
+            val atmMode = com.omkarnub.kanri.data.wallet.WalletPreferences.getInstance(context).atmWithdrawalMode
             val result = NotificationDeduplicationHelper.processIncomingTransaction(
                 dao = db.transactionDao(),
                 categoryDao = db.categoryDao(),
-                parsed = parsed
+                parsed = parsed,
+                atmMode = atmMode
             )
             val txId = when (result) {
                 is DeduplicationResult.Inserted -> result.id

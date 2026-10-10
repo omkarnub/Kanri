@@ -15,6 +15,7 @@ import kotlinx.coroutines.launch
 data class SearchFilterState(
     val query: String = "",
     val typeFilter: TransactionTypeFilter = TransactionTypeFilter.ALL,
+    val walletFilter: WalletFilter = WalletFilter.ALL,
     val datePreset: DateRangePreset = DateRangePreset.ALL_TIME,
     val customStartDate: Long? = null,
     val customEndDate: Long? = null,
@@ -59,7 +60,8 @@ class SearchViewModel(application: Application) : AndroidViewModel(application) 
                 categoryIds = filters.selectedCategoryIds,
                 sourceTypes = filters.selectedSourceTypes,
                 minAmount = minAmount,
-                maxAmount = maxAmount
+                maxAmount = maxAmount,
+                walletFilter = filters.walletFilter
             )
         }
 
@@ -72,8 +74,11 @@ class SearchViewModel(application: Application) : AndroidViewModel(application) 
 
         var spent = 0.0
         var received = 0.0
+        var transfers = 0.0
         for (item in sorted) {
-            if (item.transaction.type.equals("DEBIT", ignoreCase = true)) {
+            if (item.transaction.isTransfer) {
+                transfers += item.transaction.amount
+            } else if (item.transaction.type.equals("DEBIT", ignoreCase = true)) {
                 spent += item.transaction.amount
             } else if (item.transaction.type.equals("CREDIT", ignoreCase = true)) {
                 received += item.transaction.amount
@@ -83,6 +88,7 @@ class SearchViewModel(application: Application) : AndroidViewModel(application) 
         SearchUiState(
             query = filters.query,
             typeFilter = filters.typeFilter,
+            walletFilter = filters.walletFilter,
             datePreset = filters.datePreset,
             customStartDate = filters.customStartDate,
             customEndDate = filters.customEndDate,
@@ -96,6 +102,7 @@ class SearchViewModel(application: Application) : AndroidViewModel(application) 
             availableCategories = categories,
             totalSpent = spent,
             totalReceived = received,
+            totalTransfers = transfers,
             netAmount = received - spent,
             isLoading = false
         )
@@ -107,6 +114,10 @@ class SearchViewModel(application: Application) : AndroidViewModel(application) 
 
     fun applyFilterState(state: SearchFilterState) {
         _filterState.value = state
+    }
+
+    fun setWalletFilter(wallet: WalletFilter) {
+        _filterState.update { it.copy(walletFilter = wallet) }
     }
 
     fun setQuery(query: String) {

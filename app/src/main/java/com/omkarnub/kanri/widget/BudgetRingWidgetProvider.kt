@@ -72,7 +72,7 @@ class BudgetRingWidgetProvider : AppWidgetProvider() {
 
                 val monthTx = db.transactionDao().getTransactionsWithCategoryBetweenSync(monthStart, monthEnd)
                 val monthSpent = monthTx
-                    .filter { it.transaction.type.equals("DEBIT", ignoreCase = true) }
+                    .filter { it.transaction.type.equals("DEBIT", ignoreCase = true) && !it.transaction.isTransfer }
                     .sumOf { it.transaction.amount }
 
                 val ringBitmap = WidgetCanvasRenderer.renderBudgetRing(

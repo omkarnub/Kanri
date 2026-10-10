@@ -25,6 +25,7 @@ object FactoryResetManager {
                 db.lendingDao().deleteAllRecords()
                 db.recurringPaymentDao().deleteAll()
                 db.savingsGoalDao().deleteAll()
+                db.walletDao().deleteAll()
                 db.categoryDao().deleteAllMappings()
                 db.categoryDao().deleteAllCategories()
                 db.categoryDao().insertCategories(KanriDatabase.DEFAULT_CATEGORIES)
@@ -36,9 +37,10 @@ object FactoryResetManager {
             // 3. Reset onboarding state
             OnboardingPreferences.getInstance(context).reset()
 
-            // 4. Reset theme and profile preferences
+            // 4. Reset theme, profile, and wallet preferences
             ThemePreferences.getInstance(context).reset()
             com.omkarnub.kanri.data.profile.UserProfilePreferences.getInstance(context).reset()
+            com.omkarnub.kanri.data.wallet.WalletPreferences.getInstance(context).reset()
 
             // 5. Delete all local crash logs
             CrashLogger.clearAllLogs(context)

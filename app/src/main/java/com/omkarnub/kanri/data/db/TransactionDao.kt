@@ -5,6 +5,7 @@ import androidx.room.Delete
 import androidx.room.Insert
 import androidx.room.OnConflictStrategy
 import androidx.room.Query
+import com.omkarnub.kanri.data.wallet.WalletTxnRow
 import kotlinx.coroutines.flow.Flow
 
 @Dao
@@ -60,10 +61,10 @@ interface TransactionDao {
     @Query("SELECT * FROM transactions ORDER BY timestamp DESC")
     suspend fun getAllTransactionsWithCategorySync(): List<TransactionWithCategory>
 
-    @Query("SELECT COUNT(*) FROM transactions WHERE needs_review = 1 OR category_id IS NULL")
+    @Query("SELECT COUNT(*) FROM transactions WHERE (needs_review = 1 OR category_id IS NULL) AND transfer_to_wallet IS NULL")
     fun observeReviewCount(): Flow<Int>
 
-    @Query("SELECT * FROM transactions WHERE needs_review = 1 OR category_id IS NULL ORDER BY timestamp DESC")
+    @Query("SELECT * FROM transactions WHERE (needs_review = 1 OR category_id IS NULL) AND transfer_to_wallet IS NULL ORDER BY timestamp DESC")
     fun observeReviewQueue(): Flow<List<TransactionEntity>>
 
     @Query("UPDATE transactions SET needs_review = 0, review_reason = NULL WHERE id = :transactionId")
@@ -80,6 +81,9 @@ interface TransactionDao {
 
     @Query("UPDATE transactions SET category_id = :categoryId, notes = :notes, needs_review = 0, review_reason = NULL WHERE id = :transactionId")
     suspend fun updateCategoryAndNotes(transactionId: Long, categoryId: Long, notes: String?)
+
+    @Query("UPDATE transactions SET notes = :notes WHERE id = :transactionId")
+    suspend fun updateNotes(transactionId: Long, notes: String?)
 
     @Query("UPDATE transactions SET category_id = :categoryId, needs_review = 0, review_reason = NULL WHERE counterparty = :counterparty")
     suspend fun updateCategoryForCounterparty(counterparty: String, categoryId: Long)
@@ -127,21 +131,43 @@ interface TransactionDao {
     suspend fun delete(transaction: TransactionEntity)
 
     // -------------------------------------------------------------------------
-    // Additive Insights Queries
+    // Wallet & Balance Queries
     // -------------------------------------------------------------------------
 
-    @Query("SELECT * FROM transactions WHERE timestamp >= :startTime AND timestamp <= :endTime AND is_duplicate = 0 ORDER BY timestamp DESC")
+    @Query("SELECT id, type, amount, wallet, transfer_to_wallet, timestamp, is_duplicate FROM transactions WHERE is_duplicate = 0 ORDER BY timestamp ASC, id ASC")
+    fun observeWalletTransactions(): Flow<List<WalletTxnRow>>
+
+    @Query("SELECT id, type, amount, wallet, transfer_to_wallet, timestamp, is_duplicate FROM transactions WHERE is_duplicate = 0 ORDER BY timestamp ASC, id ASC")
+    suspend fun getWalletTransactionsSync(): List<WalletTxnRow>
+
+    @Query("UPDATE transactions SET transfer_to_wallet = :targetTransferWallet WHERE source_type = 'ATM' AND type = 'DEBIT'")
+    suspend fun rewriteAtmTransfers(targetTransferWallet: String?): Int
+
+    @Query("UPDATE transactions SET wallet = :wallet, transfer_to_wallet = :transferToWallet, category_id = NULL, needs_review = 0, review_reason = NULL WHERE id = :id")
+    suspend fun convertTransactionToTransfer(id: Long, wallet: String, transferToWallet: String): Int
+
+    @Query("UPDATE transactions SET wallet = :wallet WHERE id = :id")
+    suspend fun updateWallet(id: Long, wallet: String)
+
+    @Query("UPDATE transactions SET wallet = :wallet, transfer_to_wallet = :transferToWallet WHERE id = :id")
+    suspend fun updateWalletAndTransfer(id: Long, wallet: String, transferToWallet: String?)
+
+    // -------------------------------------------------------------------------
+    // Additive Insights Queries (Excluding Transfers)
+    // -------------------------------------------------------------------------
+
+    @Query("SELECT * FROM transactions WHERE timestamp >= :startTime AND timestamp <= :endTime AND is_duplicate = 0 AND transfer_to_wallet IS NULL ORDER BY timestamp DESC")
     suspend fun getTransactionsBetweenSync(startTime: Long, endTime: Long): List<TransactionEntity>
 
-    @Query("SELECT * FROM transactions WHERE type = :type AND timestamp >= :startTime AND timestamp <= :endTime AND is_duplicate = 0 ORDER BY timestamp DESC")
+    @Query("SELECT * FROM transactions WHERE type = :type AND timestamp >= :startTime AND timestamp <= :endTime AND is_duplicate = 0 AND transfer_to_wallet IS NULL ORDER BY timestamp DESC")
     suspend fun getTransactionsByTypeBetweenSync(type: String, startTime: Long, endTime: Long): List<TransactionEntity>
 
     @androidx.room.Transaction
-    @Query("SELECT * FROM transactions WHERE counterparty = :counterparty AND is_duplicate = 0 ORDER BY timestamp DESC")
+    @Query("SELECT * FROM transactions WHERE counterparty = :counterparty AND is_duplicate = 0 AND transfer_to_wallet IS NULL ORDER BY timestamp DESC")
     suspend fun getTransactionsWithCategoryByCounterpartySync(counterparty: String): List<TransactionWithCategory>
 
     @androidx.room.Transaction
-    @Query("SELECT * FROM transactions WHERE counterparty = :counterparty AND timestamp >= :startTime AND timestamp <= :endTime AND is_duplicate = 0 ORDER BY timestamp DESC")
+    @Query("SELECT * FROM transactions WHERE counterparty = :counterparty AND timestamp >= :startTime AND timestamp <= :endTime AND is_duplicate = 0 AND transfer_to_wallet IS NULL ORDER BY timestamp DESC")
     suspend fun getTransactionsWithCategoryByCounterpartyBetweenSync(counterparty: String, startTime: Long, endTime: Long): List<TransactionWithCategory>
 
     @Query("""
@@ -149,7 +175,7 @@ interface TransactionDao {
                SUM(amount) AS totalAmount,
                COUNT(*) AS txCount
         FROM transactions
-        WHERE type = :type AND timestamp >= :startTime AND timestamp <= :endTime AND is_duplicate = 0
+        WHERE type = :type AND timestamp >= :startTime AND timestamp <= :endTime AND is_duplicate = 0 AND transfer_to_wallet IS NULL
         GROUP BY dayString
         ORDER BY dayString ASC
     """)
@@ -161,7 +187,7 @@ interface TransactionDao {
                SUM(amount) AS totalAmount,
                COUNT(*) AS txCount
         FROM transactions
-        WHERE type = :type AND timestamp >= :startTime AND timestamp <= :endTime AND is_duplicate = 0
+        WHERE type = :type AND timestamp >= :startTime AND timestamp <= :endTime AND is_duplicate = 0 AND transfer_to_wallet IS NULL
               AND counterparty IS NOT NULL AND TRIM(counterparty) != '' AND source_type != 'ATM'
         GROUP BY LOWER(TRIM(counterparty))
         ORDER BY totalAmount DESC
@@ -174,7 +200,7 @@ interface TransactionDao {
                SUM(amount) AS totalAmount,
                COUNT(*) AS txCount
         FROM transactions
-        WHERE type = :type AND timestamp >= :startTime AND timestamp <= :endTime AND is_duplicate = 0
+        WHERE type = :type AND timestamp >= :startTime AND timestamp <= :endTime AND is_duplicate = 0 AND transfer_to_wallet IS NULL
         GROUP BY source_type
         ORDER BY totalAmount DESC
     """)
@@ -185,7 +211,7 @@ interface TransactionDao {
                SUM(amount) AS totalAmount,
                COUNT(*) AS txCount
         FROM transactions
-        WHERE type = :type AND timestamp >= :startTime AND timestamp <= :endTime AND is_duplicate = 0
+        WHERE type = :type AND timestamp >= :startTime AND timestamp <= :endTime AND is_duplicate = 0 AND transfer_to_wallet IS NULL
         GROUP BY category_id
         ORDER BY totalAmount DESC
     """)
@@ -194,7 +220,7 @@ interface TransactionDao {
     @androidx.room.Transaction
     @Query("""
         SELECT * FROM transactions
-        WHERE type = :type AND timestamp >= :startTime AND timestamp <= :endTime AND is_duplicate = 0
+        WHERE type = :type AND timestamp >= :startTime AND timestamp <= :endTime AND is_duplicate = 0 AND transfer_to_wallet IS NULL
         ORDER BY amount DESC
         LIMIT :limit
     """)
@@ -202,7 +228,7 @@ interface TransactionDao {
 
     @Query("""
         SELECT * FROM transactions
-        WHERE type = 'DEBIT' AND is_duplicate = 0
+        WHERE type = 'DEBIT' AND is_duplicate = 0 AND transfer_to_wallet IS NULL
         ORDER BY amount DESC
         LIMIT 1
     """)
@@ -233,4 +259,3 @@ data class DailySpendAggregate(
     val totalAmount: Double,
     val txCount: Int
 )
-

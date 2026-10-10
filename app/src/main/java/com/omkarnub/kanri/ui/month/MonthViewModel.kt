@@ -88,9 +88,9 @@ class MonthViewModel(application: Application) : AndroidViewModel(application) {
                 nowCal.get(Calendar.MONTH) == cal.get(Calendar.MONTH)
         val currentDay = if (isCurrentMonth) nowCal.get(Calendar.DAY_OF_MONTH) else daysInMonth
 
-        // Filter transactions
+        // Filter transactions (excluding transfers)
         val monthTransactions = txList.filter {
-            it.transaction.timestamp in startOfMonth..endOfMonth
+            it.transaction.timestamp in startOfMonth..endOfMonth && !it.transaction.isTransfer
         }
 
         var spent = 0.0

@@ -82,10 +82,12 @@ class SmsReceiver : BroadcastReceiver() {
             CoroutineScope(Dispatchers.IO).launch {
                 try {
                     val db = KanriDatabase.getDatabase(context)
+                    val atmMode = com.omkarnub.kanri.data.wallet.WalletPreferences.getInstance(context).atmWithdrawalMode
                     val result = NotificationDeduplicationHelper.processIncomingTransaction(
                         dao = db.transactionDao(),
                         categoryDao = db.categoryDao(),
-                        parsed = parsed
+                        parsed = parsed,
+                        atmMode = atmMode
                     )
 
                     when (result) {

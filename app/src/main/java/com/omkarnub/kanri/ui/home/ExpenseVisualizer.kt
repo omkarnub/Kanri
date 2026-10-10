@@ -224,13 +224,13 @@ fun ExpenseVisualizer(
     // Calculate total spent for the selected month
     val monthSpent = remember(monthTransactions) {
         monthTransactions
-            .filter { it.transaction.type.equals("DEBIT", ignoreCase = true) }
+            .filter { it.transaction.type.equals("DEBIT", ignoreCase = true) && !it.transaction.isTransfer }
             .sumOf { it.transaction.amount }
     }
 
     // Category breakdown sorted descending
     val categorySpendMap = remember(monthTransactions, categories) {
-        val debits = monthTransactions.filter { it.transaction.type.equals("DEBIT", ignoreCase = true) }
+        val debits = monthTransactions.filter { it.transaction.type.equals("DEBIT", ignoreCase = true) && !it.transaction.isTransfer }
         val map = mutableMapOf<String, Double>()
         for (item in debits) {
             val name = item.category?.name ?: "Other"
@@ -779,7 +779,7 @@ private fun BarGraphVisualizer(
 
     // Compute Daily data: Last 7 calendar days
     val dailyBars = remember(monthTransactions, selectedMonth) {
-        val debits = monthTransactions.filter { it.transaction.type.equals("DEBIT", ignoreCase = true) }
+        val debits = monthTransactions.filter { it.transaction.type.equals("DEBIT", ignoreCase = true) && !it.transaction.isTransfer }
         val dayOfWeekFormat = SimpleDateFormat("EEE", Locale.getDefault())
 
         val dayMap = mutableMapOf<String, Pair<String, Double>>()
@@ -816,7 +816,7 @@ private fun BarGraphVisualizer(
 
     // Compute Monthly data: Past 6 months
     val monthlyBars = remember(allTransactions) {
-        val debits = allTransactions.filter { it.transaction.type.equals("DEBIT", ignoreCase = true) }
+        val debits = allTransactions.filter { it.transaction.type.equals("DEBIT", ignoreCase = true) && !it.transaction.isTransfer }
         val cal = Calendar.getInstance()
         val monthList = mutableListOf<Pair<String, Double>>()
         val monthKeyFormat = SimpleDateFormat("yyyy-MM", Locale.getDefault())

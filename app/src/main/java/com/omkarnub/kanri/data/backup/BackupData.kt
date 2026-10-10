@@ -6,6 +6,7 @@ import com.omkarnub.kanri.data.db.CounterpartyCategoryMapEntity
 import com.omkarnub.kanri.data.db.LendingEntity
 import com.omkarnub.kanri.data.db.LendingRepaymentEntity
 import com.omkarnub.kanri.data.db.TransactionEntity
+import com.omkarnub.kanri.data.db.WalletBalanceEntity
 import org.json.JSONArray
 import org.json.JSONObject
 
@@ -18,10 +19,11 @@ data class BackupPayload(
     val budgets: List<BudgetEntity>,
     val lendingRecords: List<LendingEntity>,
     val counterpartyMappings: List<CounterpartyCategoryMapEntity>,
-    val lendingRepayments: List<LendingRepaymentEntity> = emptyList()
+    val lendingRepayments: List<LendingRepaymentEntity> = emptyList(),
+    val walletBalances: List<WalletBalanceEntity> = emptyList()
 ) {
     companion object {
-        const val CURRENT_VERSION = 2
+        const val CURRENT_VERSION = 3
     }
 }
 
@@ -31,7 +33,8 @@ data class BackupStats(
     val budgetCount: Int,
     val lendingCount: Int,
     val mappingCount: Int,
-    val repaymentCount: Int = 0
+    val repaymentCount: Int = 0,
+    val walletCount: Int = 0
 )
 
 object BackupJsonParser {
@@ -60,6 +63,8 @@ object BackupJsonParser {
             obj.put("isDuplicate", tx.isDuplicate)
             obj.put("isManualEntry", tx.isManualEntry)
             obj.put("notes", tx.notes ?: JSONObject.NULL)
+            obj.put("wallet", tx.wallet)
+            obj.put("transferToWallet", tx.transferToWallet ?: JSONObject.NULL)
             txArray.put(obj)
         }
         root.put("transactions", txArray)
@@ -128,6 +133,17 @@ object BackupJsonParser {
         }
         root.put("counterpartyMappings", mapArray)
 
+        // Wallet Balances
+        val walletArray = JSONArray()
+        payload.walletBalances.forEach { wb ->
+            val obj = JSONObject()
+            obj.put("walletId", wb.walletId)
+            obj.put("openingAmount", wb.openingAmount)
+            obj.put("openingTimestamp", wb.openingTimestamp)
+            walletArray.put(obj)
+        }
+        root.put("walletBalances", walletArray)
+
         return root.toString(2)
     }
 
@@ -142,12 +158,26 @@ object BackupJsonParser {
         val txArray = root.optJSONArray("transactions") ?: JSONArray()
         for (i in 0 until txArray.length()) {
             val obj = txArray.getJSONObject(i)
+            val sourceType = obj.getString("sourceType")
+
+            val wallet = if (obj.has("wallet") && !obj.isNull("wallet")) {
+                obj.getString("wallet")
+            } else {
+                if (sourceType.equals("CASH", ignoreCase = true)) "CASH" else "ONLINE"
+            }
+
+            val transferToWallet = if (obj.has("transferToWallet") && !obj.isNull("transferToWallet")) {
+                obj.getString("transferToWallet")
+            } else {
+                null
+            }
+
             txList.add(
                 TransactionEntity(
                     id = obj.optLong("id", 0),
                     type = obj.getString("type"),
                     amount = obj.getDouble("amount"),
-                    sourceType = obj.getString("sourceType"),
+                    sourceType = sourceType,
                     counterparty = if (obj.isNull("counterparty")) null else obj.getString("counterparty"),
                     displayName = if (obj.isNull("displayName")) null else obj.getString("displayName"),
                     bank = if (obj.isNull("bank")) null else obj.getString("bank"),
@@ -157,7 +187,9 @@ object BackupJsonParser {
                     rawSms = obj.optString("rawSms", ""),
                     isDuplicate = obj.optBoolean("isDuplicate", false),
                     isManualEntry = obj.optBoolean("isManualEntry", false),
-                    notes = if (obj.isNull("notes")) null else obj.getString("notes")
+                    notes = if (obj.isNull("notes")) null else obj.getString("notes"),
+                    wallet = wallet,
+                    transferToWallet = transferToWallet
                 )
             )
         }
@@ -242,6 +274,20 @@ object BackupJsonParser {
             )
         }
 
+        // Parse wallet balances
+        val walletList = mutableListOf<WalletBalanceEntity>()
+        val walletArray = root.optJSONArray("walletBalances") ?: JSONArray()
+        for (i in 0 until walletArray.length()) {
+            val obj = walletArray.getJSONObject(i)
+            walletList.add(
+                WalletBalanceEntity(
+                    walletId = obj.getString("walletId"),
+                    openingAmount = obj.getDouble("openingAmount"),
+                    openingTimestamp = obj.getLong("openingTimestamp")
+                )
+            )
+        }
+
         return BackupPayload(
             version = version,
             createdAt = createdAt,
@@ -251,7 +297,8 @@ object BackupJsonParser {
             budgets = budgetList,
             lendingRecords = lendingList,
             counterpartyMappings = mapList,
-            lendingRepayments = repaymentList
+            lendingRepayments = repaymentList,
+            walletBalances = walletList
         )
     }
 }

@@ -452,22 +452,42 @@ object BankSmsPatterns {
 
     fun findByBody(body: String): BankSmsPattern? {
         val upper = body.uppercase()
-        // Exact longer keyword first
+        // Strip out VPA handles like xyz@okaxis, abc@icici, 123@phonepe so they don't falsely match bank names
+        val textWithoutVpa = upper.replace(Regex("""[A-Z0-9.\-_]+@[A-Z0-9.\-_]+"""), " ")
+
+        // Priority 1: Bank signature at end or after hyphen/slash (e.g. -BOB, -SBI, -HDFC, /5000-BOB)
         for (pattern in ALL_PATTERNS) {
-            for (keyword in pattern.bodyKeywords) {
-                if (keyword.length > 3 && upper.contains(keyword)) {
+            val signatures = pattern.senderPrefixes + pattern.bankCode + pattern.bodyKeywords
+            for (sig in signatures) {
+                val s = sig.uppercase()
+                if (upper.endsWith("-$s") || upper.endsWith("/$s") ||
+                    upper.contains("-$s ") || upper.contains("-$s.") ||
+                    upper.contains("/$s ") || upper.contains("/$s.") ||
+                    Regex("""[-/]$s\b""").containsMatchIn(upper)
+                ) {
                     return pattern
                 }
             }
         }
-        // Word boundary match for shorter keywords (e.g. "BOB", "SBI", "UBI")
+
+        // Priority 2: Full multi-word bank names in text (e.g. "BANK OF BARODA", "STATE BANK OF INDIA", "HDFC BANK")
         for (pattern in ALL_PATTERNS) {
             for (keyword in pattern.bodyKeywords) {
-                if (upper.contains(" $keyword ") || upper.startsWith("$keyword ") || upper.contains("$keyword BANK") || upper.endsWith(" $keyword")) {
+                if (keyword.contains(" ") && textWithoutVpa.contains(keyword)) {
                     return pattern
                 }
             }
         }
+
+        // Priority 3: Word boundary match for keywords outside VPAs (e.g. \bBOB\b, \bSBI\b, \bHDFC\b)
+        for (pattern in ALL_PATTERNS) {
+            for (keyword in pattern.bodyKeywords) {
+                if (Regex("""\b${Regex.escape(keyword)}\b""").containsMatchIn(textWithoutVpa)) {
+                    return pattern
+                }
+            }
+        }
+
         return null
     }
 }

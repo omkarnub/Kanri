@@ -1,11 +1,12 @@
 package com.omkarnub.kanri.data.backup
 
+import com.omkarnub.kanri.data.db.TransactionEntity
+import javax.crypto.AEADBadTagException
 import org.junit.Assert.assertEquals
 import org.junit.Assert.assertFalse
 import org.junit.Assert.assertNotEquals
 import org.junit.Assert.assertTrue
 import org.junit.Test
-import javax.crypto.AEADBadTagException
 
 class BackupCryptoTest {
 
@@ -59,5 +60,46 @@ class BackupCryptoTest {
         } catch (e: IllegalArgumentException) {
             assertTrue(e.message?.contains("Corrupted") == true)
         }
+    }
+
+    @Test
+    fun testEncryptDecryptRoundTripWithWalletPayload() {
+        val payload = BackupPayload(
+            version = 3,
+            createdAt = System.currentTimeMillis(),
+            appVersion = "1.1.0",
+            transactions = listOf(
+                TransactionEntity(
+                    id = 101L,
+                    type = "DEBIT",
+                    amount = 750.0,
+                    sourceType = "UPI",
+                    wallet = "ONLINE",
+                    transferToWallet = null,
+                    timestamp = 1726500000000L
+                )
+            ),
+            categories = emptyList(),
+            budgets = emptyList(),
+            lendingRecords = emptyList(),
+            counterpartyMappings = emptyList(),
+            walletBalances = listOf(
+                com.omkarnub.kanri.data.db.WalletBalanceEntity("CASH", 5000.0, 1726400000000L),
+                com.omkarnub.kanri.data.db.WalletBalanceEntity("ONLINE", 25000.0, 1726400000000L)
+            )
+        )
+        val json = BackupJsonParser.toJson(payload)
+        val password = "StrongWalletBackupPassword123!"
+
+        val encrypted = BackupCryptoHelper.encryptJson(json, password)
+        assertTrue(BackupCryptoHelper.isEncryptedBackup(encrypted))
+
+        val decrypted = BackupCryptoHelper.decryptJson(encrypted, password)
+        val restored = BackupJsonParser.fromJson(decrypted)
+
+        assertEquals(1, restored.transactions.size)
+        assertEquals("ONLINE", restored.transactions[0].wallet)
+        assertEquals(2, restored.walletBalances.size)
+        assertEquals(5000.0, restored.walletBalances.first { it.walletId == "CASH" }.openingAmount, 0.001)
     }
 }

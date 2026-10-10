@@ -236,6 +236,16 @@ fun SearchScreen(
                     }
                     viewModel.setTypeFilter(nextType)
                 },
+                onToggleWallet = {
+                    haptics.tick()
+                    val nextWallet = when (uiState.walletFilter) {
+                        WalletFilter.ALL -> WalletFilter.CASH
+                        WalletFilter.CASH -> WalletFilter.ONLINE
+                        WalletFilter.ONLINE -> WalletFilter.TRANSFERS
+                        WalletFilter.TRANSFERS -> WalletFilter.ALL
+                    }
+                    viewModel.setWalletFilter(nextWallet)
+                },
                 onClearAll = {
                     haptics.tick()
                     viewModel.clearAllFilters()
@@ -248,7 +258,9 @@ fun SearchScreen(
                     count = uiState.filteredTransactions.size,
                     spent = uiState.totalSpent,
                     received = uiState.totalReceived,
-                    net = uiState.netAmount
+                    net = uiState.netAmount,
+                    transfers = uiState.totalTransfers,
+                    isTransfersFilterActive = uiState.walletFilter == WalletFilter.TRANSFERS
                 )
             }
 
@@ -304,6 +316,7 @@ fun SearchScreen(
             onSourceToggle = { viewModel.toggleSourceType(it) },
             onAmountPresetSelect = { viewModel.setAmountPreset(it) },
             onSortSelect = { viewModel.setSortOption(it) },
+            onWalletFilterSelect = { viewModel.setWalletFilter(it) },
             onResetAll = { viewModel.clearAllFilters() }
         )
     }
@@ -338,6 +351,7 @@ private fun QuickFilterChipsRow(
     uiState: SearchUiState,
     onOpenFilterSheet: () -> Unit,
     onToggleType: () -> Unit,
+    onToggleWallet: () -> Unit,
     onClearAll: () -> Unit
 ) {
     Row(
@@ -401,6 +415,35 @@ private fun QuickFilterChipsRow(
             border = FilterChipDefaults.filterChipBorder(
                 enabled = true,
                 selected = isTypeActive,
+                borderColor = MaterialTheme.colorScheme.outlineVariant,
+                selectedBorderColor = MaterialTheme.colorScheme.primary
+            )
+        )
+
+        // Wallet Filter Chip
+        val isWalletActive = uiState.walletFilter != WalletFilter.ALL
+        FilterChip(
+            selected = isWalletActive,
+            onClick = onToggleWallet,
+            label = {
+                Text(
+                    text = when (uiState.walletFilter) {
+                        WalletFilter.ALL -> "Wallet: All"
+                        WalletFilter.CASH -> "Cash"
+                        WalletFilter.ONLINE -> "Online"
+                        WalletFilter.TRANSFERS -> "Transfers"
+                    }
+                )
+            },
+            colors = FilterChipDefaults.filterChipColors(
+                selectedContainerColor = MaterialTheme.colorScheme.primary,
+                selectedLabelColor = MaterialTheme.colorScheme.onPrimary,
+                containerColor = MaterialTheme.colorScheme.surfaceVariant,
+                labelColor = MaterialTheme.colorScheme.onSurfaceVariant
+            ),
+            border = FilterChipDefaults.filterChipBorder(
+                enabled = true,
+                selected = isWalletActive,
                 borderColor = MaterialTheme.colorScheme.outlineVariant,
                 selectedBorderColor = MaterialTheme.colorScheme.primary
             )
@@ -499,7 +542,9 @@ private fun SearchSummaryHeader(
     count: Int,
     spent: Double,
     received: Double,
-    net: Double
+    net: Double,
+    transfers: Double = 0.0,
+    isTransfersFilterActive: Boolean = false
 ) {
     Card(
         modifier = Modifier
@@ -522,50 +567,76 @@ private fun SearchSummaryHeader(
                     color = MaterialTheme.colorScheme.onSurfaceVariant
                 )
 
-                Text(
-                    text = "Net: ${if (net >= 0) "+" else ""}${formatCurrency(net)}",
-                    style = MaterialTheme.typography.labelMedium,
-                    fontWeight = FontWeight.Bold,
-                    color = MaterialTheme.colorScheme.onSurface
-                )
+                if (!isTransfersFilterActive) {
+                    Text(
+                        text = "Net: ${if (net >= 0) "+" else ""}${formatCurrency(net)}",
+                        style = MaterialTheme.typography.labelMedium,
+                        fontWeight = FontWeight.Bold,
+                        color = MaterialTheme.colorScheme.onSurface
+                    )
+                }
             }
 
             Spacer(modifier = Modifier.height(6.dp))
 
-            Row(
-                modifier = Modifier.fillMaxWidth(),
-                horizontalArrangement = Arrangement.SpaceBetween
-            ) {
-                Row(verticalAlignment = Alignment.CenterVertically) {
-                    Box(
-                        modifier = Modifier
-                            .size(8.dp)
-                            .clip(CircleShape)
-                            .background(MaterialTheme.colorScheme.outline)
-                    )
-                    Spacer(modifier = Modifier.width(6.dp))
-                    Text(
-                        text = "Spent: ${formatCurrency(spent)}",
-                        style = MaterialTheme.typography.bodySmall,
-                        color = MaterialTheme.colorScheme.onSurface,
-                        fontWeight = FontWeight.SemiBold
-                    )
+            if (isTransfersFilterActive) {
+                Row(
+                    modifier = Modifier.fillMaxWidth(),
+                    horizontalArrangement = Arrangement.SpaceBetween,
+                    verticalAlignment = Alignment.CenterVertically
+                ) {
+                    Row(verticalAlignment = Alignment.CenterVertically) {
+                        Box(
+                            modifier = Modifier
+                                .size(8.dp)
+                                .clip(CircleShape)
+                                .background(MaterialTheme.colorScheme.primary)
+                        )
+                        Spacer(modifier = Modifier.width(6.dp))
+                        Text(
+                            text = "Total Transfers: ${formatCurrency(transfers)}",
+                            style = MaterialTheme.typography.bodySmall,
+                            color = MaterialTheme.colorScheme.onSurface,
+                            fontWeight = FontWeight.Bold
+                        )
+                    }
                 }
+            } else {
+                Row(
+                    modifier = Modifier.fillMaxWidth(),
+                    horizontalArrangement = Arrangement.SpaceBetween
+                ) {
+                    Row(verticalAlignment = Alignment.CenterVertically) {
+                        Box(
+                            modifier = Modifier
+                                .size(8.dp)
+                                .clip(CircleShape)
+                                .background(MaterialTheme.colorScheme.outline)
+                        )
+                        Spacer(modifier = Modifier.width(6.dp))
+                        Text(
+                            text = "Spent: ${formatCurrency(spent)}",
+                            style = MaterialTheme.typography.bodySmall,
+                            color = MaterialTheme.colorScheme.onSurface,
+                            fontWeight = FontWeight.SemiBold
+                        )
+                    }
 
-                Row(verticalAlignment = Alignment.CenterVertically) {
-                    Box(
-                        modifier = Modifier
-                            .size(8.dp)
-                            .clip(CircleShape)
-                            .background(MaterialTheme.colorScheme.primary)
-                    )
-                    Spacer(modifier = Modifier.width(6.dp))
-                    Text(
-                        text = "Received: ${formatCurrency(received)}",
-                        style = MaterialTheme.typography.bodySmall,
-                        color = MaterialTheme.colorScheme.onSurface,
-                        fontWeight = FontWeight.SemiBold
-                    )
+                    Row(verticalAlignment = Alignment.CenterVertically) {
+                        Box(
+                            modifier = Modifier
+                                .size(8.dp)
+                                .clip(CircleShape)
+                                .background(MaterialTheme.colorScheme.primary)
+                        )
+                        Spacer(modifier = Modifier.width(6.dp))
+                        Text(
+                            text = "Received: ${formatCurrency(received)}",
+                            style = MaterialTheme.typography.bodySmall,
+                            color = MaterialTheme.colorScheme.onSurface,
+                            fontWeight = FontWeight.SemiBold
+                        )
+                    }
                 }
             }
         }

@@ -2,9 +2,15 @@ package com.omkarnub.kanri.data.db
 
 import androidx.room.ColumnInfo
 import androidx.room.Entity
+import androidx.room.Index
 import androidx.room.PrimaryKey
 
-@Entity(tableName = "transactions")
+@Entity(
+    tableName = "transactions",
+    indices = [
+        Index(value = ["wallet"], name = "index_transactions_wallet")
+    ]
+)
 data class TransactionEntity(
     @PrimaryKey(autoGenerate = true)
     val id: Long = 0,
@@ -16,19 +22,19 @@ data class TransactionEntity(
     val amount: Double,
 
     @ColumnInfo(name = "source_type")
-    val sourceType: String, // "UPI", "ATM", "CARD", "BANK_TRANSFER", "UNKNOWN"
+    val sourceType: String, // "UPI", "ATM", "CARD", "BANK_TRANSFER", "UNKNOWN", "WALLET_TRANSFER"
 
     @ColumnInfo(name = "counterparty")
-    val counterparty: String?, // VPA, merchant, account, or ATM TID
+    val counterparty: String? = null, // VPA, merchant, account, or ATM TID
 
     @ColumnInfo(name = "display_name")
     val displayName: String? = null,
 
     @ColumnInfo(name = "bank")
-    val bank: String?,
+    val bank: String? = null,
 
     @ColumnInfo(name = "ref_no")
-    val refNo: String?,
+    val refNo: String? = null,
 
     @ColumnInfo(name = "timestamp")
     val timestamp: Long, // Epoch milliseconds
@@ -37,7 +43,7 @@ data class TransactionEntity(
     val categoryId: Long? = null,
 
     @ColumnInfo(name = "raw_sms")
-    val rawSms: String,
+    val rawSms: String = "",
 
     @ColumnInfo(name = "is_duplicate")
     val isDuplicate: Boolean = false,
@@ -52,5 +58,14 @@ data class TransactionEntity(
     val reviewReason: String? = null,
 
     @ColumnInfo(name = "notes")
-    val notes: String? = null
-)
+    val notes: String? = null,
+
+    @ColumnInfo(name = "wallet", defaultValue = "'ONLINE'")
+    val wallet: String = "ONLINE",
+
+    @ColumnInfo(name = "transfer_to_wallet")
+    val transferToWallet: String? = null
+) {
+    val isTransfer: Boolean
+        get() = transferToWallet != null
+}

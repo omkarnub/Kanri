@@ -70,14 +70,14 @@ Everything runs fully offline — there's no Kanri backend to breach, because th
   <tr>
     <td width="50%" valign="top">
       <img src="assets/feature-sentinel.svg" width="55" alt="Offline by default icon" /><br>
-      <strong>Offline by default</strong><br>
-      All records, categories, and notes are encrypted on-device with SQLCipher (AES-256) behind Android Keystore hardware keys. No analytics, no ad SDKs, no credit-score inquiries.<br><br>
+      <strong>Offline by default & private sync</strong><br>
+      All records, categories, and notes are encrypted on-device with SQLCipher (AES-256) behind Android Keystore hardware keys. No analytics, no ad SDKs, no credit-score inquiries. Optional client-side encrypted Google Drive backup uses strictly the restricted <code>drive.file</code> scope.<br><br>
       <code>SQLCipher AES-256</code> <code>Android Keystore</code> <code>Zero Trackers</code>
     </td>
     <td width="50%" valign="top">
       <img src="assets/feature-release.svg" width="55" alt="Dual-engine capture icon" /><br>
       <strong>Dual-engine transaction capture</strong><br>
-      An SMS parser covers 15+ major banks; a notification listener catches Google Pay, PhonePe, Paytm, CRED, FamPay, and Amazon Pay in real time. Cross-channel fingerprinting drops duplicates. Messaging apps are never read.<br><br>
+      An SMS parser covers 15+ major banks; a notification listener catches Google Pay, PhonePe, Paytm, CRED, FamPay, and Amazon Pay in real time. Cross-channel 5-minute sliding window deduplication drops duplicates, while a background watchdog auto-rebinds listeners. Messaging apps are never read.<br><br>
       <code>SMS Parser</code> <code>Notification Listener</code> <code>Smart Deduplication</code>
     </td>
   </tr>
@@ -98,14 +98,14 @@ Everything runs fully offline — there's no Kanri backend to breach, because th
   <tr>
     <td width="50%" valign="top">
       <img src="assets/feature-dev.svg" width="55" alt="Insights & financial health icon" /><br>
-      <strong>Insights & financial health</strong><br>
-      18+ visualizations — a GitHub-style spending heatmap, a 365-day matrix, burn-rate projections, month-over-month comparisons — plus a 0–100 health score weighing savings rate, budget use, spend velocity, and debt load.<br><br>
-      <code>Heatmap & Matrix</code> <code>Burn Rate</code> <code>Health Score 0–100</code>
+      <strong>Insights, health score & smart rules</strong><br>
+      18+ visualizations — a GitHub-style spending heatmap, a 365-day matrix, burn-rate projections, month-over-month comparisons — plus a 0–100 health score and smart merchant rules with longest-match auto-categorization and an interactive simulator.<br><br>
+      <code>Heatmap & Matrix</code> <code>Health Score 0–100</code> <code>Merchant Rules</code>
     </td>
     <td width="50%" valign="top">
       <img src="assets/feature-tools.svg" width="55" alt="Home screen widgets icon" /><br>
       <strong>Home screen & quick settings</strong><br>
-      Seven widgets (today's spend, budget ring, goals ring, lend/borrow, split bill, quick add) and a Quick Settings tile for logging an expense from anywhere. Screen-off auto-lock re-secures the app with biometrics the moment the display turns off.<br><br>
+      Seven widgets (today's spend, budget progress, budget ring, goals ring, lend/borrow, split bill, quick add) and a Quick Settings tile for logging an expense from anywhere. Screen-off auto-lock re-secures the app with biometrics the moment the display turns off.<br><br>
       <code>7 Android Widgets</code> <code>Quick Settings Tile</code> <code>Biometric Lock</code>
     </td>
   </tr>
@@ -129,12 +129,15 @@ Everything runs fully offline — there's no Kanri backend to breach, because th
 
 ```mermaid
 flowchart LR
-    A[Bank SMS] --> C{Transaction parser}
+    A[Bank SMS] --> C{Dual-engine parser<br/>& 5-min deduplication}
     B[Payment app notification] --> C
+    W[Watchdog worker] -. auto-rebind .-> B
     C --> D[(Room + SQLCipher<br/>AES-256, on-device)]
-    D --> E[Budgets & insights]
+    D --> E[Budgets & 18+ insights]
     D --> F[Lend & borrow ledger]
-    D --> G[Home screen widgets]
+    D --> G[7 Home screen widgets & QS tile]
+    D --> H[Savings milestones]
+    D --> I[Client-side encrypted backups]
 ```
 
 ## Tech Stack :hammer_and_wrench:
@@ -148,7 +151,7 @@ flowchart LR
 | ![WorkManager](https://img.shields.io/badge/WorkManager-2.9.1-3DDC84?style=flat-square&logo=android&logoColor=white) | Background tasks |
 | ![Biometric](https://img.shields.io/badge/Biometric-1.2.0-30A46C?style=flat-square&logo=android&logoColor=white) | Lock screen authentication |
 | ![Haze](https://img.shields.io/badge/Haze-1.3.1-30A46C?style=flat-square) | Glassmorphism effects |
-| ![Tests](https://img.shields.io/badge/Unit%20tests-222%2B%20passing-30A46C?style=flat-square) | 35 suites, 100% coverage of financial logic |
+| ![Tests](https://img.shields.io/badge/Unit%20tests-232%20passing-30A46C?style=flat-square) | 36 suites, 100% coverage of financial logic |
 
 ## Installation :package:
 
@@ -194,6 +197,7 @@ Kanri starts from one premise: your financial data is yours.
 - **No account required** — no email, phone verification, or password.
 - **No credential harvesting** — Kanri never asks for banking passwords, ATM PINs, or UPI credentials.
 - **Encrypted, user-initiated backups** — local backups use AES-GCM with PBKDF2 under a passphrase you choose.
+- **Optional encrypted cloud backup** — syncs to your personal Google Drive with client-side AES-GCM encryption, strictly restricted to the `drive.file` scope (zero access to your other Drive files).
 
 Full details: [Privacy Policy](PRIVACY_POLICY.md)
 

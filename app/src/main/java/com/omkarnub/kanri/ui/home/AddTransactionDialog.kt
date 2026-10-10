@@ -94,6 +94,8 @@ import com.omkarnub.kanri.ui.theme.GoogleSansFlex
 import kotlinx.coroutines.Dispatchers
 import kotlinx.coroutines.launch
 
+private var lastSelectedWalletSession: String? = null
+
 /**
  * Pure Monochrome Frosted Glass Transaction Dialog (Expense & Income):
  * 1. In-window frosted glass overlay with real hardware-accelerated Haze blur across all themes (Dark, AMOLED, Light).
@@ -106,7 +108,7 @@ import kotlinx.coroutines.launch
 @Composable
 fun AddTransactionDialog(
     onDismiss: () -> Unit,
-    onConfirm: (amount: Double, type: String, counterparty: String, sourceType: String, categoryId: Long?) -> Unit,
+    onConfirm: (amount: Double, type: String, counterparty: String, sourceType: String, categoryId: Long?, wallet: String?) -> Unit,
     initialType: String = "DEBIT",
     categories: List<CategoryEntity> = emptyList(),
     onOpenLendBorrow: ((amount: Double, type: String, counterparty: String, note: String) -> Unit)? = null,
@@ -130,6 +132,11 @@ fun AddTransactionDialog(
     var manualText by remember { mutableStateOf(amount.toLong().toString()) }
     var payeeText by remember { mutableStateOf("") }
     var selectedSource by remember { mutableStateOf("UPI") }
+    var selectedWallet by remember {
+        mutableStateOf(
+            lastSelectedWalletSession ?: if (selectedSource.equals("CASH", ignoreCase = true)) "CASH" else "ONLINE"
+        )
+    }
     var errorMessage by remember { mutableStateOf<String?>(null) }
 
     var isAllocateToGoalEnabled by remember { mutableStateOf(false) }
@@ -580,10 +587,68 @@ fun AddTransactionDialog(
                                 onClick = {
                                     haptics.tick()
                                     selectedSource = sourceKey
+                                    if (sourceKey.equals("CASH", ignoreCase = true)) {
+                                        selectedWallet = "CASH"
+                                    } else if (selectedWallet == "CASH") {
+                                        selectedWallet = "ONLINE"
+                                    }
                                 },
                                 label = {
                                     Text(
                                         text = source,
+                                        fontSize = 11.sp,
+                                        fontWeight = if (isSelected) FontWeight.Bold else FontWeight.Medium
+                                    )
+                                },
+                                colors = FilterChipDefaults.filterChipColors(
+                                    containerColor = MaterialTheme.colorScheme.onSurface.copy(alpha = 0.06f),
+                                    labelColor = MaterialTheme.colorScheme.onSurfaceVariant,
+                                    selectedContainerColor = MaterialTheme.colorScheme.onSurface.copy(alpha = 0.18f),
+                                    selectedLabelColor = MaterialTheme.colorScheme.onSurface
+                                ),
+                                border = FilterChipDefaults.filterChipBorder(
+                                    enabled = true,
+                                    selected = isSelected,
+                                    selectedBorderColor = MaterialTheme.colorScheme.onSurface,
+                                    selectedBorderWidth = 1.5.dp,
+                                    borderColor = MaterialTheme.colorScheme.onSurface.copy(alpha = 0.15f),
+                                    borderWidth = 0.8.dp
+                                ),
+                                shape = RoundedCornerShape(12.dp)
+                            )
+                        }
+                    }
+
+                    Spacer(modifier = Modifier.height(10.dp))
+
+                    // -------------------------------------------------------------
+                    // Wallet Impact Selector (Cash | Online | Not from balances)
+                    // -------------------------------------------------------------
+                    Text(
+                        text = "Wallet Impact",
+                        color = MaterialTheme.colorScheme.onSurfaceVariant,
+                        fontSize = 12.sp,
+                        fontWeight = FontWeight.SemiBold,
+                        modifier = Modifier.align(Alignment.Start)
+                    )
+
+                    Spacer(modifier = Modifier.height(4.dp))
+
+                    Row(
+                        modifier = Modifier.fillMaxWidth(),
+                        horizontalArrangement = Arrangement.spacedBy(6.dp)
+                    ) {
+                        listOf("CASH" to "Cash", "ONLINE" to "Online", "NONE" to "Not from balances").forEach { (key, label) ->
+                            val isSelected = selectedWallet == key
+                            FilterChip(
+                                selected = isSelected,
+                                onClick = {
+                                    haptics.tick()
+                                    selectedWallet = key
+                                },
+                                label = {
+                                    Text(
+                                        text = label,
                                         fontSize = 11.sp,
                                         fontWeight = if (isSelected) FontWeight.Bold else FontWeight.Medium
                                     )
@@ -799,8 +864,9 @@ fun AddTransactionDialog(
                                     }
                                 }
 
+                                lastSelectedWalletSession = selectedWallet
                                 haptics.success()
-                                onConfirm(amount, initialType, resolvedPayee, selectedSource, selectedCategoryId)
+                                onConfirm(amount, initialType, resolvedPayee, selectedSource, selectedCategoryId, selectedWallet)
                             },
                             colors = ButtonDefaults.buttonColors(
                                 containerColor = MaterialTheme.colorScheme.onSurface,
