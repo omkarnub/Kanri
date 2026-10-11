@@ -329,12 +329,15 @@ fun HomeScreen(
             recentTransactions = state.transactions,
             onDismiss = { showWalletSheet = false },
             onCorrectBalanceClick = { wallet, current ->
+                showWalletSheet = false
                 correctingWallet = wallet to current
             },
             onMoveMoneyClick = {
+                showWalletSheet = false
                 showMoveMoneyDialog = true
             },
             onEditOpeningBalancesClick = {
+                showWalletSheet = false
                 isEditingBaselines = true
                 showWalletSetupDialog = true
             },
