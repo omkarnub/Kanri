@@ -40,7 +40,7 @@ object DevCaptureLogger {
 
         Log.i(TAG, msg)
 
-        if (isDevBuild(context)) {
+        if (isDevBuild(context) && !com.omkarnub.kanri.ui.popup.OverlayPermissionHelper.canDrawOverlays(context)) {
             Handler(Looper.getMainLooper()).post {
                 try {
                     Toast.makeText(context.applicationContext, msg, Toast.LENGTH_LONG).show()
