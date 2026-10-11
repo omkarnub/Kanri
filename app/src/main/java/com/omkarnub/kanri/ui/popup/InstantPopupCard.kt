@@ -64,7 +64,7 @@ import androidx.compose.ui.unit.sp
 import com.omkarnub.kanri.data.db.CategoryEntity
 import com.omkarnub.kanri.ui.common.CategoryIcon
 import com.omkarnub.kanri.ui.home.formatCurrency
-import com.omkarnub.kanri.ui.theme.Panchang
+import com.omkarnub.kanri.ui.theme.GoogleSansFlex
 import kotlinx.coroutines.delay
 import kotlinx.coroutines.launch
 
@@ -192,6 +192,7 @@ fun InstantPopupCard(
                 // Center: Amount
                 Text(
                     text = "${if (isDebit) "-" else "+"} ${formatCurrency(amount)}",
+                    fontFamily = GoogleSansFlex,
                     fontSize = 36.sp,
                     fontWeight = FontWeight.SemiBold,
                     color = if (isDebit) Color(0xFFE54D2E) else Color(0xFF30A46C),

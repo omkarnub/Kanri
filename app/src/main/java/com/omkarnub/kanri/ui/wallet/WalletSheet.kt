@@ -52,7 +52,6 @@ import com.omkarnub.kanri.ui.home.TransactionListItem
 import com.omkarnub.kanri.util.CurrencyUtils
 import com.omkarnub.kanri.ui.search.WalletFilter
 import com.omkarnub.kanri.ui.theme.ExpenseRed
-import com.omkarnub.kanri.ui.theme.Panchang
 import com.omkarnub.kanri.util.rememberKanriHaptics
 
 /**
@@ -106,7 +105,7 @@ fun WalletSheet(
             ) {
                 Column {
                     Text(
-                        text = "Wallet Balances",
+                        text = "Manage Money Balance",
                         style = MaterialTheme.typography.titleLarge.copy(
                             fontWeight = FontWeight.Bold
                         ),
@@ -156,8 +155,7 @@ fun WalletSheet(
                     AnimatedNumberText(
                         text = CurrencyUtils.formatCurrency(balances.total),
                         style = MaterialTheme.typography.headlineMedium.copy(
-                            fontWeight = FontWeight.ExtraBold,
-                            fontFamily = Panchang
+                            fontWeight = FontWeight.ExtraBold
                         ),
                         color = if (balances.total < 0) ExpenseRed else MaterialTheme.colorScheme.onSurface
                     )

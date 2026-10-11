@@ -153,6 +153,7 @@ fun HomeScreen(
     var lendingEntryForTransaction by remember { mutableStateOf<TransactionWithCategory?>(null) }
     var showNeedsReviewSheet by remember { mutableStateOf(false) }
     var hasDismissedBudgetPrompt by rememberSaveable { mutableStateOf(false) }
+    var hasDismissedWalletPrompt by rememberSaveable { mutableStateOf(false) }
 
     // Wallet Balances dialog states
     var showWalletSheet by remember { mutableStateOf(false) }
@@ -169,6 +170,17 @@ fun HomeScreen(
             onSaveBudget = { newLimit ->
                 viewModel.updateMonthlyBudget(newLimit)
                 hasDismissedBudgetPrompt = true
+            }
+        )
+    } else if (!state.isLoading && !state.walletBalances.isConfigured && !hasDismissedWalletPrompt) {
+        WalletSetupDialog(
+            initialCash = 0.0,
+            initialOnline = 0.0,
+            isInitialSetup = true,
+            onDismiss = { hasDismissedWalletPrompt = true },
+            onConfirm = { cash, online, atmMode ->
+                viewModel.setupWallets(cash, online, atmMode)
+                hasDismissedWalletPrompt = true
             }
         )
     }
@@ -517,13 +529,14 @@ fun HomeScreen(
                         transactions = state.transactions,
                         categories = state.categories,
                         monthDelta = state.monthDelta,
+                        walletBalances = state.walletBalances,
                         onSelectMonth = { year, month -> viewModel.selectMonth(year, month) },
                         onUpdateBudget = { newLimit -> viewModel.updateMonthlyBudget(newLimit) }
                     )
                 }
 
                 // =========================================================================
-                // 4.05. "WHERE'S MY MONEY" (WALLET BALANCES: CASH + ONLINE)
+                // 4.05. "MANAGE MONEY BALANCE" (WALLET BALANCES: CASH + ONLINE)
                 // =========================================================================
                 Box(
                     modifier = Modifier.graphicsLayer {
@@ -531,7 +544,7 @@ fun HomeScreen(
                         translationY = (1f - walletEntrance.value) * 20.dp.toPx()
                     }
                 ) {
-                    WheresMyMoneyCard(
+                    ManageMoneyBalanceCard(
                         balances = state.walletBalances,
                         onClick = { showWalletSheet = true },
                         onSetupClick = {
