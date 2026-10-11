@@ -30,13 +30,16 @@ import androidx.compose.foundation.text.KeyboardActions
 import androidx.compose.foundation.text.KeyboardOptions
 import androidx.compose.material.icons.Icons
 import androidx.compose.material.icons.automirrored.filled.KeyboardArrowRight
+import androidx.compose.material.icons.filled.AccountBalance
 import androidx.compose.material.icons.filled.BarChart
 import androidx.compose.material.icons.filled.Check
 import androidx.compose.material.icons.filled.DonutLarge
 import androidx.compose.material.icons.filled.Edit
 import androidx.compose.material.icons.filled.KeyboardArrowDown
+import androidx.compose.material.icons.filled.Payments
 import androidx.compose.material.icons.filled.PieChart
 import androidx.compose.material.icons.filled.Tune
+import com.omkarnub.kanri.ui.theme.ExpenseRed
 import androidx.compose.material3.AlertDialog
 import androidx.compose.material3.Button
 import androidx.compose.material3.ButtonDefaults
@@ -398,6 +401,7 @@ fun ExpenseVisualizer(
                             alertColor = alertColor,
                             budgetRatio = budgetRatio,
                             monthDelta = monthDelta,
+                            walletBalances = walletBalances,
                             onCategoryClick = { showDistributionSheet = true }
                         )
                         DataVisualType.BAR_GRAPH -> BarGraphVisualizer(
@@ -428,59 +432,7 @@ fun ExpenseVisualizer(
                 }
             }
 
-            // -----------------------------------------------------------------
-            // Minimalist Cash & Online Balance Display
-            // -----------------------------------------------------------------
-            if (walletBalances != null && walletBalances.isConfigured) {
-                Spacer(modifier = Modifier.height(6.dp))
-                Row(
-                    modifier = Modifier
-                        .fillMaxWidth()
-                        .padding(horizontal = 14.dp, vertical = 2.dp),
-                    horizontalArrangement = Arrangement.SpaceBetween,
-                    verticalAlignment = Alignment.CenterVertically
-                ) {
-                    Row(
-                        verticalAlignment = Alignment.CenterVertically,
-                        horizontalArrangement = Arrangement.spacedBy(6.dp)
-                    ) {
-                        Box(
-                            modifier = Modifier
-                                .size(6.dp)
-                                .clip(CircleShape)
-                                .background(MaterialTheme.colorScheme.primary)
-                        )
-                        Text(
-                            text = "Cash: ${CurrencyUtils.formatCurrency(walletBalances.cash)}",
-                            style = MaterialTheme.typography.labelSmall.copy(
-                                fontWeight = FontWeight.SemiBold
-                            ),
-                            color = MaterialTheme.colorScheme.onSurfaceVariant
-                        )
-                    }
-
-                    Row(
-                        verticalAlignment = Alignment.CenterVertically,
-                        horizontalArrangement = Arrangement.spacedBy(6.dp)
-                    ) {
-                        Box(
-                            modifier = Modifier
-                                .size(6.dp)
-                                .clip(CircleShape)
-                                .background(MaterialTheme.colorScheme.outline)
-                        )
-                        Text(
-                            text = "Online: ${CurrencyUtils.formatCurrency(walletBalances.online)}",
-                            style = MaterialTheme.typography.labelSmall.copy(
-                                fontWeight = FontWeight.SemiBold
-                            ),
-                            color = MaterialTheme.colorScheme.onSurfaceVariant
-                        )
-                    }
-                }
-            }
-
-            Spacer(modifier = Modifier.height(8.dp))
+            Spacer(modifier = Modifier.height(10.dp))
 
             // -----------------------------------------------------------------
             // Borderless Action Buttons: Just SVG Icons with simple text
@@ -595,6 +547,7 @@ private fun RingVisualizer(
     alertColor: Color,
     budgetRatio: Float,
     monthDelta: Delta = Delta.NoData,
+    walletBalances: WalletBalances? = null,
     onCategoryClick: () -> Unit = {}
 ) {
     var animationTriggered by remember { mutableStateOf(false) }
@@ -715,6 +668,62 @@ private fun RingVisualizer(
                     color = if (budgetRatio >= 0.8f) alertColor else MaterialTheme.colorScheme.onSurfaceVariant.copy(alpha = 0.65f),
                     fontSize = 13.sp
                 )
+
+                if (walletBalances != null && walletBalances.isConfigured) {
+                    Spacer(modifier = Modifier.height(6.dp))
+                    Row(
+                        verticalAlignment = Alignment.CenterVertically,
+                        horizontalArrangement = Arrangement.spacedBy(8.dp)
+                    ) {
+                        // Cash Balance with Payments SVG
+                        Row(
+                            verticalAlignment = Alignment.CenterVertically,
+                            horizontalArrangement = Arrangement.spacedBy(4.dp)
+                        ) {
+                            Icon(
+                                imageVector = Icons.Default.Payments,
+                                contentDescription = "Cash Balance",
+                                tint = MaterialTheme.colorScheme.primary,
+                                modifier = Modifier.size(13.dp)
+                            )
+                            Text(
+                                text = CurrencyUtils.formatCurrency(walletBalances.cash),
+                                style = MaterialTheme.typography.labelSmall.copy(
+                                    fontWeight = FontWeight.SemiBold,
+                                    fontSize = 11.5.sp
+                                ),
+                                color = if (walletBalances.cash < 0) ExpenseRed else MaterialTheme.colorScheme.onSurface
+                            )
+                        }
+
+                        Text(
+                            text = "•",
+                            style = MaterialTheme.typography.labelSmall,
+                            color = MaterialTheme.colorScheme.onSurfaceVariant.copy(alpha = 0.5f)
+                        )
+
+                        // Online Balance with AccountBalance SVG
+                        Row(
+                            verticalAlignment = Alignment.CenterVertically,
+                            horizontalArrangement = Arrangement.spacedBy(4.dp)
+                        ) {
+                            Icon(
+                                imageVector = Icons.Default.AccountBalance,
+                                contentDescription = "Online Balance",
+                                tint = MaterialTheme.colorScheme.outline,
+                                modifier = Modifier.size(13.dp)
+                            )
+                            Text(
+                                text = CurrencyUtils.formatCurrency(walletBalances.online),
+                                style = MaterialTheme.typography.labelSmall.copy(
+                                    fontWeight = FontWeight.SemiBold,
+                                    fontSize = 11.5.sp
+                                ),
+                                color = if (walletBalances.online < 0) ExpenseRed else MaterialTheme.colorScheme.onSurface
+                            )
+                        }
+                    }
+                }
             }
         }
 
