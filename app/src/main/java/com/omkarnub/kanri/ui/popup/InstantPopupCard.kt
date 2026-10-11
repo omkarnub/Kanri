@@ -105,7 +105,7 @@ fun InstantPopupCard(
     sourceType: String,
     categories: List<CategoryEntity>,
     onDone: (categoryId: Long?, note: String) -> Unit,
-    onSplitBill: (numPeople: Int, perPersonAmount: Double, categoryId: Long?, note: String) -> Unit,
+    onSplitBill: () -> Unit,
     onOpenInApp: () -> Unit,
     onDismiss: () -> Unit,
     modifier: Modifier = Modifier
@@ -162,10 +162,6 @@ fun InstantPopupCard(
     var noteText by remember { mutableStateOf("") }
     var searchQuery by remember { mutableStateOf("") }
     var isSearching by remember { mutableStateOf(false) }
-
-    // Split Bill state
-    var isSplittingBill by remember { mutableStateOf(false) }
-    var splitPeopleCount by remember { mutableIntStateOf(2) }
 
     fun triggerDismiss(andExecute: () -> Unit = onDismiss) {
         if (!isVisible) return
@@ -378,30 +374,13 @@ fun InstantPopupCard(
 
                 Spacer(modifier = Modifier.height(10.dp))
 
-                // Mode-Switched Content: Standard Categorization vs Inline Split Bill
-                AnimatedContent(
-                    targetState = isSplittingBill,
-                    transitionSpec = {
-                        if (targetState) {
-                            (slideInHorizontally(initialOffsetX = { it / 2 }, animationSpec = tween(260, easing = FastOutSlowInEasing)) + fadeIn(tween(220)))
-                                .togetherWith(slideOutHorizontally(targetOffsetX = { -it / 2 }, animationSpec = tween(180, easing = FastOutSlowInEasing)) + fadeOut(tween(140)))
-                        } else {
-                            (slideInHorizontally(initialOffsetX = { -it / 2 }, animationSpec = tween(260, easing = FastOutSlowInEasing)) + fadeIn(tween(220)))
-                                .togetherWith(slideOutHorizontally(targetOffsetX = { it / 2 }, animationSpec = tween(180, easing = FastOutSlowInEasing)) + fadeOut(tween(140)))
-                        }
-                    },
-                    label = "PopupModeTransition"
-                ) { splitting ->
-                    if (!splitting) {
-                        // -------------------------------------------------------------
-                        // Standard Mode: Category Chips + Notes + [Done] [Split Bill]
-                        // -------------------------------------------------------------
-                        Column(
-                            modifier = Modifier
-                                .fillMaxWidth()
-                                .padding(horizontal = 16.dp),
-                            horizontalAlignment = Alignment.Start
-                        ) {
+                // Standard Mode: Category Chips + Notes + [Done] [Split Bill]
+                Column(
+                    modifier = Modifier
+                        .fillMaxWidth()
+                        .padding(horizontal = 16.dp),
+                    horizontalAlignment = Alignment.Start
+                ) {
                             if (!isAtmTransfer) {
                                 if (isSearching) {
                                     Row(
@@ -614,7 +593,9 @@ fun InstantPopupCard(
                                             .height(44.dp)
                                             .clip(RoundedCornerShape(12.dp))
                                             .clickable {
-                                                isSplittingBill = true
+                                                triggerDismiss {
+                                                    onSplitBill()
+                                                }
                                             }
                                     ) {
                                         Row(
@@ -641,311 +622,6 @@ fun InstantPopupCard(
                                 }
                             }
                         }
-                    } else {
-                        // -------------------------------------------------------------
-                        // Inline Split Bill Mode: Ask number of people & Split math
-                        // -------------------------------------------------------------
-                        Column(
-                            modifier = Modifier
-                                .fillMaxWidth()
-                                .padding(horizontal = 16.dp),
-                            horizontalAlignment = Alignment.CenterHorizontally
-                        ) {
-                            // Section Header
-                            Row(
-                                modifier = Modifier.fillMaxWidth(),
-                                horizontalArrangement = Arrangement.SpaceBetween,
-                                verticalAlignment = Alignment.CenterVertically
-                            ) {
-                                Row(
-                                    verticalAlignment = Alignment.CenterVertically,
-                                    horizontalArrangement = Arrangement.spacedBy(6.dp)
-                                ) {
-                                    Icon(
-                                        imageVector = Icons.AutoMirrored.Filled.CallSplit,
-                                        contentDescription = null,
-                                        tint = primaryTextColor,
-                                        modifier = Modifier.size(16.dp)
-                                    )
-                                    Text(
-                                        text = "Split Bill with Friends",
-                                        fontFamily = GoogleSansFlex,
-                                        fontSize = 14.sp,
-                                        fontWeight = FontWeight.Bold,
-                                        color = primaryTextColor
-                                    )
-                                }
-
-                                Text(
-                                    text = "Cancel",
-                                    fontSize = 12.sp,
-                                    color = secondaryTextColor,
-                                    fontWeight = FontWeight.Medium,
-                                    modifier = Modifier
-                                        .clip(RoundedCornerShape(4.dp))
-                                        .clickable { isSplittingBill = false }
-                                        .padding(horizontal = 6.dp, vertical = 2.dp)
-                                )
-                            }
-
-                            Spacer(modifier = Modifier.height(10.dp))
-
-                            // Interactive People Stepper Card
-                            Surface(
-                                shape = RoundedCornerShape(16.dp),
-                                color = chipBg,
-                                border = BorderStroke(1.dp, neutralBorder),
-                                modifier = Modifier.fillMaxWidth()
-                            ) {
-                                Column(
-                                    modifier = Modifier.padding(14.dp),
-                                    horizontalAlignment = Alignment.CenterHorizontally
-                                ) {
-                                    Text(
-                                        text = "How many people are splitting?",
-                                        fontSize = 12.sp,
-                                        color = secondaryTextColor,
-                                        fontWeight = FontWeight.Medium
-                                    )
-
-                                    Spacer(modifier = Modifier.height(8.dp))
-
-                                    // Stepper controls
-                                    Row(
-                                        verticalAlignment = Alignment.CenterVertically,
-                                        horizontalArrangement = Arrangement.spacedBy(16.dp)
-                                    ) {
-                                        // Minus Button
-                                        IconButton(
-                                            onClick = {
-                                                if (splitPeopleCount > 2) splitPeopleCount--
-                                            },
-                                            enabled = splitPeopleCount > 2,
-                                            modifier = Modifier
-                                                .size(34.dp)
-                                                .clip(CircleShape)
-                                                .background(if (splitPeopleCount > 2) (if (isLight) Color.White else Color(0x35FFFFFF)) else Color.Transparent)
-                                                .border(1.dp, neutralBorder, CircleShape)
-                                        ) {
-                                            Icon(
-                                                imageVector = Icons.Default.Remove,
-                                                contentDescription = "Decrease people",
-                                                tint = if (splitPeopleCount > 2) primaryTextColor else secondaryTextColor.copy(alpha = 0.4f),
-                                                modifier = Modifier.size(15.dp)
-                                            )
-                                        }
-
-                                        // Current Count Display with smooth morph
-                                        Row(
-                                            verticalAlignment = Alignment.CenterVertically,
-                                            horizontalArrangement = Arrangement.spacedBy(6.dp)
-                                        ) {
-                                            Icon(
-                                                imageVector = Icons.Default.Group,
-                                                contentDescription = null,
-                                                tint = primaryTextColor,
-                                                modifier = Modifier.size(18.dp)
-                                            )
-                                            AnimatedContent(
-                                                targetState = splitPeopleCount,
-                                                transitionSpec = {
-                                                    (fadeIn(animationSpec = tween(180)) + scaleIn(initialScale = 0.92f))
-                                                        .togetherWith(fadeOut(animationSpec = tween(120)))
-                                                },
-                                                label = "PeopleCountMorph"
-                                            ) { count ->
-                                                Text(
-                                                    text = "$count People",
-                                                    fontFamily = GoogleSansFlex,
-                                                    fontSize = 20.sp,
-                                                    fontWeight = FontWeight.Bold,
-                                                    color = primaryTextColor
-                                                )
-                                            }
-                                        }
-
-                                        // Plus Button
-                                        IconButton(
-                                            onClick = {
-                                                if (splitPeopleCount < 10) splitPeopleCount++
-                                            },
-                                            enabled = splitPeopleCount < 10,
-                                            modifier = Modifier
-                                                .size(34.dp)
-                                                .clip(CircleShape)
-                                                .background(if (splitPeopleCount < 10) (if (isLight) Color.White else Color(0x35FFFFFF)) else Color.Transparent)
-                                                .border(1.dp, neutralBorder, CircleShape)
-                                        ) {
-                                            Icon(
-                                                imageVector = Icons.Default.Add,
-                                                contentDescription = "Increase people",
-                                                tint = if (splitPeopleCount < 10) primaryTextColor else secondaryTextColor.copy(alpha = 0.4f),
-                                                modifier = Modifier.size(15.dp)
-                                            )
-                                        }
-                                    }
-
-                                    Spacer(modifier = Modifier.height(10.dp))
-
-                                    // Quick count presets: 2, 3, 4, 5
-                                    Row(
-                                        horizontalArrangement = Arrangement.spacedBy(8.dp),
-                                        verticalAlignment = Alignment.CenterVertically
-                                    ) {
-                                        listOf(2, 3, 4, 5).forEach { count ->
-                                            val isSelected = splitPeopleCount == count
-                                            Box(
-                                                modifier = Modifier
-                                                    .size(width = 38.dp, height = 28.dp)
-                                                    .clip(RoundedCornerShape(8.dp))
-                                                    .background(
-                                                        if (isSelected) {
-                                                            if (isLight) Color(0xFF141416) else Color.White
-                                                        } else (if (isLight) Color.White else Color(0x18FFFFFF))
-                                                    )
-                                                    .border(
-                                                        1.dp,
-                                                        if (isSelected) activeBorder else neutralBorder,
-                                                        RoundedCornerShape(8.dp)
-                                                    )
-                                                    .clickable { splitPeopleCount = count },
-                                                contentAlignment = Alignment.Center
-                                            ) {
-                                                Text(
-                                                    text = "$count",
-                                                    fontSize = 12.5.sp,
-                                                    fontWeight = if (isSelected) FontWeight.Bold else FontWeight.Medium,
-                                                    color = if (isSelected) {
-                                                        if (isLight) Color.White else Color.Black
-                                                    } else primaryTextColor
-                                                )
-                                            }
-                                        }
-                                    }
-
-                                    Spacer(modifier = Modifier.height(12.dp))
-
-                                    // Real-time Per Person Calculation
-                                    val perPerson = amount / splitPeopleCount
-                                    val othersTotal = amount - perPerson
-
-                                    Row(
-                                        modifier = Modifier
-                                            .fillMaxWidth()
-                                            .clip(RoundedCornerShape(10.dp))
-                                            .background(if (isLight) Color.White else Color(0x25000000))
-                                            .padding(horizontal = 12.dp, vertical = 8.dp),
-                                        horizontalArrangement = Arrangement.SpaceBetween,
-                                        verticalAlignment = Alignment.CenterVertically
-                                    ) {
-                                        Column {
-                                            Text(
-                                                text = "Each pays",
-                                                fontSize = 11.sp,
-                                                color = secondaryTextColor,
-                                                fontWeight = FontWeight.Medium
-                                            )
-                                            AnimatedContent(
-                                                targetState = perPerson,
-                                                transitionSpec = {
-                                                    (fadeIn(animationSpec = tween(200)) + scaleIn(initialScale = 0.92f))
-                                                        .togetherWith(fadeOut(animationSpec = tween(120)))
-                                                },
-                                                label = "PerPersonMorph"
-                                            ) { targetAmount ->
-                                                Text(
-                                                    text = "₹${formatCurrency(targetAmount)}",
-                                                    fontFamily = GoogleSansFlex,
-                                                    fontSize = 17.sp,
-                                                    fontWeight = FontWeight.Bold,
-                                                    color = primaryTextColor
-                                                )
-                                            }
-                                        }
-
-                                        Column(horizontalAlignment = Alignment.End) {
-                                            Text(
-                                                text = "${splitPeopleCount - 1} friend${if (splitPeopleCount > 2) "s" else ""} owe",
-                                                fontSize = 11.sp,
-                                                color = secondaryTextColor,
-                                                fontWeight = FontWeight.Medium
-                                            )
-                                            AnimatedContent(
-                                                targetState = othersTotal,
-                                                transitionSpec = {
-                                                    (fadeIn(animationSpec = tween(200)) + scaleIn(initialScale = 0.92f))
-                                                        .togetherWith(fadeOut(animationSpec = tween(120)))
-                                                },
-                                                label = "OthersTotalMorph"
-                                            ) { targetDues ->
-                                                Text(
-                                                    text = "₹${formatCurrency(targetDues)}",
-                                                    fontFamily = GoogleSansFlex,
-                                                    fontSize = 14.sp,
-                                                    fontWeight = FontWeight.SemiBold,
-                                                    color = Color(0xFF30A46C) // Green dues indicator
-                                                )
-                                            }
-                                        }
-                                    }
-                                }
-                            }
-
-                            Spacer(modifier = Modifier.height(12.dp))
-
-                            // Split Bill Action Row: Back & Confirm
-                            Row(
-                                modifier = Modifier.fillMaxWidth(),
-                                horizontalArrangement = Arrangement.spacedBy(10.dp)
-                            ) {
-                                Button(
-                                    onClick = { isSplittingBill = false },
-                                    modifier = Modifier
-                                        .weight(0.7f)
-                                        .height(44.dp),
-                                    shape = RoundedCornerShape(12.dp),
-                                    colors = ButtonDefaults.buttonColors(
-                                        containerColor = secondaryBtnBg,
-                                        contentColor = secondaryBtnContent
-                                    ),
-                                    elevation = ButtonDefaults.buttonElevation(defaultElevation = 0.dp)
-                                ) {
-                                    Text(
-                                        text = "Back",
-                                        fontFamily = GoogleSansFlex,
-                                        fontSize = 14.sp,
-                                        fontWeight = FontWeight.SemiBold
-                                    )
-                                }
-
-                                Button(
-                                    onClick = {
-                                        val perPerson = amount / splitPeopleCount
-                                        triggerDismiss {
-                                            onSplitBill(splitPeopleCount, perPerson, selectedCategoryId, noteText)
-                                        }
-                                    },
-                                    modifier = Modifier
-                                        .weight(1.3f)
-                                        .height(44.dp),
-                                    shape = RoundedCornerShape(12.dp),
-                                    colors = ButtonDefaults.buttonColors(
-                                        containerColor = doneBtnBg,
-                                        contentColor = doneBtnContent
-                                    ),
-                                    elevation = ButtonDefaults.buttonElevation(defaultElevation = 0.dp)
-                                ) {
-                                    Text(
-                                        text = "Split & Save",
-                                        fontFamily = GoogleSansFlex,
-                                        fontSize = 14.5.sp,
-                                        fontWeight = FontWeight.Bold
-                                    )
-                                }
-                            }
-                        }
-                    }
-                }
 
                 Spacer(modifier = Modifier.height(6.dp))
 

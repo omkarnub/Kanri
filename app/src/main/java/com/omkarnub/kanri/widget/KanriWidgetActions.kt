@@ -18,23 +18,51 @@ object KanriWidgetActions {
     const val ACTION_OPEN_LENDING = "com.omkarnub.kanri.action.OPEN_LENDING"
     const val ACTION_OPEN_HOME = "com.omkarnub.kanri.action.OPEN_HOME"
 
+    const val EXTRA_AMOUNT = "extra_split_amount"
+    const val EXTRA_DESCRIPTION = "extra_split_description"
+
     private val _pendingAction = MutableStateFlow<String?>(null)
     val pendingAction = _pendingAction.asStateFlow()
 
-    fun handleAction(action: String?) {
+    var pendingSplitAmount: Double? = null
+        private set
+    var pendingSplitDescription: String? = null
+        private set
+
+    fun triggerSplitBill(amount: Double?, description: String?) {
+        pendingSplitAmount = amount
+        pendingSplitDescription = description
+        _pendingAction.value = ACTION_SPLIT_BILL
+    }
+
+    fun handleAction(action: String?, amount: Double? = null, description: String? = null) {
         if (action != null && action.startsWith("com.omkarnub.kanri.action.")) {
+            if (action == ACTION_SPLIT_BILL) {
+                if (amount != null) pendingSplitAmount = amount
+                if (description != null) pendingSplitDescription = description
+            }
             _pendingAction.value = action
         }
     }
 
     fun handleIntent(intent: Intent?) {
-        handleAction(intent?.action)
+        if (intent == null) return
+        val amount = if (intent.hasExtra(EXTRA_AMOUNT)) intent.getDoubleExtra(EXTRA_AMOUNT, 0.0) else null
+        val desc = intent.getStringExtra(EXTRA_DESCRIPTION)
+        handleAction(intent.action, amount, desc)
     }
 
     fun consumeAction(): String? {
         val current = _pendingAction.value
         _pendingAction.value = null
         return current
+    }
+
+    fun consumeSplitPayload(): Pair<Double?, String?> {
+        val payload = Pair(pendingSplitAmount, pendingSplitDescription)
+        pendingSplitAmount = null
+        pendingSplitDescription = null
+        return payload
     }
 
     fun createPendingIntent(
