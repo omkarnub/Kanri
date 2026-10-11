@@ -94,6 +94,7 @@ import com.omkarnub.kanri.ui.common.CategoryIcon
 import com.omkarnub.kanri.ui.month.CategoryDistributionSheet
 import com.omkarnub.kanri.ui.month.CategorySpendItem
 import com.omkarnub.kanri.data.analytics.Delta
+import com.omkarnub.kanri.data.wallet.WalletBalances
 import com.omkarnub.kanri.util.CurrencyUtils
 import java.text.SimpleDateFormat
 import java.util.Calendar
@@ -193,6 +194,7 @@ fun ExpenseVisualizer(
     onUpdateBudget: (Double) -> Unit,
     modifier: Modifier = Modifier,
     monthDelta: Delta = Delta.NoData,
+    walletBalances: WalletBalances? = null,
     onSelectMonth: ((year: Int, month: Int) -> Unit)? = null
 ) {
     val months = remember { getRecentMonths() }
@@ -426,7 +428,59 @@ fun ExpenseVisualizer(
                 }
             }
 
-            Spacer(modifier = Modifier.height(10.dp))
+            // -----------------------------------------------------------------
+            // Minimalist Cash & Online Balance Display
+            // -----------------------------------------------------------------
+            if (walletBalances != null && walletBalances.isConfigured) {
+                Spacer(modifier = Modifier.height(6.dp))
+                Row(
+                    modifier = Modifier
+                        .fillMaxWidth()
+                        .padding(horizontal = 14.dp, vertical = 2.dp),
+                    horizontalArrangement = Arrangement.SpaceBetween,
+                    verticalAlignment = Alignment.CenterVertically
+                ) {
+                    Row(
+                        verticalAlignment = Alignment.CenterVertically,
+                        horizontalArrangement = Arrangement.spacedBy(6.dp)
+                    ) {
+                        Box(
+                            modifier = Modifier
+                                .size(6.dp)
+                                .clip(CircleShape)
+                                .background(MaterialTheme.colorScheme.primary)
+                        )
+                        Text(
+                            text = "Cash: ${CurrencyUtils.formatCurrency(walletBalances.cash)}",
+                            style = MaterialTheme.typography.labelSmall.copy(
+                                fontWeight = FontWeight.SemiBold
+                            ),
+                            color = MaterialTheme.colorScheme.onSurfaceVariant
+                        )
+                    }
+
+                    Row(
+                        verticalAlignment = Alignment.CenterVertically,
+                        horizontalArrangement = Arrangement.spacedBy(6.dp)
+                    ) {
+                        Box(
+                            modifier = Modifier
+                                .size(6.dp)
+                                .clip(CircleShape)
+                                .background(MaterialTheme.colorScheme.outline)
+                        )
+                        Text(
+                            text = "Online: ${CurrencyUtils.formatCurrency(walletBalances.online)}",
+                            style = MaterialTheme.typography.labelSmall.copy(
+                                fontWeight = FontWeight.SemiBold
+                            ),
+                            color = MaterialTheme.colorScheme.onSurfaceVariant
+                        )
+                    }
+                }
+            }
+
+            Spacer(modifier = Modifier.height(8.dp))
 
             // -----------------------------------------------------------------
             // Borderless Action Buttons: Just SVG Icons with simple text
