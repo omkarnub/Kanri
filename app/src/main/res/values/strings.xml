@@ -14,4 +14,63 @@
     <!-- Quick Settings Tile -->
     <string name="quick_add_tile_label">Quick Add</string>
     <string name="quick_add_tile_subtitle">Log Expense</string>
+
+    <!-- Onboarding Hero Redesign Strings -->
+    <string name="onboarding_headline">Know where every rupee went.</string>
+    <string name="onboarding_subline">Automatic. Private. 100% offline.</string>
+    <string name="onboarding_get_started">Get started</string>
+    <string name="onboarding_privacy_link">How does Kanri stay private?</string>
+    <string name="onboarding_bank_sender">BANK</string>
+    <string name="onboarding_timestamp_now">now</string>
+
+    <!-- Feature Highlights -->
+    <string name="onboarding_feature_1">Auto-tracks bank &amp; UPI SMS instantly</string>
+    <string name="onboarding_feature_2">100% private, on-device &amp; offline</string>
+    <string name="onboarding_feature_3">Real-time budget &amp; expense insights</string>
+    <string name="onboarding_feature_4">Split bills &amp; cash wallet balances</string>
+
+    <!-- Demo Scenarios -->
+    <string name="onboarding_demo_sms_1">Rs.250.00 debited from A/c XX1234 on 11-Oct. UPI to Chai Point. Avl Bal hidden.</string>
+    <string name="onboarding_demo_payee_1">Chai Point</string>
+    <string name="onboarding_demo_category_1">Food and Drinks</string>
+    <string name="onboarding_demo_source_1">UPI</string>
+    <string name="onboarding_demo_semantics_1">Demo: a bank message about a ₹250 payment becomes a tracked expense in Kanri.</string>
+
+    <string name="onboarding_demo_sms_2">Rs.1,200.00 credited to A/c XX1234. UPI from Aarav K.</string>
+    <string name="onboarding_demo_payee_2">Aarav K</string>
+    <string name="onboarding_demo_category_2">Received</string>
+    <string name="onboarding_demo_source_2">UPI</string>
+    <string name="onboarding_demo_semantics_2">Demo: a bank message about a ₹1,200 credit becomes tracked income in Kanri.</string>
+
+    <string name="onboarding_demo_sms_3">Rs.500.00 withdrawn at ATM. A/c XX1234.</string>
+    <string name="onboarding_demo_payee_3">ATM withdrawal</string>
+    <string name="onboarding_demo_category_3">Cash</string>
+    <string name="onboarding_demo_source_3">ATM</string>
+    <string name="onboarding_demo_semantics_3">Demo: a bank message about a ₹500 ATM withdrawal becomes tracked cash in Kanri.</string>
+
+    <string name="onboarding_demo_sms_4">Rs.199.00 debited from A/c XX1234. UPI to Swiggy. Avl Bal hidden.</string>
+    <string name="onboarding_demo_payee_4">Swiggy</string>
+    <string name="onboarding_demo_category_4">Food and Drinks</string>
+    <string name="onboarding_demo_source_4">UPI</string>
+    <string name="onboarding_demo_semantics_4">Demo: a Swiggy food order detected and categorised automatically.</string>
+
+    <string name="onboarding_demo_sms_5">Rs.45,000.00 credited to A/c XX1234. NEFT from Infosys Ltd. Salary Oct.</string>
+    <string name="onboarding_demo_payee_5">Infosys Ltd</string>
+    <string name="onboarding_demo_category_5">Salary</string>
+    <string name="onboarding_demo_source_5">NEFT</string>
+    <string name="onboarding_demo_semantics_5">Demo: a salary credit auto-tracked as income in Kanri.</string>
+
+    <string name="onboarding_demo_sms_6">Rs.349.00 debited from A/c XX1234. UPI to Jio Recharge. Avl Bal hidden.</string>
+    <string name="onboarding_demo_payee_6">Jio Recharge</string>
+    <string name="onboarding_demo_category_6">Utilities</string>
+    <string name="onboarding_demo_source_6">UPI</string>
+    <string name="onboarding_demo_semantics_6">Demo: a mobile recharge payment tracked and categorised as Utilities.</string>
+
+    <!-- Privacy Sheet -->
+    <string name="onboarding_privacy_title">Private by design</string>
+    <string name="onboarding_privacy_row_1">Everything stays on your phone. No servers, no accounts.</string>
+    <string name="onboarding_privacy_row_2">Your messages are read on-device only to find bank alerts.</string>
+    <string name="onboarding_privacy_row_3">Data is encrypted on your phone (AES-256).</string>
+    <string name="onboarding_privacy_row_4">No ads, no tracking, no analytics.</string>
+    <string name="onboarding_privacy_close">Close</string>
 </resources>

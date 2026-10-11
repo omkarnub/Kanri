@@ -112,18 +112,31 @@ class SmsReceiver : BroadcastReceiver() {
                             // Trigger Truecaller-style Instant Popup or Notification Fallback
                             try {
                                 if (OverlayPermissionHelper.canDrawOverlays(context)) {
-                                    val serviceIntent = Intent(context, InstantPopupService::class.java).apply {
-                                        putExtra(InstantPopupService.EXTRA_TRANSACTION_ID, rowId)
-                                        putExtra(InstantPopupService.EXTRA_AMOUNT, entity.amount)
-                                        putExtra(InstantPopupService.EXTRA_IS_DEBIT, isDebit)
-                                        putExtra(InstantPopupService.EXTRA_COUNTERPARTY, counterparty)
-                                        putExtra(InstantPopupService.EXTRA_BANK, entity.bank)
-                                        putExtra(InstantPopupService.EXTRA_SOURCE_TYPE, entity.sourceType)
-                                    }
-                                    if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.O) {
-                                        context.startForegroundService(serviceIntent)
-                                    } else {
-                                        context.startService(serviceIntent)
+                                    try {
+                                        val serviceIntent = Intent(context, InstantPopupService::class.java).apply {
+                                            putExtra(InstantPopupService.EXTRA_TRANSACTION_ID, rowId)
+                                            putExtra(InstantPopupService.EXTRA_AMOUNT, entity.amount)
+                                            putExtra(InstantPopupService.EXTRA_IS_DEBIT, isDebit)
+                                            putExtra(InstantPopupService.EXTRA_COUNTERPARTY, counterparty)
+                                            putExtra(InstantPopupService.EXTRA_BANK, entity.bank)
+                                            putExtra(InstantPopupService.EXTRA_SOURCE_TYPE, entity.sourceType)
+                                        }
+                                        if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.O) {
+                                            context.startForegroundService(serviceIntent)
+                                        } else {
+                                            context.startService(serviceIntent)
+                                        }
+                                    } catch (fgsEx: Exception) {
+                                        Log.w(TAG, "Failed to start overlay service, falling back to notification", fgsEx)
+                                        InstantPopupNotificationHelper.showInstantTransactionNotification(
+                                            context = context,
+                                            txId = rowId,
+                                            amount = entity.amount,
+                                            isDebit = isDebit,
+                                            counterparty = counterparty,
+                                            bank = entity.bank,
+                                            sourceType = entity.sourceType
+                                        )
                                     }
                                 } else {
                                     InstantPopupNotificationHelper.showInstantTransactionNotification(

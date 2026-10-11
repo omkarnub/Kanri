@@ -42,7 +42,8 @@ open class MainActivity : FragmentActivity() {
         com.omkarnub.kanri.data.lending.LendingReminderScheduler.init(applicationContext)
         com.omkarnub.kanri.widget.KanriWidgetActions.handleIntent(intent)
 
-        if (!com.omkarnub.kanri.util.SmsPermissionHelper.hasSmsPermissions(this)) {
+        val onboardingPrefs = com.omkarnub.kanri.ui.onboarding.OnboardingPreferences.getInstance(applicationContext)
+        if (onboardingPrefs.hasCompletedOnboarding && !com.omkarnub.kanri.util.SmsPermissionHelper.hasSmsPermissions(this)) {
             smsPermissionLauncher.launch(
                 arrayOf(
                     android.Manifest.permission.RECEIVE_SMS,
@@ -50,7 +51,9 @@ open class MainActivity : FragmentActivity() {
                 )
             )
         }
-        com.omkarnub.kanri.util.BatteryOptimizationHelper.promptOnceIfAppropriate(this)
+        if (onboardingPrefs.hasCompletedOnboarding) {
+            com.omkarnub.kanri.util.BatteryOptimizationHelper.promptOnceIfAppropriate(this)
+        }
 
         setContent {
             KanriTheme {

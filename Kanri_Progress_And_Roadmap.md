@@ -5,7 +5,7 @@
 **Purpose:** 100% offline, privacy-first personal financial operating system — automatically detects UPI transactions, ATM withdrawals, card payments, and bank transfers (sent & received), tracks daily and monthly cash flow, budgets, lending/borrowing ledgers, group split expenses, financial health scoring, savings milestones, and encrypted data exports.  
 **Target Platform:** Android 8.0+ (Min SDK 26, Target SDK 37, 16 KB memory page size compliant).  
 **Tested On:** Pixel 8 virtual & physical devices (API 34/35/37) and real hardware (Android 14+).  
-**Current Release:** v1.0.1 (versionCode 2)  
+**Current Release:** v1.0.2 (versionCode 3)  
 **Tech Stack:** Kotlin 2.2.10, Jetpack Compose (BOM 2026.02.01), Material 3, Room 2.8.5, SQLCipher 4.6.1 (AES-256), AndroidX Biometric 1.2.0, WorkManager 2.9.1, Haze Glassmorphism.  
 **Design Philosophy:** Strict minimalist monochrome luxury aesthetic (pure AMOLED black `#000000`, refined dark `#1E1E1E`, cream light `#FEFAEC`, frosted glass accents), zero visual clutter, surgical dual-tone amount accents (Expense Red `#E54D2E`, Radix Sage Green `#30A46C`), Panchang brand typography, Google Sans Flex UI typography, and fluid choreographic micro-animations.
 
@@ -158,6 +158,22 @@
     - **Luxury UI Integration:** `WheresMyMoneyCard` with `AnimatedNumberText`, split ratio bar, and negative balance indicators; frosted glass `WalletSheet`; `CorrectBalanceDialog` (with mathematical opening adjustment preview); `MoveMoneyDialog`; `WalletSetupDialog`; and skippable onboarding step.
     - **One-Tap Conversions:** Instant conversion to cash deposit/withdrawal from `TransactionDetailScreen` and `NeedsReviewSheet`.
     - **Encrypted Backup & Reset:** Full backup format v3 serialization/restoration and factory reset cleanup.
+88. **Interactive Hero Onboarding Redesign & Mesh Gradient Motion (`OnboardingScreen.kt`, `OnboardingHeroDemo.kt`, `OnboardingMiniGauge.kt`, `OnboardingPrivacySheet.kt`, `GrainGradientBackground.kt`)** — Complete redesign of Slide 0 "Get Started" onboarding screen into a self-contained live product demonstration:
+    - **SMS-to-Card Morph Animation:** Fictional bank SMS notification enters, highlights amount & merchant, morphs into a full Kanri transaction card with `AnimatedNumber` rolling digits, and reacts on a liquid-fill mini gauge.
+    - **3 Realistic Scenarios:** Chai Point ₹250 debit, Aarav K ₹1,200 credit, and ATM ₹500 withdrawal looping seamlessly with pure state machine control (`OnboardingHeroStateMachine`).
+    - **Canvas Mesh Gradient Brightness Pulse:** Dynamic brightness pulse hook on `GrainGradientBackground` triggering subtle ambient illuminations on transaction arrival.
+    - **"Private by Design" Sheet:** Frosted glass modal bottom sheet detailing local on-device processing, AES-256 encryption, zero server reliance, and absence of trackers/ads.
+    - **Accessibility & Motion Polish:** TalkBack semantic node wrapping the live demo, respect for system reduce-motion settings, and zero-leak lifecycle-aware pause/resume.
+89. **Deep Scan, Bug Hardening & Release v1.0.2 (`CurrencyUtils.kt`, `SmsReceiver.kt`, `QuickAddTileService.kt`, `MonthViewScreen.kt`, `AndroidManifest.xml`)** — Comprehensive app-wide code sanitization, crash prevention, and compiler/lint hardening:
+    - **Multithreading Concurrency Defense:** Fixed `CurrencyUtils` race conditions by migrating `NumberFormat` singleton formatters to `ThreadLocal.withInitial`, completely eliminating potential `ArrayIndexOutOfBoundsException` and multithreaded format corruption during simultaneous UI and background parsing operations.
+    - **Foreground Service Crash Defense:** Wrapped `startForegroundService` in `SmsReceiver` and `KanriNotificationListenerService` with resilient try/catch blocks that automatically fallback to heads-up notifications if Android 14+ background execution limits or permission restrictions throw `ForegroundServiceStartNotAllowedException`.
+    - **Quick Settings Tile Exception Fix:** Updated `QuickAddTileService` to use `@SuppressLint("StartActivityAndCollapseDeprecated")` on legacy intent collapsing while using `PendingIntent` on Android 14+ (API 34), preventing `UnsupportedOperationException`.
+    - **Composition StateFlow Observation Fix:** Replaced direct `.value` access of StateFlow in `MonthViewScreen` composition with observed `monthState` snapshot.
+    - **Locale Observability Hardening:** Replaced unobserved `Locale.getDefault()` calls in Compose dialogs (`CrashLogsDialog.kt`, `SettingsScreen.kt`) with observable `LocalConfiguration.current.locales[0]`.
+    - **ChromeOS / Non-Telephony Hardware Declaration:** Added `<uses-feature android:name="android.hardware.telephony" android:required="false" />` to `AndroidManifest.xml` to support tablets and ChromeOS laptops.
+    - **Widget RemoteViews & Theme API Compatibility:** Added `tools:ignore="UseAppTint"` to widget RemoteViews layouts and `tools:targetApi` guards on splash screen attributes in `themes.xml`.
+    - **Full Pass on 285 Unit Tests & Zero Lint Errors:** Achieved 100% test pass rate across 38 suites and zero lint errors across the entire codebase.
+    - **Bump versionCode to 3 and versionName to 1.0.2.**
 
 ---
 
@@ -411,13 +427,15 @@ Native Android notification shade pull-down tile:
 ---
 
 ### 2.14 Onboarding Experience (`OnboardingScreen.kt` & `GrainGradientBackground.kt`)
-Luxury 5-step onboarding walkthrough:
-- **Mesh Gradient Engine (`GrainGradientBackground.kt`):** Custom Canvas shader rendering continuous animated multi-point color gradient combined with film-grain noise.
-- **Step 1 — Welcome & Philosophy:** Luxury monochrome wordmark, privacy manifesto, and 100% offline commitment.
-- **Step 2 — Detection Power:** How SMS and notification detection work locally without cloud ingestion.
-- **Step 3 — Mode Selection:** Strict Offline Mode vs Optional Encrypted Google Drive Sync (`drive.file` scope).
-- **Step 4 — Permissions:** In-context explanations for SMS and Notification listener permissions with respectful skip options.
-- **Step 5 — Personalization:** User name, optional profile avatar, currency display, and initial monthly budget target.
+Luxury onboarding walkthrough:
+- **Mesh Gradient Engine (`GrainGradientBackground.kt`):** Custom Canvas shader rendering continuous animated multi-point color gradient combined with precomputed film-grain noise texture, plus dynamic brightness pulse hook.
+- **Step 1 — Live Detection Hero ("Get Started"):** Interactive 5-second product demonstration showing an incoming bank SMS morphing into a Kanri transaction card with `AnimatedNumber` rolling digits, a reactive liquid-fill mini gauge, ambient background brightness pulse, and a "How does Kanri stay private?" frosted glass sheet.
+- **Step 2 — Profile Personalization:** User name, optional profile avatar, currency display, and initial monthly budget target.
+- **Step 3 — Bank SMS Permission:** In-context explanation for SMS detection permission with respectful skip option.
+- **Step 4 — Notification Listener Permission:** Supplementary detection for UPI payment notifications.
+- **Step 5 — Display Overlay Permission:** System overlay permission for instant post-payment transaction categorization popup.
+- **Step 6 — Background Execution:** Battery optimization exemption for uninterrupted offline monitoring.
+- **Step 7 — App Lock Setup:** Optional biometric / PIN authentication configuration.
 
 ---
 
@@ -564,9 +582,9 @@ Kanri uses **Room 2.8.5** secured with **SQLCipher 4.6.1** AES-256 encryption at
 
 ---
 
-## 4. Comprehensive Test Suite (42 Test Suites, 270 Tests) 🧪
+## 4. Comprehensive Test Suite (44 Test Suites, 285 Tests) 🧪
 
-The repository maintains **42 unit and integration test suites** (270 individual tests, 100% pass rate) verifying financial accuracy, cryptographic integrity, background services, deduplication logic, and UI state:
+The repository maintains **44 unit and integration test suites** (285 individual tests, 100% pass rate) verifying financial accuracy, cryptographic integrity, background services, deduplication logic, and UI state:
 
 1. **`DeltaCalculatorTest.kt`** — Validates month-over-month spend delta calculations, zero spending baselines, and percentage bounds.
 2. **`FinancialHealthCalculatorTest.kt`** — Validates the 4 financial health pillars (Savings Rate, Budget Utilization, Spend Velocity, Debt Burden), edge cases (zero income, over-budget), letter grade assignments, and diagnostic feedback generation.
@@ -610,6 +628,8 @@ The repository maintains **42 unit and integration test suites** (270 individual
 40. **`WalletMigrationTest.kt`** — Validates Room migration 10$\rightarrow$11, column additions, index creation, table creation, and historical data backfill.
 41. **`WalletRepositoryTest.kt`** — Tests setup, balance correction, money movement, ATM mode switching, factory reset, and live StateFlow emissions.
 42. **`TransferExclusionTest.kt`** — Verifies that internal wallet transfers are strictly excluded from streak calculations, month-over-month deltas, CSV statement spend totals, and search aggregate metrics.
+43. **`OnboardingHeroDemoStateMachineTest.kt`** — Validates the pure state machine governing the hero demo: correct state transitions, timeline timings, 3-scenario cyclic looping, pause/resume lifecycle handling, reduce-motion static frame emission, and coroutine cancellation on dispose.
+44. **`DemoScenarioTest.kt`** — Validates fictional sample transaction data: INR currency formatting, Indian number grouping, sign prefixes, absence of real bank/brand names or Avl Bal leaks, and mini gauge delta bounds [0.0..1.0].
 
 ---
 

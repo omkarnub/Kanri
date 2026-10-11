@@ -140,7 +140,11 @@ fun WalletSetupDialog(
             ) {
                 // Header
                 Text(
-                    text = if (isInitialSetup) "Set up money balances" else "Edit Opening Balances",
+                    text = if (isInitialSetup) {
+                        if (currentTab == WalletSetupTab.CASH) "Set opening Cash balance" else "Set opening Online balance"
+                    } else {
+                        if (currentTab == WalletSetupTab.CASH) "Edit Cash Balance" else "Edit Bank Balance"
+                    },
                     style = MaterialTheme.typography.titleLarge.copy(
                         fontWeight = FontWeight.Bold,
                         color = MaterialTheme.colorScheme.onSurface
@@ -149,10 +153,10 @@ fun WalletSetupDialog(
                 )
 
                 Text(
-                    text = if (isInitialSetup) {
-                        "Set your starting Cash and Online funds to manage and track your money accurately."
+                    text = if (currentTab == WalletSetupTab.CASH) {
+                        "How much physical cash do you have in hand right now? Kanri tracks paper cash spent live."
                     } else {
-                        "Reset your starting baseline Cash and Online accounts."
+                        "How much money do you currently have in bank accounts & UPI? Kanri deducts this from SMS."
                     },
                     color = MaterialTheme.colorScheme.onSurfaceVariant,
                     fontSize = 12.5.sp,
@@ -162,7 +166,7 @@ fun WalletSetupDialog(
                 )
 
                 // -------------------------------------------------------------
-                // Segmented Tabs: Cash in Hand vs Online / Bank
+                // Segmented Step Tabs: Cash in Hand vs Online / Bank
                 // -------------------------------------------------------------
                 Row(
                     modifier = Modifier
@@ -196,7 +200,7 @@ fun WalletSetupDialog(
                             horizontalAlignment = Alignment.CenterHorizontally
                         ) {
                             Text(
-                                text = "Cash in Hand",
+                                text = "💵 1. Cash in Hand",
                                 style = MaterialTheme.typography.labelSmall.copy(
                                     fontWeight = if (currentTab == WalletSetupTab.CASH) FontWeight.Bold else FontWeight.Medium
                                 ),
@@ -209,7 +213,7 @@ fun WalletSetupDialog(
                                 text = CurrencyUtils.formatCurrency(cashAmount, includeDecimals = false),
                                 style = MaterialTheme.typography.bodySmall.copy(fontWeight = FontWeight.Bold),
                                 color = if (currentTab == WalletSetupTab.CASH)
-                                    MaterialTheme.colorScheme.primary
+                                    MaterialTheme.colorScheme.onSurface
                                 else MaterialTheme.colorScheme.onSurfaceVariant
                             )
                         }
@@ -239,7 +243,7 @@ fun WalletSetupDialog(
                             horizontalAlignment = Alignment.CenterHorizontally
                         ) {
                             Text(
-                                text = "Online / Bank",
+                                text = "🏦 2. Online / Bank",
                                 style = MaterialTheme.typography.labelSmall.copy(
                                     fontWeight = if (currentTab == WalletSetupTab.ONLINE) FontWeight.Bold else FontWeight.Medium
                                 ),
@@ -252,7 +256,7 @@ fun WalletSetupDialog(
                                 text = CurrencyUtils.formatCurrency(onlineAmount, includeDecimals = false),
                                 style = MaterialTheme.typography.bodySmall.copy(fontWeight = FontWeight.Bold),
                                 color = if (currentTab == WalletSetupTab.ONLINE)
-                                    MaterialTheme.colorScheme.primary
+                                    MaterialTheme.colorScheme.onSurface
                                 else MaterialTheme.colorScheme.onSurfaceVariant
                             )
                         }
@@ -414,11 +418,15 @@ fun WalletSetupDialog(
                 // -------------------------------------------------------------
                 // Quick Increment Buttons: +500, +1000, +2000, +5000
                 // -------------------------------------------------------------
+                val quickIncrements = if (currentTab == WalletSetupTab.CASH) {
+                    listOf(100.0, 500.0, 1000.0, 2000.0)
+                } else {
+                    listOf(500.0, 1000.0, 5000.0, 10000.0)
+                }
                 Row(
                     modifier = Modifier.fillMaxWidth(),
                     horizontalArrangement = Arrangement.spacedBy(8.dp)
                 ) {
-                    val quickIncrements = listOf(500.0, 1000.0, 2000.0, 5000.0)
                     quickIncrements.forEach { inc ->
                         Surface(
                             shape = RoundedCornerShape(10.dp),

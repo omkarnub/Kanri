@@ -1087,7 +1087,7 @@ fun MonthViewScreen(
     if (showSetBudgetDialog) {
         val monthDtf = DateTimeFormatter.ofPattern("MMMM yyyy")
         val currentBudgetVal = if (setBudgetCategory == null) {
-            monthViewModel.uiState.value.totalSpent // or current overall budget
+            monthState.totalSpent // or current overall budget
         } else 0.0
 
         SetBudgetDialog(

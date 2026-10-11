@@ -8,17 +8,25 @@ object CurrencyUtils {
 
     private val indianLocale = Locale.forLanguageTag("en-IN")
 
-    private val currencyFormatterWithDecimals: NumberFormat by lazy {
+    private val currencyFormatterWithDecimals = ThreadLocal.withInitial {
         NumberFormat.getNumberInstance(indianLocale).apply {
             minimumFractionDigits = 2
             maximumFractionDigits = 2
         }
     }
 
-    private val currencyFormatterWithoutDecimals: NumberFormat by lazy {
+    private val currencyFormatterWithoutDecimals = ThreadLocal.withInitial {
         NumberFormat.getNumberInstance(indianLocale).apply {
             minimumFractionDigits = 0
             maximumFractionDigits = 0
+        }
+    }
+
+    private fun getFormatter(includeDecimals: Boolean): NumberFormat {
+        val formatter = if (includeDecimals) currencyFormatterWithDecimals.get() else currencyFormatterWithoutDecimals.get()
+        return formatter ?: NumberFormat.getNumberInstance(indianLocale).apply {
+            minimumFractionDigits = if (includeDecimals) 2 else 0
+            maximumFractionDigits = if (includeDecimals) 2 else 0
         }
     }
 
@@ -30,7 +38,7 @@ object CurrencyUtils {
         if (amount.isNaN() || amount.isInfinite() || abs(amount) < 0.0001) {
             return if (includeDecimals) "₹0.00" else "₹0"
         }
-        val formatter = if (includeDecimals) currencyFormatterWithDecimals else currencyFormatterWithoutDecimals
+        val formatter = getFormatter(includeDecimals)
         return if (amount < 0) "-₹${formatter.format(abs(amount))}" else "₹${formatter.format(amount)}"
     }
 
@@ -59,7 +67,7 @@ object CurrencyUtils {
                 "${String.format(Locale.US, "%.1f", k).removeSuffix(".0")}k"
             }
             else -> {
-                currencyFormatterWithoutDecimals.format(absAmount)
+                getFormatter(false).format(absAmount)
             }
         }
         return "${sign}₹$formatted"
