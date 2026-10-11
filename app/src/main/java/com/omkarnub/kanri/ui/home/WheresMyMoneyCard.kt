@@ -34,6 +34,7 @@ import androidx.compose.ui.unit.sp
 import com.omkarnub.kanri.data.wallet.WalletBalances
 import com.omkarnub.kanri.ui.common.AnimatedNumberText
 import com.omkarnub.kanri.ui.theme.ExpenseRed
+import com.omkarnub.kanri.ui.theme.IncomeGreen
 import com.omkarnub.kanri.util.CurrencyUtils
 import com.omkarnub.kanri.util.rememberKanriHaptics
 
@@ -131,6 +132,30 @@ fun ManageMoneyBalanceCard(
         return
     }
 
+    val cashTodayNet = balances.cashTodayNet
+    val cashFlowText = when {
+        cashTodayNet > 0.0001 -> "+${CurrencyUtils.formatCurrency(cashTodayNet)} today"
+        cashTodayNet < -0.0001 -> "${CurrencyUtils.formatCurrency(cashTodayNet)} today"
+        else -> "₹0.00 today"
+    }
+    val cashFlowColor = when {
+        cashTodayNet > 0.0001 -> IncomeGreen
+        cashTodayNet < -0.0001 -> ExpenseRed
+        else -> MaterialTheme.colorScheme.onSurfaceVariant.copy(alpha = 0.65f)
+    }
+
+    val onlineTodayNet = balances.onlineTodayNet
+    val onlineFlowText = when {
+        onlineTodayNet > 0.0001 -> "+${CurrencyUtils.formatCurrency(onlineTodayNet)} today"
+        onlineTodayNet < -0.0001 -> "${CurrencyUtils.formatCurrency(onlineTodayNet)} today"
+        else -> "₹0.00 today"
+    }
+    val onlineFlowColor = when {
+        onlineTodayNet > 0.0001 -> IncomeGreen
+        onlineTodayNet < -0.0001 -> ExpenseRed
+        else -> MaterialTheme.colorScheme.onSurfaceVariant.copy(alpha = 0.65f)
+    }
+
     // Configured Minimalist Card
     Card(
         modifier = modifier
@@ -140,7 +165,7 @@ fun ManageMoneyBalanceCard(
                 onClick()
             }
             .semantics {
-                contentDescription = "Manage money Balance. Cash: ₹${balances.cash}, Online: ₹${balances.online}"
+                contentDescription = "Manage money Balance. Cash: ₹${balances.cash}, today: $cashFlowText. Online: ₹${balances.online}, today: $onlineFlowText"
             },
         shape = RoundedCornerShape(20.dp),
         colors = CardDefaults.cardColors(
@@ -210,6 +235,15 @@ fun ManageMoneyBalanceCard(
                         ),
                         color = if (balances.cash < 0) ExpenseRed else MaterialTheme.colorScheme.onSurface
                     )
+                    Spacer(modifier = Modifier.height(3.dp))
+                    Text(
+                        text = cashFlowText,
+                        style = MaterialTheme.typography.labelSmall.copy(
+                            fontWeight = FontWeight.SemiBold,
+                            fontSize = 11.5.sp
+                        ),
+                        color = cashFlowColor
+                    )
                 }
 
                 // Online Balance
@@ -240,6 +274,15 @@ fun ManageMoneyBalanceCard(
                             fontWeight = FontWeight.Bold
                         ),
                         color = if (balances.online < 0) ExpenseRed else MaterialTheme.colorScheme.onSurface
+                    )
+                    Spacer(modifier = Modifier.height(3.dp))
+                    Text(
+                        text = onlineFlowText,
+                        style = MaterialTheme.typography.labelSmall.copy(
+                            fontWeight = FontWeight.SemiBold,
+                            fontSize = 11.5.sp
+                        ),
+                        color = onlineFlowColor
                     )
                 }
             }

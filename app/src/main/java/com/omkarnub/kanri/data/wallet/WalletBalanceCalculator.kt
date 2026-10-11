@@ -4,7 +4,66 @@ import com.omkarnub.kanri.data.db.WalletBalanceEntity
 import kotlin.math.abs
 import kotlin.math.round
 
+import java.util.Calendar
+
 object WalletBalanceCalculator {
+
+    /**
+     * Returns the start of the current day (00:00:00.000) in epoch milliseconds.
+     */
+    fun getStartOfTodayMillis(): Long {
+        val cal = Calendar.getInstance()
+        cal.set(Calendar.HOUR_OF_DAY, 0)
+        cal.set(Calendar.MINUTE, 0)
+        cal.set(Calendar.SECOND, 0)
+        cal.set(Calendar.MILLISECOND, 0)
+        return cal.timeInMillis
+    }
+
+    /**
+     * Computes the net cash flow for a specific wallet ("CASH" or "ONLINE") on the current day:
+     * credits - debits + transfers_in - transfers_out
+     *
+     * Only non-duplicate transactions at or after max(openingTimestamp, startOfToday) are counted.
+     */
+    fun todayNet(
+        wallet: String,
+        openingTimestamp: Long,
+        startOfToday: Long,
+        transactions: List<WalletTxnRow>
+    ): Double {
+        var delta = 0.0
+        val targetWallet = wallet.uppercase().trim()
+
+        for (tx in transactions) {
+            if (tx.isDuplicate) continue
+            if (tx.timestamp < openingTimestamp || tx.timestamp < startOfToday) continue
+
+            val txWallet = tx.wallet.uppercase().trim()
+            val transferTo = tx.transferToWallet?.uppercase()?.trim()
+
+            if (transferTo != null) {
+                // Transfer row
+                if (txWallet == targetWallet) {
+                    delta -= tx.amount // Outflow from source wallet
+                }
+                if (transferTo == targetWallet) {
+                    delta += tx.amount // Inflow to destination wallet
+                }
+            } else {
+                // Standard income or expense
+                if (txWallet == targetWallet) {
+                    if (tx.type.equals("CREDIT", ignoreCase = true)) {
+                        delta += tx.amount
+                    } else if (tx.type.equals("DEBIT", ignoreCase = true)) {
+                        delta -= tx.amount
+                    }
+                }
+            }
+        }
+
+        return roundTo2Decimals(delta)
+    }
 
     /**
      * Rounds amount to 2 decimal places (paise) and ensures -0.00 is never returned.
@@ -68,11 +127,12 @@ object WalletBalanceCalculator {
     }
 
     /**
-     * Computes Cash, Online, and Total balances given opening balances and transactions.
+     * Computes Cash, Online, and Total balances and today's net cash flow given opening balances and transactions.
      */
     fun balances(
         openings: Map<String, WalletBalanceEntity>,
-        transactions: List<WalletTxnRow>
+        transactions: List<WalletTxnRow>,
+        startOfToday: Long = getStartOfTodayMillis()
     ): WalletBalances {
         val cashOpening = openings["CASH"]
         val onlineOpening = openings["ONLINE"]
@@ -93,6 +153,18 @@ object WalletBalanceCalculator {
             0.0
         }
 
+        val cashTodayNet = if (cashOpening != null) {
+            todayNet("CASH", cashOpening.openingTimestamp, startOfToday, transactions)
+        } else {
+            0.0
+        }
+
+        val onlineTodayNet = if (onlineOpening != null) {
+            todayNet("ONLINE", onlineOpening.openingTimestamp, startOfToday, transactions)
+        } else {
+            0.0
+        }
+
         val total = roundTo2Decimals(cashBalance + onlineBalance)
         return WalletBalances(
             cash = cashBalance,
@@ -100,7 +172,9 @@ object WalletBalanceCalculator {
             total = total,
             isConfigured = true,
             cashOpeningTimestamp = cashOpening?.openingTimestamp,
-            onlineOpeningTimestamp = onlineOpening?.openingTimestamp
+            onlineOpeningTimestamp = onlineOpening?.openingTimestamp,
+            cashTodayNet = cashTodayNet,
+            onlineTodayNet = onlineTodayNet
         )
     }
 

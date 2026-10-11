@@ -20,5 +20,7 @@ data class WalletBalances(
     val total: Double = 0.0,
     val isConfigured: Boolean = false,
     val cashOpeningTimestamp: Long? = null,
-    val onlineOpeningTimestamp: Long? = null
+    val onlineOpeningTimestamp: Long? = null,
+    val cashTodayNet: Double = 0.0,
+    val onlineTodayNet: Double = 0.0
 )
