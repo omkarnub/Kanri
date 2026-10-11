@@ -21,12 +21,16 @@ fun SplitExpenseSheet(
     onDismiss: () -> Unit,
     onSaveLenderSplit: (friendNames: List<String>, perPersonShare: Double, eventDescription: String) -> Unit,
     onSaveBorrowerSplit: (payerName: String, userShare: Double, eventDescription: String) -> Unit,
-    existingPeople: List<String> = emptyList()
+    existingPeople: List<String> = emptyList(),
+    initialAmount: Double? = null,
+    initialDescription: String? = null
 ) {
     SplitExpenseScreen(
         onDismiss = onDismiss,
         onSaveLenderSplit = onSaveLenderSplit,
         onSaveBorrowerSplit = onSaveBorrowerSplit,
-        existingPeople = existingPeople
+        existingPeople = existingPeople,
+        initialAmount = initialAmount,
+        initialDescription = initialDescription
     )
 }

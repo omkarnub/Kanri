@@ -80,6 +80,8 @@ fun MainNavigationScreen(
     var addLendingInitialPerson by remember { mutableStateOf("") }
     var addLendingInitialNotes by remember { mutableStateOf<String?>("") }
     var showSplitSheet by remember { mutableStateOf(false) }
+    var splitInitialAmount by remember { mutableStateOf<Double?>(null) }
+    var splitInitialDescription by remember { mutableStateOf<String?>(null) }
     var showSetBudgetDialog by remember { mutableStateOf(false) }
     val splitSheetState = rememberModalBottomSheetState(skipPartiallyExpanded = true)
 
@@ -87,6 +89,9 @@ fun MainNavigationScreen(
     LaunchedEffect(widgetAction) {
         when (widgetAction) {
             com.omkarnub.kanri.widget.KanriWidgetActions.ACTION_SPLIT_BILL -> {
+                val (amt, desc) = com.omkarnub.kanri.widget.KanriWidgetActions.consumeSplitPayload()
+                splitInitialAmount = amt
+                splitInitialDescription = desc
                 showSplitSheet = true
                 com.omkarnub.kanri.widget.KanriWidgetActions.consumeAction()
             }
@@ -329,16 +334,26 @@ fun MainNavigationScreen(
             }
             SplitExpenseSheet(
                 sheetState = splitSheetState,
-                onDismiss = { showSplitSheet = false },
+                onDismiss = {
+                    showSplitSheet = false
+                    splitInitialAmount = null
+                    splitInitialDescription = null
+                },
                 onSaveLenderSplit = { friendNames, perPersonShare, eventDescription ->
                     lendingViewModel.addSplitAsLender(friendNames, perPersonShare, eventDescription)
                     showSplitSheet = false
+                    splitInitialAmount = null
+                    splitInitialDescription = null
                 },
                 onSaveBorrowerSplit = { payerName, userShare, eventDescription ->
                     lendingViewModel.addSplitAsBorrower(payerName, userShare, eventDescription)
                     showSplitSheet = false
+                    splitInitialAmount = null
+                    splitInitialDescription = null
                 },
-                existingPeople = existingPeople
+                existingPeople = existingPeople,
+                initialAmount = splitInitialAmount,
+                initialDescription = splitInitialDescription
             )
         }
 

@@ -231,49 +231,22 @@ class InstantPopupService : Service() {
                                     }
                                 }
                             },
-                            onSplitBill = { numPeople, perPersonAmount, catId, note ->
-                                serviceScope.launch(Dispatchers.IO) {
-                                    val cleanMerchant = BrandFormatter.cleanMerchantName(counterparty).ifBlank { "Bill" }
-                                    val baseNote = note.trim().ifEmpty { null }
-                                    val splitNote = "Split among $numPeople (₹${formatCurrency(perPersonAmount)} each)" +
-                                        if (baseNote != null) " • $baseNote" else ""
-                                    if (txId > 0L) {
-                                        if (catId != null) {
-                                            db.transactionDao().updateCategoryAndNotes(txId, catId, splitNote)
-                                            if (counterparty.isNotBlank()) {
-                                                db.transactionDao().updateCategoryForCounterparty(counterparty, catId)
-                                                db.categoryDao().setMapping(
-                                                    CounterpartyCategoryMapEntity(
-                                                        counterparty = counterparty.trim().lowercase(),
-                                                        categoryId = catId
-                                                    )
-                                                )
-                                            }
-                                        } else {
-                                            db.transactionDao().updateNotes(txId, splitNote)
-                                        }
-                                    }
-                                    // Insert lending records for friends who owe the user
-                                    val friendsCount = (numPeople - 1).coerceAtLeast(1)
-                                    val now = System.currentTimeMillis()
-                                    val lendingRecords = (1..friendsCount).map { idx ->
-                                        LendingEntity(
-                                            personName = if (friendsCount == 1) "Friend" else "Friend $idx",
-                                            amount = perPersonAmount,
-                                            type = "LENT",
-                                            date = now,
-                                            isSettled = false,
-                                            notes = "Split: $cleanMerchant (1 share of $numPeople)",
-                                            linkedTransactionId = if (txId > 0L) txId else null
-                                        )
-                                    }
-                                    db.lendingDao().insertAll(lendingRecords)
-                                    KanriWidgetsUpdater.updateAllWidgets(this@InstantPopupService)
+                            onSplitBill = {
+                                val cleanMerchant = BrandFormatter.cleanMerchantName(counterparty).ifBlank { "Expense" }
+                                com.omkarnub.kanri.widget.KanriWidgetActions.triggerSplitBill(amount, cleanMerchant)
 
-                                    withContext(Dispatchers.Main) {
-                                        stopSelf()
+                                val openIntent = (packageManager.getLaunchIntentForPackage(packageName)
+                                    ?: Intent(this@InstantPopupService, MainActivity::class.java)).apply {
+                                    action = com.omkarnub.kanri.widget.KanriWidgetActions.ACTION_SPLIT_BILL
+                                    putExtra(com.omkarnub.kanri.widget.KanriWidgetActions.EXTRA_AMOUNT, amount)
+                                    putExtra(com.omkarnub.kanri.widget.KanriWidgetActions.EXTRA_DESCRIPTION, cleanMerchant)
+                                    if (txId > 0L) {
+                                        putExtra(InstantPopupService.EXTRA_TRANSACTION_ID, txId)
                                     }
+                                    addFlags(Intent.FLAG_ACTIVITY_NEW_TASK or Intent.FLAG_ACTIVITY_CLEAR_TOP or Intent.FLAG_ACTIVITY_SINGLE_TOP)
                                 }
+                                startActivity(openIntent)
+                                stopSelf()
                             },
                             onOpenInApp = {
                                 val openIntent = (packageManager.getLaunchIntentForPackage(packageName)

@@ -116,6 +116,8 @@ fun SplitExpenseScreen(
     onSaveLenderSplit: (friendNames: List<String>, perPersonShare: Double, eventDescription: String) -> Unit,
     onSaveBorrowerSplit: (payerName: String, userShare: Double, eventDescription: String) -> Unit,
     existingPeople: List<String> = emptyList(),
+    initialAmount: Double? = null,
+    initialDescription: String? = null,
     modifier: Modifier = Modifier
 ) {
     val context = LocalContext.current
@@ -124,9 +126,19 @@ fun SplitExpenseScreen(
     val coroutineScope = rememberCoroutineScope()
     val focusRequester = remember { FocusRequester() }
 
-    var amountText by remember { mutableStateOf("") }
+    var amountText by remember {
+        mutableStateOf(
+            if (initialAmount != null && initialAmount > 0.0) {
+                if (initialAmount % 1.0 == 0.0) {
+                    initialAmount.toLong().toString()
+                } else {
+                    String.format(java.util.Locale.US, "%.2f", initialAmount)
+                }
+            } else ""
+        )
+    }
     var peopleCount by remember { mutableIntStateOf(3) }
-    var eventDescription by remember { mutableStateOf("") }
+    var eventDescription by remember { mutableStateOf(initialDescription?.trim() ?: "") }
     var selectedRole by remember { mutableStateOf(SplitRole.I_PAID) }
     var payerName by remember { mutableStateOf("") }
     var errorMessage by remember { mutableStateOf<String?>(null) }
