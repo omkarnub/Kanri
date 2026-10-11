@@ -191,7 +191,7 @@ class InstantPopupService : Service() {
                             ) {
                                 stopSelf()
                             },
-                        contentAlignment = androidx.compose.ui.Alignment.Center
+                        contentAlignment = androidx.compose.ui.Alignment.BottomCenter
                     ) {
                         InstantPopupCard(
                             amount = amount,
