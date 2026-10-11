@@ -41,13 +41,11 @@ import androidx.compose.material3.Card
 import androidx.compose.material3.CardDefaults
 import androidx.compose.material3.Icon
 import androidx.compose.material3.IconButton
-import androidx.compose.material3.LinearProgressIndicator
 import androidx.compose.material3.Surface
 import androidx.compose.material3.Text
 import androidx.compose.runtime.Composable
 import androidx.compose.runtime.LaunchedEffect
 import androidx.compose.runtime.getValue
-import androidx.compose.runtime.mutableFloatStateOf
 import androidx.compose.runtime.mutableStateOf
 import androidx.compose.runtime.remember
 import androidx.compose.runtime.rememberCoroutineScope
@@ -74,9 +72,12 @@ import kotlinx.coroutines.delay
 import kotlinx.coroutines.launch
 
 /**
- * Concept B: Bottom-docked frosted card for instant transaction overlays.
- * Thumb-friendly, ambient radial lighting, glowing category chips,
- * dual actions (Done / Split Bill), and 8-second auto-dismiss timer.
+ * Concept B: Bottom-docked frosted glassmorphism card for instant transaction overlays.
+ * Features:
+ * - Genuine glassmorphic translucency with specular border highlights
+ * - Subtle, refined ambient glow on amount (lowered intensity)
+ * - Persistent overlay that only closes upon manual user action (no auto-dismiss timer)
+ * - Thumb-friendly reach, category selection, and dual actions (Done / Split Bill)
  */
 @Composable
 fun InstantPopupCard(
@@ -101,10 +102,6 @@ fun InstantPopupCard(
     var searchQuery by remember { mutableStateOf("") }
     var isSearching by remember { mutableStateOf(false) }
 
-    // Auto-dismiss countdown (8 seconds)
-    var isInteracted by remember { mutableStateOf(false) }
-    var autoDismissProgress by remember { mutableFloatStateOf(1f) }
-
     fun triggerDismiss(andExecute: () -> Unit = onDismiss) {
         if (!isVisible) return
         coroutineScope.launch {
@@ -116,22 +113,6 @@ fun InstantPopupCard(
 
     LaunchedEffect(Unit) {
         isVisible = true
-    }
-
-    // 8-second auto-dismiss timer (pauses if user interacts)
-    LaunchedEffect(isInteracted) {
-        if (isInteracted) return@LaunchedEffect
-        val totalMs = 8000L
-        val stepMs = 50L
-        var elapsed = 0L
-        while (elapsed < totalMs) {
-            delay(stepMs)
-            elapsed += stepMs
-            autoDismissProgress = (1f - (elapsed.toFloat() / totalMs)).coerceIn(0f, 1f)
-        }
-        triggerDismiss {
-            onDone(selectedCategoryId, noteText)
-        }
     }
 
     val context = androidx.compose.ui.platform.LocalContext.current
@@ -170,20 +151,28 @@ fun InstantPopupCard(
                     interactionSource = remember { MutableInteractionSource() },
                     indication = null
                 ) {
-                    isInteracted = true
                     focusManager.clearFocus()
                 },
             shape = RoundedCornerShape(topStart = 28.dp, topEnd = 28.dp, bottomStart = 20.dp, bottomEnd = 20.dp),
             colors = CardDefaults.cardColors(
-                containerColor = Color(0xFF131318)
+                containerColor = Color(0xEE121319) // Frosted translucent glassmorphic dark container
             ),
             elevation = CardDefaults.cardElevation(defaultElevation = 24.dp),
-            border = BorderStroke(1.dp, Color(0xFF262632))
+            border = BorderStroke(
+                1.dp,
+                Brush.verticalGradient(
+                    listOf(
+                        Color(0x38FFFFFF), // Specular top rim lighting
+                        Color(0x14FFFFFF),
+                        Color(0x1F2A2B3A)
+                    )
+                )
+            )
         ) {
             Column(
                 modifier = Modifier
                     .fillMaxWidth()
-                    .padding(bottom = 8.dp),
+                    .padding(bottom = 12.dp),
                 horizontalAlignment = Alignment.CenterHorizontally
             ) {
                 // Drag handle
@@ -193,7 +182,7 @@ fun InstantPopupCard(
                         .width(38.dp)
                         .height(4.dp)
                         .clip(CircleShape)
-                        .background(Color(0xFF3F3F48))
+                        .background(Color(0x55FFFFFF))
                 )
 
                 // Top Row: Time detected + Close icon
@@ -208,7 +197,7 @@ fun InstantPopupCard(
                         text = "Just now",
                         fontSize = 12.sp,
                         fontWeight = FontWeight.Normal,
-                        color = Color(0xFF71717A)
+                        color = Color(0xFF8E8E98)
                     )
 
                     IconButton(
@@ -216,18 +205,18 @@ fun InstantPopupCard(
                         modifier = Modifier
                             .size(28.dp)
                             .clip(CircleShape)
-                            .background(Color(0xFF1E1E26))
+                            .background(Color(0x28FFFFFF))
                     ) {
                         Icon(
                             imageVector = Icons.Default.Close,
                             contentDescription = "Close",
-                            tint = Color(0xFFA1A1AA),
+                            tint = Color(0xFFCCCCCC),
                             modifier = Modifier.size(14.dp)
                         )
                     }
                 }
 
-                // Hero Section with Ambient Radial Glow
+                // Hero Section with Subtle Refined Ambient Radial Glow (reduced intensity)
                 Box(
                     modifier = Modifier
                         .fillMaxWidth()
@@ -235,10 +224,10 @@ fun InstantPopupCard(
                         .background(
                             brush = Brush.radialGradient(
                                 colors = listOf(
-                                    accentColor.copy(alpha = 0.16f),
+                                    accentColor.copy(alpha = 0.07f), // Refined subtle glow
                                     Color.Transparent
                                 ),
-                                radius = 280f
+                                radius = 240f
                             )
                         ),
                     contentAlignment = Alignment.Center
@@ -286,8 +275,8 @@ fun InstantPopupCard(
                         if (detailText.isNotBlank()) {
                             Surface(
                                 shape = RoundedCornerShape(8.dp),
-                                color = Color(0xFF1C1C24),
-                                border = BorderStroke(0.8.dp, Color(0xFF2C2C38))
+                                color = Color(0x601D1E28),
+                                border = BorderStroke(0.8.dp, Color(0x28FFFFFF))
                             ) {
                                 Text(
                                     text = detailText,
@@ -317,24 +306,21 @@ fun InstantPopupCard(
                                     .fillMaxWidth()
                                     .height(38.dp)
                                     .clip(RoundedCornerShape(10.dp))
-                                    .background(Color(0xFF1B1B22))
-                                    .border(1.dp, Color(0xFF282834), RoundedCornerShape(10.dp))
+                                    .background(Color(0x801A1B24))
+                                    .border(1.dp, Color(0x30FFFFFF), RoundedCornerShape(10.dp))
                                     .padding(horizontal = 10.dp),
                                 verticalAlignment = Alignment.CenterVertically
                             ) {
                                 Icon(
                                     imageVector = Icons.Default.Search,
                                     contentDescription = null,
-                                    tint = Color(0xFF71717A),
+                                    tint = Color(0xFF8E8E98),
                                     modifier = Modifier.size(16.dp)
                                 )
                                 Spacer(modifier = Modifier.width(8.dp))
                                 BasicTextField(
                                     value = searchQuery,
-                                    onValueChange = {
-                                        isInteracted = true
-                                        searchQuery = it
-                                    },
+                                    onValueChange = { searchQuery = it },
                                     singleLine = true,
                                     textStyle = TextStyle(
                                         color = Color.White,
@@ -346,7 +332,7 @@ fun InstantPopupCard(
                                         if (searchQuery.isEmpty()) {
                                             Text(
                                                 text = "Search categories...",
-                                                color = Color(0xFF52525B),
+                                                color = Color(0xFF6E6E78),
                                                 fontSize = 13.sp
                                             )
                                         }
@@ -363,7 +349,7 @@ fun InstantPopupCard(
                                     Icon(
                                         imageVector = Icons.Default.Close,
                                         contentDescription = "Close search",
-                                        tint = Color(0xFF71717A),
+                                        tint = Color(0xFFA1A1AA),
                                         modifier = Modifier.size(14.dp)
                                     )
                                 }
@@ -383,14 +369,11 @@ fun InstantPopupCard(
                             if (!isSearching) {
                                 Surface(
                                     shape = RoundedCornerShape(10.dp),
-                                    color = Color(0xFF191922),
-                                    border = BorderStroke(1.dp, Color(0xFF272733)),
+                                    color = Color(0x701C1D28),
+                                    border = BorderStroke(1.dp, Color(0x28FFFFFF)),
                                     modifier = Modifier
                                         .clip(RoundedCornerShape(10.dp))
-                                        .clickable {
-                                            isInteracted = true
-                                            isSearching = true
-                                        }
+                                        .clickable { isSearching = true }
                                 ) {
                                     Box(
                                         modifier = Modifier.padding(horizontal = 10.dp, vertical = 7.dp),
@@ -410,12 +393,11 @@ fun InstantPopupCard(
                                 val isSelected = selectedCategoryId == cat.id
                                 Surface(
                                     shape = RoundedCornerShape(10.dp),
-                                    color = if (isSelected) accentColor.copy(alpha = 0.14f) else Color(0xFF191922),
-                                    border = if (isSelected) BorderStroke(1.2.dp, accentColor) else BorderStroke(1.dp, Color(0xFF272733)),
+                                    color = if (isSelected) accentColor.copy(alpha = 0.18f) else Color(0x701C1D28),
+                                    border = if (isSelected) BorderStroke(1.2.dp, accentColor) else BorderStroke(1.dp, Color(0x28FFFFFF)),
                                     modifier = Modifier
                                         .clip(RoundedCornerShape(10.dp))
                                         .clickable {
-                                            isInteracted = true
                                             if (isSelected) {
                                                 selectedCategoryId = null
                                                 selectedCategoryName = null
@@ -457,17 +439,14 @@ fun InstantPopupCard(
                             .height(40.dp)
                             .padding(horizontal = 16.dp)
                             .clip(RoundedCornerShape(10.dp))
-                            .background(Color(0xFF181820))
-                            .border(1.dp, Color(0xFF262632), RoundedCornerShape(10.dp))
+                            .background(Color(0x70191A24))
+                            .border(1.dp, Color(0x25FFFFFF), RoundedCornerShape(10.dp))
                             .padding(horizontal = 12.dp),
                         contentAlignment = Alignment.CenterStart
                     ) {
                         BasicTextField(
                             value = noteText,
-                            onValueChange = {
-                                isInteracted = true
-                                noteText = it
-                            },
+                            onValueChange = { noteText = it },
                             singleLine = true,
                             textStyle = TextStyle(
                                 color = Color.White,
@@ -481,7 +460,7 @@ fun InstantPopupCard(
                                 if (noteText.isEmpty()) {
                                     Text(
                                         text = "Add a note (optional)",
-                                        color = Color(0xFF52525B),
+                                        color = Color(0xFF6E6E78),
                                         fontSize = 13.sp
                                     )
                                 }
@@ -525,8 +504,8 @@ fun InstantPopupCard(
 
                     Surface(
                         shape = RoundedCornerShape(12.dp),
-                        color = Color(0xFF1B1B24),
-                        border = BorderStroke(1.dp, Color(0xFF2C2C3A)),
+                        color = Color(0x801F202C),
+                        border = BorderStroke(1.dp, Color(0x35FFFFFF)),
                         modifier = Modifier
                             .weight(1f)
                             .height(44.dp)
@@ -565,7 +544,7 @@ fun InstantPopupCard(
                 Text(
                     text = "Open in Kanri ›",
                     fontSize = 12.sp,
-                    color = Color(0xFF71717A),
+                    color = Color(0xFF8E8E98),
                     modifier = Modifier
                         .clip(RoundedCornerShape(4.dp))
                         .clickable {
@@ -575,19 +554,6 @@ fun InstantPopupCard(
                         }
                         .padding(horizontal = 8.dp, vertical = 3.dp)
                 )
-
-                // Whisper-thin auto-dismiss countdown bar at the bottom edge
-                if (!isInteracted) {
-                    Spacer(modifier = Modifier.height(4.dp))
-                    LinearProgressIndicator(
-                        progress = { autoDismissProgress },
-                        modifier = Modifier
-                            .fillMaxWidth()
-                            .height(2.5.dp),
-                        color = accentColor,
-                        trackColor = Color(0xFF1C1C24)
-                    )
-                }
             }
         }
     }
