@@ -474,6 +474,11 @@ object SmsParser {
      * Prevents carrier delivery delays from distorting transaction dates or the 5-minute dedup window.
      */
     fun extractTimestamp(body: String, fallback: Long = System.currentTimeMillis()): Long {
+        val fallbackCal = java.util.Calendar.getInstance().apply { timeInMillis = fallback }
+        val fallbackDay = fallbackCal.get(java.util.Calendar.DAY_OF_MONTH)
+        val fallbackMonth = fallbackCal.get(java.util.Calendar.MONTH) + 1
+        val fallbackYear = fallbackCal.get(java.util.Calendar.YEAR)
+
         // Pattern 1: e.g. 01-09-2026 19:07:46 or 14-09-26 18:22:10 or 15-09-2026 or 12/09/2026 or 18-09-26
         val numDatePattern = Pattern.compile(
             """\b(\d{1,2})[-/](\d{1,2})[-/](\d{2,4})(?:\s+(\d{1,2}):(\d{2})(?::(\d{2}))?)?\b"""
@@ -485,9 +490,10 @@ object SmsParser {
                 val month = nm.group(2)!!.toInt()
                 var year = nm.group(3)!!.toInt()
                 if (year < 100) year += 2000
-                val hour = nm.group(4)?.toIntOrNull() ?: 12
-                val min = nm.group(5)?.toIntOrNull() ?: 0
-                val sec = nm.group(6)?.toIntOrNull() ?: 0
+                val isToday = day == fallbackDay && month == fallbackMonth && year == fallbackYear
+                val hour = nm.group(4)?.toIntOrNull() ?: if (isToday) fallbackCal.get(java.util.Calendar.HOUR_OF_DAY) else 12
+                val min = nm.group(5)?.toIntOrNull() ?: if (isToday) fallbackCal.get(java.util.Calendar.MINUTE) else 0
+                val sec = nm.group(6)?.toIntOrNull() ?: if (isToday) fallbackCal.get(java.util.Calendar.SECOND) else 0
 
                 if (day in 1..31 && month in 1..12 && year in 2020..2035) {
                     val cal = java.util.Calendar.getInstance()
@@ -508,9 +514,10 @@ object SmsParser {
                 val year = ym.group(1)!!.toInt()
                 val month = ym.group(2)!!.toInt()
                 val day = ym.group(3)!!.toInt()
-                val hour = ym.group(4)?.toIntOrNull() ?: 12
-                val min = ym.group(5)?.toIntOrNull() ?: 0
-                val sec = ym.group(6)?.toIntOrNull() ?: 0
+                val isToday = day == fallbackDay && month == fallbackMonth && year == fallbackYear
+                val hour = ym.group(4)?.toIntOrNull() ?: if (isToday) fallbackCal.get(java.util.Calendar.HOUR_OF_DAY) else 12
+                val min = ym.group(5)?.toIntOrNull() ?: if (isToday) fallbackCal.get(java.util.Calendar.MINUTE) else 0
+                val sec = ym.group(6)?.toIntOrNull() ?: if (isToday) fallbackCal.get(java.util.Calendar.SECOND) else 0
 
                 if (day in 1..31 && month in 1..12 && year in 2020..2035) {
                     val cal = java.util.Calendar.getInstance()
@@ -546,11 +553,12 @@ object SmsParser {
                     "dec" -> 12
                     else -> 0
                 }
-                var year = am.group(3)?.toIntOrNull() ?: java.util.Calendar.getInstance().get(java.util.Calendar.YEAR)
+                var year = am.group(3)?.toIntOrNull() ?: fallbackYear
                 if (year < 100) year += 2000
-                val hour = am.group(4)?.toIntOrNull() ?: 12
-                val min = am.group(5)?.toIntOrNull() ?: 0
-                val sec = am.group(6)?.toIntOrNull() ?: 0
+                val isToday = day == fallbackDay && month == fallbackMonth && year == fallbackYear
+                val hour = am.group(4)?.toIntOrNull() ?: if (isToday) fallbackCal.get(java.util.Calendar.HOUR_OF_DAY) else 12
+                val min = am.group(5)?.toIntOrNull() ?: if (isToday) fallbackCal.get(java.util.Calendar.MINUTE) else 0
+                val sec = am.group(6)?.toIntOrNull() ?: if (isToday) fallbackCal.get(java.util.Calendar.SECOND) else 0
 
                 if (day in 1..31 && month in 1..12 && year in 2020..2035) {
                     val cal = java.util.Calendar.getInstance()
