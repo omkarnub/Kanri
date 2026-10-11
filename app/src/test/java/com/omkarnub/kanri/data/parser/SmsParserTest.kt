@@ -587,4 +587,34 @@ class SmsParserTest {
         assertEquals("friend@upi", rCredit.counterparty)
         assertEquals("Bank of Baroda", rCredit.bank)
     }
+
+    @Test
+    fun testMerchantWithAvlBalSentenceBoundary() {
+        // SMS where merchant is followed by sentence boundary and Avl Bal
+        val sms = "Spent Rs. 350.00 at Starbucks. Avl Bal Rs 24,500.00 on your Card ending 1234. If not you, call bank."
+        val result = SmsParser.parse(sms)
+        assertNotNull(result)
+        assertEquals(350.0, result!!.amount, 0.001)
+        assertEquals("Starbucks", result.counterparty)
+
+        // BrandFormatter cleans any residual raw DB string
+        val cleaned = com.omkarnub.kanri.util.BrandFormatter.cleanMerchantName("Starbucks. Avl Bal Rs 24")
+        assertEquals("Starbucks", cleaned)
+
+        // Verify UNKNOWN • Online is replaced with polished brand tag
+        val tagUnknown = com.omkarnub.kanri.util.BrandFormatter.formatBrandTag(
+            bank = null,
+            sourceType = "UNKNOWN",
+            isWalletConfigured = true
+        )
+        assertEquals("Online Account", tagUnknown.title)
+
+        // Verify known bank and UPI tag
+        val tagHdfcUpi = com.omkarnub.kanri.util.BrandFormatter.formatBrandTag(
+            bank = "HDFC",
+            sourceType = "UPI",
+            isWalletConfigured = true
+        )
+        assertEquals("HDFC Bank • UPI", tagHdfcUpi.title)
+    }
 }

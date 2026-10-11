@@ -35,7 +35,11 @@ import com.omkarnub.kanri.MainActivity
 import com.omkarnub.kanri.R
 import com.omkarnub.kanri.data.db.CounterpartyCategoryMapEntity
 import com.omkarnub.kanri.data.db.KanriDatabase
+import com.omkarnub.kanri.data.db.LendingEntity
+import com.omkarnub.kanri.ui.home.formatCurrency
 import com.omkarnub.kanri.ui.theme.KanriTheme
+import com.omkarnub.kanri.util.BrandFormatter
+import com.omkarnub.kanri.widget.KanriWidgetsUpdater
 import kotlinx.coroutines.CoroutineScope
 import kotlinx.coroutines.Dispatchers
 import kotlinx.coroutines.SupervisorJob
@@ -222,6 +226,50 @@ class InstantPopupService : Service() {
                                             db.transactionDao().updateNotes(txId, cleanNote)
                                         }
                                     }
+                                    withContext(Dispatchers.Main) {
+                                        stopSelf()
+                                    }
+                                }
+                            },
+                            onSplitBill = { numPeople, perPersonAmount, catId, note ->
+                                serviceScope.launch(Dispatchers.IO) {
+                                    val cleanMerchant = BrandFormatter.cleanMerchantName(counterparty).ifBlank { "Bill" }
+                                    val baseNote = note.trim().ifEmpty { null }
+                                    val splitNote = "Split among $numPeople (₹${formatCurrency(perPersonAmount)} each)" +
+                                        if (baseNote != null) " • $baseNote" else ""
+                                    if (txId > 0L) {
+                                        if (catId != null) {
+                                            db.transactionDao().updateCategoryAndNotes(txId, catId, splitNote)
+                                            if (counterparty.isNotBlank()) {
+                                                db.transactionDao().updateCategoryForCounterparty(counterparty, catId)
+                                                db.categoryDao().setMapping(
+                                                    CounterpartyCategoryMapEntity(
+                                                        counterparty = counterparty.trim().lowercase(),
+                                                        categoryId = catId
+                                                    )
+                                                )
+                                            }
+                                        } else {
+                                            db.transactionDao().updateNotes(txId, splitNote)
+                                        }
+                                    }
+                                    // Insert lending records for friends who owe the user
+                                    val friendsCount = (numPeople - 1).coerceAtLeast(1)
+                                    val now = System.currentTimeMillis()
+                                    val lendingRecords = (1..friendsCount).map { idx ->
+                                        LendingEntity(
+                                            personName = if (friendsCount == 1) "Friend" else "Friend $idx",
+                                            amount = perPersonAmount,
+                                            type = "LENT",
+                                            date = now,
+                                            isSettled = false,
+                                            notes = "Split: $cleanMerchant (1 share of $numPeople)",
+                                            linkedTransactionId = if (txId > 0L) txId else null
+                                        )
+                                    }
+                                    db.lendingDao().insertAll(lendingRecords)
+                                    KanriWidgetsUpdater.updateAllWidgets(this@InstantPopupService)
+
                                     withContext(Dispatchers.Main) {
                                         stopSelf()
                                     }

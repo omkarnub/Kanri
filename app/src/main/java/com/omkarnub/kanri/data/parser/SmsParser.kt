@@ -626,7 +626,7 @@ object SmsParser {
             }
         }
 
-        val delimiter = """(?=\s+(?:on|via|ref|refno|upi|using|from|order|purchase|\()|\s*[\.,;]|$)"""
+        val delimiter = """(?=\s+(?:on|via|ref|refno|upi|using|from|order|purchase|avl|avail|bal|balance|clear\s+bal|total\s+bal|a\/c|acct|txn|utr|rrn|\()|\.\s+|\s*[\.,;]|$)"""
 
         val patterns = listOf(
             // "Cr. to 9307704640-2.wallet@phonepe" or "Cr. to vishalkolhekar09-1@okaxis" or "Dr. to merchant@upi"
@@ -698,6 +698,23 @@ object SmsParser {
                 cleaned = cleaned.substring(prefix.length).trim()
             }
         }
+
+        // Cut off trailing sentence or balance noise (e.g. ". Avl Bal Rs 24")
+        if (cleaned.contains(". ")) {
+            val parts = cleaned.split(Regex("""\.\s+"""))
+            if (parts.isNotEmpty() && parts[0].isNotBlank()) {
+                val candidate = parts[0].trim()
+                if (isValidCounterparty(candidate)) {
+                    cleaned = candidate
+                }
+            }
+        }
+
+        // Strip trailing balance, account, reference, and date noise
+        val noisePattern = Regex(
+            """(?i)(?:[.,\s]+|^)(?:avl(?:[\s.]*bal(?:ance)?)?|available\s+bal(?:ance)?|avail\s+bal|clear\s+bal|total\s+bal|a\/c\s+bal|bal(?:ance)?[\s:]*(?:rs|inr|₹|\d)|limit|lmt|a\/c\b|acct\b|ref(?:[\s.]*no)?|rrn\b|utr\b|txn(?:\s*id)?|upi\s+ref|on\s+\d{1,2}[-/]|at\s+\d{1,2}:\d{2})\b.*$"""
+        )
+        cleaned = cleaned.replace(noisePattern, "").trim()
 
         // If string contains slash (e.g. "Zomato/zomato@icici"), pick the cleaner merchant name
         if (cleaned.contains("/")) {

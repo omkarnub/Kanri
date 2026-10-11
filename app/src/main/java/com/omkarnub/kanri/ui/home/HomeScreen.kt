@@ -840,7 +840,10 @@ fun TransactionListItem(
                 val title = if (isTransfer) {
                     "Transfer: ${transaction.wallet} → ${transaction.transferToWallet}"
                 } else {
-                    transaction.counterparty?.takeIf { it.isNotBlank() } ?: (if (isDebit) "Expense" else "Income")
+                    val rawName = transaction.displayName?.takeIf { it.isNotBlank() }
+                        ?: transaction.counterparty?.takeIf { it.isNotBlank() }
+                    rawName?.let { com.omkarnub.kanri.util.BrandFormatter.cleanMerchantName(it).ifBlank { it } }
+                        ?: (if (isDebit) "Expense" else "Income")
                 }
                 Text(
                     text = title,
@@ -860,8 +863,9 @@ fun TransactionListItem(
                     horizontalArrangement = Arrangement.spacedBy(5.dp)
                 ) {
                     // Badge for Source
+                    val sourceText = if (isTransfer) "Transfer" else com.omkarnub.kanri.util.BrandFormatter.formatSourceLabel(transaction.sourceType)
                     Text(
-                        text = if (isTransfer) "TRANSFER" else transaction.sourceType,
+                        text = sourceText,
                         style = MaterialTheme.typography.labelSmall,
                         color = MaterialTheme.colorScheme.onSurfaceVariant.copy(alpha = 0.7f),
                         fontWeight = FontWeight.Medium

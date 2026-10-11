@@ -66,23 +66,33 @@ object InstantPopupNotificationHelper {
         val atmMode = walletPrefs.atmWithdrawalMode
         val isAtmTransfer = isDebit && sourceType.equals("ATM", ignoreCase = true) && atmMode == com.omkarnub.kanri.data.wallet.AtmWithdrawalMode.TRANSFER
 
+        val displayMerchant = if (isAtmTransfer) {
+            "ATM Cash Withdrawal"
+        } else {
+            com.omkarnub.kanri.util.BrandFormatter.cleanMerchantName(counterparty)
+        }
+
+        val brandTag = com.omkarnub.kanri.util.BrandFormatter.formatBrandTag(
+            bank = bank,
+            sourceType = sourceType,
+            isWalletConfigured = isWalletConfigured,
+            isAtmTransfer = isAtmTransfer
+        )
+
         val title = if (isAtmTransfer) {
             "ATM Cash Withdrawal"
         } else if (isDebit) {
             val walletSuffix = if (isWalletConfigured) " · Online" else ""
-            "💸 ${formatCurrency(amount)}$walletSuffix spent" + if (counterparty.isNotBlank()) " at $counterparty" else ""
+            "💸 ${formatCurrency(amount)}$walletSuffix spent" + if (displayMerchant.isNotBlank()) " at $displayMerchant" else ""
         } else {
             val walletSuffix = if (isWalletConfigured) " · Online" else ""
-            "💰 ${formatCurrency(amount)}$walletSuffix received" + if (counterparty.isNotBlank()) " from $counterparty" else ""
+            "💰 ${formatCurrency(amount)}$walletSuffix received" + if (displayMerchant.isNotBlank()) " from $displayMerchant" else ""
         }
 
         val details = if (isAtmTransfer) {
             "₹${formatCurrency(amount)} withdrawn → added to Cash"
-        } else buildString {
-            if (!bank.isNullOrBlank()) append(bank).append(" • ")
-            append(sourceType)
-            if (isWalletConfigured) append(" • Online")
-            append(" — Tap a category below:")
+        } else {
+            "${brandTag.title} — Tap a category below:"
         }
 
         val builder = NotificationCompat.Builder(context, CHANNEL_ID)
