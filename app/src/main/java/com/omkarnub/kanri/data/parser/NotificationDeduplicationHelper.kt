@@ -157,7 +157,7 @@ object NotificationDeduplicationHelper {
             amount = parsed.amount,
             sourceType = parsed.sourceType.name,
             counterparty = parsed.counterparty,
-            displayName = parsed.counterparty,
+            displayName = com.omkarnub.kanri.util.BrandFormatter.cleanMerchantName(parsed.counterparty).ifBlank { parsed.counterparty },
             bank = parsed.bank,
             refNo = parsed.refNo,
             timestamp = parsed.timestamp,

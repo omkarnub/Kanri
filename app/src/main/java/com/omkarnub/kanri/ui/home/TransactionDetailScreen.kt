@@ -1753,7 +1753,8 @@ private fun formatSourceType(sourceType: String): String {
         "ATM" -> "Cash ATM"
         "BANK_TRANSFER" -> "Bank Transfer"
         "CASH" -> "Cash"
-        else -> sourceType
+        "UNKNOWN" -> "Online / Other"
+        else -> com.omkarnub.kanri.util.BrandFormatter.formatSourceLabel(sourceType)
     }
 }
 

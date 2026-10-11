@@ -1,27 +1,15 @@
 package com.omkarnub.kanri.util
 
 import android.content.Context
-import android.content.pm.ApplicationInfo
-import android.os.Handler
-import android.os.Looper
 import android.util.Log
-import android.widget.Toast
 import java.util.Locale
 
 /**
- * Diagnostic logger and Toast utility for transaction capture verification in developer builds.
- * Displays toast alerts indicating whether a payment was caught by SMS, notification, or merged via dedup.
+ * Diagnostic logger for transaction capture verification in developer builds.
+ * Logs capture events to Logcat without displaying intrusive system toasts.
  */
 object DevCaptureLogger {
     private const val TAG = "KanriCapture"
-
-    private fun isDevBuild(context: Context): Boolean {
-        return try {
-            (context.applicationInfo.flags and ApplicationInfo.FLAG_DEBUGGABLE) != 0
-        } catch (_: Exception) {
-            false
-        }
-    }
 
     fun logCapture(
         context: Context,
@@ -39,16 +27,6 @@ object DevCaptureLogger {
         val msg = "Kanri [$source]: ₹$formattedAmount $type ($details)"
 
         Log.i(TAG, msg)
-
-        if (isDevBuild(context) && !com.omkarnub.kanri.ui.popup.OverlayPermissionHelper.canDrawOverlays(context)) {
-            Handler(Looper.getMainLooper()).post {
-                try {
-                    Toast.makeText(context.applicationContext, msg, Toast.LENGTH_LONG).show()
-                } catch (t: Throwable) {
-                    Log.e(TAG, "Failed to display dev toast", t)
-                }
-            }
-        }
     }
 
     fun logDeduplicationMerge(
@@ -62,15 +40,5 @@ object DevCaptureLogger {
         val msg = "Kanri [Dedup Merged]: ₹$formattedAmount from $source merged into Tx #$existingId ($counterparty)"
 
         Log.i(TAG, msg)
-
-        if (isDevBuild(context)) {
-            Handler(Looper.getMainLooper()).post {
-                try {
-                    Toast.makeText(context.applicationContext, msg, Toast.LENGTH_LONG).show()
-                } catch (t: Throwable) {
-                    Log.e(TAG, "Failed to display dedup toast", t)
-                }
-            }
-        }
     }
 }
