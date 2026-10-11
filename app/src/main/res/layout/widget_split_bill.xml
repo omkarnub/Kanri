@@ -1,5 +1,6 @@
 <?xml version="1.0" encoding="utf-8"?>
 <LinearLayout xmlns:android="http://schemas.android.com/apk/res/android"
+    xmlns:tools="http://schemas.android.com/tools"
     android:id="@+id/widget_split_bill_root"
     android:layout_width="match_parent"
     android:layout_height="match_parent"
@@ -20,7 +21,8 @@
             android:layout_height="22dp"
             android:contentDescription="Split Icon"
             android:src="@drawable/ic_widget_split"
-            android:tint="#FFFFFF" />
+            android:tint="#FFFFFF"
+            tools:ignore="UseAppTint" />
     </LinearLayout>
 
     <!-- Texts -->
@@ -56,6 +58,7 @@
         android:layout_height="16dp"
         android:contentDescription="Open"
         android:src="@drawable/ic_widget_arrow_right"
-        android:tint="#FFFFFF" />
+        android:tint="#FFFFFF"
+        tools:ignore="UseAppTint" />
 
 </LinearLayout>

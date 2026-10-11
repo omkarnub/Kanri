@@ -1,5 +1,6 @@
 <?xml version="1.0" encoding="utf-8"?>
 <LinearLayout xmlns:android="http://schemas.android.com/apk/res/android"
+    xmlns:tools="http://schemas.android.com/tools"
     android:id="@+id/widget_quick_add_root"
     android:layout_width="match_parent"
     android:layout_height="match_parent"
@@ -43,7 +44,8 @@
                 android:layout_height="16dp"
                 android:contentDescription="Add Expense"
                 android:src="@drawable/ic_widget_add"
-                android:tint="#FFFFFF" />
+                android:tint="#FFFFFF"
+                tools:ignore="UseAppTint" />
 
             <TextView
                 android:layout_width="wrap_content"
@@ -71,7 +73,8 @@
                 android:layout_height="16dp"
                 android:contentDescription="Add Income"
                 android:src="@drawable/ic_widget_add"
-                android:tint="#FFFFFF" />
+                android:tint="#FFFFFF"
+                tools:ignore="UseAppTint" />
 
             <TextView
                 android:layout_width="wrap_content"

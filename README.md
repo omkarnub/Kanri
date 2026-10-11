@@ -151,7 +151,7 @@ flowchart LR
 | ![WorkManager](https://img.shields.io/badge/WorkManager-2.9.1-3DDC84?style=flat-square&logo=android&logoColor=white) | Background tasks |
 | ![Biometric](https://img.shields.io/badge/Biometric-1.2.0-30A46C?style=flat-square&logo=android&logoColor=white) | Lock screen authentication |
 | ![Haze](https://img.shields.io/badge/Haze-1.3.1-30A46C?style=flat-square) | Glassmorphism effects |
-| ![Tests](https://img.shields.io/badge/Unit%20tests-232%20passing-30A46C?style=flat-square) | 36 suites, 100% coverage of financial logic |
+| ![Tests](https://img.shields.io/badge/Unit%20tests-285%20passing-30A46C?style=flat-square) | 38 suites, 100% coverage of financial logic |
 
 ## Installation :package:
 

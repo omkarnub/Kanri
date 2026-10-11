@@ -1249,8 +1249,9 @@ fun SettingsScreen(
                             Spacer(modifier = Modifier.height(10.dp))
 
                             // Last Backup Timestamp
+                            val currentLocale = androidx.compose.ui.platform.LocalConfiguration.current.locales[0]
                             val formattedDate = if (lastBackupTimestamp > 0L) {
-                                SimpleDateFormat("MMM d, yyyy 'at' h:mm a", Locale.getDefault()).format(Date(lastBackupTimestamp))
+                                SimpleDateFormat("MMM d, yyyy 'at' h:mm a", currentLocale).format(Date(lastBackupTimestamp))
                             } else {
                                 "Never"
                             }
@@ -2296,7 +2297,8 @@ private fun ConsumerCrashLogsDialog(onDismiss: () -> Unit) {
                                 verticalAlignment = Alignment.CenterVertically
                             ) {
                                 Column {
-                                    val dateStr = SimpleDateFormat("dd MMM yyyy, HH:mm", Locale.getDefault())
+                                    val currentLocale = androidx.compose.ui.platform.LocalConfiguration.current.locales[0]
+                                    val dateStr = SimpleDateFormat("dd MMM yyyy, HH:mm", currentLocale)
                                         .format(Date(logFile.lastModified()))
                                     Text(
                                         text = "Diagnostic Report",

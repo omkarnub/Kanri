@@ -146,6 +146,7 @@ fun CrashLogsDialog(
                     fontSize = 14.sp
                 )
             } else {
+                val currentLocale = androidx.compose.ui.platform.LocalConfiguration.current.locales[0]
                 LazyColumn(
                     modifier = Modifier
                         .fillMaxWidth()
@@ -153,7 +154,7 @@ fun CrashLogsDialog(
                     verticalArrangement = Arrangement.spacedBy(8.dp)
                 ) {
                     items(logs) { file ->
-                        val dateString = SimpleDateFormat("MMM dd, yyyy HH:mm:ss", Locale.getDefault())
+                        val dateString = SimpleDateFormat("MMM dd, yyyy HH:mm:ss", currentLocale)
                             .format(Date(file.lastModified()))
                         val isFatal = file.name.startsWith("fatal")
 
