@@ -23,8 +23,6 @@ import androidx.compose.foundation.shape.RoundedCornerShape
 import com.omkarnub.kanri.ui.common.GlassLevel
 import com.omkarnub.kanri.ui.common.KanriGlassCard
 import androidx.compose.material3.Card
-import com.omkarnub.kanri.ui.common.GlassLevel
-import com.omkarnub.kanri.ui.common.KanriGlassCard
 import androidx.compose.material3.CardDefaults
 import androidx.compose.material3.MaterialTheme
 import androidx.compose.material3.Surface

@@ -59,8 +59,7 @@ fun CategoryTrendLineChart(
     lineColor: Color,
     modifier: Modifier = Modifier
 ) {
-    val context = LocalContext.current
-    val currencySymbol = remember(context) { CurrencyUtils.getCurrencySymbol(context) }
+    val currencySymbol = remember { CurrencyUtils.getCurrencySymbol() }
     var selectedIndex by remember(trendPoints) {
         mutableStateOf(if (trendPoints.isNotEmpty()) trendPoints.size - 1 else -1)
     }

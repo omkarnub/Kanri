@@ -27,8 +27,6 @@ import androidx.compose.material.icons.automirrored.filled.TrendingUp
 import com.omkarnub.kanri.ui.common.GlassLevel
 import com.omkarnub.kanri.ui.common.KanriGlassCard
 import androidx.compose.material3.Card
-import com.omkarnub.kanri.ui.common.GlassLevel
-import com.omkarnub.kanri.ui.common.KanriGlassCard
 import androidx.compose.material3.CardDefaults
 import androidx.compose.material3.FilterChip
 import androidx.compose.material3.FilterChipDefaults
