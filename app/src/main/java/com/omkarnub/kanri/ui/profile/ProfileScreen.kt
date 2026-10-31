@@ -14,6 +14,7 @@ import androidx.compose.foundation.background
 import androidx.compose.foundation.border
 import androidx.compose.foundation.clickable
 import com.omkarnub.kanri.ui.common.KanriGlassAlertDialog
+import com.omkarnub.kanri.ui.common.kokonut.KokonutAvatarSelectorDialog
 import com.omkarnub.kanri.ui.common.KanriGlassDatePickerDialog
 import com.omkarnub.kanri.ui.common.kanriGlassTextFieldColors
 import com.omkarnub.kanri.ui.common.kanriPrimaryButtonColors
@@ -26,6 +27,8 @@ import androidx.compose.foundation.layout.Spacer
 import androidx.compose.foundation.layout.fillMaxSize
 import androidx.compose.foundation.layout.fillMaxWidth
 import androidx.compose.foundation.layout.height
+import androidx.compose.foundation.layout.navigationBarsPadding
+import androidx.compose.foundation.layout.imePadding
 import androidx.compose.foundation.layout.padding
 import androidx.compose.foundation.layout.size
 import androidx.compose.foundation.layout.width
@@ -121,6 +124,7 @@ fun ProfileScreen(
     val currentUserName by profilePrefs.userNameFlow.collectAsState()
     val currentUserDob by profilePrefs.userDobFlow.collectAsState()
     val profilePhotoPath by profilePrefs.profilePhotoPathFlow.collectAsState()
+    val avatarVariant by profilePrefs.avatarVariantFlow.collectAsState()
 
     val exportSchedule by ExportScheduler.scheduleFlow.collectAsState()
     val isAutoMonthly = exportSchedule == ExportScheduler.ExportSchedule.MONTHLY
@@ -347,66 +351,49 @@ fun ProfileScreen(
         BackupRestoreSheet(onDismiss = { showBackupRestoreSheet = false })
     }
 
-    // Photo Options Dialog (Change / Remove)
+    // Kokonut Avatar Selector Dialog (12 Presets + Custom Photo Upload)
     if (showPhotoOptionsDialog) {
-        KanriGlassAlertDialog(
-            onDismissRequest = { showPhotoOptionsDialog = false },
-            title = { Text("Profile Picture", fontWeight = FontWeight.Bold) },
-            text = {
-                Column(verticalArrangement = Arrangement.spacedBy(8.dp)) {
-                    Text(
-                        "Personalize your profile with a photo or remove the current picture.",
-                        fontSize = 13.sp,
-                        color = MaterialTheme.colorScheme.onSurfaceVariant
-                    )
-                }
-            },
-            confirmButton = {
-                Button(
-                    onClick = {
-                        showPhotoOptionsDialog = false
-                        photoPickerLauncher.launch("image/*")
-                    },
-                    colors = kanriPrimaryButtonColors()
-                ) {
-                    Text(if (profilePhotoPath != null) "Choose New Photo" else "Select Photo")
-                }
-            },
-            dismissButton = {
-                if (profilePhotoPath != null) {
-                    TextButton(
-                        onClick = {
-                            showPhotoOptionsDialog = false
-                            profilePrefs.removeProfilePhoto()
-                            haptics.tick()
-                            Toast.makeText(context, "Picture removed", Toast.LENGTH_SHORT).show()
-                        }
-                    ) {
-                        Text("Remove Photo", color = MaterialTheme.colorScheme.error)
-                    }
-                } else {
-                    TextButton(onClick = { showPhotoOptionsDialog = false }) {
-                        Text("Cancel")
-                    }
-                }
+        KokonutAvatarSelectorDialog(
+            onDismiss = { showPhotoOptionsDialog = false },
+            onAvatarSelected = {
+                showPhotoOptionsDialog = false
+                haptics.success()
+                Toast.makeText(context, "Avatar updated", Toast.LENGTH_SHORT).show()
             }
         )
     }
 
     // Edit Profile Dialog (Name & Date of Birth)
     if (showEditProfileDialog) {
-        EditProfileDialog(
-            currentName = currentUserName,
-            currentDob = currentUserDob,
-            onDismiss = { showEditProfileDialog = false },
-            onSave = { newName, newDob ->
-                showEditProfileDialog = false
-                profilePrefs.userName = newName
-                profilePrefs.userDob = newDob
-                haptics.success()
-                Toast.makeText(context, "Profile details saved", Toast.LENGTH_SHORT).show()
-            }
-        )
+        Box(
+            modifier = Modifier.fillMaxSize(),
+            contentAlignment = Alignment.BottomCenter
+        ) {
+            Box(
+                modifier = Modifier
+                    .fillMaxSize()
+                    .background(Color.Black.copy(alpha = 0.52f))
+                    .clickable { showEditProfileDialog = false }
+            )
+            com.omkarnub.kanri.ui.common.kokonut.KokonutAvatarPicker(
+                title = "Edit Profile",
+                submitLabel = "Save",
+                initialName = currentUserName,
+                initialVariant = avatarVariant,
+                onComplete = { newName, newVariant, _ ->
+                    showEditProfileDialog = false
+                    profilePrefs.userName = newName
+                    profilePrefs.avatarVariant = newVariant
+                    profilePrefs.removeProfilePhoto()
+                    haptics.success()
+                    Toast.makeText(context, "Profile details saved", Toast.LENGTH_SHORT).show()
+                },
+                modifier = Modifier
+                    .fillMaxWidth()
+                    .navigationBarsPadding()
+                    .imePadding()
+            )
+        }
     }
 
     val tokens = LocalKanriGlass.current
@@ -500,37 +487,16 @@ fun ProfileScreen(
                             .border(1.5.dp, MaterialTheme.colorScheme.outlineVariant, CircleShape)
                             .clickable {
                                 haptics.click()
-                                showPhotoOptionsDialog = true
+                                showEditProfileDialog = true
                             },
                         contentAlignment = Alignment.Center
                     ) {
-                        val photoBitmap = remember(profilePhotoPath) {
-                            if (profilePhotoPath != null && File(profilePhotoPath!!).exists()) {
-                                try {
-                                    BitmapFactory.decodeFile(profilePhotoPath)?.asImageBitmap()
-                                } catch (e: Exception) {
-                                    null
-                                }
-                            } else null
-                        }
-
-                        if (photoBitmap != null) {
-                            Image(
-                                bitmap = photoBitmap,
-                                contentDescription = "Profile Photo",
-                                contentScale = ContentScale.Crop,
-                                modifier = Modifier.fillMaxSize()
-                            )
-                        } else {
-                            Text(
-                                text = currentUserName.take(1).uppercase(),
-                                style = MaterialTheme.typography.headlineMedium.copy(
-                                    fontWeight = FontWeight.Bold,
-                                    fontSize = 28.sp
-                                ),
-                                color = MaterialTheme.colorScheme.onSurface
-                            )
-                        }
+                        com.omkarnub.kanri.ui.common.kokonut.KanriUserAvatar(
+                            name = currentUserName,
+                            variant = avatarVariant,
+                            photoPath = profilePhotoPath,
+                            modifier = Modifier.fillMaxSize()
+                        )
 
                         // Camera / Edit badge
                         Box(

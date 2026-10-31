@@ -17,10 +17,14 @@ class WalletPreferences(context: Context) {
     private val _isWalletSetupCompletedFlow = MutableStateFlow(loadIsWalletSetupCompleted())
     val isWalletSetupCompletedFlow: StateFlow<Boolean> = _isWalletSetupCompletedFlow.asStateFlow()
 
+    private val _isBalanceSpoilerEnabledFlow = MutableStateFlow(loadIsBalanceSpoilerEnabled())
+    val isBalanceSpoilerEnabledFlow: StateFlow<Boolean> = _isBalanceSpoilerEnabledFlow.asStateFlow()
+
     companion object {
         private const val PREFS_NAME = "kanri_wallet_prefs"
         private const val KEY_ATM_WITHDRAWAL_MODE = "key_atm_withdrawal_mode"
         private const val KEY_WALLET_SETUP_COMPLETED = "key_wallet_setup_completed"
+        private const val KEY_BALANCE_SPOILER_ENABLED = "key_balance_spoiler_enabled"
 
         @Volatile
         private var INSTANCE: WalletPreferences? = null
@@ -45,6 +49,10 @@ class WalletPreferences(context: Context) {
         return prefs.getBoolean(KEY_WALLET_SETUP_COMPLETED, false)
     }
 
+    private fun loadIsBalanceSpoilerEnabled(): Boolean {
+        return prefs.getBoolean(KEY_BALANCE_SPOILER_ENABLED, false)
+    }
+
     var atmWithdrawalMode: AtmWithdrawalMode
         get() = loadAtmWithdrawalMode()
         set(value) {
@@ -59,9 +67,17 @@ class WalletPreferences(context: Context) {
             _isWalletSetupCompletedFlow.value = value
         }
 
+    var isBalanceSpoilerEnabled: Boolean
+        get() = loadIsBalanceSpoilerEnabled()
+        set(value) {
+            prefs.edit().putBoolean(KEY_BALANCE_SPOILER_ENABLED, value).apply()
+            _isBalanceSpoilerEnabledFlow.value = value
+        }
+
     fun reset() {
         prefs.edit().clear().apply()
         _atmWithdrawalModeFlow.value = AtmWithdrawalMode.SPENDING
         _isWalletSetupCompletedFlow.value = false
+        _isBalanceSpoilerEnabledFlow.value = false
     }
 }

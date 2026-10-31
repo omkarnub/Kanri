@@ -56,6 +56,10 @@ import androidx.compose.ui.unit.sp
 import com.omkarnub.kanri.data.db.LendingWithRepayments
 import com.omkarnub.kanri.ui.common.AnimatedNumberText
 import com.omkarnub.kanri.util.CurrencyUtils
+import com.omkarnub.kanri.ui.common.kokonut.KokonutTearButton
+import com.omkarnub.kanri.ui.common.kokonut.TearTone
+import java.text.SimpleDateFormat
+import java.util.Date
 import java.util.Locale
 import kotlin.math.abs
 
@@ -80,6 +84,7 @@ fun LendingPersonDetailView(
     onSettleAllClick: () -> Unit,
     onPayUpiClick: () -> Unit = {},
     onTransactionClick: (LendingWithRepayments) -> Unit,
+    onSettleEntry: ((LendingWithRepayments) -> Unit)? = null,
     modifier: Modifier = Modifier
 ) {
     BackHandler(onBack = onBack)
@@ -334,10 +339,31 @@ fun LendingPersonDetailView(
                 }
 
                 items(allEntries, key = { it.lending.id }) { entryWithRepayments ->
-                    GPayTransactionItem(
-                        entryWithRepayments = entryWithRepayments,
-                        onClick = { onTransactionClick(entryWithRepayments) }
-                    )
+                    val record = entryWithRepayments.lending
+                    if (!record.isSettled) {
+                        val isLent = record.type.equals("LENT", ignoreCase = true)
+                        val dateStr = SimpleDateFormat("dd MMM yyyy", Locale.getDefault()).format(Date(record.date))
+                        val dueStr = if (record.dueDate != null) " • Due: ${SimpleDateFormat("dd MMM", Locale.getDefault()).format(Date(record.dueDate))}" else ""
+                        val sub = "${CurrencyUtils.formatCurrency(entryWithRepayments.outstanding)} • $dateStr$dueStr"
+
+                        KokonutTearButton(
+                            title = record.personName,
+                            subtitle = sub,
+                            confirmedTitle = "Settled",
+                            confirmedSubtitle = "Marked as settled",
+                            tone = if (isLent) TearTone.DEFAULT else TearTone.MUTED,
+                            isSettled = false,
+                            onConfirm = {
+                                onSettleEntry?.invoke(entryWithRepayments)
+                            },
+                            modifier = Modifier.fillMaxWidth()
+                        )
+                    } else {
+                        GPayTransactionItem(
+                            entryWithRepayments = entryWithRepayments,
+                            onClick = { onTransactionClick(entryWithRepayments) }
+                        )
+                    }
                 }
 
                 item(key = "bottom_dock_clearance") {

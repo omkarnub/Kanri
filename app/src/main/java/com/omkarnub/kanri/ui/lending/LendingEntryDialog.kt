@@ -110,6 +110,11 @@ import com.omkarnub.kanri.ui.common.rememberKanriGlassTheme
 import com.omkarnub.kanri.util.CurrencyUtils
 import dev.chrisbanes.haze.ExperimentalHazeApi
 import dev.chrisbanes.haze.HazeState
+import com.omkarnub.kanri.ui.common.kokonut.KokonutAmountPad
+import com.omkarnub.kanri.ui.common.kokonut.KokonutSmoothDrawer
+import com.omkarnub.kanri.ui.common.kokonut.DrawerDetailRow
+import java.text.SimpleDateFormat
+import java.util.Date
 import dev.chrisbanes.haze.hazeChild
 import java.util.Calendar
 import java.util.Locale
@@ -117,6 +122,13 @@ import java.util.TimeZone
 
 private val SageGreen = Color(0xFF30A46C)
 private val ExpenseRed = Color(0xFFE54D2E)
+
+enum class LendingEntryStep {
+    AMOUNT_PAD,
+    FILL_DETAILS,
+    SUMMARY_DRAWER
+}
+
 
 @OptIn(ExperimentalLayoutApi::class, ExperimentalMaterial3Api::class, ExperimentalHazeApi::class)
 @Composable
@@ -134,7 +146,6 @@ fun LendingEntryDialog(
     onSave: (personName: String, amount: Double, type: String, date: Long, dueDate: Long?, notes: String?, wallet: String) -> Unit,
     hazeState: HazeState? = LocalHazeState.current
 ) {
-    BackHandler(onBack = onDismiss)
 
     val context = LocalContext.current
     val glassTheme = rememberKanriGlassTheme()
@@ -142,6 +153,9 @@ fun LendingEntryDialog(
 
     val isEditing = existingEntry != null
     val hasRepayments = existingEntry?.repayments?.isNotEmpty() == true
+    var currentStep by remember {
+        mutableStateOf(if (isEditing) LendingEntryStep.FILL_DETAILS else LendingEntryStep.AMOUNT_PAD)
+    }
 
     var type by remember { mutableStateOf(existingEntry?.lending?.type ?: initialType) }
     var personName by remember { mutableStateOf(existingEntry?.lending?.personName ?: initialPersonName) }
@@ -223,6 +237,62 @@ fun LendingEntryDialog(
         }
     )
 
+    when (currentStep) {
+        LendingEntryStep.AMOUNT_PAD -> {
+            BackHandler(onBack = onDismiss)
+            Box(
+                modifier = Modifier.fillMaxSize(),
+                contentAlignment = Alignment.BottomCenter
+            ) {
+                Box(
+                    modifier = Modifier
+                        .fillMaxSize()
+                        .then(
+                            if (hazeState != null) {
+                                Modifier.hazeChild(
+                                    state = hazeState,
+                                    style = dev.chrisbanes.haze.HazeStyle(
+                                        backgroundColor = Color.Black.copy(alpha = 0.52f),
+                                        tint = dev.chrisbanes.haze.HazeTint(Color.Black.copy(alpha = 0.52f)),
+                                        blurRadius = 24.dp
+                                    )
+                                )
+                            } else {
+                                Modifier.background(Color.Black.copy(alpha = 0.52f))
+                            }
+                        )
+                        .clickable(
+                            interactionSource = remember { MutableInteractionSource() },
+                            indication = null,
+                            onClick = onDismiss
+                        )
+                )
+
+                KokonutAmountPad(
+                    label = if (type == "LENT") "Lending to" else "Borrowing from",
+                    recipientName = if (personName.isNotBlank()) personName else (if (type == "LENT") "Lent" else "Borrowed"),
+                    initialAmount = amount,
+                    onContinue = { entered ->
+                        amount = entered
+                        manualText = if (entered % 1.0 == 0.0) entered.toLong().toString() else entered.toString()
+                        manualTextFieldValue = TextFieldValue(text = manualText, selection = TextRange(manualText.length))
+                        currentStep = LendingEntryStep.FILL_DETAILS
+                    },
+                    modifier = Modifier
+                        .fillMaxWidth()
+                        .navigationBarsPadding()
+                        .imePadding()
+                )
+            }
+        }
+        LendingEntryStep.FILL_DETAILS -> {
+            BackHandler(onBack = {
+                if (!isEditing) {
+                    currentStep = LendingEntryStep.AMOUNT_PAD
+                } else {
+                    onDismiss()
+                }
+            })
     Dialog(
         onDismissRequest = onDismiss,
         properties = DialogProperties(
@@ -307,7 +377,7 @@ fun LendingEntryDialog(
                             Button(
                                 onClick = {
                                     if (isValid) {
-                                        onSave(personName.trim(), amount, type, entryDate, dueDate, notes.ifBlank { null }, selectedWallet)
+                                        currentStep = LendingEntryStep.SUMMARY_DRAWER
                                     }
                                 },
                                 enabled = isValid,
@@ -318,7 +388,7 @@ fun LendingEntryDialog(
                                     .height(52.dp)
                             ) {
                                 Text(
-                                    text = if (isEditing) "Save Changes" else "Add Entry",
+                                    text = if (isEditing) "Review Changes" else "Review Summary",
                                     style = MaterialTheme.typography.titleMedium.copy(fontWeight = FontWeight.Bold)
                                 )
                             }
@@ -1390,6 +1460,34 @@ fun LendingEntryDialog(
     }
 }
 
+
+        }
+        LendingEntryStep.SUMMARY_DRAWER -> {
+            BackHandler(onBack = { currentStep = LendingEntryStep.FILL_DETAILS })
+            val detailRows = listOfNotNull(
+                DrawerDetailRow(title = "Type", value = if (type == "LENT") "Lent" else "Borrowed"),
+                DrawerDetailRow(title = if (type == "LENT") "To" else "From", value = personName.trim()),
+                if (dueDate != null) DrawerDetailRow(title = "Expected Return", value = SimpleDateFormat("dd MMM yyyy", Locale.getDefault()).format(Date(dueDate!!))) else null,
+                if (notes.isNotBlank()) DrawerDetailRow(title = "Note", value = notes.trim()) else null,
+                DrawerDetailRow(title = "Account", value = if (selectedWallet == "ONLINE") "Online" else if (selectedWallet == "CASH") "Cash" else "Unlinked")
+            )
+
+            KokonutSmoothDrawer(
+                title = if (type == "LENT") "Review loan" else "Review borrowing",
+                description = "${personName.trim()} • ${SimpleDateFormat("dd MMM, hh:mm a", Locale.getDefault()).format(Date(entryDate))}",
+                totalAmount = amount,
+                slideLabel = if (type == "LENT") "Slide to lend ₹${amount.toInt()}" else "Slide to record borrowing",
+                detailRows = detailRows,
+                accountType = if (selectedWallet == "ONLINE") "Online" else "Cash",
+                onConfirm = {
+                    onSave(personName.trim(), amount, type, entryDate, dueDate, notes.ifBlank { null }, selectedWallet)
+                },
+                onDismiss = {
+                    currentStep = LendingEntryStep.FILL_DETAILS
+                }
+            )
+        }
+    }
     // Material Date Picker Dialog for Entry Date
     if (showEntryDatePicker) {
         val datePickerState = rememberDatePickerState(

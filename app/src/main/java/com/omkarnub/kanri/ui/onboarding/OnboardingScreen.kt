@@ -110,6 +110,7 @@ import com.omkarnub.kanri.data.cloud.BackupMode
 import com.omkarnub.kanri.data.cloud.CloudBackupPreferences
 import com.omkarnub.kanri.data.cloud.CloudBackupWorker
 import com.omkarnub.kanri.data.profile.UserProfilePreferences
+import com.omkarnub.kanri.ui.common.kokonut.KokonutAvatarSelectorDialog
 import com.omkarnub.kanri.data.security.SecurityPreferences
 import com.omkarnub.kanri.ui.notification.NotificationAccessHelper
 import com.omkarnub.kanri.ui.onboarding.animation.FoldHinge
@@ -667,220 +668,28 @@ private fun ProfileSetupSlide(
     onContinue: () -> Unit
 ) {
     val context = LocalContext.current
-    val focusManager = LocalFocusManager.current
-    val profilePrefs = remember { UserProfilePreferences.getInstance(context) }
-
-    var nameInput by remember {
-        mutableStateOf(if (profilePrefs.userName == "Alex") "" else profilePrefs.userName)
-    }
-    var profilePhotoPath by remember { mutableStateOf(profilePrefs.profilePhotoPath) }
-
-    val photoPickerLauncher = rememberLauncherForActivityResult(
-        contract = ActivityResultContracts.GetContent()
-    ) { uri: Uri? ->
-        if (uri != null) {
-            val saved = profilePrefs.savePhotoFromUri(uri)
-            if (saved) {
-                profilePhotoPath = profilePrefs.profilePhotoPath
-            }
-        }
-    }
+    val profilePrefs = remember { com.omkarnub.kanri.data.profile.UserProfilePreferences.getInstance(context) }
+    val initialName = remember { if (profilePrefs.userName == "Alex") "" else profilePrefs.userName }
+    val initialVariant = remember { profilePrefs.avatarVariant }
 
     Box(
         modifier = Modifier
             .fillMaxSize()
-            .padding(horizontal = 32.dp),
+            .padding(horizontal = 20.dp, vertical = 16.dp),
         contentAlignment = Alignment.Center
     ) {
-        Column(
-            horizontalAlignment = Alignment.CenterHorizontally,
-            verticalArrangement = Arrangement.Center,
+        com.omkarnub.kanri.ui.common.kokonut.KokonutAvatarPicker(
+            title = "Pick your avatar",
+            submitLabel = "Continue",
+            initialName = initialName,
+            initialVariant = initialVariant,
+            onComplete = { name, variant, _ ->
+                profilePrefs.userName = name
+                profilePrefs.avatarVariant = variant
+                onContinue()
+            },
             modifier = Modifier.fillMaxWidth()
-        ) {
-            Text(
-                text = "Welcome to Kanri",
-                fontFamily = Panchang,
-                fontWeight = FontWeight.Bold,
-                fontSize = 22.sp,
-                color = MaterialTheme.colorScheme.onBackground,
-                textAlign = TextAlign.Center
-            )
-
-            Spacer(modifier = Modifier.height(10.dp))
-
-            Text(
-                text = "Choose your name and profile picture to personalize your financial space.",
-                fontSize = 14.sp,
-                lineHeight = 20.sp,
-                color = MaterialTheme.colorScheme.onSurfaceVariant,
-                textAlign = TextAlign.Center,
-                modifier = Modifier.padding(horizontal = 8.dp)
-            )
-
-            Spacer(modifier = Modifier.height(36.dp))
-
-            // Avatar picker
-            Box(
-                modifier = Modifier
-                    .size(108.dp)
-                    .clip(CircleShape)
-                    .background(MaterialTheme.colorScheme.surfaceVariant)
-                    .border(
-                        width = 1.5.dp,
-                        color = MaterialTheme.colorScheme.outlineVariant,
-                        shape = CircleShape
-                    )
-                    .clickable {
-                        photoPickerLauncher.launch("image/*")
-                    },
-                contentAlignment = Alignment.Center
-            ) {
-                val photoBitmap = remember(profilePhotoPath) {
-                    if (profilePhotoPath != null && File(profilePhotoPath!!).exists()) {
-                        try {
-                            BitmapFactory.decodeFile(profilePhotoPath)?.asImageBitmap()
-                        } catch (e: Exception) {
-                            null
-                        }
-                    } else null
-                }
-
-                if (photoBitmap != null) {
-                    Image(
-                        bitmap = photoBitmap,
-                        contentDescription = "Profile Avatar",
-                        contentScale = ContentScale.Crop,
-                        modifier = Modifier.fillMaxSize()
-                    )
-                } else {
-                    Icon(
-                        imageVector = Icons.Default.Person,
-                        contentDescription = "Default Avatar",
-                        modifier = Modifier.size(52.dp),
-                        tint = MaterialTheme.colorScheme.onSurfaceVariant
-                    )
-                }
-
-                // Camera overlay badge in bottom-right corner
-                Box(
-                    modifier = Modifier
-                        .size(32.dp)
-                        .align(Alignment.BottomEnd)
-                        .clip(CircleShape)
-                        .background(MaterialTheme.colorScheme.onBackground)
-                        .border(1.5.dp, MaterialTheme.colorScheme.background, CircleShape),
-                    contentAlignment = Alignment.Center
-                ) {
-                    Icon(
-                        imageVector = Icons.Default.CameraAlt,
-                        contentDescription = "Change Photo",
-                        tint = MaterialTheme.colorScheme.background,
-                        modifier = Modifier.size(16.dp)
-                    )
-                }
-            }
-
-            Spacer(modifier = Modifier.height(8.dp))
-
-            TextButton(
-                onClick = { photoPickerLauncher.launch("image/*") }
-            ) {
-                Text(
-                    text = if (profilePhotoPath != null) "Change photo" else "Choose photo",
-                    fontSize = 13.sp,
-                    fontWeight = FontWeight.Medium,
-                    color = MaterialTheme.colorScheme.onSurfaceVariant
-                )
-            }
-
-            Spacer(modifier = Modifier.height(24.dp))
-
-            // Name input field
-            OutlinedTextField(
-                value = nameInput,
-                onValueChange = { nameInput = it },
-                label = { Text("What should we call you?") },
-                placeholder = { Text("e.g. Alex") },
-                singleLine = true,
-                shape = RoundedCornerShape(16.dp),
-                keyboardOptions = KeyboardOptions(
-                    capitalization = KeyboardCapitalization.Words,
-                    imeAction = ImeAction.Done
-                ),
-                keyboardActions = KeyboardActions(
-                    onDone = {
-                        focusManager.clearFocus()
-                    }
-                ),
-                trailingIcon = {
-                    if (nameInput.isNotBlank()) {
-                        IconButton(onClick = { nameInput = "" }) {
-                            Icon(
-                                imageVector = Icons.Default.Close,
-                                contentDescription = "Clear name",
-                                modifier = Modifier.size(18.dp)
-                            )
-                        }
-                    }
-                },
-                colors = OutlinedTextFieldDefaults.colors(
-                    focusedBorderColor = MaterialTheme.colorScheme.onBackground,
-                    unfocusedBorderColor = MaterialTheme.colorScheme.outlineVariant,
-                    focusedLabelColor = MaterialTheme.colorScheme.onBackground,
-                    unfocusedLabelColor = MaterialTheme.colorScheme.onSurfaceVariant
-                ),
-                modifier = Modifier.fillMaxWidth()
-            )
-
-            Spacer(modifier = Modifier.height(36.dp))
-
-            // Continue Button
-            Button(
-                onClick = {
-                    focusManager.clearFocus()
-                    val trimmed = nameInput.trim()
-                    profilePrefs.userName = if (trimmed.isNotBlank()) trimmed else "Alex"
-                    onContinue()
-                },
-                modifier = Modifier
-                    .fillMaxWidth()
-                    .height(52.dp),
-                shape = RoundedCornerShape(50),
-                colors = ButtonDefaults.buttonColors(
-                    containerColor = MaterialTheme.colorScheme.onBackground,
-                    contentColor = MaterialTheme.colorScheme.background
-                ),
-                elevation = ButtonDefaults.buttonElevation(
-                    defaultElevation = 0.dp,
-                    pressedElevation = 0.dp
-                )
-            ) {
-                Text(
-                    text = "Continue",
-                    fontWeight = FontWeight.SemiBold,
-                    fontSize = 15.sp
-                )
-            }
-
-            Spacer(modifier = Modifier.height(12.dp))
-
-            TextButton(
-                onClick = {
-                    focusManager.clearFocus()
-                    if (profilePrefs.userName.isBlank()) {
-                        profilePrefs.userName = "Alex"
-                    }
-                    onContinue()
-                }
-            ) {
-                Text(
-                    text = "Set up later",
-                    fontSize = 13.sp,
-                    fontWeight = FontWeight.Medium,
-                    color = MaterialTheme.colorScheme.onSurfaceVariant.copy(alpha = 0.7f)
-                )
-            }
-        }
+        )
     }
 }
 

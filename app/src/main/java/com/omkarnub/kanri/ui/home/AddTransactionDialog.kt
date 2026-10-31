@@ -24,6 +24,7 @@ import androidx.compose.foundation.layout.fillMaxSize
 import androidx.compose.foundation.layout.fillMaxWidth
 import androidx.compose.foundation.layout.height
 import androidx.compose.foundation.layout.imePadding
+import androidx.compose.foundation.layout.navigationBarsPadding
 import androidx.compose.foundation.layout.padding
 import androidx.compose.foundation.layout.size
 import androidx.compose.foundation.layout.width
@@ -79,6 +80,12 @@ import com.omkarnub.kanri.data.db.CategoryEntity
 import com.omkarnub.kanri.ui.common.AnimatedNumberText
 import com.omkarnub.kanri.ui.common.CategoryIcon
 import com.omkarnub.kanri.ui.common.GlassLevel
+import com.omkarnub.kanri.ui.common.kokonut.KokonutAmountPad
+import com.omkarnub.kanri.ui.common.kokonut.KokonutSmoothDrawer
+import com.omkarnub.kanri.ui.common.kokonut.DrawerDetailRow
+import java.text.SimpleDateFormat
+import java.util.Date
+import java.util.Locale
 import com.omkarnub.kanri.ui.common.KanriGlassCard
 import com.omkarnub.kanri.ui.common.LocalHazeState
 import com.omkarnub.kanri.ui.common.kanriPrimaryButtonColors
@@ -101,6 +108,13 @@ import kotlinx.coroutines.launch
 
 private var lastSelectedWalletSession: String? = null
 
+enum class AddTransactionStep {
+    AMOUNT_PAD,
+    FILL_DETAILS,
+    SUMMARY_DRAWER
+}
+
+
 /**
  * Pure Monochrome Frosted Glass Transaction Dialog (Expense & Income):
  * 1. In-window frosted glass overlay with real hardware-accelerated Haze blur across all themes (Dark, AMOLED, Light).
@@ -119,7 +133,6 @@ fun AddTransactionDialog(
     onOpenLendBorrow: ((amount: Double, type: String, counterparty: String, note: String) -> Unit)? = null,
     hazeState: HazeState? = LocalHazeState.current
 ) {
-    BackHandler(onBack = onDismiss)
 
     val context = LocalContext.current
     val haptics = rememberKanriHaptics()
@@ -131,6 +144,7 @@ fun AddTransactionDialog(
     val glassTheme = rememberKanriGlassTheme()
     val isDebit = initialType.equals("DEBIT", ignoreCase = true)
     val titleText = if (isDebit) "Add Expense" else "Add Income"
+    var currentStep by remember { mutableStateOf(AddTransactionStep.AMOUNT_PAD) }
 
     var amount by remember { mutableDoubleStateOf(100.0) }
     var isManualInput by remember { mutableStateOf(false) }
@@ -182,9 +196,59 @@ fun AddTransactionDialog(
         }
     }
 
+    when (currentStep) {
+        AddTransactionStep.AMOUNT_PAD -> {
+            BackHandler(onBack = onDismiss)
+            Box(
+                modifier = Modifier.fillMaxSize(),
+                contentAlignment = Alignment.BottomCenter
+            ) {
+                Box(
+                    modifier = Modifier
+                        .fillMaxSize()
+                        .then(
+                            if (hazeState != null) {
+                                Modifier.hazeChild(
+                                    state = hazeState,
+                                    style = dev.chrisbanes.haze.HazeStyle(
+                                        backgroundColor = Color.Black.copy(alpha = 0.52f),
+                                        tint = dev.chrisbanes.haze.HazeTint(Color.Black.copy(alpha = 0.52f)),
+                                        blurRadius = 24.dp
+                                    )
+                                )
+                            } else {
+                                Modifier.background(Color.Black.copy(alpha = 0.52f))
+                            }
+                        )
+                        .clickable(
+                            interactionSource = remember { MutableInteractionSource() },
+                            indication = null,
+                            onClick = onDismiss
+                        )
+                )
+
+                KokonutAmountPad(
+                    label = if (isDebit) "Expense" else "Income",
+                    recipientName = if (isDebit) "Expense" else "Income",
+                    initialAmount = amount,
+                    onContinue = { entered ->
+                        amount = entered
+                        manualText = if (entered % 1.0 == 0.0) entered.toLong().toString() else entered.toString()
+                        manualTextFieldValue = TextFieldValue(text = manualText, selection = TextRange(manualText.length))
+                        currentStep = AddTransactionStep.FILL_DETAILS
+                    },
+                    modifier = Modifier
+                        .fillMaxWidth()
+                        .navigationBarsPadding()
+                        .imePadding()
+                )
+            }
+        }
+        AddTransactionStep.FILL_DETAILS -> {
+            BackHandler(onBack = { currentStep = AddTransactionStep.AMOUNT_PAD })
     Box(
         modifier = Modifier.fillMaxSize(),
-        contentAlignment = Alignment.Center
+        contentAlignment = Alignment.BottomCenter
     ) {
         // 1. Semi-transparent backdrop scrim with click-outside dismiss
         Box(
@@ -214,14 +278,14 @@ fun AddTransactionDialog(
         // 2. Centered Plain Themed Popup Card with Strong Frosted Blur
         Box(
             modifier = Modifier
-                .fillMaxSize()
+                .fillMaxWidth()
                 .imePadding()
-                .padding(horizontal = 18.dp),
-            contentAlignment = Alignment.Center
+                .navigationBarsPadding(),
+            contentAlignment = Alignment.BottomCenter
         ) {
             KanriGlassCard(
                 modifier = Modifier.fillMaxWidth(),
-                shape = RoundedCornerShape(28.dp),
+                shape = RoundedCornerShape(topStart = 24.dp, topEnd = 24.dp, bottomStart = 0.dp, bottomEnd = 0.dp),
                 level = GlassLevel.Strong,
                 hazeState = hazeState
             ) {
@@ -840,44 +904,13 @@ fun AddTransactionDialog(
                                     )
                                     return@Button
                                 }
-                                val defaultNote = if (isDebit) "Expense" else "Income"
-                                var resolvedPayee = payeeText.ifBlank { defaultNote }
-
-                                // If savings goal allocation was checked
-                                if (!isDebit && isAllocateToGoalEnabled && selectedGoalId != null) {
-                                    val chosenGoal = activeGoals.find { it.id == selectedGoalId }
-                                    if (chosenGoal != null) {
-                                        scope.launch(Dispatchers.IO) {
-                                            val newTotal = chosenGoal.currentAmount + amount
-                                            val isDone = chosenGoal.targetAmount > 0 && newTotal >= chosenGoal.targetAmount
-                                            db.savingsGoalDao().updateProgress(chosenGoal.id, newTotal, isDone)
-                                            db.savingsGoalDao().insertContribution(
-                                                SavingsGoalContributionEntity(
-                                                    goalId = chosenGoal.id,
-                                                    amount = amount,
-                                                    timestamp = System.currentTimeMillis(),
-                                                    note = "Income: $resolvedPayee"
-                                                )
-                                            )
-                                        }
-                                        resolvedPayee = "[Saved ₹${amount.toInt()} for ${chosenGoal.title}] $resolvedPayee"
-                                        android.widget.Toast.makeText(
-                                            context,
-                                            "₹${amount.toInt()} allocated to ${chosenGoal.title}",
-                                            android.widget.Toast.LENGTH_SHORT
-                                        ).show()
-                                    }
-                                }
-
-                                lastSelectedWalletSession = selectedWallet
-                                haptics.success()
-                                onConfirm(amount, initialType, resolvedPayee, selectedSource, selectedCategoryId, selectedWallet)
+                                currentStep = AddTransactionStep.SUMMARY_DRAWER
                             },
                             colors = kanriPrimaryButtonColors(),
                             shape = RoundedCornerShape(12.dp)
                         ) {
                             Text(
-                                text = if (isDebit) "Save Expense" else "Save Income",
+                                text = "Review Summary",
                                 fontWeight = FontWeight.Bold,
                                 modifier = Modifier.padding(horizontal = 6.dp)
                             )
@@ -887,4 +920,61 @@ fun AddTransactionDialog(
             }
         }
     }
+        }
+        AddTransactionStep.SUMMARY_DRAWER -> {
+            BackHandler(onBack = { currentStep = AddTransactionStep.FILL_DETAILS })
+            val selectedCategory = sortedCategories.firstOrNull { it.id == selectedCategoryId }
+            val defaultNote = if (isDebit) "Expense" else "Income"
+            var resolvedPayee = payeeText.ifBlank { defaultNote }
+
+            val detailRows = listOfNotNull(
+                DrawerDetailRow(title = "Type", value = if (isDebit) "Expense" else "Income"),
+                DrawerDetailRow(title = "Category", value = selectedCategory?.name ?: "General"),
+                if (payeeText.isNotBlank()) DrawerDetailRow(title = "Note / Payee", value = payeeText) else null,
+                DrawerDetailRow(title = "Account", value = if (selectedWallet == "ONLINE") "Online" else "Cash")
+            )
+
+            KokonutSmoothDrawer(
+                title = if (isDebit) "Review expense" else "Review income",
+                description = "${selectedCategory?.name ?: "General"} • ${SimpleDateFormat("dd MMM, hh:mm a", Locale.getDefault()).format(Date())}",
+                totalAmount = amount,
+                slideLabel = if (isDebit) "Slide to save expense" else "Slide to save income",
+                detailRows = detailRows,
+                accountType = if (selectedWallet == "ONLINE") "Online" else "Cash",
+                onConfirm = {
+                    if (!isDebit && isAllocateToGoalEnabled && selectedGoalId != null) {
+                        val chosenGoal = activeGoals.find { it.id == selectedGoalId }
+                        if (chosenGoal != null) {
+                            scope.launch(Dispatchers.IO) {
+                                val newTotal = chosenGoal.currentAmount + amount
+                                val isDone = chosenGoal.targetAmount > 0 && newTotal >= chosenGoal.targetAmount
+                                db.savingsGoalDao().updateProgress(chosenGoal.id, newTotal, isDone)
+                                db.savingsGoalDao().insertContribution(
+                                    SavingsGoalContributionEntity(
+                                        goalId = chosenGoal.id,
+                                        amount = amount,
+                                        timestamp = System.currentTimeMillis(),
+                                        note = "Income: $resolvedPayee"
+                                    )
+                                )
+                            }
+                            resolvedPayee = "[Saved ₹${amount.toInt()} for ${chosenGoal.title}] $resolvedPayee"
+                            android.widget.Toast.makeText(
+                                context,
+                                "₹${amount.toInt()} allocated to ${chosenGoal.title}",
+                                android.widget.Toast.LENGTH_SHORT
+                            ).show()
+                        }
+                    }
+                    lastSelectedWalletSession = selectedWallet
+                    haptics.success()
+                    onConfirm(amount, initialType, resolvedPayee, selectedSource, selectedCategoryId, selectedWallet)
+                },
+                onDismiss = {
+                    currentStep = AddTransactionStep.FILL_DETAILS
+                }
+            )
+        }
+    }
+
 }

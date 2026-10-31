@@ -1,4 +1,4 @@
-﻿package com.omkarnub.kanri.ui.home
+package com.omkarnub.kanri.ui.home
 
 import android.content.Intent
 import android.net.Uri
@@ -153,6 +153,7 @@ fun HomeScreen(
     val profilePrefs = remember { com.omkarnub.kanri.data.profile.UserProfilePreferences.getInstance(context) }
     val currentUserName by profilePrefs.userNameFlow.collectAsState()
     val profilePhotoPath by profilePrefs.profilePhotoPathFlow.collectAsState()
+    val avatarVariant by profilePrefs.avatarVariantFlow.collectAsState()
 
     val state by viewModel.uiState.collectAsState()
     val greetingResult by viewModel.greeting.collectAsState()
@@ -481,33 +482,12 @@ fun HomeScreen(
                             },
                         contentAlignment = Alignment.Center
                     ) {
-                        val photoBitmap = remember(profilePhotoPath) {
-                            if (profilePhotoPath != null && java.io.File(profilePhotoPath!!).exists()) {
-                                try {
-                                    android.graphics.BitmapFactory.decodeFile(profilePhotoPath)?.asImageBitmap()
-                                } catch (e: Exception) {
-                                    null
-                                }
-                            } else null
-                        }
-
-                        if (photoBitmap != null) {
-                            androidx.compose.foundation.Image(
-                                bitmap = photoBitmap,
-                                contentDescription = "User Profile",
-                                contentScale = androidx.compose.ui.layout.ContentScale.Crop,
-                                modifier = Modifier.fillMaxSize()
-                            )
-                        } else {
-                            Text(
-                                text = currentUserName.take(1).uppercase(),
-                                style = MaterialTheme.typography.titleSmall.copy(
-                                    fontWeight = FontWeight.Bold,
-                                    fontSize = 15.sp
-                                ),
-                                color = MaterialTheme.colorScheme.onSurface
-                            )
-                        }
+                        com.omkarnub.kanri.ui.common.kokonut.KanriUserAvatar(
+                            name = currentUserName,
+                            variant = avatarVariant,
+                            photoPath = profilePhotoPath,
+                            modifier = Modifier.fillMaxSize()
+                        )
                     }
                 }
 

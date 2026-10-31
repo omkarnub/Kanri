@@ -302,6 +302,20 @@ fun LendingScreen(
                         haptics.click()
                         selectedTransactionForDetail = entry
                     },
+                    onSettleEntry = { entry ->
+                        haptics.success()
+                        hubViewModel.settleAllEntry(entry.lending.id)
+                        scope.launch {
+                            val result = snackbarHostState.showSnackbar(
+                                message = "Marked as settled",
+                                actionLabel = "Undo",
+                                duration = SnackbarDuration.Short
+                            )
+                            if (result == SnackbarResult.ActionPerformed) {
+                                hubViewModel.reopenLegacyEntry(entry.lending.id)
+                            }
+                        }
+                    },
                     modifier = Modifier.padding(horizontal = 18.dp)
                 )
             } else {

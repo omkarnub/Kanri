@@ -1,4 +1,4 @@
-﻿package com.omkarnub.kanri.data.profile
+package com.omkarnub.kanri.data.profile
 
 import android.content.Context
 import android.content.SharedPreferences
@@ -27,11 +27,15 @@ class UserProfilePreferences(private val context: Context) {
     private val _profilePhotoPathFlow = MutableStateFlow(loadProfilePhotoPath())
     val profilePhotoPathFlow: StateFlow<String?> = _profilePhotoPathFlow.asStateFlow()
 
+    private val _avatarVariantFlow = MutableStateFlow(loadAvatarVariant())
+    val avatarVariantFlow: StateFlow<Int> = _avatarVariantFlow.asStateFlow()
+
     companion object {
         private const val PREFS_NAME = "kanri_user_profile_prefs"
         private const val KEY_USER_NAME = "key_user_name"
         private const val KEY_USER_DOB = "key_user_dob"
         private const val KEY_PROFILE_PHOTO_PATH = "key_profile_photo_path"
+        private const val KEY_AVATAR_VARIANT = "key_avatar_variant"
         private const val PROFILE_IMAGE_FILENAME = "kanri_profile_avatar.jpg"
         private const val DEFAULT_NAME = "Alex"
 
@@ -83,6 +87,15 @@ class UserProfilePreferences(private val context: Context) {
         private set(value) {
             prefs.edit().putString(KEY_PROFILE_PHOTO_PATH, value).apply()
             _profilePhotoPathFlow.value = value
+        }
+
+    private fun loadAvatarVariant(): Int = prefs.getInt(KEY_AVATAR_VARIANT, 0)
+
+    var avatarVariant: Int
+        get() = loadAvatarVariant()
+        set(value) {
+            prefs.edit().putInt(KEY_AVATAR_VARIANT, value).apply()
+            _avatarVariantFlow.value = value
         }
 
     /**
@@ -169,5 +182,6 @@ class UserProfilePreferences(private val context: Context) {
         _userNameFlow.value = DEFAULT_NAME
         _userDobFlow.value = ""
         _profilePhotoPathFlow.value = null
+        _avatarVariantFlow.value = 0
     }
 }

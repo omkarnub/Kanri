@@ -35,11 +35,17 @@ import androidx.compose.ui.text.font.FontWeight
 import androidx.compose.ui.unit.dp
 import androidx.compose.ui.unit.sp
 import com.omkarnub.kanri.data.wallet.WalletBalances
+import com.omkarnub.kanri.data.wallet.WalletPreferences
 import com.omkarnub.kanri.ui.common.AnimatedNumberText
+import com.omkarnub.kanri.ui.common.kokonut.KokonutSpoilerText
 import com.omkarnub.kanri.ui.theme.ExpenseRed
 import com.omkarnub.kanri.ui.theme.IncomeGreen
 import com.omkarnub.kanri.util.CurrencyUtils
 import com.omkarnub.kanri.util.rememberKanriHaptics
+import androidx.compose.runtime.collectAsState
+import androidx.compose.runtime.getValue
+import androidx.compose.runtime.remember
+import androidx.compose.ui.platform.LocalContext
 
 /**
  * "Manage money Balance" Home Card.
@@ -54,6 +60,9 @@ fun ManageMoneyBalanceCard(
     onSetupClick: () -> Unit,
     modifier: Modifier = Modifier
 ) {
+    val context = LocalContext.current
+    val walletPrefs = remember { WalletPreferences.getInstance(context) }
+    val isSpoilerEnabled by walletPrefs.isBalanceSpoilerEnabledFlow.collectAsState()
     val tokens = LocalKanriGlass.current
 
     val secondaryLabelColor = tokens?.textPrimary?.copy(alpha = 0.80f)
@@ -223,13 +232,18 @@ fun ManageMoneyBalanceCard(
                         )
                     }
                     Spacer(modifier = Modifier.height(4.dp))
-                    AnimatedNumberText(
-                        text = CurrencyUtils.formatCurrency(balances.cash),
-                        style = MaterialTheme.typography.titleLarge.copy(
-                            fontWeight = FontWeight.Bold
-                        ),
-                        color = if (balances.cash < 0) ExpenseRed else MaterialTheme.colorScheme.onSurface
-                    )
+                    KokonutSpoilerText(
+                        isSpoilerActive = isSpoilerEnabled,
+                        speckColor = MaterialTheme.colorScheme.onSurface
+                    ) {
+                        AnimatedNumberText(
+                            text = CurrencyUtils.formatCurrency(balances.cash),
+                            style = MaterialTheme.typography.titleLarge.copy(
+                                fontWeight = FontWeight.Bold
+                            ),
+                            color = if (balances.cash < 0) ExpenseRed else MaterialTheme.colorScheme.onSurface
+                        )
+                    }
                     Spacer(modifier = Modifier.height(3.dp))
                     Text(
                         text = cashFlowText,
@@ -263,13 +277,18 @@ fun ManageMoneyBalanceCard(
                         )
                     }
                     Spacer(modifier = Modifier.height(4.dp))
-                    AnimatedNumberText(
-                        text = CurrencyUtils.formatCurrency(balances.online),
-                        style = MaterialTheme.typography.titleLarge.copy(
-                            fontWeight = FontWeight.Bold
-                        ),
-                        color = if (balances.online < 0) ExpenseRed else MaterialTheme.colorScheme.onSurface
-                    )
+                    KokonutSpoilerText(
+                        isSpoilerActive = isSpoilerEnabled,
+                        speckColor = MaterialTheme.colorScheme.onSurface
+                    ) {
+                        AnimatedNumberText(
+                            text = CurrencyUtils.formatCurrency(balances.online),
+                            style = MaterialTheme.typography.titleLarge.copy(
+                                fontWeight = FontWeight.Bold
+                            ),
+                            color = if (balances.online < 0) ExpenseRed else MaterialTheme.colorScheme.onSurface
+                        )
+                    }
                     Spacer(modifier = Modifier.height(3.dp))
                     Text(
                         text = onlineFlowText,

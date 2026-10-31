@@ -65,6 +65,9 @@ import com.omkarnub.kanri.ui.common.rememberKanriGlassTheme
 import com.omkarnub.kanri.ui.theme.LocalKanriGlass
 import com.omkarnub.kanri.ui.home.formatCurrency
 import java.util.Locale
+import com.omkarnub.kanri.ui.common.kokonut.KokonutSpendingRing
+import com.omkarnub.kanri.ui.common.kokonut.SpendingCategory
+import com.omkarnub.kanri.util.CurrencyUtils
 
 val CategoryGradientPairs = listOf(
     // 0: Soft Sage Green to Forest Green
@@ -97,221 +100,92 @@ fun CategoryDonutChart(
     modifier: Modifier = Modifier,
     onCategoryClick: ((CategorySpendItem) -> Unit)? = null
 ) {
-    var animationTriggered by remember { mutableStateOf(false) }
     var showDistributionSheet by remember { mutableStateOf(false) }
 
-    LaunchedEffect(categorySpends) {
-        animationTriggered = true
+    val kokonutPalette = remember {
+        listOf(
+            Color(0xFF38BDF8),
+            Color(0xFF10B981),
+            Color(0xFFF43F5E),
+            Color(0xFFFBBF24),
+            Color(0xFF8B5CF6),
+            Color(0xFFEC4899),
+            Color(0xFF14B8A6),
+            Color(0xFFF97316),
+            Color(0xFF6366F1),
+            Color(0xFF71717A)
+        )
     }
 
-    val animatedProgress by animateFloatAsState(
-        targetValue = if (animationTriggered) 1f else 0f,
-        animationSpec = tween(durationMillis = 1000, easing = FastOutSlowInEasing),
-        label = "donutProgress"
-    )
-
-    val trackColor = MaterialTheme.colorScheme.surfaceVariant
-    val top3Spends = remember(categorySpends) { categorySpends.take(3) }
-
-    KanriGlassCard(
-        modifier = modifier.fillMaxWidth(),
-        level = GlassLevel.Blur,
-        shape = RoundedCornerShape(24.dp)
-    ) {
-        Column(
-            modifier = Modifier
-                .fillMaxWidth()
-                .padding(20.dp),
-            horizontalAlignment = Alignment.CenterHorizontally
-        ) {
-            Text(
-                text = "SPENDING BY CATEGORY",
-                style = MaterialTheme.typography.labelSmall.copy(
-                    color = MaterialTheme.colorScheme.onSurfaceVariant,
-                    letterSpacing = 1.2.sp,
-                    fontWeight = FontWeight.Bold
-                ),
-                modifier = Modifier.fillMaxWidth()
+    val ringCategories = remember(categorySpends) {
+        if (categorySpends.isEmpty()) {
+            listOf(
+                SpendingCategory(
+                    name = "No spending",
+                    amount = 0.0,
+                    change = 0.0,
+                    color = Color(0xFF71717A)
+                )
             )
-
-            Spacer(modifier = Modifier.height(20.dp))
-
-            if (categorySpends.isEmpty() || totalSpent <= 0.0) {
-                // Empty state donut
-                Box(
-                    modifier = Modifier.size(190.dp),
-                    contentAlignment = Alignment.Center
-                ) {
-                    Canvas(modifier = Modifier.size(180.dp)) {
-                        val strokeWidth = 24.dp.toPx()
-                        val arcRadius = (size.minDimension - strokeWidth) / 2f
-                        drawCircle(
-                            color = trackColor.copy(alpha = 0.35f),
-                            radius = arcRadius,
-                            center = Offset(size.width / 2f, size.height / 2f),
-                            style = Stroke(width = strokeWidth)
-                        )
-                    }
-                    Column(horizontalAlignment = Alignment.CenterHorizontally) {
-                        Text(
-                            text = "₹0.00",
-                            fontWeight = FontWeight.Bold,
-                            fontSize = 20.sp,
-                            color = MaterialTheme.colorScheme.onSurface
-                        )
-                        Text(
-                            text = "No spends",
-                            fontSize = 11.sp,
-                            color = MaterialTheme.colorScheme.onSurfaceVariant
-                        )
-                    }
-                }
-            } else {
-                // Animated Donut Canvas
-                Box(
-                    modifier = Modifier.size(200.dp),
-                    contentAlignment = Alignment.Center
-                ) {
-                    Canvas(modifier = Modifier.size(180.dp)) {
-                        val strokeWidth = 24.dp.toPx()
-                        val arcPadding = strokeWidth / 2f
-                        val arcSize = Size(size.width - strokeWidth, size.height - strokeWidth)
-                        val arcTopLeft = Offset(arcPadding, arcPadding)
-                        val arcRadius = (size.minDimension - strokeWidth) / 2f
-                        val center = Offset(size.width / 2f, size.height / 2f)
-
-                        // Subtle track ring background
-                        drawCircle(
-                            color = trackColor.copy(alpha = 0.35f),
-                            radius = arcRadius,
-                            center = center,
-                            style = Stroke(width = strokeWidth)
-                        )
-
-                        var startAngle = -90f
-                        val gapAngle = if (categorySpends.size > 1) 3.5f else 0f
-
-                        for ((index, item) in categorySpends.withIndex()) {
-                            val rawSweep = (item.percentage / 100f) * 360f
-                            val effectiveGap = if (rawSweep > 4f) gapAngle else (rawSweep * 0.3f)
-                            val sweepAngle = (rawSweep - effectiveGap).coerceAtLeast(0.5f) * animatedProgress
-                            val gradientPair = getCategoryGradient(index)
-
-                            val startRad = Math.toRadians(startAngle.toDouble())
-                            val endRad = Math.toRadians((startAngle + sweepAngle).toDouble())
-
-                            val startPoint = Offset(
-                                x = (center.x + arcRadius * kotlin.math.cos(startRad)).toFloat(),
-                                y = (center.y + arcRadius * kotlin.math.sin(startRad)).toFloat()
-                            )
-                            val endPoint = Offset(
-                                x = (center.x + arcRadius * kotlin.math.cos(endRad)).toFloat(),
-                                y = (center.y + arcRadius * kotlin.math.sin(endRad)).toFloat()
-                            )
-
-                            val brush = if (categorySpends.size == 1 && sweepAngle >= 359f) {
-                                Brush.sweepGradient(
-                                    colors = listOf(gradientPair.first, gradientPair.second, gradientPair.first),
-                                    center = center
-                                )
-                            } else {
-                                Brush.linearGradient(
-                                    colors = listOf(gradientPair.first, gradientPair.second),
-                                    start = startPoint,
-                                    end = endPoint
-                                )
-                            }
-
-                            drawArc(
-                                brush = brush,
-                                startAngle = startAngle,
-                                sweepAngle = sweepAngle,
-                                useCenter = false,
-                                topLeft = arcTopLeft,
-                                size = arcSize,
-                                style = Stroke(width = strokeWidth, cap = StrokeCap.Butt)
-                            )
-                            startAngle += rawSweep
-                        }
-                    }
-
-                    // Inside hole content
-                    Column(
-                        horizontalAlignment = Alignment.CenterHorizontally
-                    ) {
-                        Text(
-                            text = "TOTAL SPENT",
-                            fontSize = 10.sp,
-                            fontWeight = FontWeight.Bold,
-                            color = MaterialTheme.colorScheme.onSurfaceVariant,
-                            letterSpacing = 1.sp
-                        )
-                        Text(
-                            text = formatCurrency(totalSpent),
-                            fontWeight = FontWeight.ExtraBold,
-                            fontSize = 18.sp,
-                            color = MaterialTheme.colorScheme.onSurface
-                        )
-                    }
-                }
+        } else {
+            categorySpends.mapIndexed { idx, item ->
+                SpendingCategory(
+                    name = item.name,
+                    amount = item.totalAmount,
+                    change = 0.0,
+                    color = if (item.color != Color.Unspecified && item.color != Color.Transparent) item.color else kokonutPalette[idx % kokonutPalette.size]
+                )
             }
+        }
+    }
 
-            Spacer(modifier = Modifier.height(24.dp))
+    Column(
+        modifier = modifier.fillMaxWidth(),
+        horizontalAlignment = Alignment.CenterHorizontally
+    ) {
+        KokonutSpendingRing(
+            title = "SPENDING BY CATEGORY",
+            categories = ringCategories,
+            modifier = Modifier.fillMaxWidth()
+        )
 
-            // Top 3 Category Breakdown List
-            if (top3Spends.isNotEmpty()) {
-                Column(
-                    modifier = Modifier.fillMaxWidth(),
-                    verticalArrangement = Arrangement.spacedBy(10.dp)
+        if (categorySpends.isNotEmpty()) {
+            Spacer(modifier = Modifier.height(10.dp))
+            KanriGlassCard(
+                level = GlassLevel.Flat,
+                shape = RoundedCornerShape(14.dp),
+                onClick = { showDistributionSheet = true },
+                modifier = Modifier.fillMaxWidth()
+            ) {
+                Row(
+                    modifier = Modifier
+                        .fillMaxWidth()
+                        .padding(vertical = 12.dp, horizontal = 16.dp),
+                    horizontalArrangement = Arrangement.SpaceBetween,
+                    verticalAlignment = Alignment.CenterVertically
                 ) {
-                    top3Spends.forEachIndexed { index, item ->
-                        CategoryBreakdownRow(
-                            item = item,
-                            gradient = getCategoryGradient(index),
-                            showPercentage = false,
-                            onClick = if (onCategoryClick != null) { { onCategoryClick(item) } } else null
-                        )
-                    }
-                }
-
-                // See More button to open full distribution popup
-                Spacer(modifier = Modifier.height(14.dp))
-                KanriGlassCard(
-                    level = GlassLevel.Flat,
-                    shape = RoundedCornerShape(14.dp),
-                    onClick = { showDistributionSheet = true },
-                    modifier = Modifier.fillMaxWidth()
-                ) {
-                    Row(
-                        modifier = Modifier
-                            .fillMaxWidth()
-                            .padding(vertical = 12.dp, horizontal = 16.dp),
-                        horizontalArrangement = Arrangement.SpaceBetween,
-                        verticalAlignment = Alignment.CenterVertically
-                    ) {
-                        Row(verticalAlignment = Alignment.CenterVertically) {
-                            Icon(
-                                imageVector = Icons.Default.PieChart,
-                                contentDescription = null,
-                                tint = MaterialTheme.colorScheme.onSurface,
-                                modifier = Modifier.size(16.dp)
-                            )
-                            Spacer(modifier = Modifier.width(8.dp))
-                            Text(
-                                text = if (categorySpends.size > 3) "See More (${categorySpends.size} categories)" else "See Distribution",
-                                style = MaterialTheme.typography.labelLarge.copy(
-                                    fontWeight = FontWeight.SemiBold,
-                                    color = MaterialTheme.colorScheme.onSurface
-                                )
-                            )
-                        }
+                    Row(verticalAlignment = Alignment.CenterVertically) {
                         Icon(
-                            imageVector = Icons.AutoMirrored.Filled.KeyboardArrowRight,
-                            contentDescription = "See More",
-                            tint = MaterialTheme.colorScheme.onSurfaceVariant,
+                            imageVector = Icons.Default.PieChart,
+                            contentDescription = null,
+                            tint = MaterialTheme.colorScheme.onSurface,
                             modifier = Modifier.size(16.dp)
                         )
+                        Spacer(modifier = Modifier.width(8.dp))
+                        Text(
+                            text = "Category Distribution (" + categorySpends.size.toString() + " categories)",
+                            style = MaterialTheme.typography.labelLarge.copy(
+                                fontWeight = FontWeight.SemiBold,
+                                color = MaterialTheme.colorScheme.onSurface
+                            )
+                        )
                     }
+                    Icon(
+                        imageVector = Icons.AutoMirrored.Filled.KeyboardArrowRight,
+                        contentDescription = "See More",
+                        tint = MaterialTheme.colorScheme.onSurfaceVariant,
+                        modifier = Modifier.size(16.dp)
+                    )
                 }
             }
         }
