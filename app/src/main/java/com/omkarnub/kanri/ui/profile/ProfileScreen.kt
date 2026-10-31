@@ -15,6 +15,7 @@ import androidx.compose.foundation.border
 import androidx.compose.foundation.clickable
 import com.omkarnub.kanri.ui.common.KanriGlassAlertDialog
 import com.omkarnub.kanri.ui.common.KanriGlassDatePickerDialog
+import com.omkarnub.kanri.ui.common.kanriGlassTextFieldColors
 import com.omkarnub.kanri.ui.common.kanriPrimaryButtonColors
 import com.omkarnub.kanri.ui.theme.LocalKanriGlass
 import androidx.compose.foundation.layout.Arrangement
@@ -893,6 +894,7 @@ private fun EditProfileDialog(
                     placeholder = { Text("Your name") },
                     singleLine = true,
                     shape = RoundedCornerShape(12.dp),
+                    colors = kanriGlassTextFieldColors(),
                     modifier = Modifier.fillMaxWidth()
                 )
 
@@ -903,6 +905,7 @@ private fun EditProfileDialog(
                     placeholder = { Text("e.g. 14 Aug 2000") },
                     singleLine = true,
                     shape = RoundedCornerShape(12.dp),
+                    colors = kanriGlassTextFieldColors(),
                     trailingIcon = {
                         IconButton(onClick = { showDatePicker = true }) {
                             Icon(

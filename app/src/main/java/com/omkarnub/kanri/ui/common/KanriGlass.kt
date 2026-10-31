@@ -33,9 +33,11 @@ import androidx.compose.foundation.shape.RoundedCornerShape
 import androidx.compose.material3.ButtonColors
 import androidx.compose.material3.ButtonDefaults
 import androidx.compose.material3.LocalContentColor
+import androidx.compose.material3.OutlinedTextFieldDefaults
 import androidx.compose.material3.ProvideTextStyle
 import androidx.compose.material3.Surface
 import androidx.compose.material3.Text
+import androidx.compose.material3.TextFieldColors
 import androidx.compose.runtime.CompositionLocalProvider
 import androidx.compose.ui.text.font.FontWeight
 import androidx.compose.ui.unit.sp
@@ -808,6 +810,9 @@ fun KanriGlassDialog(
                 val window = view.findDialogWindow()
                 if (window != null) {
                     applyWindowBlur(window, blurRadiusPx)
+                    if (tokens != null) {
+                        window.setDimAmount(0.35f)
+                    }
                 }
             }
             attachBlur()
@@ -846,8 +851,8 @@ fun KanriGlassDialog(
         }
 
         val dialogBg = if (tokens != null) {
-            if (tokens.isDark) Color(0xFF14151B).copy(alpha = 0.94f)
-            else Color(0xFFFAF9F5).copy(alpha = 0.96f)
+            if (tokens.isDark) Color(0xFF14151B).copy(alpha = 0.72f)
+            else Color(0xFFFAF9F5).copy(alpha = 0.78f)
         } else {
             MaterialTheme.colorScheme.surface
         }
@@ -875,7 +880,7 @@ fun KanriGlassDialog(
                         alpha = dialogAlpha.value
                     }
                     .shadow(
-                        elevation = 16.dp,
+                        elevation = if (tokens != null) 24.dp else 16.dp,
                         shape = shape,
                         spotColor = Color.Black.copy(alpha = 0.45f)
                     )
@@ -887,11 +892,55 @@ fun KanriGlassDialog(
                 shape = shape,
                 color = dialogBg
             ) {
-                Box {
+                Box(
+                    modifier = Modifier.background(
+                        if (tokens != null) {
+                            Brush.verticalGradient(
+                                listOf(
+                                    if (tokens.isDark) Color.White.copy(alpha = 0.08f) else Color.White.copy(alpha = 0.40f),
+                                    Color.Transparent
+                                )
+                            )
+                        } else Brush.verticalGradient(listOf(Color.Transparent, Color.Transparent))
+                    )
+                ) {
                     content()
                 }
             }
         }
+    }
+}
+
+/**
+ * Glass-styled text field colors for OutlinedTextField inputs.
+ * Ensures consistent translucent backgrounds and luminous borders across dialogs and screens.
+ */
+@Composable
+fun kanriGlassTextFieldColors(): TextFieldColors {
+    val tokens = LocalKanriGlass.current
+    return if (tokens != null) {
+        val containerColor = if (tokens.isDark) Color.White.copy(alpha = 0.05f) else Color.Black.copy(alpha = 0.03f)
+        val focusedBorder = tokens.accent
+        val unfocusedBorder = if (tokens.isDark) Color.White.copy(alpha = 0.18f) else Color.Black.copy(alpha = 0.12f)
+        val textColor = if (tokens.isDark) Color.White else Color(0xFF18181B)
+        val placeholderColor = if (tokens.isDark) Color.White.copy(alpha = 0.45f) else Color.Black.copy(alpha = 0.45f)
+
+        OutlinedTextFieldDefaults.colors(
+            focusedContainerColor = containerColor,
+            unfocusedContainerColor = containerColor,
+            disabledContainerColor = containerColor.copy(alpha = 0.02f),
+            focusedBorderColor = focusedBorder,
+            unfocusedBorderColor = unfocusedBorder,
+            focusedTextColor = textColor,
+            unfocusedTextColor = textColor,
+            focusedLabelColor = focusedBorder,
+            unfocusedLabelColor = placeholderColor,
+            focusedPlaceholderColor = placeholderColor,
+            unfocusedPlaceholderColor = placeholderColor,
+            cursorColor = focusedBorder
+        )
+    } else {
+        OutlinedTextFieldDefaults.colors()
     }
 }
 

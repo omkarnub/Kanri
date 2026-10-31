@@ -30,7 +30,7 @@ import androidx.compose.material.icons.filled.Shield
 import androidx.compose.material.icons.filled.VisibilityOff
 import com.omkarnub.kanri.ui.common.GlassLevel
 import com.omkarnub.kanri.ui.common.KanriGlassCard
-import com.omkarnub.kanri.ui.common.KanriGlassAlertDialog as AlertDialog
+import com.omkarnub.kanri.ui.common.KanriGlassAlertDialog
 import com.omkarnub.kanri.ui.common.kanriPrimaryButtonColors
 import androidx.compose.material3.Button
 import androidx.compose.material3.Card
@@ -62,7 +62,7 @@ fun PrivacyPolicyDialog(
     val context = LocalContext.current
     val scrollState = rememberScrollState()
 
-    AlertDialog(
+    KanriGlassAlertDialog(
         onDismissRequest = onDismiss,
         title = {
             Column(
@@ -109,10 +109,9 @@ fun PrivacyPolicyDialog(
                 verticalArrangement = Arrangement.spacedBy(14.dp)
             ) {
                 // Feature Pillars Banner
-                Surface(
+                KanriGlassCard(
                     shape = RoundedCornerShape(12.dp),
-                    color = MaterialTheme.colorScheme.surfaceVariant.copy(alpha = 0.5f),
-                    border = BorderStroke(1.dp, MaterialTheme.colorScheme.outlineVariant),
+                    level = GlassLevel.Flat,
                     modifier = Modifier.fillMaxWidth()
                 ) {
                     Column(
@@ -183,10 +182,9 @@ fun PrivacyPolicyDialog(
                 )
 
                 // Contact
-                Surface(
+                KanriGlassCard(
                     shape = RoundedCornerShape(10.dp),
-                    color = MaterialTheme.colorScheme.surfaceVariant.copy(alpha = 0.3f),
-                    border = BorderStroke(1.dp, MaterialTheme.colorScheme.outlineVariant),
+                    level = GlassLevel.Flat,
                     modifier = Modifier.fillMaxWidth()
                 ) {
                     Column(modifier = Modifier.padding(10.dp)) {

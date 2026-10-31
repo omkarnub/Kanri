@@ -21,6 +21,8 @@ import androidx.compose.ui.graphics.Brush
 import com.omkarnub.kanri.ui.theme.LocalKanriGlass
 import com.omkarnub.kanri.ui.common.GlassLevel
 import com.omkarnub.kanri.ui.common.KanriGlassCard
+import com.omkarnub.kanri.ui.common.kanriGlassTextFieldColors
+import com.omkarnub.kanri.ui.common.kanriPrimaryButtonColors
 import androidx.compose.foundation.layout.Arrangement
 import androidx.compose.foundation.layout.Box
 import androidx.compose.foundation.layout.Column
@@ -2241,6 +2243,7 @@ private fun SuggestFeatureDialog(onDismiss: () -> Unit) {
                     label = { Text("Feature Title") },
                     placeholder = { Text("e.g. Export to Excel format") },
                     singleLine = true,
+                    colors = kanriGlassTextFieldColors(),
                     shape = RoundedCornerShape(10.dp),
                     modifier = Modifier.fillMaxWidth()
                 )
@@ -2251,6 +2254,7 @@ private fun SuggestFeatureDialog(onDismiss: () -> Unit) {
                     label = { Text("Details & Use Case") },
                     placeholder = { Text("How would this help your daily expense tracking?") },
                     maxLines = 4,
+                    colors = kanriGlassTextFieldColors(),
                     shape = RoundedCornerShape(10.dp),
                     modifier = Modifier
                         .fillMaxWidth()
@@ -2434,6 +2438,7 @@ private fun CategoryEditCreateDialog(
                     label = { Text("Category Name") },
                     placeholder = { Text("e.g. Gym, Coffee, Pet Care") },
                     singleLine = true,
+                    colors = kanriGlassTextFieldColors(),
                     shape = RoundedCornerShape(12.dp),
                     modifier = Modifier.fillMaxWidth()
                 )
@@ -2503,6 +2508,7 @@ private fun SelectCurrencyDialog(
     onSelectCurrency: (AppCurrency) -> Unit,
     onDismiss: () -> Unit
 ) {
+    val tokens = LocalKanriGlass.current
     var searchQuery by remember { mutableStateOf("") }
     val filteredCurrencies = remember(searchQuery) {
         val query = searchQuery.trim().lowercase()
@@ -2543,6 +2549,7 @@ private fun SelectCurrencyDialog(
                     onValueChange = { searchQuery = it },
                     placeholder = { Text("Search currency or code...") },
                     singleLine = true,
+                    colors = kanriGlassTextFieldColors(),
                     modifier = Modifier.fillMaxWidth(),
                     shape = RoundedCornerShape(12.dp)
                 )
@@ -2570,19 +2577,29 @@ private fun SelectCurrencyDialog(
                     } else {
                         filteredCurrencies.forEach { currency ->
                             val isSelected = currency == currentCurrency
-                            Surface(
-                                onClick = { onSelectCurrency(currency) },
+                            KanriGlassCard(
+                                modifier = Modifier
+                                    .fillMaxWidth()
+                                    .clickable { onSelectCurrency(currency) }
+                                    .then(
+                                        if (isSelected) {
+                                            Modifier.border(
+                                                1.5.dp,
+                                                tokens?.accent ?: MaterialTheme.colorScheme.onSurface,
+                                                RoundedCornerShape(14.dp)
+                                            )
+                                        } else Modifier
+                                    ),
                                 shape = RoundedCornerShape(14.dp),
-                                color = if (isSelected) MaterialTheme.colorScheme.onSurface.copy(alpha = 0.12f) else Color.Transparent,
-                                border = BorderStroke(
-                                    1.dp,
-                                    if (isSelected) MaterialTheme.colorScheme.onSurface else MaterialTheme.colorScheme.outlineVariant.copy(alpha = 0.5f)
-                                ),
-                                modifier = Modifier.fillMaxWidth()
+                                level = GlassLevel.Flat
                             ) {
                                 Row(
                                     modifier = Modifier
                                         .fillMaxWidth()
+                                        .background(
+                                            if (isSelected) (tokens?.accent ?: MaterialTheme.colorScheme.onSurface).copy(alpha = 0.12f)
+                                            else Color.Transparent
+                                        )
                                         .padding(horizontal = 14.dp, vertical = 12.dp),
                                     verticalAlignment = Alignment.CenterVertically,
                                     horizontalArrangement = Arrangement.SpaceBetween
@@ -2610,7 +2627,7 @@ private fun SelectCurrencyDialog(
                                         Icon(
                                             imageVector = Icons.Default.CheckCircle,
                                             contentDescription = "Selected",
-                                            tint = MaterialTheme.colorScheme.onSurface,
+                                            tint = tokens?.accent ?: MaterialTheme.colorScheme.onSurface,
                                             modifier = Modifier.size(20.dp)
                                         )
                                     }
