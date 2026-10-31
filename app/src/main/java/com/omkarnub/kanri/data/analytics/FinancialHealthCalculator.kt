@@ -1,4 +1,4 @@
-package com.omkarnub.kanri.data.analytics
+﻿package com.omkarnub.kanri.data.analytics
 
 import androidx.compose.runtime.Immutable
 import com.omkarnub.kanri.data.budget.BudgetCalculator

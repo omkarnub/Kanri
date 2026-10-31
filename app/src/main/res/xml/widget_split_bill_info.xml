@@ -11,7 +11,7 @@
     android:updatePeriodMillis="1800000"
     android:initialLayout="@layout/widget_split_bill"
     android:previewLayout="@layout/widget_split_bill"
-    android:previewImage="@mipmap/ic_launcher"
+    android:previewImage="@drawable/preview_widget_split_bill"
     android:widgetCategory="home_screen"
     android:description="@string/widget_split_bill_name"
     android:resizeMode="horizontal|vertical" />

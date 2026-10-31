@@ -10,6 +10,7 @@ import androidx.compose.foundation.background
 import androidx.compose.foundation.border
 import androidx.compose.foundation.clickable
 import androidx.compose.foundation.horizontalScroll
+import com.omkarnub.kanri.ui.theme.LocalKanriGlass
 import androidx.compose.foundation.layout.Arrangement
 import androidx.compose.foundation.layout.Box
 import androidx.compose.foundation.layout.Column
@@ -42,7 +43,10 @@ import androidx.compose.material.icons.filled.Delete
 import androidx.compose.material.icons.filled.Edit
 import androidx.compose.material.icons.filled.Search
 import androidx.compose.material.icons.filled.Warning
-import androidx.compose.material3.AlertDialog
+import com.omkarnub.kanri.ui.common.GlassLevel
+import com.omkarnub.kanri.ui.common.KanriGlassCard
+import com.omkarnub.kanri.ui.common.KanriGlassAlertDialog as AlertDialog
+import com.omkarnub.kanri.ui.common.KanriGlassDialog
 import androidx.compose.material3.Card
 import androidx.compose.material3.CardDefaults
 import androidx.compose.material3.Checkbox
@@ -159,16 +163,18 @@ fun SmartMerchantRulesScreen(
         } else null
     }
 
+    val tokens = LocalKanriGlass.current
+
     Scaffold(
         modifier = modifier.fillMaxSize(),
-        containerColor = MaterialTheme.colorScheme.background,
+        containerColor = if (tokens != null) Color.Transparent else MaterialTheme.colorScheme.background,
         snackbarHost = { SnackbarHost(snackbarHostState) },
         topBar = {
             Surface(
                 modifier = Modifier
                     .fillMaxWidth()
                     .statusBarsPadding(),
-                color = MaterialTheme.colorScheme.background
+                color = if (tokens != null) Color.Transparent else MaterialTheme.colorScheme.background
             ) {
                 Row(
                     modifier = Modifier
@@ -243,13 +249,10 @@ fun SmartMerchantRulesScreen(
             // 1. Interactive Rule Simulator Card
             // -----------------------------------------------------------------
             item {
-                Card(
+                KanriGlassCard(
                     modifier = Modifier.fillMaxWidth(),
                     shape = RoundedCornerShape(20.dp),
-                    colors = CardDefaults.cardColors(
-                        containerColor = MaterialTheme.colorScheme.surface
-                    ),
-                    border = BorderStroke(1.dp, MaterialTheme.colorScheme.outlineVariant)
+                    level = GlassLevel.Blur
                 ) {
                     Column(modifier = Modifier.padding(16.dp)) {
                         Row(
@@ -514,11 +517,10 @@ fun SmartMerchantRulesScreen(
             // -----------------------------------------------------------------
             if (filteredRules.isEmpty()) {
                 item {
-                    Card(
+                    KanriGlassCard(
                         modifier = Modifier.fillMaxWidth(),
                         shape = RoundedCornerShape(16.dp),
-                        colors = CardDefaults.cardColors(containerColor = MaterialTheme.colorScheme.surface),
-                        border = BorderStroke(1.dp, MaterialTheme.colorScheme.outlineVariant)
+                        level = GlassLevel.Blur
                     ) {
                         Box(
                             modifier = Modifier
@@ -692,11 +694,10 @@ private fun RuleItemCard(
     onApplyToPast: () -> Unit,
     modifier: Modifier = Modifier
 ) {
-    Card(
+    KanriGlassCard(
         modifier = modifier.fillMaxWidth(),
         shape = RoundedCornerShape(16.dp),
-        colors = CardDefaults.cardColors(containerColor = MaterialTheme.colorScheme.surface),
-        border = BorderStroke(1.dp, MaterialTheme.colorScheme.outlineVariant)
+        level = GlassLevel.Blur
     ) {
         Row(
             modifier = Modifier
@@ -827,14 +828,12 @@ private fun AddEditRuleDialog(
     var applyToPast by remember { mutableStateOf(true) }
     var errorMessage by remember { mutableStateOf<String?>(null) }
 
-    Dialog(onDismissRequest = onDismiss) {
-        Surface(
-            shape = RoundedCornerShape(24.dp),
-            color = MaterialTheme.colorScheme.surface,
-            border = BorderStroke(1.dp, MaterialTheme.colorScheme.outlineVariant),
-            modifier = Modifier.fillMaxWidth()
-        ) {
-            Column(modifier = Modifier.padding(20.dp)) {
+    KanriGlassDialog(
+        onDismissRequest = onDismiss,
+        modifier = Modifier.fillMaxWidth(0.92f),
+        shape = RoundedCornerShape(24.dp)
+    ) {
+        Column(modifier = Modifier.padding(20.dp)) {
                 Text(
                     text = if (isEdit) "Edit Merchant Rule" else "Add Merchant Rule",
                     style = MaterialTheme.typography.titleMedium.copy(
@@ -990,4 +989,3 @@ private fun AddEditRuleDialog(
             }
         }
     }
-}

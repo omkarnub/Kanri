@@ -32,6 +32,8 @@ import com.omkarnub.kanri.data.db.TransactionEntity
 import com.omkarnub.kanri.ui.common.CategoryIcon
 import com.omkarnub.kanri.ui.home.formatCurrency
 import com.omkarnub.kanri.ui.insights.BiggestTransactionItem
+import com.omkarnub.kanri.ui.common.GlassLevel
+import com.omkarnub.kanri.ui.common.KanriGlassCard
 import com.omkarnub.kanri.ui.insights.BiggestTransactionsData
 import com.omkarnub.kanri.ui.insights.InsightsMode
 import java.time.Instant
@@ -51,14 +53,14 @@ fun BiggestTransactionsSection(
     val title = if (mode == InsightsMode.EXPENSE) "BIGGEST EXPENSES" else "BIGGEST INCOME"
     val accentColor = if (mode == InsightsMode.EXPENSE) ExpenseRed else IncomeSage
 
-    Surface(
+    KanriGlassCard(
         modifier = modifier
             .fillMaxWidth()
             .semantics {
                 contentDescription = "$title: ${data.items.size} items listed"
             },
         shape = RoundedCornerShape(20.dp),
-        color = MaterialTheme.colorScheme.surfaceVariant.copy(alpha = 0.18f)
+        level = GlassLevel.Blur
     ) {
         Column(
             modifier = Modifier

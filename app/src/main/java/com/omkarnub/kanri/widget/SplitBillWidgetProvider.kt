@@ -1,4 +1,4 @@
-package com.omkarnub.kanri.widget
+﻿package com.omkarnub.kanri.widget
 
 import android.appwidget.AppWidgetManager
 import android.appwidget.AppWidgetProvider
@@ -43,7 +43,13 @@ class SplitBillWidgetProvider : AppWidgetProvider() {
             appWidgetManager: AppWidgetManager,
             appWidgetIds: IntArray
         ) {
-            for (widgetId in appWidgetIds) {
+            val validIds = appWidgetManager.getAppWidgetIds(
+                ComponentName(context, SplitBillWidgetProvider::class.java)
+            ).toSet()
+            val targetIds = appWidgetIds.filter { it in validIds }.toIntArray()
+            if (targetIds.isEmpty()) return
+
+            for (widgetId in targetIds) {
                 val views = RemoteViews(context.packageName, R.layout.widget_split_bill)
 
                 // Check resize dimensions

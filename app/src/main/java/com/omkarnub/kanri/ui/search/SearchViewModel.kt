@@ -1,4 +1,4 @@
-package com.omkarnub.kanri.ui.search
+﻿package com.omkarnub.kanri.ui.search
 
 import android.app.Application
 import androidx.lifecycle.AndroidViewModel

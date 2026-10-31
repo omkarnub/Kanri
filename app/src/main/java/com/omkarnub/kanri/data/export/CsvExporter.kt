@@ -119,7 +119,11 @@ object CsvExporter {
      * and escape internal quotes by doubling them.
      */
     fun escapeCsv(value: String): String {
-        val str = value.trim()
+        var str = value.trim()
+        // Neutralize formula execution in spreadsheets (CWE-1236)
+        if (str.startsWith("=") || str.startsWith("+") || str.startsWith("-") || str.startsWith("@") || str.startsWith("\t") || str.startsWith("\r")) {
+            str = "'$str"
+        }
         val containsSpecial = str.contains(',') || str.contains('"') || str.contains('\n') || str.contains('\r')
         return if (containsSpecial) {
             "\"" + str.replace("\"", "\"\"") + "\""

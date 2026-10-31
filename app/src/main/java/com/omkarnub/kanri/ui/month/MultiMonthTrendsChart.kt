@@ -20,7 +20,11 @@ import androidx.compose.foundation.layout.size
 import androidx.compose.foundation.layout.width
 import androidx.compose.foundation.shape.CircleShape
 import androidx.compose.foundation.shape.RoundedCornerShape
+import com.omkarnub.kanri.ui.common.GlassLevel
+import com.omkarnub.kanri.ui.common.KanriGlassCard
 import androidx.compose.material3.Card
+import com.omkarnub.kanri.ui.common.GlassLevel
+import com.omkarnub.kanri.ui.common.KanriGlassCard
 import androidx.compose.material3.CardDefaults
 import androidx.compose.material3.MaterialTheme
 import androidx.compose.material3.Surface
@@ -62,11 +66,10 @@ fun MultiMonthTrendsChart(
 ) {
     val textMeasurer = rememberTextMeasurer()
 
-    Card(
+    KanriGlassCard(
         modifier = modifier.fillMaxWidth(),
         shape = RoundedCornerShape(24.dp),
-        colors = CardDefaults.cardColors(containerColor = MaterialTheme.colorScheme.surface),
-        border = androidx.compose.foundation.BorderStroke(1.dp, MaterialTheme.colorScheme.outlineVariant)
+        level = GlassLevel.Blur
     ) {
         Column(
             modifier = Modifier

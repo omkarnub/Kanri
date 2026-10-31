@@ -2,6 +2,10 @@ package com.omkarnub.kanri.ui.category
 
 import androidx.compose.foundation.background
 import androidx.compose.foundation.horizontalScroll
+import androidx.compose.ui.graphics.luminance
+import com.omkarnub.kanri.ui.common.GlassLevel
+import com.omkarnub.kanri.ui.common.KanriGlassCard
+import com.omkarnub.kanri.ui.theme.LocalKanriGlass
 import androidx.compose.foundation.layout.Arrangement
 import androidx.compose.foundation.layout.Box
 import androidx.compose.foundation.layout.Column
@@ -89,8 +93,14 @@ fun CategoryDetailScreen(
         )
     }
 
+    val tokens = LocalKanriGlass.current
+
+    val isDark = tokens?.isDark ?: (MaterialTheme.colorScheme.surface.luminance() < 0.5f)
+    val titleTextColor = if (isDark) Color.White else Color(0xFF141418)
+
     Scaffold(
         modifier = modifier.fillMaxSize(),
+        containerColor = if (tokens != null) Color.Transparent else MaterialTheme.colorScheme.background,
         topBar = {
             TopAppBar(
                 title = {
@@ -114,12 +124,12 @@ fun CategoryDetailScreen(
                                 text = state.categoryName,
                                 fontWeight = FontWeight.Bold,
                                 fontSize = 18.sp,
-                                color = Color.White
+                                color = titleTextColor
                             )
                             Text(
                                 text = "Category Insights",
                                 fontSize = 11.sp,
-                                color = Color(0xFF8B949E)
+                                color = MaterialTheme.colorScheme.onSurfaceVariant
                             )
                         }
                     }
@@ -129,12 +139,12 @@ fun CategoryDetailScreen(
                         Icon(
                             imageVector = Icons.AutoMirrored.Filled.ArrowBack,
                             contentDescription = "Back",
-                            tint = Color.White
+                            tint = titleTextColor
                         )
                     }
                 },
                 colors = TopAppBarDefaults.topAppBarColors(
-                    containerColor = MaterialTheme.colorScheme.surface
+                    containerColor = if (tokens != null) Color.Transparent else MaterialTheme.colorScheme.surface
                 )
             )
         }
@@ -237,11 +247,10 @@ fun CategoryDetailScreen(
                 // 5. Itemized Transaction List
                 if (state.filteredTransactions.isEmpty()) {
                     item {
-                        Card(
+                        KanriGlassCard(
                             modifier = Modifier.fillMaxWidth(),
                             shape = RoundedCornerShape(16.dp),
-                            colors = CardDefaults.cardColors(containerColor = MaterialTheme.colorScheme.surface),
-                            border = androidx.compose.foundation.BorderStroke(1.dp, MaterialTheme.colorScheme.outlineVariant)
+                            level = GlassLevel.Blur
                         ) {
                             Column(
                                 modifier = Modifier
@@ -253,19 +262,19 @@ fun CategoryDetailScreen(
                                     imageVector = Icons.Default.Inbox,
                                     contentDescription = null,
                                     modifier = Modifier.size(38.dp),
-                                    tint = Color(0xFF484F58)
+                                    tint = tokens?.textSecondary ?: MaterialTheme.colorScheme.onSurfaceVariant.copy(alpha = 0.6f)
                                 )
                                 Spacer(modifier = Modifier.height(10.dp))
                                 Text(
                                     text = "No transactions found",
                                     fontWeight = FontWeight.Medium,
-                                    color = Color(0xFF8B949E),
+                                    color = tokens?.textSecondary ?: MaterialTheme.colorScheme.onSurfaceVariant,
                                     fontSize = 14.sp
                                 )
                                 Text(
                                     text = "No spends recorded in this time range",
                                     fontSize = 12.sp,
-                                    color = Color(0xFF6E7681)
+                                    color = tokens?.textTertiary ?: MaterialTheme.colorScheme.onSurfaceVariant.copy(alpha = 0.7f)
                                 )
                             }
                         }
@@ -321,11 +330,10 @@ fun CategoryDetailScreen(
 
 @Composable
 fun CategoryMetricsCard(state: CategoryDetailUiState) {
-    Card(
+    KanriGlassCard(
         modifier = Modifier.fillMaxWidth(),
         shape = RoundedCornerShape(20.dp),
-        colors = CardDefaults.cardColors(containerColor = MaterialTheme.colorScheme.surface),
-        border = androidx.compose.foundation.BorderStroke(1.dp, MaterialTheme.colorScheme.outlineVariant)
+        level = GlassLevel.Blur
     ) {
         Column(
             modifier = Modifier
@@ -400,11 +408,10 @@ fun CategoryMetricsCard(state: CategoryDetailUiState) {
                 horizontalArrangement = Arrangement.spacedBy(12.dp)
             ) {
                 // Category Share Card
-                Card(
+                KanriGlassCard(
                     modifier = Modifier.weight(1f),
                     shape = RoundedCornerShape(12.dp),
-                    colors = CardDefaults.cardColors(containerColor = MaterialTheme.colorScheme.surfaceVariant),
-                    border = androidx.compose.foundation.BorderStroke(1.dp, MaterialTheme.colorScheme.outlineVariant)
+                    level = GlassLevel.Flat
                 ) {
                     Column(modifier = Modifier.padding(12.dp)) {
                         Text(
@@ -425,11 +432,10 @@ fun CategoryMetricsCard(state: CategoryDetailUiState) {
                 }
 
                 // 6-Month Average Card
-                Card(
+                KanriGlassCard(
                     modifier = Modifier.weight(1f),
                     shape = RoundedCornerShape(12.dp),
-                    colors = CardDefaults.cardColors(containerColor = MaterialTheme.colorScheme.surfaceVariant),
-                    border = androidx.compose.foundation.BorderStroke(1.dp, MaterialTheme.colorScheme.outlineVariant)
+                    level = GlassLevel.Flat
                 ) {
                     Column(modifier = Modifier.padding(12.dp)) {
                         Text(
@@ -458,11 +464,10 @@ fun TopPayeesCard(
     topPayees: List<TopPayeeItem>,
     themeColor: Color
 ) {
-    Card(
+    KanriGlassCard(
         modifier = Modifier.fillMaxWidth(),
         shape = RoundedCornerShape(20.dp),
-        colors = CardDefaults.cardColors(containerColor = MaterialTheme.colorScheme.surface),
-        border = androidx.compose.foundation.BorderStroke(1.dp, MaterialTheme.colorScheme.outlineVariant)
+        level = GlassLevel.Blur
     ) {
         Column(
             modifier = Modifier

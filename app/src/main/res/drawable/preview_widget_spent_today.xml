@@ -1,0 +1,33 @@
+<vector xmlns:android="http://schemas.android.com/apk/res/android"
+    android:width="160dp"
+    android:height="90dp"
+    android:viewportWidth="160"
+    android:viewportHeight="90">
+
+    <!-- Card Background -->
+    <path
+        android:fillColor="#1E232E"
+        android:pathData="M 16,0 L 144,0 A 16,16 0 0,1 160,16 L 160,74 A 16,16 0 0,1 144,90 L 16,90 A 16,16 0 0,1 0,74 L 0,16 A 16,16 0 0,1 16,0 Z" />
+
+    <!-- Card Border -->
+    <path
+        android:strokeColor="#2EFFFFFF"
+        android:strokeWidth="1.5"
+        android:pathData="M 16,0.75 L 144,0.75 A 15.25,15.25 0 0,1 159.25,16 L 159.25,74 A 15.25,15.25 0 0,1 144,89.25 L 16,89.25 A 15.25,15.25 0 0,1 0.75,74 L 0.75,16 A 15.25,15.25 0 0,1 16,0.75 Z" />
+
+    <!-- Header: SPENT TODAY -->
+    <path
+        android:fillColor="#E0FFFFFF"
+        android:pathData="M 16,16 L 74,16 A 2,2 0 0,1 76,18 L 76,20 A 2,2 0 0,1 74,22 L 16,22 A 2,2 0 0,1 14,20 L 14,18 A 2,2 0 0,1 16,16 Z" />
+
+    <!-- Amount: Large ₹ Symbol & Number representation -->
+    <path
+        android:fillColor="#FFFFFF"
+        android:pathData="M 16,36 L 90,36 A 4,4 0 0,1 94,40 L 94,52 A 4,4 0 0,1 90,56 L 16,56 A 4,4 0 0,1 12,52 L 12,40 A 4,4 0 0,1 16,36 Z" />
+
+    <!-- Subtitle: No spends / Spends status bar -->
+    <path
+        android:fillColor="#66FFFFFF"
+        android:pathData="M 16,68 L 120,68 A 2,2 0 0,1 122,70 L 122,72 A 2,2 0 0,1 120,74 L 16,74 A 2,2 0 0,1 14,72 L 14,70 A 2,2 0 0,1 16,68 Z" />
+
+</vector>

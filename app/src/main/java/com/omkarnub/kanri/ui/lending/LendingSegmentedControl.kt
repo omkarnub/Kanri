@@ -1,4 +1,4 @@
-package com.omkarnub.kanri.ui.lending
+﻿package com.omkarnub.kanri.ui.lending
 
 import androidx.compose.animation.animateColorAsState
 import androidx.compose.animation.core.FastOutSlowInEasing
@@ -24,17 +24,22 @@ import androidx.compose.ui.text.font.FontWeight
 import androidx.compose.ui.unit.dp
 import androidx.compose.ui.unit.sp
 
+import com.omkarnub.kanri.ui.common.GlassLevel
+import com.omkarnub.kanri.ui.common.KanriGlassCard
+import com.omkarnub.kanri.ui.theme.LocalKanriGlass
+
 @Composable
 fun LendingSegmentedControl(
     selectedTab: LendingTabOption,
     onTabSelected: (LendingTabOption) -> Unit,
     modifier: Modifier = Modifier
 ) {
-    Surface(
+    val tokens = LocalKanriGlass.current
+
+    KanriGlassCard(
         modifier = modifier.fillMaxWidth(),
-        shape = RoundedCornerShape(14.dp),
-        color = MaterialTheme.colorScheme.surfaceVariant.copy(alpha = 0.35f),
-        border = BorderStroke(1.dp, MaterialTheme.colorScheme.outlineVariant)
+        level = GlassLevel.Flat,
+        shape = RoundedCornerShape(14.dp)
     ) {
         Row(
             modifier = Modifier
@@ -43,13 +48,16 @@ fun LendingSegmentedControl(
         ) {
             LendingTabOption.entries.forEach { tab ->
                 val isSelected = tab == selectedTab
+                val selectedBg = tokens?.accent?.copy(alpha = 0.16f) ?: MaterialTheme.colorScheme.inverseSurface
                 val bgColor by animateColorAsState(
-                    targetValue = if (isSelected) MaterialTheme.colorScheme.onSurface else Color.Transparent,
+                    targetValue = if (isSelected) selectedBg else Color.Transparent,
                     animationSpec = tween(durationMillis = 200, easing = FastOutSlowInEasing),
                     label = "tabBg"
                 )
+                val selectedText = tokens?.accent ?: MaterialTheme.colorScheme.inverseOnSurface
+                val unselectedText = tokens?.textSecondary ?: MaterialTheme.colorScheme.onSurfaceVariant
                 val textColor by animateColorAsState(
-                    targetValue = if (isSelected) MaterialTheme.colorScheme.surface else MaterialTheme.colorScheme.onSurfaceVariant,
+                    targetValue = if (isSelected) selectedText else unselectedText,
                     animationSpec = tween(durationMillis = 200, easing = FastOutSlowInEasing),
                     label = "tabText"
                 )

@@ -1,4 +1,4 @@
-package com.omkarnub.kanri.data.db
+﻿package com.omkarnub.kanri.data.db
 
 import androidx.room.ColumnInfo
 import androidx.room.Entity

@@ -1,4 +1,4 @@
-package com.omkarnub.kanri.data.db
+﻿package com.omkarnub.kanri.data.db
 
 import android.content.Context
 import android.util.Log
@@ -152,11 +152,7 @@ abstract class KanriDatabase : RoomDatabase() {
                 val dbFile = appContext.getDatabasePath("kanri_database")
                 migrateUnencryptedDatabaseIfPresent(appContext, dbFile)
 
-                val passphrase = try {
-                    DatabaseKeyManager.getOrCreatePassphrase(appContext)
-                } catch (e: Throwable) {
-                    "kanri_default_fallback_passphrase_32_bytes_len".toByteArray()
-                }
+                val passphrase = DatabaseKeyManager.getOrCreatePassphrase(appContext)
 
                 // If an existing database file cannot be decrypted with the current passphrase (e.g. key was rotated or file is corrupted),
                 // remove the unopenable files so a fresh database can be created safely without crashing.
@@ -186,7 +182,8 @@ abstract class KanriDatabase : RoomDatabase() {
                     val factory = SupportOpenHelperFactory(passphrase)
                     builder.openHelperFactory(factory)
                 } catch (e: Throwable) {
-                    Log.w("KanriDatabase", "SQLCipher native factory initialization skipped: ${e.message}")
+                    Log.e("KanriDatabase", "SQLCipher native factory initialization failed", e)
+                    throw IllegalStateException("Failed to initialize encrypted database engine: ${e.message}", e)
                 }
 
                 val instance = builder.build()
@@ -254,9 +251,14 @@ abstract class KanriDatabase : RoomDatabase() {
                         File(parent, "kanri_database-wal").delete()
                         File(parent, "kanri_database-shm").delete()
                         File(parent, "kanri_database-journal").delete()
+                        File(parent, "kanri_database_plain.db").delete()
+                        File(parent, "kanri_database_plain.db-wal").delete()
+                        File(parent, "kanri_database_plain.db-shm").delete()
+                        File(parent, "kanri_database_plain.db-journal").delete()
                     }
                 } catch (_: Throwable) {}
                 context.deleteDatabase("kanri_database")
+                context.deleteDatabase("kanri_database_plain.db")
             }
         }
 
@@ -272,10 +274,17 @@ abstract class KanriDatabase : RoomDatabase() {
         }
 
         fun migrateUnencryptedDatabaseIfPresent(context: Context, dbFile: File) {
+            val plainDbFile = File(dbFile.parentFile, "kanri_database_plain.db")
+            // If previous run crashed midway, recover file
+            if (plainDbFile.exists() && !dbFile.exists()) {
+                plainDbFile.renameTo(dbFile)
+            } else if (plainDbFile.exists() && dbFile.exists()) {
+                plainDbFile.delete()
+            }
+
             if (!isDatabaseUnencrypted(dbFile)) return
 
             try {
-                val plainDbFile = File(dbFile.parentFile, "kanri_database_plain.db")
                 if (plainDbFile.exists()) {
                     plainDbFile.delete()
                 }
@@ -322,6 +331,14 @@ abstract class KanriDatabase : RoomDatabase() {
                 plainDbFile.delete()
             } catch (e: Exception) {
                 Log.e("KanriDatabase", "Migration of unencrypted database failed", e)
+                // Restore original file if migration threw so no data is lost or plaintext left lingering
+                if (plainDbFile.exists() && !dbFile.exists()) {
+                    plainDbFile.renameTo(dbFile)
+                }
+            } finally {
+                if (dbFile.exists() && plainDbFile.exists()) {
+                    plainDbFile.delete()
+                }
             }
         }
 

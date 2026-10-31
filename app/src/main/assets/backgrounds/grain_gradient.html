@@ -1,0 +1,152 @@
+<!DOCTYPE html>
+<html>
+<head>
+  <meta charset="utf-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1, user-scalable=no">
+  <style>
+    * { margin: 0; padding: 0; box-sizing: border-box; }
+    html, body { width: 100%; height: 100%; overflow: hidden; background: #031419; }
+    canvas { display: block; width: 100vw; height: 100vh; pointer-events: none; }
+  </style>
+</head>
+<body>
+<canvas id="glcanvas"></canvas>
+<script>
+(function() {
+  const canvas = document.getElementById('glcanvas');
+  const gl = canvas.getContext('webgl', { alpha: false, antialias: false, depth: false, powerPreference: 'low-power' });
+  if (!gl) return;
+
+  const vertex = `attribute vec2 a_position;
+void main() { gl_Position = vec4(a_position, 0., 1.); }`;
+
+  const fragment = `precision highp float;
+uniform vec2 u_resolution;
+uniform float u_ratio, u_angle, u_position, u_curve, u_softness, u_scale;
+uniform float u_grain, u_grainSize, u_seed, u_time;
+uniform vec3 u_light, u_mid, u_dark;
+float hash(vec2 p) {
+  vec3 p3 = fract(vec3(p.xyx) * .1031);
+  p3 += dot(p3, p3.yzx + 33.33);
+  return fract((p3.x + p3.y) * p3.z);
+}
+void main() {
+  vec2 uv = gl_FragCoord.xy / u_resolution;
+  uv.y = 1. - uv.y;
+  vec2 p = uv - .5;
+  float aspect = u_resolution.x / u_resolution.y;
+  p.x *= aspect;
+  float c = cos(u_angle), s = sin(u_angle);
+  p = mat2(c, -s, s, c) * p;
+  p.x /= aspect;
+  p = p / u_scale + .5;
+  float breath = sin(u_time * .52);
+  float undertow = sin(u_time * .31);
+  float bend = u_curve + sin(u_time * .52 - .7) * .12;
+  float edge = .32 + bend * pow(1. - p.y, 2.) + u_position
+    + breath * .115 + undertow * .035;
+  float distanceToEdge = p.x - edge
+    + sin(p.y * 4. + u_time * .38) * .035;
+  float diffusion = u_softness * (1. + breath * .28);
+  float shadow = smoothstep(-diffusion, diffusion * .45, distanceToEdge);
+  vec2 lightCenter = vec2(.04 + breath * .13, .04 + undertow * .16);
+  vec2 lightUV = (p - lightCenter) * vec2(1.9, 1.7);
+  float mint = exp(-dot(lightUV, lightUV));
+  vec3 light = mix(u_light, u_mid, mint * (.66 + breath * .1));
+  vec3 color = mix(light, u_mid * (.68 + breath * .035),
+    smoothstep(-diffusion * 1.8, .02, distanceToEdge));
+  color = mix(color, u_dark, shadow);
+  vec2 grainUV = floor(gl_FragCoord.xy / (u_ratio * u_grainSize));
+  float noise = hash(grainUV + mod(u_seed, 1000.) * 13.7) - .5;
+  color += noise * u_grain * mix(.48, .32, shadow);
+  gl_FragColor = vec4(clamp(color, 0., 1.), 1.);
+}`;
+
+  function compile(type, src) {
+    const s = gl.createShader(type);
+    gl.shaderSource(s, src);
+    gl.compileShader(s);
+    return s;
+  }
+
+  const vs = compile(gl.VERTEX_SHADER, vertex);
+  const fs = compile(gl.FRAGMENT_SHADER, fragment);
+  const prog = gl.createProgram();
+  gl.attachShader(prog, vs);
+  gl.attachShader(prog, fs);
+  gl.linkProgram(prog);
+  gl.useProgram(prog);
+
+  const buf = gl.createBuffer();
+  gl.bindBuffer(gl.ARRAY_BUFFER, buf);
+  gl.bufferData(gl.ARRAY_BUFFER, new Float32Array([-1, -1, 3, -1, -1, 3]), gl.STATIC_DRAW);
+  const aPos = gl.getAttribLocation(prog, "a_position");
+  gl.enableVertexAttribArray(aPos);
+  gl.vertexAttribPointer(aPos, 2, gl.FLOAT, false, 0, 0);
+
+  const uRes = gl.getUniformLocation(prog, "u_resolution");
+  const uRatio = gl.getUniformLocation(prog, "u_ratio");
+  const uAngle = gl.getUniformLocation(prog, "u_angle");
+  const uPos = gl.getUniformLocation(prog, "u_position");
+  const uCurve = gl.getUniformLocation(prog, "u_curve");
+  const uSoft = gl.getUniformLocation(prog, "u_softness");
+  const uScale = gl.getUniformLocation(prog, "u_scale");
+  const uGrain = gl.getUniformLocation(prog, "u_grain");
+  const uGrainSize = gl.getUniformLocation(prog, "u_grainSize");
+  const uSeed = gl.getUniformLocation(prog, "u_seed");
+  const uTime = gl.getUniformLocation(prog, "u_time");
+  const uLight = gl.getUniformLocation(prog, "u_light");
+  const uMid = gl.getUniformLocation(prog, "u_mid");
+  const uDark = gl.getUniformLocation(prog, "u_dark");
+
+  function hex(val, def) {
+    let clean = (val || def).replace('#', '');
+    if (clean.length === 3) clean = clean.split('').map(c => c + c).join('');
+    return [0, 2, 4].map(i => parseInt(clean.slice(i, i + 2), 16) / 255);
+  }
+
+  // Colorful palette: luminous emerald / ocean teal / deep obsidian teal
+  const colLight = hex("#dce5df", "#dce5df");
+  const colMid = hex("#83b9ad", "#83b9ad");
+  const colDark = hex("#031419", "#031419");
+
+  let ratio = 1;
+  function resize() {
+    ratio = Math.min(window.devicePixelRatio || 1, 1.25);
+    canvas.width = Math.max(1, Math.floor(window.innerWidth * ratio));
+    canvas.height = Math.max(1, Math.floor(window.innerHeight * ratio));
+    gl.viewport(0, 0, canvas.width, canvas.height);
+  }
+  window.addEventListener('resize', resize);
+  resize();
+
+  let prev = performance.now();
+  let elapsed = 0;
+  function draw(now) {
+    const dt = Math.min((now - prev) / 1000, 0.05);
+    prev = now;
+    elapsed += dt;
+
+    gl.uniform2f(uRes, canvas.width, canvas.height);
+    gl.uniform1f(uRatio, ratio);
+    gl.uniform1f(uTime, elapsed);
+    gl.uniform1f(uAngle, 0.0);
+    gl.uniform1f(uPos, 0.0);
+    gl.uniform1f(uCurve, 0.48);
+    gl.uniform1f(uSoft, 0.13);
+    gl.uniform1f(uScale, 1.0);
+    gl.uniform1f(uGrain, 0.32);
+    gl.uniform1f(uGrainSize, 1.0);
+    gl.uniform1f(uSeed, 1.0);
+    gl.uniform3fv(uLight, colLight);
+    gl.uniform3fv(uMid, colMid);
+    gl.uniform3fv(uDark, colDark);
+
+    gl.drawArrays(gl.TRIANGLES, 0, 3);
+    requestAnimationFrame(draw);
+  }
+  requestAnimationFrame(draw);
+})();
+</script>
+</body>
+</html>

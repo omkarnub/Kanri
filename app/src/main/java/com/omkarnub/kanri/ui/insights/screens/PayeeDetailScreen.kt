@@ -4,6 +4,9 @@ import androidx.compose.foundation.BorderStroke
 import androidx.compose.foundation.Canvas
 import androidx.compose.foundation.background
 import androidx.compose.foundation.border
+import com.omkarnub.kanri.ui.common.GlassLevel
+import com.omkarnub.kanri.ui.common.KanriGlassCard
+import com.omkarnub.kanri.ui.theme.LocalKanriGlass
 import androidx.compose.foundation.clickable
 import androidx.compose.foundation.gestures.detectTapGestures
 import androidx.compose.foundation.layout.Arrangement
@@ -83,8 +86,11 @@ fun PayeeDetailScreen(
     var scrubbedMonthIndex by remember { mutableStateOf<Int?>(null) }
     val haptics = rememberKanriHaptics()
 
+    val tokens = LocalKanriGlass.current
+
     Scaffold(
         modifier = modifier.fillMaxSize(),
+        containerColor = if (tokens != null) Color.Transparent else MaterialTheme.colorScheme.background,
         topBar = {
             TopAppBar(
                 title = {
@@ -107,7 +113,7 @@ fun PayeeDetailScreen(
                     }
                 },
                 colors = TopAppBarDefaults.topAppBarColors(
-                    containerColor = MaterialTheme.colorScheme.surface
+                    containerColor = if (tokens != null) Color.Transparent else MaterialTheme.colorScheme.surface
                 )
             )
         }
@@ -136,13 +142,10 @@ fun PayeeDetailScreen(
         ) {
             // Header: Avatar, Display Name, Raw counterparty, Default Category Chip
             item {
-                Card(
+                KanriGlassCard(
                     modifier = Modifier.fillMaxWidth(),
                     shape = RoundedCornerShape(20.dp),
-                    colors = CardDefaults.cardColors(
-                        containerColor = MaterialTheme.colorScheme.surfaceVariant.copy(alpha = 0.35f)
-                    ),
-                    border = BorderStroke(1.dp, MaterialTheme.colorScheme.outlineVariant)
+                    level = GlassLevel.Blur
                 ) {
                     Column(
                         modifier = Modifier
@@ -250,11 +253,10 @@ fun PayeeDetailScreen(
                             horizontalArrangement = Arrangement.spacedBy(8.dp)
                         ) {
                             pair.forEach { (label, value) ->
-                                Surface(
+                                KanriGlassCard(
                                     modifier = Modifier.weight(1f),
                                     shape = RoundedCornerShape(14.dp),
-                                    color = MaterialTheme.colorScheme.surfaceVariant.copy(alpha = 0.35f),
-                                    border = BorderStroke(1.dp, MaterialTheme.colorScheme.outlineVariant)
+                                    level = GlassLevel.Flat
                                 ) {
                                     Column(modifier = Modifier.padding(12.dp)) {
                                         Text(
@@ -289,13 +291,10 @@ fun PayeeDetailScreen(
             // 12-Month Spend Bars
             if (data.last12MonthsBars.isNotEmpty()) {
                 item {
-                    Card(
+                    KanriGlassCard(
                         modifier = Modifier.fillMaxWidth(),
                         shape = RoundedCornerShape(20.dp),
-                        colors = CardDefaults.cardColors(
-                            containerColor = MaterialTheme.colorScheme.surfaceVariant.copy(alpha = 0.35f)
-                        ),
-                        border = BorderStroke(1.dp, MaterialTheme.colorScheme.outlineVariant)
+                        level = GlassLevel.Blur
                     ) {
                         Column(
                             modifier = Modifier

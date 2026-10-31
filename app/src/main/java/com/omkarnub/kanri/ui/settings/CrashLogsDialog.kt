@@ -21,7 +21,9 @@ import androidx.compose.material.icons.Icons
 import androidx.compose.material.icons.filled.BugReport
 import androidx.compose.material.icons.filled.Delete
 import androidx.compose.material.icons.filled.Share
-import androidx.compose.material3.AlertDialog
+import com.omkarnub.kanri.ui.common.GlassLevel
+import com.omkarnub.kanri.ui.common.KanriGlassCard
+import com.omkarnub.kanri.ui.common.KanriGlassAlertDialog as AlertDialog
 import androidx.compose.material3.Button
 import androidx.compose.material3.ButtonDefaults
 import androidx.compose.material3.Card
@@ -158,14 +160,11 @@ fun CrashLogsDialog(
                             .format(Date(file.lastModified()))
                         val isFatal = file.name.startsWith("fatal")
 
-                        Card(
-                            modifier = Modifier
-                                .fillMaxWidth()
-                                .clickable { selectedFile = file },
+                        KanriGlassCard(
+                            modifier = Modifier.fillMaxWidth(),
                             shape = RoundedCornerShape(12.dp),
-                            colors = CardDefaults.cardColors(
-                                containerColor = MaterialTheme.colorScheme.surfaceVariant
-                            )
+                            level = GlassLevel.Flat,
+                            onClick = { selectedFile = file }
                         ) {
                             Row(
                                 modifier = Modifier

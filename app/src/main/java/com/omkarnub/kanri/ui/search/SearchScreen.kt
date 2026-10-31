@@ -4,6 +4,9 @@ import androidx.compose.foundation.BorderStroke
 import androidx.compose.foundation.background
 import androidx.compose.foundation.clickable
 import androidx.compose.foundation.horizontalScroll
+import com.omkarnub.kanri.ui.common.GlassLevel
+import com.omkarnub.kanri.ui.common.KanriGlassCard
+import com.omkarnub.kanri.ui.theme.LocalKanriGlass
 import androidx.compose.foundation.layout.Arrangement
 import androidx.compose.foundation.layout.Box
 import androidx.compose.foundation.layout.Column
@@ -108,9 +111,11 @@ fun SearchScreen(
         }
     }
 
+    val tokens = LocalKanriGlass.current
+
     Scaffold(
         modifier = modifier.fillMaxSize(),
-        containerColor = MaterialTheme.colorScheme.background,
+        containerColor = if (tokens != null) Color.Transparent else MaterialTheme.colorScheme.background,
         topBar = {
             TopAppBar(
                 title = {
@@ -210,7 +215,7 @@ fun SearchScreen(
                     }
                 },
                 colors = TopAppBarDefaults.topAppBarColors(
-                    containerColor = MaterialTheme.colorScheme.surface
+                    containerColor = if (tokens != null) Color.Transparent else MaterialTheme.colorScheme.surface
                 )
             )
         }
@@ -287,17 +292,39 @@ fun SearchScreen(
                         items = uiState.filteredTransactions,
                         key = { it.transaction.id }
                     ) { item ->
-                        TransactionItemCard(
-                            item = item,
-                            onClick = {
-                                haptics.click()
-                                if (onTransactionClick != null) {
-                                    onTransactionClick(item)
-                                } else {
-                                    selectedTransactionForCategory = item
+                        if (tokens != null) {
+                            KanriGlassCard(
+                                modifier = Modifier.fillMaxWidth(),
+                                level = GlassLevel.Flat,
+                                shape = RoundedCornerShape(16.dp)
+                            ) {
+                                Box(modifier = Modifier.padding(horizontal = 10.dp, vertical = 2.dp)) {
+                                    TransactionItemCard(
+                                        item = item,
+                                        onClick = {
+                                            haptics.click()
+                                            if (onTransactionClick != null) {
+                                                onTransactionClick(item)
+                                            } else {
+                                                selectedTransactionForCategory = item
+                                            }
+                                        }
+                                    )
                                 }
                             }
-                        )
+                        } else {
+                            TransactionItemCard(
+                                item = item,
+                                onClick = {
+                                    haptics.click()
+                                    if (onTransactionClick != null) {
+                                        onTransactionClick(item)
+                                    } else {
+                                        selectedTransactionForCategory = item
+                                    }
+                                }
+                            )
+                        }
                     }
                 }
             }
@@ -546,14 +573,8 @@ private fun SearchSummaryHeader(
     transfers: Double = 0.0,
     isTransfersFilterActive: Boolean = false
 ) {
-    Card(
-        modifier = Modifier
-            .fillMaxWidth()
-            .padding(horizontal = 16.dp, vertical = 6.dp),
-        shape = RoundedCornerShape(12.dp),
-        colors = CardDefaults.cardColors(containerColor = MaterialTheme.colorScheme.surfaceVariant),
-        border = BorderStroke(1.dp, MaterialTheme.colorScheme.outlineVariant)
-    ) {
+    val tokens = LocalKanriGlass.current
+    val content = @Composable {
         Column(modifier = Modifier.padding(12.dp)) {
             Row(
                 modifier = Modifier.fillMaxWidth(),
@@ -604,7 +625,8 @@ private fun SearchSummaryHeader(
             } else {
                 Row(
                     modifier = Modifier.fillMaxWidth(),
-                    horizontalArrangement = Arrangement.SpaceBetween
+                    horizontalArrangement = Arrangement.SpaceBetween,
+                    verticalAlignment = Alignment.CenterVertically
                 ) {
                     Row(verticalAlignment = Alignment.CenterVertically) {
                         Box(
@@ -639,6 +661,29 @@ private fun SearchSummaryHeader(
                     }
                 }
             }
+        }
+    }
+
+    if (tokens != null) {
+        KanriGlassCard(
+            modifier = Modifier
+                .fillMaxWidth()
+                .padding(horizontal = 16.dp, vertical = 6.dp),
+            level = GlassLevel.Flat,
+            shape = RoundedCornerShape(14.dp)
+        ) {
+            content()
+        }
+    } else {
+        Card(
+            modifier = Modifier
+                .fillMaxWidth()
+                .padding(horizontal = 16.dp, vertical = 6.dp),
+            shape = RoundedCornerShape(12.dp),
+            colors = CardDefaults.cardColors(containerColor = MaterialTheme.colorScheme.surfaceVariant),
+            border = BorderStroke(1.dp, MaterialTheme.colorScheme.outlineVariant)
+        ) {
+            content()
         }
     }
 }

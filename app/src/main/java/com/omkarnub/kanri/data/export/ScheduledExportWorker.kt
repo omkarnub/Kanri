@@ -1,4 +1,4 @@
-package com.omkarnub.kanri.data.export
+﻿package com.omkarnub.kanri.data.export
 
 import android.app.NotificationChannel
 import android.app.NotificationManager
@@ -46,8 +46,8 @@ class ScheduledExportWorker(
                 ExportRange.LastMonth
             }
 
-            // Fixed app-managed directory
-            val exportDir = File(applicationContext.getExternalFilesDir(null), "Kanri/AutoExports").apply {
+            // Private internal app-managed directory (isolated from other apps, CWE-312)
+            val exportDir = File(applicationContext.filesDir, "auto_exports").apply {
                 mkdirs()
             }
 
@@ -61,17 +61,6 @@ class ScheduledExportWorker(
             if (pdfResult.isFailure && csvResult.isFailure) {
                 Log.e(TAG, "Failed to generate exports: PDF=${pdfResult.exceptionOrNull()}, CSV=${csvResult.exceptionOrNull()}")
                 return Result.retry()
-            }
-
-            // Also copy to public download directory if accessible
-            try {
-                val publicDownloads = File(Environment.getExternalStoragePublicDirectory(Environment.DIRECTORY_DOWNLOADS), "Kanri/AutoExports")
-                if (publicDownloads.exists() || publicDownloads.mkdirs()) {
-                    copyFile(pdfFile, File(publicDownloads, pdfFile.name))
-                    copyFile(csvFile, File(publicDownloads, csvFile.name))
-                }
-            } catch (e: Exception) {
-                Log.w(TAG, "Could not copy exports to public Downloads: ${e.message}")
             }
 
             // If Cloud Backup mode is active, upload encrypted backup to Google Drive
@@ -141,7 +130,7 @@ class ScheduledExportWorker(
         } else null
 
         val notification = NotificationCompat.Builder(applicationContext, CHANNEL_ID)
-            .setSmallIcon(R.mipmap.ic_launcher)
+            .setSmallIcon(R.drawable.ic_notification)
             .setContentTitle("Kanri Statement Ready ($periodLabel)")
             .setContentText("Your periodic PDF & CSV financial statement has been generated.")
             .setStyle(

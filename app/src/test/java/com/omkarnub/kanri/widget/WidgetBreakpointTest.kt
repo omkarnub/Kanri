@@ -38,6 +38,7 @@ class WidgetBreakpointTest {
         assertTrue(R.layout.widget_lend_borrow != 0)
         assertTrue(R.layout.widget_spent_today != 0)
         assertTrue(R.layout.widget_split_bill != 0)
+        assertTrue(R.layout.widget_wallet_balance != 0)
     }
 }
 

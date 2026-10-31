@@ -1,4 +1,4 @@
-package com.omkarnub.kanri.ui.insights.sections
+﻿package com.omkarnub.kanri.ui.insights.sections
 
 import androidx.compose.animation.AnimatedVisibility
 import androidx.compose.animation.core.FastOutSlowInEasing
@@ -53,6 +53,8 @@ import com.omkarnub.kanri.ui.insights.BudgetVsActualData
 import com.omkarnub.kanri.ui.insights.CategoryBudgetRow
 import com.omkarnub.kanri.ui.insights.UnbudgetedCategoryRow
 import kotlin.math.abs
+import com.omkarnub.kanri.ui.common.GlassLevel
+import com.omkarnub.kanri.ui.common.KanriGlassCard
 
 private val ExpenseRed = Color(0xFFE54D2E)
 private val WarningAmber = Color(0xFFF5A524)
@@ -67,17 +69,14 @@ fun BudgetVsActualSection(
 ) {
     var showUnbudgetedSection by remember { mutableStateOf(false) }
 
-    Card(
+    KanriGlassCard(
         modifier = modifier
             .fillMaxWidth()
             .semantics {
                 contentDescription = "Budget versus actual: ${formatCurrency(data.overallSpent)} of ${formatCurrency(data.overallBudget)} spent"
             },
         shape = RoundedCornerShape(20.dp),
-        colors = CardDefaults.cardColors(
-            containerColor = MaterialTheme.colorScheme.surfaceVariant.copy(alpha = 0.35f)
-        ),
-        border = BorderStroke(1.dp, MaterialTheme.colorScheme.outlineVariant)
+        level = GlassLevel.Blur
     ) {
         Column(
             modifier = Modifier

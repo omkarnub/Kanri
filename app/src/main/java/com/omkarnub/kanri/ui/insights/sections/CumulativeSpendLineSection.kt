@@ -23,6 +23,8 @@ import androidx.compose.material3.CardDefaults
 import androidx.compose.material3.MaterialTheme
 import androidx.compose.material3.Surface
 import androidx.compose.material3.Text
+import com.omkarnub.kanri.ui.common.GlassLevel
+import com.omkarnub.kanri.ui.common.KanriGlassCard
 import androidx.compose.runtime.Composable
 import androidx.compose.runtime.LaunchedEffect
 import androidx.compose.runtime.getValue
@@ -80,17 +82,14 @@ fun CumulativeSpendLineSection(
     val latestCurrent = data.currentPoints.lastOrNull()?.amount ?: 0.0
     val latestProjected = data.projectedPoints.lastOrNull()?.amount ?: latestCurrent
 
-    Card(
+    KanriGlassCard(
         modifier = modifier
             .fillMaxWidth()
             .semantics {
                 contentDescription = "Cumulative spend chart: ${formatCurrency(latestCurrent)} so far, projected ${formatCurrency(latestProjected)}"
             },
         shape = RoundedCornerShape(20.dp),
-        colors = CardDefaults.cardColors(
-            containerColor = MaterialTheme.colorScheme.surfaceVariant.copy(alpha = 0.35f)
-        ),
-        border = BorderStroke(1.dp, MaterialTheme.colorScheme.outlineVariant)
+        level = GlassLevel.Blur
     ) {
         Column(
             modifier = Modifier

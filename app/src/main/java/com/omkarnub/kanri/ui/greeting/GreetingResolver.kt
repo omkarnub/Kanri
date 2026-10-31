@@ -1,4 +1,4 @@
-package com.omkarnub.kanri.ui.greeting
+﻿package com.omkarnub.kanri.ui.greeting
 
 import com.omkarnub.kanri.util.CurrencyUtils
 import java.time.LocalTime
@@ -80,34 +80,32 @@ object GreetingResolver {
     private fun selectGreeting(bucket: TimeBucket, userName: String, rng: Random): String {
         val (plainVariants, playfulVariants) = when (bucket) {
             TimeBucket.Morning -> listOf(
-                "Good morning, {name}",
-                "Morning, {name}"
+                "Good morning, {name}"
             ) to listOf(
                 "Rise and shine, {name}",
                 "Fresh day, {name}"
             )
             TimeBucket.Afternoon -> listOf(
-                "Good afternoon, {name}",
-                "Afternoon, {name}"
+                "Good afternoon, {name}"
             ) to listOf(
                 "Hey {name}"
             )
             TimeBucket.Evening -> listOf(
-                "Good evening, {name}",
-                "Evening, {name}"
+                "Good evening, {name}"
             ) to listOf(
                 "Winding down, {name}?"
             )
             TimeBucket.Night -> listOf(
-                "Good night, {name}",
-                "Night, {name}"
+                "Good night, {name}"
             ) to listOf(
                 "Late one, {name}?"
             )
             TimeBucket.LateNight -> listOf(
+                "Good night, {name}"
+            ) to listOf(
                 "Still up, {name}?",
                 "Burning the midnight oil, {name}?"
-            ) to emptyList()
+            )
         }
 
         val template = if (playfulVariants.isEmpty()) {

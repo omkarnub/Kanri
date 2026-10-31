@@ -36,6 +36,9 @@ import com.omkarnub.kanri.ui.insights.CategoryMoverItem
 import com.omkarnub.kanri.ui.insights.CategoryMoversData
 import kotlin.math.abs
 
+import com.omkarnub.kanri.ui.common.GlassLevel
+import com.omkarnub.kanri.ui.common.KanriGlassCard
+
 private val ExpenseRed = Color(0xFFE54D2E)
 private val IncomeSage = Color(0xFF30A46C)
 
@@ -45,14 +48,14 @@ fun CategoryMoversSection(
     onCategoryClick: (Long?) -> Unit,
     modifier: Modifier = Modifier
 ) {
-    Surface(
+    KanriGlassCard(
         modifier = modifier
             .fillMaxWidth()
             .semantics {
                 contentDescription = "Category movers ${data.periodLabel}: ${data.upMovers.size} increases, ${data.downMovers.size} decreases"
             },
         shape = RoundedCornerShape(20.dp),
-        color = MaterialTheme.colorScheme.surfaceVariant.copy(alpha = 0.18f)
+        level = GlassLevel.Blur
     ) {
         Column(
             modifier = Modifier

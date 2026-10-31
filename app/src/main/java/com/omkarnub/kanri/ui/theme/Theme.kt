@@ -8,9 +8,11 @@ import androidx.compose.material3.dynamicDarkColorScheme
 import androidx.compose.material3.dynamicLightColorScheme
 import androidx.compose.material3.lightColorScheme
 import androidx.compose.runtime.Composable
+import androidx.compose.runtime.CompositionLocalProvider
 import androidx.compose.runtime.SideEffect
 import androidx.compose.runtime.collectAsState
 import androidx.compose.runtime.getValue
+import androidx.compose.runtime.remember
 import androidx.compose.ui.graphics.Color
 import androidx.compose.ui.platform.LocalContext
 import androidx.compose.ui.platform.LocalView
@@ -109,6 +111,39 @@ private val KanriLightColorScheme = lightColorScheme(
     outlineVariant = LightOutlineVariant
 )
 
+/** Glass Scheme (Transparent background & surfaces so backdrop and glass cards render cleanly) */
+private val KanriGlassColorScheme = darkColorScheme(
+    primary = GlassTokens.accent,
+    onPrimary = GlassTokens.onAccent,
+    primaryContainer = Color.White.copy(alpha = 0.12f),
+    onPrimaryContainer = GlassTokens.accent,
+    secondary = GlassTokens.textSecondary,
+    onSecondary = GlassTokens.textPrimary,
+    secondaryContainer = Color.White.copy(alpha = 0.08f),
+    onSecondaryContainer = GlassTokens.textPrimary,
+    tertiary = GlassTokens.credit,
+    onTertiary = GlassTokens.onAccent,
+    tertiaryContainer = Color.White.copy(alpha = 0.08f),
+    onTertiaryContainer = GlassTokens.credit,
+    background = Color.Transparent,
+    onBackground = GlassTokens.textPrimary,
+    surface = Color.White.copy(alpha = 0.07f),
+    onSurface = GlassTokens.textPrimary,
+    surfaceVariant = Color.White.copy(alpha = 0.09f),
+    onSurfaceVariant = GlassTokens.textSecondary,
+    surfaceContainer = Color.White.copy(alpha = 0.07f),
+    surfaceContainerHigh = Color.White.copy(alpha = 0.10f),
+    surfaceContainerHighest = Color.White.copy(alpha = 0.14f),
+    surfaceContainerLow = Color.White.copy(alpha = 0.05f),
+    surfaceContainerLowest = Color.White.copy(alpha = 0.03f),
+    surfaceDim = Color.White.copy(alpha = 0.04f),
+    surfaceBright = Color.White.copy(alpha = 0.12f),
+    inverseSurface = Color(0xFFEDEDED),
+    inverseOnSurface = Color(0xFF111114),
+    outline = GlassTokens.borderStart,
+    outlineVariant = GlassTokens.borderEnd
+)
+
 @Composable
 fun KanriTheme(
     themeMode: ThemeMode? = null,
@@ -120,21 +155,69 @@ fun KanriTheme(
 
     val currentThemeMode by themePrefs.themeModeFlow.collectAsState()
     val isDynamicEnabled by themePrefs.dynamicColorFlow.collectAsState()
+    val glassCustomization by themePrefs.glassCustomizationFlow.collectAsState()
 
     val effectiveThemeMode = themeMode ?: currentThemeMode
     val effectiveDynamicColor = dynamicColor ?: isDynamicEnabled
 
-    val isDark = when (effectiveThemeMode) {
-        ThemeMode.DARK, ThemeMode.AMOLED -> true
+    val systemDark = androidx.compose.foundation.isSystemInDarkTheme()
+    val resolvedThemeMode = when (effectiveThemeMode) {
+        ThemeMode.SYSTEM -> if (systemDark) ThemeMode.DARK else ThemeMode.LIGHT
+        else -> effectiveThemeMode
+    }
+
+    val glassTokens = if (resolvedThemeMode == ThemeMode.GLASS) {
+        remember(glassCustomization) {
+            createCustomGlassTokens(glassCustomization)
+        }
+    } else null
+
+    val isDark = when (resolvedThemeMode) {
+        ThemeMode.DARK, ThemeMode.AMOLED, ThemeMode.GLASS -> true
         ThemeMode.LIGHT -> false
+        ThemeMode.SYSTEM -> systemDark
+    }
+
+    val dynamicGlassColorScheme = remember(glassTokens) {
+        val t = glassTokens ?: GlassTokens
+        darkColorScheme(
+            primary = t.accent,
+            onPrimary = t.onAccent,
+            primaryContainer = t.tintFlat,
+            onPrimaryContainer = t.accent,
+            secondary = t.textSecondary,
+            onSecondary = t.textPrimary,
+            secondaryContainer = t.tintFlat,
+            onSecondaryContainer = t.textPrimary,
+            tertiary = t.credit,
+            onTertiary = t.onAccent,
+            tertiaryContainer = t.tintFlat,
+            onTertiaryContainer = t.credit,
+            background = Color.Transparent,
+            onBackground = t.textPrimary,
+            surface = t.fallbackSurface,
+            onSurface = t.textPrimary,
+            surfaceVariant = t.tintFlat,
+            onSurfaceVariant = t.textSecondary,
+            surfaceContainer = t.tintBlur,
+            surfaceContainerHigh = t.tintStrong,
+            surfaceContainerHighest = t.tintStrong,
+            surfaceContainerLow = t.tintFlat,
+            surfaceContainerLowest = t.tintFlat,
+            surfaceDim = t.fallbackSurface,
+            surfaceBright = t.tintStrong,
+            outline = t.borderStart,
+            outlineVariant = t.borderEnd
+        )
     }
 
     val colorScheme = when {
+        glassTokens != null -> dynamicGlassColorScheme
         effectiveDynamicColor && Build.VERSION.SDK_INT >= Build.VERSION_CODES.S -> {
             if (isDark) dynamicDarkColorScheme(context) else dynamicLightColorScheme(context)
         }
-        effectiveThemeMode == ThemeMode.AMOLED -> KanriAmoledColorScheme
-        effectiveThemeMode == ThemeMode.DARK -> KanriDarkColorScheme
+        resolvedThemeMode == ThemeMode.AMOLED -> KanriAmoledColorScheme
+        resolvedThemeMode == ThemeMode.DARK -> KanriDarkColorScheme
         else -> KanriLightColorScheme
     }
 
@@ -150,9 +233,11 @@ fun KanriTheme(
         }
     }
 
-    MaterialTheme(
-        colorScheme = colorScheme,
-        typography = Typography,
-        content = content
-    )
+    CompositionLocalProvider(LocalKanriGlass provides glassTokens) {
+        MaterialTheme(
+            colorScheme = colorScheme,
+            typography = Typography,
+            content = content
+        )
+    }
 }

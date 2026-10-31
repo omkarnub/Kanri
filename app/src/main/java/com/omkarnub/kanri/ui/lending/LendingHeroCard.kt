@@ -9,8 +9,6 @@ import androidx.compose.foundation.layout.fillMaxWidth
 import androidx.compose.foundation.layout.height
 import androidx.compose.foundation.layout.padding
 import androidx.compose.foundation.shape.RoundedCornerShape
-import androidx.compose.material3.Card
-import androidx.compose.material3.CardDefaults
 import androidx.compose.material3.HorizontalDivider
 import androidx.compose.material3.MaterialTheme
 import androidx.compose.material3.Text
@@ -22,6 +20,9 @@ import androidx.compose.ui.text.font.FontWeight
 import androidx.compose.ui.unit.dp
 import androidx.compose.ui.unit.sp
 import com.omkarnub.kanri.ui.common.AnimatedNumberText
+import com.omkarnub.kanri.ui.common.GlassLevel
+import com.omkarnub.kanri.ui.common.KanriGlassCard
+import com.omkarnub.kanri.ui.theme.LocalKanriGlass
 import com.omkarnub.kanri.util.CurrencyUtils
 import kotlin.math.abs
 
@@ -34,13 +35,12 @@ fun LendingHeroCard(
     heroTotals: HeroTotals,
     modifier: Modifier = Modifier
 ) {
-    Card(
+    val tokens = LocalKanriGlass.current
+
+    KanriGlassCard(
         modifier = modifier.fillMaxWidth(),
-        shape = RoundedCornerShape(20.dp),
-        colors = CardDefaults.cardColors(
-            containerColor = MaterialTheme.colorScheme.surfaceVariant.copy(alpha = 0.35f)
-        ),
-        border = BorderStroke(1.dp, MaterialTheme.colorScheme.outlineVariant)
+        level = GlassLevel.Blur,
+        shape = RoundedCornerShape(24.dp)
     ) {
         Column(
             modifier = Modifier
@@ -55,7 +55,7 @@ fun LendingHeroCard(
                     letterSpacing = 1.4.sp,
                     fontSize = 11.sp
                 ),
-                color = MaterialTheme.colorScheme.onSurfaceVariant
+                color = tokens?.textSecondary ?: MaterialTheme.colorScheme.onSurfaceVariant
             )
 
             Spacer(modifier = Modifier.height(8.dp))
@@ -69,21 +69,23 @@ fun LendingHeroCard(
                             fontWeight = FontWeight.Bold,
                             fontSize = 26.sp
                         ),
-                        color = MaterialTheme.colorScheme.onSurface
+                        color = tokens?.textPrimary ?: MaterialTheme.colorScheme.onSurface
                     )
                     Text(
                         text = "No pending dues",
                         style = MaterialTheme.typography.bodySmall.copy(
                             fontSize = 13.sp
                         ),
-                        color = MaterialTheme.colorScheme.onSurfaceVariant.copy(alpha = 0.8f),
+                        color = (tokens?.textTertiary ?: MaterialTheme.colorScheme.onSurfaceVariant).copy(alpha = 0.8f),
                         modifier = Modifier.padding(top = 2.dp)
                     )
                 }
             } else {
                 val isPositive = heroTotals.netPosition > 0.0
                 val sign = if (isPositive) "+" else if (heroTotals.netPosition < 0.0) "−" else ""
-                val color = if (isPositive) SageGreen else if (heroTotals.netPosition < 0.0) ExpenseRed else MaterialTheme.colorScheme.onSurface
+                val positiveColor = tokens?.credit ?: SageGreen
+                val negativeColor = tokens?.debit ?: ExpenseRed
+                val color = if (isPositive) positiveColor else if (heroTotals.netPosition < 0.0) negativeColor else (tokens?.textPrimary ?: MaterialTheme.colorScheme.onSurface)
                 val formattedAbs = CurrencyUtils.formatCurrency(abs(heroTotals.netPosition))
 
                 Row(
@@ -114,13 +116,13 @@ fun LendingHeroCard(
                     style = MaterialTheme.typography.bodySmall.copy(
                         fontSize = 12.5.sp
                     ),
-                    color = MaterialTheme.colorScheme.onSurfaceVariant.copy(alpha = 0.8f),
+                    color = (tokens?.textSecondary ?: MaterialTheme.colorScheme.onSurfaceVariant).copy(alpha = 0.8f),
                     modifier = Modifier.padding(top = 2.dp)
                 )
             }
 
             Spacer(modifier = Modifier.height(18.dp))
-            HorizontalDivider(color = MaterialTheme.colorScheme.outlineVariant.copy(alpha = 0.5f))
+            HorizontalDivider(color = tokens?.borderEnd ?: MaterialTheme.colorScheme.outlineVariant.copy(alpha = 0.5f))
             Spacer(modifier = Modifier.height(14.dp))
 
             // Sub stats: You'll get & You owe
@@ -136,16 +138,17 @@ fun LendingHeroCard(
                             fontWeight = FontWeight.Medium,
                             fontSize = 11.5.sp
                         ),
-                        color = MaterialTheme.colorScheme.onSurfaceVariant
+                        color = tokens?.textSecondary ?: MaterialTheme.colorScheme.onSurfaceVariant
                     )
                     Spacer(modifier = Modifier.height(3.dp))
+                    val toReceiveColor = if (heroTotals.toReceive > 0) (tokens?.credit ?: SageGreen) else (tokens?.textPrimary ?: MaterialTheme.colorScheme.onSurface)
                     AnimatedNumberText(
                         text = CurrencyUtils.formatCurrency(heroTotals.toReceive),
                         style = MaterialTheme.typography.titleMedium.copy(
                             fontWeight = FontWeight.Bold,
                             fontSize = 17.sp
                         ),
-                        color = if (heroTotals.toReceive > 0) SageGreen else MaterialTheme.colorScheme.onSurface,
+                        color = toReceiveColor,
                         animateFromZero = false,
                         horizontalArrangement = Arrangement.Start
                     )
@@ -162,16 +165,17 @@ fun LendingHeroCard(
                             fontWeight = FontWeight.Medium,
                             fontSize = 11.5.sp
                         ),
-                        color = MaterialTheme.colorScheme.onSurfaceVariant
+                        color = tokens?.textSecondary ?: MaterialTheme.colorScheme.onSurfaceVariant
                     )
                     Spacer(modifier = Modifier.height(3.dp))
+                    val toPayColor = if (heroTotals.toPay > 0) (tokens?.debit ?: ExpenseRed) else (tokens?.textPrimary ?: MaterialTheme.colorScheme.onSurface)
                     AnimatedNumberText(
                         text = CurrencyUtils.formatCurrency(heroTotals.toPay),
                         style = MaterialTheme.typography.titleMedium.copy(
                             fontWeight = FontWeight.Bold,
                             fontSize = 17.sp
                         ),
-                        color = if (heroTotals.toPay > 0) ExpenseRed else MaterialTheme.colorScheme.onSurface,
+                        color = toPayColor,
                         animateFromZero = false,
                         horizontalArrangement = Arrangement.End
                     )

@@ -51,8 +51,8 @@ fun AnimatedNumberText(
     color: Color = Color.Unspecified,
     fontSize: TextUnit = TextUnit.Unspecified,
     animateFromZero: Boolean = true,
-    durationMillis: Int = 850,
-    delayPerDigitMillis: Int = 30,
+    durationMillis: Int = 500,
+    delayPerDigitMillis: Int = 16,
     horizontalArrangement: Arrangement.Horizontal = Arrangement.Center
 ) {
     val density = LocalDensity.current
@@ -121,11 +121,12 @@ fun AnimatedNumber(
     color: Color = Color.Unspecified,
     fontSize: TextUnit = TextUnit.Unspecified,
     animateFromZero: Boolean = true,
-    durationMillis: Int = 850,
-    delayPerDigitMillis: Int = 30,
+    durationMillis: Int = 500,
+    delayPerDigitMillis: Int = 16,
     horizontalArrangement: Arrangement.Horizontal = Arrangement.Center
 ) {
-    val formatted = remember(value) { CurrencyUtils.formatCurrency(value) }
+    val currency = CurrencyUtils.getCurrency()
+    val formatted = remember(value, currency) { CurrencyUtils.formatCurrency(value, currency = currency) }
     AnimatedNumberText(
         text = formatted,
         modifier = modifier,

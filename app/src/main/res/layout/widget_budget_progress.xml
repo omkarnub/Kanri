@@ -20,6 +20,7 @@
             android:layout_height="wrap_content"
             android:layout_weight="1"
             android:fontFamily="@font/google_sans_bold"
+            android:textStyle="bold"
             android:letterSpacing="0.08"
             android:text="BUDGET"
             android:textColor="#FFFFFF"
@@ -30,6 +31,7 @@
             android:layout_width="wrap_content"
             android:layout_height="wrap_content"
             android:fontFamily="@font/google_sans_bold"
+            android:textStyle="bold"
             android:text="68% used"
             android:textColor="#FFFFFF"
             android:textSize="11sp" />

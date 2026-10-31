@@ -1,0 +1,47 @@
+<?xml version="1.0" encoding="utf-8"?>
+<shortcuts xmlns:android="http://schemas.android.com/apk/res/android">
+    <shortcut
+        android:shortcutId="shortcut_add_expense"
+        android:enabled="true"
+        android:icon="@drawable/ic_shortcut_expense"
+        android:shortcutShortLabel="@string/shortcut_add_expense_short"
+        android:shortcutLongLabel="@string/shortcut_add_expense_long">
+        <intent
+            android:action="com.omkarnub.kanri.action.ADD_EXPENSE"
+            android:targetPackage="com.omkarnub.kanri"
+            android:targetClass="com.omkarnub.kanri.MainActivityDarkDark" />
+    </shortcut>
+    <shortcut
+        android:shortcutId="shortcut_add_income"
+        android:enabled="true"
+        android:icon="@drawable/ic_shortcut_income"
+        android:shortcutShortLabel="@string/shortcut_add_income_short"
+        android:shortcutLongLabel="@string/shortcut_add_income_long">
+        <intent
+            android:action="com.omkarnub.kanri.action.ADD_INCOME"
+            android:targetPackage="com.omkarnub.kanri"
+            android:targetClass="com.omkarnub.kanri.MainActivityDarkDark" />
+    </shortcut>
+    <shortcut
+        android:shortcutId="shortcut_split_bill"
+        android:enabled="true"
+        android:icon="@drawable/ic_shortcut_split"
+        android:shortcutShortLabel="@string/shortcut_split_bill_short"
+        android:shortcutLongLabel="@string/shortcut_split_bill_long">
+        <intent
+            android:action="com.omkarnub.kanri.action.SPLIT_BILL"
+            android:targetPackage="com.omkarnub.kanri"
+            android:targetClass="com.omkarnub.kanri.MainActivityDarkDark" />
+    </shortcut>
+    <shortcut
+        android:shortcutId="shortcut_lend_borrow"
+        android:enabled="true"
+        android:icon="@drawable/ic_shortcut_lending"
+        android:shortcutShortLabel="@string/shortcut_lend_borrow_short"
+        android:shortcutLongLabel="@string/shortcut_lend_borrow_long">
+        <intent
+            android:action="com.omkarnub.kanri.action.OPEN_LENDING"
+            android:targetPackage="com.omkarnub.kanri"
+            android:targetClass="com.omkarnub.kanri.MainActivityDarkDark" />
+    </shortcut>
+</shortcuts>

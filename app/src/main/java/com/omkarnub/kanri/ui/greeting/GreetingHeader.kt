@@ -44,7 +44,7 @@ fun GreetingHeader(
     }
 
     val subtitleColor = when (greetingResult.tone) {
-        Tone.Neutral -> MaterialTheme.colorScheme.onSurfaceVariant.copy(alpha = 0.65f)
+        Tone.Neutral -> MaterialTheme.colorScheme.onSurfaceVariant.copy(alpha = 0.85f)
         Tone.Positive -> Color(0xFF34C759).copy(alpha = 0.85f)
         Tone.Warning -> Color(0xFFF5A524)
     }

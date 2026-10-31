@@ -1,4 +1,4 @@
-package com.omkarnub.kanri.ui.lending
+﻿package com.omkarnub.kanri.ui.lending
 
 import android.app.TimePickerDialog
 import android.net.Uri
@@ -20,11 +20,14 @@ import androidx.compose.foundation.layout.ExperimentalLayoutApi
 import androidx.compose.foundation.layout.FlowRow
 import androidx.compose.foundation.layout.Row
 import androidx.compose.foundation.layout.Spacer
+import androidx.compose.foundation.layout.fillMaxHeight
 import androidx.compose.foundation.layout.fillMaxSize
 import androidx.compose.foundation.layout.fillMaxWidth
 import androidx.compose.foundation.layout.height
 import androidx.compose.foundation.layout.heightIn
 import androidx.compose.foundation.layout.imePadding
+import androidx.compose.foundation.layout.navigationBarsPadding
+import androidx.compose.foundation.layout.statusBarsPadding
 import androidx.compose.foundation.layout.padding
 import androidx.compose.foundation.layout.size
 import androidx.compose.foundation.layout.width
@@ -38,6 +41,7 @@ import androidx.compose.foundation.text.KeyboardActions
 import androidx.compose.foundation.text.KeyboardOptions
 import androidx.compose.foundation.verticalScroll
 import androidx.compose.material.icons.Icons
+import androidx.compose.material.icons.automirrored.filled.ArrowBack
 import androidx.compose.material.icons.filled.Add
 import androidx.compose.material.icons.filled.CalendarMonth
 import androidx.compose.material.icons.filled.Check
@@ -51,18 +55,24 @@ import androidx.compose.material.icons.filled.Search
 import androidx.compose.material3.Button
 import androidx.compose.material3.ButtonDefaults
 import androidx.compose.material3.DatePicker
-import androidx.compose.material3.DatePickerDialog
 import androidx.compose.material3.ExperimentalMaterial3Api
 import androidx.compose.material3.Icon
 import androidx.compose.material3.IconButton
 import androidx.compose.material3.MaterialTheme
 import androidx.compose.material3.OutlinedTextField
 import androidx.compose.material3.OutlinedTextFieldDefaults
+import androidx.compose.material3.Scaffold
 import androidx.compose.material3.Surface
 import androidx.compose.material3.Text
 import androidx.compose.material3.TextButton
+import androidx.compose.material3.TopAppBar
+import androidx.compose.material3.TopAppBarDefaults
 import androidx.compose.material3.rememberDatePickerState
+import androidx.compose.ui.window.Dialog
+import androidx.compose.ui.window.DialogProperties
+import androidx.compose.ui.window.DialogWindowProvider
 import androidx.compose.runtime.Composable
+import androidx.compose.runtime.DisposableEffect
 import androidx.compose.runtime.LaunchedEffect
 import androidx.compose.runtime.getValue
 import androidx.compose.runtime.mutableDoubleStateOf
@@ -78,17 +88,28 @@ import androidx.compose.ui.focus.FocusRequester
 import androidx.compose.ui.focus.focusRequester
 import androidx.compose.ui.graphics.Color
 import androidx.compose.ui.platform.LocalContext
+import androidx.compose.ui.platform.LocalView
+import com.omkarnub.kanri.ui.common.GlassBackdrop
+import com.omkarnub.kanri.ui.theme.LocalKanriGlass
+import androidx.compose.ui.text.TextRange
 import androidx.compose.ui.text.font.FontWeight
 import androidx.compose.ui.text.input.ImeAction
 import androidx.compose.ui.text.input.KeyboardType
+import androidx.compose.ui.text.input.TextFieldValue
 import androidx.compose.ui.unit.dp
 import androidx.compose.ui.unit.sp
 import com.omkarnub.kanri.data.db.LendingWithRepayments
 import com.omkarnub.kanri.ui.common.AnimatedNumberText
+import com.omkarnub.kanri.ui.common.GlassLevel
+import com.omkarnub.kanri.ui.common.KanriGlassCard
+import com.omkarnub.kanri.ui.common.KanriGlassDatePickerDialog
 import com.omkarnub.kanri.ui.common.LocalHazeState
+import com.omkarnub.kanri.ui.common.applyWindowBlur
+import com.omkarnub.kanri.ui.common.kanriPrimaryButtonColors
 import com.omkarnub.kanri.ui.common.rememberKanriGlassTheme
 import com.omkarnub.kanri.util.CurrencyUtils
 import dev.chrisbanes.haze.ExperimentalHazeApi
+import dev.chrisbanes.haze.HazeState
 import dev.chrisbanes.haze.hazeChild
 import java.util.Calendar
 import java.util.Locale
@@ -110,12 +131,12 @@ fun LendingEntryDialog(
     recentPeople: List<String> = emptyList(),
     allPeople: List<PersonSummary> = emptyList(),
     onDismiss: () -> Unit,
-    onSave: (personName: String, amount: Double, type: String, date: Long, dueDate: Long?, notes: String?, wallet: String) -> Unit
+    onSave: (personName: String, amount: Double, type: String, date: Long, dueDate: Long?, notes: String?, wallet: String) -> Unit,
+    hazeState: HazeState? = LocalHazeState.current
 ) {
     BackHandler(onBack = onDismiss)
 
     val context = LocalContext.current
-    val hazeState = LocalHazeState.current
     val glassTheme = rememberKanriGlassTheme()
 
 
@@ -126,7 +147,11 @@ fun LendingEntryDialog(
     var personName by remember { mutableStateOf(existingEntry?.lending?.personName ?: initialPersonName) }
     var amount by remember { mutableDoubleStateOf(existingEntry?.lending?.amount ?: initialAmount) }
     var isManualInput by remember { mutableStateOf(false) }
-    var manualText by remember { mutableStateOf(if (amount % 1.0 == 0.0) amount.toLong().toString() else amount.toString()) }
+    val initialAmountStr = remember(amount) { if (amount % 1.0 == 0.0) amount.toLong().toString() else amount.toString() }
+    var manualText by remember { mutableStateOf(initialAmountStr) }
+    var manualTextFieldValue by remember {
+        mutableStateOf(TextFieldValue(text = initialAmountStr, selection = TextRange(initialAmountStr.length)))
+    }
     var notes by remember { mutableStateOf(existingEntry?.lending?.notes ?: (initialNotes ?: "")) }
     var entryDate by remember { mutableLongStateOf(existingEntry?.lending?.date ?: initialDate) }
     var dueDate by remember { mutableStateOf<Long?>(existingEntry?.lending?.dueDate ?: initialDueDate) }
@@ -175,93 +200,142 @@ fun LendingEntryDialog(
     val isDueDateValid = dueDate == null || dueDate!! >= entryDate
     val isValid = isPersonValid && isAmountValid && isDueDateValid
 
-    Box(
-        modifier = Modifier.fillMaxSize(),
-        contentAlignment = Alignment.Center
-    ) {
-        // Backdrop Scrim
-        Box(
-            modifier = Modifier
-                .fillMaxSize()
-                .background(Color.Black.copy(alpha = 0.35f))
-                .clickable(
-                    interactionSource = remember { MutableInteractionSource() },
-                    indication = null,
-                    onClick = onDismiss
-                )
-        )
+    val tokens = LocalKanriGlass.current
 
-        // Frosted Dialog Card
+    val pageBgColor = if (tokens != null) {
+        Color.Transparent
+    } else {
+        MaterialTheme.colorScheme.background
+    }
+
+    val sectionCardColor = if (tokens != null) {
+        tokens.tintFlat
+    } else {
+        MaterialTheme.colorScheme.surfaceContainerLow
+    }
+
+    val sectionCardBorder = BorderStroke(
+        width = 0.8.dp,
+        color = if (tokens != null) {
+            tokens.borderStart
+        } else {
+            MaterialTheme.colorScheme.outlineVariant.copy(alpha = 0.35f)
+        }
+    )
+
+    Dialog(
+        onDismissRequest = onDismiss,
+        properties = DialogProperties(
+            usePlatformDefaultWidth = false,
+            decorFitsSystemWindows = false
+        )
+    ) {
+        val view = LocalView.current
+        DisposableEffect(view) {
+            val window = (view.parent as? DialogWindowProvider)?.window
+            window?.let { w ->
+                w.setDimAmount(0f)
+                w.setBackgroundDrawableResource(android.R.color.transparent)
+                applyWindowBlur(w)
+            }
+            onDispose {}
+        }
+
         Box(
             modifier = Modifier
                 .fillMaxSize()
-                .imePadding()
-                .padding(horizontal = 18.dp, vertical = 24.dp),
-            contentAlignment = Alignment.Center
+                .background(pageBgColor)
         ) {
-            Surface(
-                modifier = Modifier
-                    .fillMaxWidth()
-                    .shadow(
-                        elevation = glassTheme.shadowElevation + 6.dp,
-                        shape = RoundedCornerShape(28.dp),
-                        spotColor = glassTheme.shadowColor,
-                        ambientColor = glassTheme.shadowColor.copy(alpha = glassTheme.shadowColor.alpha * 0.7f)
-                    )
-                    .clip(RoundedCornerShape(28.dp))
-                    .then(
-                        if (hazeState != null) {
-                            Modifier.hazeChild(
-                                state = hazeState,
-                                style = glassTheme.popupHazeStyle
-                            ) {
-                                canDrawArea = { true }
-                            }
-                        } else {
-                            Modifier
-                        }
-                    )
-                    .border(
-                        glassTheme.glassBorder,
-                        shape = RoundedCornerShape(28.dp)
-                    ),
-                shape = RoundedCornerShape(28.dp),
-                color = if (hazeState != null) Color.Transparent else glassTheme.fallbackBackgroundColor
-            ) {
-                Column(
-                    modifier = Modifier
-                        .fillMaxWidth()
-                        .verticalScroll(rememberScrollState())
-                        .padding(horizontal = 22.dp, vertical = 22.dp),
-                    horizontalAlignment = Alignment.CenterHorizontally
-                ) {
-                    // Header Row
-                    Row(
-                        modifier = Modifier.fillMaxWidth(),
-                        verticalAlignment = Alignment.CenterVertically,
-                        horizontalArrangement = Arrangement.SpaceBetween
-                    ) {
-                        Text(
-                            text = if (isEditing) "Edit Record" else "Add Record",
-                            style = MaterialTheme.typography.titleLarge.copy(
-                                fontWeight = FontWeight.Bold,
+            if (tokens != null) {
+                GlassBackdrop(
+                    modifier = Modifier.fillMaxSize(),
+                    tokens = tokens
+                )
+            }
+
+            Scaffold(
+                modifier = Modifier.fillMaxSize(),
+                containerColor = Color.Transparent,
+                topBar = {
+                    TopAppBar(
+                        title = {
+                            Text(
+                                text = if (isEditing) "Edit Record" else "Add Record",
+                                style = MaterialTheme.typography.titleLarge.copy(
+                                    fontWeight = FontWeight.Bold,
+                                    fontSize = 20.sp
+                                ),
                                 color = MaterialTheme.colorScheme.onSurface
                             )
+                        },
+                        navigationIcon = {
+                            IconButton(onClick = onDismiss) {
+                                Icon(
+                                    imageVector = Icons.AutoMirrored.Filled.ArrowBack,
+                                    contentDescription = "Back",
+                                    tint = MaterialTheme.colorScheme.onSurface
+                                )
+                            }
+                        },
+                        colors = TopAppBarDefaults.topAppBarColors(
+                            containerColor = Color.Transparent
                         )
-
-                        IconButton(
-                            onClick = onDismiss,
-                            modifier = Modifier.size(32.dp)
+                    )
+                },
+                bottomBar = {
+                    Surface(
+                        modifier = Modifier
+                            .fillMaxWidth()
+                            .navigationBarsPadding()
+                            .imePadding(),
+                        color = if (tokens != null) {
+                            tokens.fallbackSurface.copy(alpha = 0.85f)
+                        } else {
+                            MaterialTheme.colorScheme.background
+                        },
+                        tonalElevation = 0.dp,
+                        border = BorderStroke(
+                            0.8.dp,
+                            if (tokens != null) tokens.borderStart else MaterialTheme.colorScheme.outlineVariant.copy(alpha = 0.35f)
+                        )
+                    ) {
+                        Box(
+                            modifier = Modifier
+                                .fillMaxWidth()
+                                .padding(horizontal = 20.dp, vertical = 12.dp)
                         ) {
-                            Icon(
-                                imageVector = Icons.Default.Close,
-                                contentDescription = "Close",
-                                tint = MaterialTheme.colorScheme.onSurfaceVariant
-                            )
+                            Button(
+                                onClick = {
+                                    if (isValid) {
+                                        onSave(personName.trim(), amount, type, entryDate, dueDate, notes.ifBlank { null }, selectedWallet)
+                                    }
+                                },
+                                enabled = isValid,
+                                shape = RoundedCornerShape(16.dp),
+                                colors = kanriPrimaryButtonColors(),
+                                modifier = Modifier
+                                    .fillMaxWidth()
+                                    .height(52.dp)
+                            ) {
+                                Text(
+                                    text = if (isEditing) "Save Changes" else "Add Entry",
+                                    style = MaterialTheme.typography.titleMedium.copy(fontWeight = FontWeight.Bold)
+                                )
+                            }
                         }
                     }
-
-                    Spacer(modifier = Modifier.height(14.dp))
+                }
+            ) { innerPadding ->
+                Column(
+                    modifier = Modifier
+                        .fillMaxSize()
+                        .padding(innerPadding)
+                        .imePadding()
+                        .verticalScroll(rememberScrollState())
+                        .padding(horizontal = 20.dp, vertical = 8.dp),
+                    horizontalAlignment = Alignment.CenterHorizontally,
+                    verticalArrangement = Arrangement.spacedBy(16.dp)
+                ) {
 
                     // Two-way toggle: I Lent / I Borrowed
                     Row(
@@ -278,11 +352,8 @@ fun LendingEntryDialog(
                                 .clip(RoundedCornerShape(12.dp))
                                 .clickable(enabled = !hasRepayments) { type = "LENT" },
                             shape = RoundedCornerShape(12.dp),
-                            color = if (isLent) SageGreen.copy(alpha = 0.18f) else MaterialTheme.colorScheme.onSurface.copy(alpha = 0.05f),
-                            border = BorderStroke(
-                                1.dp,
-                                if (isLent) SageGreen else MaterialTheme.colorScheme.outlineVariant
-                            )
+                            color = if (isLent) SageGreen.copy(alpha = 0.18f) else sectionCardColor,
+                            border = if (isLent) BorderStroke(1.2.dp, SageGreen) else sectionCardBorder
                         ) {
                             Box(
                                 modifier = Modifier.padding(vertical = 11.dp),
@@ -305,11 +376,8 @@ fun LendingEntryDialog(
                                 .clip(RoundedCornerShape(12.dp))
                                 .clickable(enabled = !hasRepayments) { type = "BORROWED" },
                             shape = RoundedCornerShape(12.dp),
-                            color = if (isBorrowed) ExpenseRed.copy(alpha = 0.18f) else MaterialTheme.colorScheme.onSurface.copy(alpha = 0.05f),
-                            border = BorderStroke(
-                                1.dp,
-                                if (isBorrowed) ExpenseRed else MaterialTheme.colorScheme.outlineVariant
-                            )
+                            color = if (isBorrowed) ExpenseRed.copy(alpha = 0.18f) else sectionCardColor,
+                            border = if (isBorrowed) BorderStroke(1.2.dp, ExpenseRed) else sectionCardBorder
                         ) {
                             Box(
                                 modifier = Modifier.padding(vertical = 11.dp),
@@ -340,8 +408,8 @@ fun LendingEntryDialog(
                     // Amount Stepper with [-] and [+]
                     Surface(
                         shape = RoundedCornerShape(20.dp),
-                        color = MaterialTheme.colorScheme.onSurface.copy(alpha = 0.05f),
-                        border = BorderStroke(0.8.dp, MaterialTheme.colorScheme.onSurface.copy(alpha = 0.14f)),
+                        color = sectionCardColor,
+                        border = sectionCardBorder,
                         modifier = Modifier.fillMaxWidth()
                     ) {
                         Row(
@@ -383,16 +451,18 @@ fun LendingEntryDialog(
                             ) {
                                 if (isManualInput && !hasRepayments) {
                                     OutlinedTextField(
-                                        value = manualText,
-                                        onValueChange = {
-                                            val filtered = it.filter { ch -> ch.isDigit() }
+                                        value = manualTextFieldValue,
+                                        onValueChange = { newValue ->
+                                            val filtered = newValue.text.filter { ch -> ch.isDigit() }
+                                            val newSelection = TextRange(filtered.length)
+                                            manualTextFieldValue = TextFieldValue(text = filtered, selection = newSelection)
                                             manualText = filtered
                                             val parsed = filtered.toDoubleOrNull()
                                             if (parsed != null) {
                                                 amount = parsed
                                             }
                                         },
-                                        prefix = { Text("₹ ", fontWeight = FontWeight.Bold) },
+                                        prefix = { Text("${CurrencyUtils.getCurrencySymbol()} ", fontWeight = FontWeight.Bold) },
                                         singleLine = true,
                                         keyboardOptions = KeyboardOptions(
                                             keyboardType = KeyboardType.Number,
@@ -418,7 +488,9 @@ fun LendingEntryDialog(
                                         modifier = Modifier
                                             .clip(RoundedCornerShape(12.dp))
                                             .clickable(enabled = !hasRepayments) {
-                                                manualText = amount.toLong().toString()
+                                                val str = amount.toLong().toString()
+                                                manualTextFieldValue = TextFieldValue(text = str, selection = TextRange(str.length))
+                                                manualText = str
                                                 isManualInput = true
                                             }
                                             .padding(horizontal = 4.dp, vertical = 2.dp),
@@ -492,8 +564,8 @@ fun LendingEntryDialog(
                             listOf(10.0, 50.0, 100.0, 500.0).forEach { inc ->
                                 Surface(
                                     shape = RoundedCornerShape(10.dp),
-                                    color = MaterialTheme.colorScheme.onSurface.copy(alpha = 0.06f),
-                                    border = BorderStroke(0.8.dp, MaterialTheme.colorScheme.outlineVariant),
+                                    color = sectionCardColor,
+                                    border = sectionCardBorder,
                                     modifier = Modifier
                                         .weight(1f)
                                         .clip(RoundedCornerShape(10.dp))
@@ -549,8 +621,8 @@ fun LendingEntryDialog(
                                 if (allPeople.isNotEmpty()) {
                                     Surface(
                                         shape = RoundedCornerShape(10.dp),
-                                        color = MaterialTheme.colorScheme.onSurface.copy(alpha = 0.08f),
-                                        border = BorderStroke(0.8.dp, MaterialTheme.colorScheme.outlineVariant),
+                                        color = sectionCardColor,
+                                        border = sectionCardBorder,
                                         modifier = Modifier
                                             .clip(RoundedCornerShape(10.dp))
                                             .clickable { showPeoplePopup = true }
@@ -580,8 +652,8 @@ fun LendingEntryDialog(
 
                                 Surface(
                                     shape = RoundedCornerShape(10.dp),
-                                    color = MaterialTheme.colorScheme.onSurface.copy(alpha = 0.08f),
-                                    border = BorderStroke(0.8.dp, MaterialTheme.colorScheme.outlineVariant),
+                                    color = sectionCardColor,
+                                    border = sectionCardBorder,
                                     modifier = Modifier
                                         .clip(RoundedCornerShape(10.dp))
                                         .clickable { contactPickerLauncher.launch(null) }
@@ -652,7 +724,7 @@ fun LendingEntryDialog(
                             modifier = Modifier.fillMaxWidth(),
                             colors = OutlinedTextFieldDefaults.colors(
                                 focusedBorderColor = MaterialTheme.colorScheme.onSurface,
-                                unfocusedBorderColor = MaterialTheme.colorScheme.outlineVariant
+                                unfocusedBorderColor = if (tokens != null) tokens.borderStart else MaterialTheme.colorScheme.outlineVariant
                             )
                         )
 
@@ -670,11 +742,8 @@ fun LendingEntryDialog(
                                     val initial = p.displayName.trim().take(1).uppercase(Locale.ROOT).ifBlank { "?" }
                                     Surface(
                                         shape = RoundedCornerShape(12.dp),
-                                        color = if (isSelected) MaterialTheme.colorScheme.onSurface.copy(alpha = 0.15f) else MaterialTheme.colorScheme.onSurface.copy(alpha = 0.05f),
-                                        border = BorderStroke(
-                                            if (isSelected) 1.5.dp else 0.8.dp,
-                                            if (isSelected) MaterialTheme.colorScheme.onSurface else MaterialTheme.colorScheme.outlineVariant
-                                        ),
+                                        color = if (isSelected) MaterialTheme.colorScheme.onSurface.copy(alpha = 0.15f) else sectionCardColor,
+                                        border = if (isSelected) BorderStroke(1.5.dp, MaterialTheme.colorScheme.onSurface) else sectionCardBorder,
                                         modifier = Modifier
                                             .clip(RoundedCornerShape(12.dp))
                                             .clickable {
@@ -690,7 +759,7 @@ fun LendingEntryDialog(
                                                 modifier = Modifier
                                                     .size(20.dp)
                                                     .clip(CircleShape)
-                                                    .background(if (isSelected) MaterialTheme.colorScheme.onSurface else MaterialTheme.colorScheme.onSurface.copy(alpha = 0.12f)),
+                                                    .background(if (isSelected) MaterialTheme.colorScheme.inverseSurface else MaterialTheme.colorScheme.onSurface.copy(alpha = 0.12f)),
                                                 contentAlignment = Alignment.Center
                                             ) {
                                                 Text(
@@ -699,7 +768,7 @@ fun LendingEntryDialog(
                                                         fontWeight = FontWeight.Bold,
                                                         fontSize = 11.sp
                                                     ),
-                                                    color = if (isSelected) MaterialTheme.colorScheme.surface else MaterialTheme.colorScheme.onSurface
+                                                    color = if (isSelected) MaterialTheme.colorScheme.inverseOnSurface else MaterialTheme.colorScheme.onSurface
                                                 )
                                             }
                                             Text(
@@ -723,8 +792,8 @@ fun LendingEntryDialog(
                                 if (allPeople.size > 6) {
                                     Surface(
                                         shape = RoundedCornerShape(12.dp),
-                                        color = MaterialTheme.colorScheme.onSurface.copy(alpha = 0.05f),
-                                        border = BorderStroke(0.8.dp, MaterialTheme.colorScheme.outlineVariant),
+                                        color = sectionCardColor,
+                                        border = sectionCardBorder,
                                         modifier = Modifier
                                             .clip(RoundedCornerShape(12.dp))
                                             .clickable { showPeoplePopup = true }
@@ -748,8 +817,8 @@ fun LendingEntryDialog(
                             val cleanNote = initialNotes.trim().take(30)
                             Surface(
                                 shape = RoundedCornerShape(10.dp),
-                                color = MaterialTheme.colorScheme.onSurface.copy(alpha = 0.08f),
-                                border = BorderStroke(0.8.dp, MaterialTheme.colorScheme.outlineVariant),
+                                color = sectionCardColor,
+                                border = sectionCardBorder,
                                 modifier = Modifier
                                     .clip(RoundedCornerShape(10.dp))
                                     .clickable { personName = cleanNote }
@@ -802,8 +871,8 @@ fun LendingEntryDialog(
                             // Date Button
                             Surface(
                                 shape = RoundedCornerShape(12.dp),
-                                color = MaterialTheme.colorScheme.onSurface.copy(alpha = 0.05f),
-                                border = BorderStroke(0.8.dp, MaterialTheme.colorScheme.outlineVariant),
+                                color = sectionCardColor,
+                                border = sectionCardBorder,
                                 modifier = Modifier
                                     .weight(1.3f)
                                     .clip(RoundedCornerShape(12.dp))
@@ -835,8 +904,8 @@ fun LendingEntryDialog(
                             // Time Button
                             Surface(
                                 shape = RoundedCornerShape(12.dp),
-                                color = MaterialTheme.colorScheme.onSurface.copy(alpha = 0.05f),
-                                border = BorderStroke(0.8.dp, MaterialTheme.colorScheme.outlineVariant),
+                                color = sectionCardColor,
+                                border = sectionCardBorder,
                                 modifier = Modifier
                                     .weight(1f)
                                     .clip(RoundedCornerShape(12.dp))
@@ -894,8 +963,8 @@ fun LendingEntryDialog(
 
                             Surface(
                                 shape = RoundedCornerShape(10.dp),
-                                color = if (isToday) MaterialTheme.colorScheme.onSurface else MaterialTheme.colorScheme.onSurface.copy(alpha = 0.05f),
-                                border = if (!isToday) BorderStroke(0.8.dp, MaterialTheme.colorScheme.outlineVariant) else null,
+                                color = if (isToday) MaterialTheme.colorScheme.inverseSurface else sectionCardColor,
+                                border = if (!isToday) sectionCardBorder else null,
                                 modifier = Modifier
                                     .clip(RoundedCornerShape(10.dp))
                                     .clickable {
@@ -913,15 +982,15 @@ fun LendingEntryDialog(
                                         fontWeight = if (isToday) FontWeight.Bold else FontWeight.Medium,
                                         fontSize = 11.sp
                                     ),
-                                    color = if (isToday) MaterialTheme.colorScheme.surface else MaterialTheme.colorScheme.onSurfaceVariant,
+                                    color = if (isToday) MaterialTheme.colorScheme.inverseOnSurface else MaterialTheme.colorScheme.onSurfaceVariant,
                                     modifier = Modifier.padding(horizontal = 9.dp, vertical = 5.dp)
                                 )
                             }
 
                             Surface(
                                 shape = RoundedCornerShape(10.dp),
-                                color = if (isYesterday) MaterialTheme.colorScheme.onSurface else MaterialTheme.colorScheme.onSurface.copy(alpha = 0.05f),
-                                border = if (!isYesterday) BorderStroke(0.8.dp, MaterialTheme.colorScheme.outlineVariant) else null,
+                                color = if (isYesterday) MaterialTheme.colorScheme.inverseSurface else sectionCardColor,
+                                border = if (!isYesterday) sectionCardBorder else null,
                                 modifier = Modifier
                                     .clip(RoundedCornerShape(10.dp))
                                     .clickable {
@@ -939,7 +1008,7 @@ fun LendingEntryDialog(
                                         fontWeight = if (isYesterday) FontWeight.Bold else FontWeight.Medium,
                                         fontSize = 11.sp
                                     ),
-                                    color = if (isYesterday) MaterialTheme.colorScheme.surface else MaterialTheme.colorScheme.onSurfaceVariant,
+                                    color = if (isYesterday) MaterialTheme.colorScheme.inverseOnSurface else MaterialTheme.colorScheme.onSurfaceVariant,
                                     modifier = Modifier.padding(horizontal = 9.dp, vertical = 5.dp)
                                 )
                             }
@@ -990,8 +1059,8 @@ fun LendingEntryDialog(
 
                                 Surface(
                                     shape = RoundedCornerShape(12.dp),
-                                    color = if (isSelected) MaterialTheme.colorScheme.onSurface else MaterialTheme.colorScheme.onSurface.copy(alpha = 0.05f),
-                                    border = if (!isSelected) BorderStroke(0.8.dp, MaterialTheme.colorScheme.outlineVariant) else null,
+                                    color = if (isSelected) MaterialTheme.colorScheme.inverseSurface else sectionCardColor,
+                                    border = if (!isSelected) sectionCardBorder else null,
                                     modifier = Modifier
                                         .clip(RoundedCornerShape(12.dp))
                                         .clickable {
@@ -1004,7 +1073,7 @@ fun LendingEntryDialog(
                                             fontWeight = if (isSelected) FontWeight.Bold else FontWeight.Medium,
                                             fontSize = 11.5.sp
                                         ),
-                                        color = if (isSelected) MaterialTheme.colorScheme.surface else MaterialTheme.colorScheme.onSurfaceVariant,
+                                        color = if (isSelected) MaterialTheme.colorScheme.inverseOnSurface else MaterialTheme.colorScheme.onSurfaceVariant,
                                         modifier = Modifier.padding(horizontal = 10.dp, vertical = 6.dp)
                                     )
                                 }
@@ -1017,8 +1086,8 @@ fun LendingEntryDialog(
 
                             Surface(
                                 shape = RoundedCornerShape(12.dp),
-                                color = if (isCustomSelected) MaterialTheme.colorScheme.onSurface else MaterialTheme.colorScheme.onSurface.copy(alpha = 0.05f),
-                                border = if (!isCustomSelected) BorderStroke(0.8.dp, MaterialTheme.colorScheme.outlineVariant) else null,
+                                color = if (isCustomSelected) MaterialTheme.colorScheme.inverseSurface else sectionCardColor,
+                                border = if (!isCustomSelected) sectionCardBorder else null,
                                 modifier = Modifier
                                     .clip(RoundedCornerShape(12.dp))
                                     .clickable { showCustomDueDatePicker = true }
@@ -1031,7 +1100,7 @@ fun LendingEntryDialog(
                                     Icon(
                                         imageVector = Icons.Default.CalendarMonth,
                                         contentDescription = "Custom Date",
-                                        tint = if (isCustomSelected) MaterialTheme.colorScheme.surface else MaterialTheme.colorScheme.onSurfaceVariant,
+                                        tint = if (isCustomSelected) MaterialTheme.colorScheme.inverseOnSurface else MaterialTheme.colorScheme.onSurfaceVariant,
                                         modifier = Modifier.size(13.dp)
                                     )
                                     Text(
@@ -1044,7 +1113,7 @@ fun LendingEntryDialog(
                                             fontWeight = if (isCustomSelected) FontWeight.Bold else FontWeight.Medium,
                                             fontSize = 11.5.sp
                                         ),
-                                        color = if (isCustomSelected) MaterialTheme.colorScheme.surface else MaterialTheme.colorScheme.onSurfaceVariant
+                                        color = if (isCustomSelected) MaterialTheme.colorScheme.inverseOnSurface else MaterialTheme.colorScheme.onSurfaceVariant
                                     )
                                 }
                             }
@@ -1079,8 +1148,8 @@ fun LendingEntryDialog(
                                     val isSelected = selectedWallet == key
                                     Surface(
                                         shape = RoundedCornerShape(12.dp),
-                                        color = if (isSelected) MaterialTheme.colorScheme.onSurface else MaterialTheme.colorScheme.onSurface.copy(alpha = 0.05f),
-                                        border = if (!isSelected) BorderStroke(0.8.dp, MaterialTheme.colorScheme.outlineVariant) else null,
+                                        color = if (isSelected) MaterialTheme.colorScheme.inverseSurface else sectionCardColor,
+                                        border = if (!isSelected) sectionCardBorder else null,
                                         modifier = Modifier
                                             .clip(RoundedCornerShape(12.dp))
                                             .clickable { selectedWallet = key }
@@ -1091,7 +1160,7 @@ fun LendingEntryDialog(
                                                 fontWeight = if (isSelected) FontWeight.Bold else FontWeight.Medium,
                                                 fontSize = 11.5.sp
                                             ),
-                                            color = if (isSelected) MaterialTheme.colorScheme.surface else MaterialTheme.colorScheme.onSurfaceVariant,
+                                            color = if (isSelected) MaterialTheme.colorScheme.inverseOnSurface else MaterialTheme.colorScheme.onSurfaceVariant,
                                             modifier = Modifier.padding(horizontal = 10.dp, vertical = 6.dp)
                                         )
                                     }
@@ -1112,42 +1181,16 @@ fun LendingEntryDialog(
                         modifier = Modifier.fillMaxWidth(),
                         colors = OutlinedTextFieldDefaults.colors(
                             focusedBorderColor = MaterialTheme.colorScheme.onSurface,
-                            unfocusedBorderColor = MaterialTheme.colorScheme.outlineVariant
+                            unfocusedBorderColor = if (tokens != null) tokens.borderStart else MaterialTheme.colorScheme.outlineVariant
                         )
                     )
 
-                    Spacer(modifier = Modifier.height(20.dp))
-
-                    // Save Button
-                    Button(
-                        onClick = {
-                            if (isValid) {
-                                onSave(personName.trim(), amount, type, entryDate, dueDate, notes.ifBlank { null }, selectedWallet)
-                            }
-                        },
-                        enabled = isValid,
-                        shape = RoundedCornerShape(16.dp),
-                        colors = ButtonDefaults.buttonColors(
-                            containerColor = MaterialTheme.colorScheme.onSurface,
-                            contentColor = MaterialTheme.colorScheme.surface,
-                            disabledContainerColor = MaterialTheme.colorScheme.onSurface.copy(alpha = 0.12f),
-                            disabledContentColor = MaterialTheme.colorScheme.onSurface.copy(alpha = 0.38f)
-                        ),
-                        modifier = Modifier
-                            .fillMaxWidth()
-                            .height(50.dp)
-                    ) {
-                        Text(
-                            text = if (isEditing) "Save Changes" else "Add Entry",
-                            style = MaterialTheme.typography.titleMedium.copy(fontWeight = FontWeight.Bold)
-                        )
+                        Spacer(modifier = Modifier.height(24.dp))
                     }
                 }
-            }
-        }
 
         // -------------------------------------------------------------
-        // Existing Profiles Popup (Avatar + Name ONLY, no owe/lent, no settled)
+        // Existing Profiles Popup (Plain Themed Card)
         // -------------------------------------------------------------
         if (showPeoplePopup && allPeople.isNotEmpty()) {
             var searchQuery by remember { mutableStateOf("") }
@@ -1180,31 +1223,11 @@ fun LendingEntryDialog(
                         .padding(horizontal = 24.dp),
                     contentAlignment = Alignment.Center
                 ) {
-                    Surface(
-                        modifier = Modifier
-                            .fillMaxWidth()
-                            .shadow(
-                                elevation = glassTheme.shadowElevation + 6.dp,
-                                shape = RoundedCornerShape(24.dp),
-                                spotColor = glassTheme.shadowColor,
-                                ambientColor = glassTheme.shadowColor.copy(alpha = glassTheme.shadowColor.alpha * 0.7f)
-                            )
-                            .clip(RoundedCornerShape(24.dp))
-                            .then(
-                                if (hazeState != null) {
-                                    Modifier.hazeChild(
-                                        state = hazeState,
-                                        style = glassTheme.popupHazeStyle
-                                    ) {
-                                        canDrawArea = { true }
-                                    }
-                                } else {
-                                    Modifier
-                                }
-                            )
-                            .border(glassTheme.glassBorder, shape = RoundedCornerShape(24.dp)),
+                    KanriGlassCard(
+                        modifier = Modifier.fillMaxWidth(),
                         shape = RoundedCornerShape(24.dp),
-                        color = if (hazeState != null) Color.Transparent else glassTheme.fallbackBackgroundColor
+                        level = GlassLevel.Strong,
+                        hazeState = hazeState
                     ) {
                         Column(
                             modifier = Modifier
@@ -1299,11 +1322,8 @@ fun LendingEntryDialog(
 
                                         Surface(
                                             shape = RoundedCornerShape(14.dp),
-                                            color = if (isSelected) MaterialTheme.colorScheme.onSurface.copy(alpha = 0.12f) else MaterialTheme.colorScheme.surfaceVariant.copy(alpha = 0.35f),
-                                            border = BorderStroke(
-                                                if (isSelected) 1.5.dp else 1.dp,
-                                                if (isSelected) MaterialTheme.colorScheme.onSurface else MaterialTheme.colorScheme.outlineVariant
-                                            ),
+                                            color = if (isSelected) MaterialTheme.colorScheme.onSurface.copy(alpha = 0.12f) else sectionCardColor,
+                                            border = if (isSelected) BorderStroke(1.5.dp, MaterialTheme.colorScheme.onSurface) else sectionCardBorder,
                                             modifier = Modifier
                                                 .fillMaxWidth()
                                                 .clip(RoundedCornerShape(14.dp))
@@ -1325,7 +1345,7 @@ fun LendingEntryDialog(
                                                         modifier = Modifier
                                                             .size(38.dp)
                                                             .clip(CircleShape)
-                                                            .background(if (isSelected) MaterialTheme.colorScheme.onSurface else MaterialTheme.colorScheme.surfaceVariant)
+                                                            .background(if (isSelected) MaterialTheme.colorScheme.inverseSurface else MaterialTheme.colorScheme.surfaceVariant)
                                                             .border(1.dp, MaterialTheme.colorScheme.outlineVariant, CircleShape),
                                                         contentAlignment = Alignment.Center
                                                     ) {
@@ -1335,7 +1355,7 @@ fun LendingEntryDialog(
                                                                 fontWeight = FontWeight.Bold,
                                                                 fontSize = 15.sp
                                                             ),
-                                                            color = if (isSelected) MaterialTheme.colorScheme.surface else MaterialTheme.colorScheme.onSurface
+                                                            color = if (isSelected) MaterialTheme.colorScheme.inverseOnSurface else MaterialTheme.colorScheme.onSurface
                                                         )
                                                     }
 
@@ -1368,13 +1388,14 @@ fun LendingEntryDialog(
             }
         }
     }
+}
 
     // Material Date Picker Dialog for Entry Date
     if (showEntryDatePicker) {
         val datePickerState = rememberDatePickerState(
             initialSelectedDateMillis = entryDate
         )
-        DatePickerDialog(
+        KanriGlassDatePickerDialog(
             onDismissRequest = { showEntryDatePicker = false },
             confirmButton = {
                 TextButton(
@@ -1386,7 +1407,7 @@ fun LendingEntryDialog(
                         showEntryDatePicker = false
                     }
                 ) {
-                    Text("OK", color = MaterialTheme.colorScheme.onSurface)
+                    Text("OK", color = MaterialTheme.colorScheme.onSurface, fontWeight = FontWeight.Bold)
                 }
             },
             dismissButton = {
@@ -1404,7 +1425,7 @@ fun LendingEntryDialog(
         val datePickerState = rememberDatePickerState(
             initialSelectedDateMillis = dueDate ?: (entryDate + 7L * 86_400_000L)
         )
-        DatePickerDialog(
+        KanriGlassDatePickerDialog(
             onDismissRequest = { showCustomDueDatePicker = false },
             confirmButton = {
                 TextButton(
@@ -1416,7 +1437,7 @@ fun LendingEntryDialog(
                         showCustomDueDatePicker = false
                     }
                 ) {
-                    Text("OK", color = MaterialTheme.colorScheme.onSurface)
+                    Text("OK", color = MaterialTheme.colorScheme.onSurface, fontWeight = FontWeight.Bold)
                 }
             },
             dismissButton = {

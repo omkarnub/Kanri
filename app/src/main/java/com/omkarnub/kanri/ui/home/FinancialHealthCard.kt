@@ -1,4 +1,4 @@
-package com.omkarnub.kanri.ui.home
+﻿package com.omkarnub.kanri.ui.home
 
 import androidx.compose.animation.core.Animatable
 import androidx.compose.animation.core.FastOutSlowInEasing
@@ -38,6 +38,9 @@ import androidx.compose.ui.text.font.FontWeight
 import androidx.compose.ui.unit.dp
 import androidx.compose.ui.unit.sp
 import com.omkarnub.kanri.data.analytics.FinancialHealthData
+import com.omkarnub.kanri.ui.common.GlassLevel
+import com.omkarnub.kanri.ui.common.KanriGlassCard
+import com.omkarnub.kanri.ui.theme.LocalKanriGlass
 import com.omkarnub.kanri.util.CurrencyUtils
 import kotlin.math.abs
 import kotlin.math.roundToInt
@@ -58,22 +61,43 @@ fun FinancialHealthCard(
         )
     }
 
-    Card(
-        modifier = modifier
-            .fillMaxWidth()
-            .clip(RoundedCornerShape(20.dp))
-            .clickable(onClick = onClick),
-        shape = RoundedCornerShape(20.dp),
-        colors = CardDefaults.cardColors(
-            containerColor = MaterialTheme.colorScheme.surfaceVariant.copy(alpha = 0.35f)
-        ),
-        border = BorderStroke(1.dp, MaterialTheme.colorScheme.outlineVariant)
-    ) {
-        Column(
-            modifier = Modifier
-                .fillMaxWidth()
-                .padding(18.dp)
+    val tokens = LocalKanriGlass.current
+    if (tokens != null) {
+        KanriGlassCard(
+            modifier = modifier.fillMaxWidth(),
+            level = GlassLevel.Flat,
+            shape = RoundedCornerShape(20.dp),
+            onClick = onClick
         ) {
+            FinancialHealthCardBody(financialHealth = financialHealth, animatedProgress = animatedProgress)
+        }
+    } else {
+        Card(
+            modifier = modifier
+                .fillMaxWidth()
+                .clip(RoundedCornerShape(20.dp))
+                .clickable(onClick = onClick),
+            shape = RoundedCornerShape(20.dp),
+            colors = CardDefaults.cardColors(
+                containerColor = MaterialTheme.colorScheme.surfaceVariant.copy(alpha = 0.35f)
+            ),
+            border = BorderStroke(1.dp, MaterialTheme.colorScheme.outlineVariant)
+        ) {
+            FinancialHealthCardBody(financialHealth = financialHealth, animatedProgress = animatedProgress)
+        }
+    }
+}
+
+@Composable
+private fun FinancialHealthCardBody(
+    financialHealth: FinancialHealthData,
+    animatedProgress: androidx.compose.animation.core.Animatable<Float, *>
+) {
+    Column(
+        modifier = Modifier
+            .fillMaxWidth()
+            .padding(18.dp)
+    ) {
             // Header Row: Section Label & Monochrome Status Tag
             Row(
                 modifier = Modifier.fillMaxWidth(),
@@ -257,7 +281,6 @@ fun FinancialHealthCard(
             }
         }
     }
-}
 
 @Composable
 private fun QuickStatItem(

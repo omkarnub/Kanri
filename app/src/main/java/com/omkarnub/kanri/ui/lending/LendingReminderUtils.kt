@@ -1,4 +1,4 @@
-package com.omkarnub.kanri.ui.lending
+﻿package com.omkarnub.kanri.ui.lending
 
 import com.omkarnub.kanri.util.CurrencyUtils
 import java.text.SimpleDateFormat

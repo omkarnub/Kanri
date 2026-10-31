@@ -34,8 +34,11 @@ import androidx.compose.foundation.layout.size
 import androidx.compose.foundation.layout.width
 import androidx.compose.foundation.shape.CircleShape
 import androidx.compose.foundation.shape.RoundedCornerShape
+import androidx.compose.material3.MaterialTheme
 import androidx.compose.material3.Surface
 import androidx.compose.material3.Text
+import androidx.compose.ui.graphics.luminance
+import com.omkarnub.kanri.ui.theme.lerpColor
 import androidx.compose.runtime.Composable
 import androidx.compose.runtime.getValue
 import androidx.compose.runtime.remember
@@ -53,9 +56,22 @@ import androidx.compose.ui.unit.Dp
 import androidx.compose.ui.unit.dp
 import androidx.compose.ui.unit.sp
 import com.omkarnub.kanri.ui.common.rememberKanriGlassTheme
+import com.omkarnub.kanri.ui.common.GlassLevel
+import com.omkarnub.kanri.ui.common.KanriGlassCard
+import com.omkarnub.kanri.ui.theme.LocalKanriGlass
 import com.omkarnub.kanri.ui.theme.ThemeMode
 import dev.chrisbanes.haze.HazeState
-import dev.chrisbanes.haze.hazeChild
+import dev.chrisbanes.haze.hazeEffect
+
+import dev.chrisbanes.haze.HazeStyle
+import dev.chrisbanes.haze.HazeTint
+import androidx.compose.ui.graphics.Brush
+import androidx.compose.foundation.BorderStroke
+
+import androidx.compose.runtime.collectAsState
+import androidx.compose.ui.platform.LocalContext
+import com.omkarnub.kanri.ui.theme.ThemePreferences
+import com.omkarnub.kanri.ui.theme.KanriMotion
 
 private val ExpenseRed = Color(0xFFE54D2E)
 private val IncomeGreen = Color(0xFF30A46C)
@@ -78,6 +94,19 @@ fun AddExpenseIncomePopup(
     hazeState: HazeState? = null,
     themeMode: ThemeMode? = null
 ) {
+    val context = LocalContext.current
+    val themePrefs = remember { ThemePreferences.getInstance(context) }
+    val glassCustomization by themePrefs.glassCustomizationFlow.collectAsState()
+    val tokens = LocalKanriGlass.current
+
+    val effectiveExpenseColor = tokens?.expenseColor ?: glassCustomization.expenseColor
+    val effectiveIncomeColor = tokens?.incomeColor ?: glassCustomization.incomeColor
+    val expenseTintOpacity = tokens?.expenseTintOpacity ?: glassCustomization.expenseTintOpacity
+    val incomeTintOpacity = tokens?.incomeTintOpacity ?: glassCustomization.incomeTintOpacity
+    val cornerRadius = tokens?.cornerRadius ?: glassCustomization.cornerRadiusDp.dp
+    val borderWidth = tokens?.borderWidth ?: glassCustomization.borderWidthDp.dp
+    val tintLightness = glassCustomization.tintLightness
+
     val glassTheme = rememberKanriGlassTheme(themeMode)
 
     // Full screen overlay with tap-outside dismiss
@@ -89,7 +118,7 @@ fun AddExpenseIncomePopup(
         Box(
             modifier = Modifier
                 .fillMaxSize()
-                .background(Color.Black.copy(alpha = 0.35f))
+                .background(Color.Black.copy(alpha = 0.30f))
                 .clickable(
                     interactionSource = remember { MutableInteractionSource() },
                     indication = null,
@@ -107,53 +136,27 @@ fun AddExpenseIncomePopup(
     ) {
         AnimatedVisibility(
             visible = isOpen,
-            enter = fadeIn(animationSpec = tween(220, easing = FastOutSlowInEasing)) +
+            enter = fadeIn(animationSpec = tween(180, easing = KanriMotion.EaseOut)) +
                     scaleIn(
-                        initialScale = 0.82f,
-                        animationSpec = spring(
-                            dampingRatio = 0.78f,
-                            stiffness = Spring.StiffnessMediumLow
-                        )
+                        initialScale = 0.90f,
+                        animationSpec = KanriMotion.SnappySpring
                     ) +
                     slideInVertically(
-                        initialOffsetY = { it / 4 },
-                        animationSpec = spring(
-                            dampingRatio = 0.82f,
-                            stiffness = Spring.StiffnessMediumLow
-                        )
+                        initialOffsetY = { (it * 0.10f).toInt() },
+                        animationSpec = KanriMotion.SmoothSlideSpring
                     ),
-            exit = fadeOut(animationSpec = tween(160, easing = FastOutSlowInEasing)) +
-                    scaleOut(targetScale = 0.88f, animationSpec = tween(160)) +
-                    slideOutVertically(targetOffsetY = { it / 6 }, animationSpec = tween(160))
+            exit = fadeOut(animationSpec = tween(140, easing = KanriMotion.EaseOut)) +
+                    scaleOut(targetScale = 0.94f, animationSpec = tween(140, easing = KanriMotion.EaseOut)) +
+                    slideOutVertically(targetOffsetY = { (it * 0.08f).toInt() }, animationSpec = tween(140, easing = KanriMotion.EaseOut))
         ) {
-            Surface(
+            KanriGlassCard(
                 modifier = Modifier
                     .padding(horizontal = 20.dp)
-                    .padding(bottom = 86.dp) // Sits gracefully right above the 64dp floating dock
-                    .width(300.dp)
-                    .shadow(
-                        elevation = glassTheme.shadowElevation + 6.dp,
-                        shape = RoundedCornerShape(26.dp),
-                        spotColor = glassTheme.shadowColor,
-                        ambientColor = glassTheme.shadowColor.copy(alpha = glassTheme.shadowColor.alpha * 0.7f)
-                    )
-                    .clip(RoundedCornerShape(26.dp))
-                    .then(
-                        if (hazeState != null) {
-                            Modifier.hazeChild(
-                                state = hazeState,
-                                style = glassTheme.popupHazeStyle
-                            )
-                        } else {
-                            Modifier
-                        }
-                    )
-                    .border(
-                        glassTheme.glassBorder,
-                        shape = RoundedCornerShape(26.dp)
-                    ),
+                    .padding(bottom = 86.dp)
+                    .width(300.dp),
+                level = GlassLevel.Strong,
                 shape = RoundedCornerShape(26.dp),
-                color = if (hazeState != null) Color.Transparent else glassTheme.fallbackBackgroundColor
+                hazeState = hazeState
             ) {
                 Column(
                     modifier = Modifier
@@ -161,24 +164,31 @@ fun AddExpenseIncomePopup(
                         .padding(14.dp),
                     verticalArrangement = Arrangement.spacedBy(10.dp)
                 ) {
-                    // 1. Expense Option
                     PopupOptionCard(
                         title = "Expense",
                         subtitle = "Log spent money",
-                        accentColor = ExpenseRed,
+                        accentColor = effectiveExpenseColor,
                         icon = { tint -> ExpenseFlowIcon(tint = tint, size = 24.dp) },
+                        hazeState = hazeState,
+                        tintOpacity = expenseTintOpacity,
+                        tintLightness = tintLightness,
+                        cornerRadius = cornerRadius,
+                        borderWidth = borderWidth,
                         onClick = {
                             onDismiss()
                             onAddExpense()
                         }
                     )
-
-                    // 2. Income Option
                     PopupOptionCard(
                         title = "Income",
                         subtitle = "Log received money",
-                        accentColor = IncomeGreen,
+                        accentColor = effectiveIncomeColor,
                         icon = { tint -> IncomeFlowIcon(tint = tint, size = 24.dp) },
+                        hazeState = hazeState,
+                        tintOpacity = incomeTintOpacity,
+                        tintLightness = tintLightness,
+                        cornerRadius = cornerRadius,
+                        borderWidth = borderWidth,
                         onClick = {
                             onDismiss()
                             onAddIncome()
@@ -196,7 +206,12 @@ private fun PopupOptionCard(
     subtitle: String,
     accentColor: Color,
     icon: @Composable (Color) -> Unit,
-    onClick: () -> Unit
+    onClick: () -> Unit,
+    hazeState: HazeState? = null,
+    tintOpacity: Float = 0.16f,
+    tintLightness: Float = 0.0f,
+    cornerRadius: Dp = 18.dp,
+    borderWidth: Dp = 1.2.dp
 ) {
     val haptics = rememberKanriHaptics()
     val interactionSource = remember { MutableInteractionSource() }
@@ -204,15 +219,50 @@ private fun PopupOptionCard(
 
     val scale by animateFloatAsState(
         targetValue = if (isPressed) 0.96f else 1.0f,
-        animationSpec = tween(durationMillis = 120, easing = FastOutSlowInEasing),
+        animationSpec = KanriMotion.PressSpring,
         label = "popupOptionScale"
     )
 
-    Surface(
+    val safeTint = tintOpacity.coerceIn(0.04f, 0.50f)
+    val cardShape = RoundedCornerShape(cornerRadius.coerceIn(12.dp, 28.dp))
+
+    val isDark = LocalKanriGlass.current?.isDark ?: (MaterialTheme.colorScheme.surface.luminance() < 0.5f)
+    val cardFillColor = if (isDark) Color(0xFF161822).copy(alpha = 0.45f) else Color.White.copy(alpha = 0.55f)
+    val titleTextColor = if (isDark) Color.White else Color(0xFF12141B)
+    val subtitleTextColor = if (isDark) Color.White.copy(alpha = 0.70f) else Color(0xFF5A5C66)
+
+    Box(
         modifier = Modifier
             .fillMaxWidth()
             .scale(scale)
-            .clip(RoundedCornerShape(18.dp))
+            .shadow(
+                elevation = 6.dp,
+                shape = cardShape,
+                spotColor = accentColor.copy(alpha = 0.28f),
+                ambientColor = Color.Black.copy(alpha = 0.25f)
+            )
+            .clip(cardShape)
+            .background(cardFillColor)
+            .background(
+                Brush.linearGradient(
+                    colors = listOf(
+                        accentColor.copy(alpha = if (isDark) 0.18f else 0.12f),
+                        accentColor.copy(alpha = if (isDark) 0.05f else 0.02f)
+                    )
+                )
+            )
+            .border(
+                BorderStroke(
+                    borderWidth.coerceIn(0.8.dp, 2.dp),
+                    Brush.linearGradient(
+                        colors = listOf(
+                            accentColor.copy(alpha = if (isDark) 0.50f else 0.40f),
+                            accentColor.copy(alpha = if (isDark) 0.15f else 0.10f)
+                        )
+                    )
+                ),
+                shape = cardShape
+            )
             .clickable(
                 interactionSource = interactionSource,
                 indication = null,
@@ -220,10 +270,7 @@ private fun PopupOptionCard(
                     haptics.click()
                     onClick()
                 }
-            ),
-        shape = RoundedCornerShape(18.dp),
-        color = accentColor.copy(alpha = 0.08f),
-        border = androidx.compose.foundation.BorderStroke(1.dp, accentColor.copy(alpha = 0.22f))
+            )
     ) {
         Row(
             modifier = Modifier
@@ -233,9 +280,14 @@ private fun PopupOptionCard(
         ) {
             Box(
                 modifier = Modifier
-                    .size(44.dp)
+                    .size(46.dp)
                     .clip(CircleShape)
-                    .background(accentColor.copy(alpha = 0.16f)),
+                    .background(accentColor.copy(alpha = if (isDark) 0.22f else 0.16f))
+                    .border(
+                        0.8.dp,
+                        accentColor.copy(alpha = 0.45f),
+                        CircleShape
+                    ),
                 contentAlignment = Alignment.Center
             ) {
                 icon(accentColor)
@@ -246,15 +298,15 @@ private fun PopupOptionCard(
             Column(modifier = Modifier.weight(1f)) {
                 Text(
                     text = title,
-                    color = accentColor,
-                    fontSize = 17.sp,
+                    color = titleTextColor,
+                    fontSize = 17.5.sp,
                     fontWeight = FontWeight.Bold,
                     letterSpacing = (-0.3).sp
                 )
                 Spacer(modifier = Modifier.height(2.dp))
                 Text(
                     text = subtitle,
-                    color = Color.Gray,
+                    color = subtitleTextColor,
                     fontSize = 12.sp,
                     fontWeight = FontWeight.Normal
                 )

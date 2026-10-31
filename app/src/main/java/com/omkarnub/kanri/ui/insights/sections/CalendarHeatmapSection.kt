@@ -1,4 +1,4 @@
-package com.omkarnub.kanri.ui.insights.sections
+﻿package com.omkarnub.kanri.ui.insights.sections
 
 import androidx.compose.foundation.BorderStroke
 import androidx.compose.foundation.Canvas
@@ -15,6 +15,8 @@ import androidx.compose.foundation.layout.size
 import androidx.compose.foundation.shape.RoundedCornerShape
 import androidx.compose.material3.Card
 import androidx.compose.material3.CardDefaults
+import com.omkarnub.kanri.ui.common.GlassLevel
+import com.omkarnub.kanri.ui.common.KanriGlassCard
 import androidx.compose.material3.MaterialTheme
 import androidx.compose.material3.Surface
 import androidx.compose.material3.Text
@@ -90,17 +92,14 @@ fun CalendarHeatmapSection(
         }
     }
 
-    Card(
+    KanriGlassCard(
         modifier = modifier
             .fillMaxWidth()
             .semantics {
                 contentDescription = "Calendar heatmap for ${data.yearMonth.month.name}, ${data.noSpendDaysCount} no-spend days"
             },
         shape = RoundedCornerShape(20.dp),
-        colors = CardDefaults.cardColors(
-            containerColor = surfaceVariant.copy(alpha = 0.35f)
-        ),
-        border = BorderStroke(1.dp, outlineVariant)
+        level = GlassLevel.Blur
     ) {
         Column(
             modifier = Modifier

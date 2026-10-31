@@ -48,6 +48,8 @@ import androidx.compose.ui.draw.clip
 import androidx.compose.ui.graphics.Color
 import androidx.compose.ui.graphics.vector.ImageVector
 import androidx.compose.ui.platform.LocalContext
+import com.omkarnub.kanri.ui.common.GlassLevel
+import com.omkarnub.kanri.ui.common.KanriGlassCard
 import androidx.compose.ui.text.font.FontWeight
 import androidx.compose.ui.unit.dp
 import androidx.compose.ui.unit.sp
@@ -381,14 +383,11 @@ private fun GPayTransactionItem(
         modifier = Modifier.fillMaxWidth(),
         contentAlignment = alignment
     ) {
-        Card(
-            modifier = Modifier
-                .widthIn(min = 220.dp, max = 320.dp)
-                .clip(bubbleShape)
-                .clickable(onClick = onClick),
+        KanriGlassCard(
+            modifier = Modifier.widthIn(min = 220.dp, max = 320.dp),
             shape = bubbleShape,
-            colors = CardDefaults.cardColors(containerColor = bubbleBg),
-            border = BorderStroke(1.dp, bubbleBorderColor)
+            level = GlassLevel.Flat,
+            onClick = onClick
         ) {
             Column(
                 modifier = Modifier.padding(horizontal = 14.dp, vertical = 12.dp),
@@ -515,13 +514,11 @@ private fun ActionButton(
     onClick: () -> Unit,
     modifier: Modifier = Modifier
 ) {
-    Surface(
+    KanriGlassCard(
+        modifier = modifier,
         shape = RoundedCornerShape(14.dp),
-        color = MaterialTheme.colorScheme.surfaceVariant.copy(alpha = 0.45f),
-        border = BorderStroke(1.dp, MaterialTheme.colorScheme.outlineVariant),
-        modifier = modifier
-            .clip(RoundedCornerShape(14.dp))
-            .clickable(onClick = onClick)
+        level = GlassLevel.Flat,
+        onClick = onClick
     ) {
         Column(
             modifier = Modifier.padding(vertical = 10.dp, horizontal = 4.dp),

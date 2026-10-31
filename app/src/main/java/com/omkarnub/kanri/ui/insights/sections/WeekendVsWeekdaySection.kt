@@ -31,6 +31,9 @@ import androidx.compose.ui.semantics.semantics
 import androidx.compose.ui.text.font.FontWeight
 import androidx.compose.ui.unit.dp
 import androidx.compose.ui.unit.sp
+import com.omkarnub.kanri.ui.common.GlassLevel
+import com.omkarnub.kanri.ui.common.KanriGlassCard
+import com.omkarnub.kanri.ui.common.KanriGlassPill
 import com.omkarnub.kanri.ui.home.formatCurrency
 import com.omkarnub.kanri.ui.insights.WeekendVsWeekdayData
 
@@ -54,14 +57,14 @@ fun WeekendVsWeekdaySection(
         label = "weekendProgress"
     )
 
-    Surface(
+    KanriGlassCard(
         modifier = modifier
             .fillMaxWidth()
             .semantics {
                 contentDescription = "Weekend vs weekday spend: ${data.insightSentence}"
             },
-        shape = RoundedCornerShape(20.dp),
-        color = MaterialTheme.colorScheme.surfaceVariant.copy(alpha = 0.18f)
+        level = GlassLevel.Blur,
+        shape = RoundedCornerShape(20.dp)
     ) {
         Column(
             modifier = Modifier
@@ -221,20 +224,10 @@ private fun DayTypeColumn(
 
         if (topCategory != null) {
             Spacer(modifier = Modifier.height(4.dp))
-            Surface(
-                shape = RoundedCornerShape(6.dp),
-                color = MaterialTheme.colorScheme.surfaceVariant
-            ) {
-                Text(
-                    text = "Top: $topCategory",
-                    style = MaterialTheme.typography.bodySmall.copy(
-                        color = MaterialTheme.colorScheme.onSurface,
-                        fontSize = 10.sp,
-                        fontWeight = FontWeight.SemiBold
-                    ),
-                    modifier = Modifier.padding(horizontal = 6.dp, vertical = 2.dp)
-                )
-            }
+            KanriGlassPill(
+                text = "Top: $topCategory",
+                level = GlassLevel.Flat
+            )
         }
     }
 }

@@ -1,4 +1,4 @@
-package com.omkarnub.kanri.widget
+﻿package com.omkarnub.kanri.widget
 
 import android.content.Context
 
@@ -16,6 +16,7 @@ object KanriWidgetsUpdater {
             SplitBillWidgetProvider.updateAll(context)
             QuickAddWidgetProvider.updateAll(context)
             MoneySpentTodayWidgetProvider.updateAll(context)
+            WalletBalanceWidgetProvider.updateAll(context)
         } catch (e: Exception) {
             com.omkarnub.kanri.data.crash.CrashLogger.logHandledException(
                 context, "KanriWidgetsUpdater.updateAllWidgets", e

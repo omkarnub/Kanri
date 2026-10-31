@@ -134,10 +134,10 @@ interface TransactionDao {
     // Wallet & Balance Queries
     // -------------------------------------------------------------------------
 
-    @Query("SELECT id, type, amount, wallet, transfer_to_wallet, timestamp, is_duplicate FROM transactions WHERE is_duplicate = 0 ORDER BY timestamp ASC, id ASC")
+    @Query("SELECT id, type, amount, wallet, transfer_to_wallet, timestamp, is_duplicate FROM transactions WHERE is_duplicate = 0 AND (needs_review = 0 OR is_manual_entry = 1) ORDER BY timestamp ASC, id ASC")
     fun observeWalletTransactions(): Flow<List<WalletTxnRow>>
 
-    @Query("SELECT id, type, amount, wallet, transfer_to_wallet, timestamp, is_duplicate FROM transactions WHERE is_duplicate = 0 ORDER BY timestamp ASC, id ASC")
+    @Query("SELECT id, type, amount, wallet, transfer_to_wallet, timestamp, is_duplicate FROM transactions WHERE is_duplicate = 0 AND (needs_review = 0 OR is_manual_entry = 1) ORDER BY timestamp ASC, id ASC")
     suspend fun getWalletTransactionsSync(): List<WalletTxnRow>
 
     @Query("UPDATE transactions SET transfer_to_wallet = :targetTransferWallet WHERE source_type = 'ATM' AND type = 'DEBIT'")

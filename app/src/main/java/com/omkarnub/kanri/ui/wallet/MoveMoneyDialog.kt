@@ -37,8 +37,13 @@ import androidx.compose.ui.text.font.FontWeight
 import androidx.compose.ui.text.input.KeyboardType
 import androidx.compose.ui.unit.dp
 import androidx.compose.ui.unit.sp
-import androidx.compose.ui.window.Dialog
+import com.omkarnub.kanri.ui.common.GlassLevel
+import com.omkarnub.kanri.ui.common.KanriGlassCard
+import com.omkarnub.kanri.ui.common.KanriGlassDialog
+import com.omkarnub.kanri.ui.common.kanriPrimaryButtonColors
 import com.omkarnub.kanri.util.rememberKanriHaptics
+import com.omkarnub.kanri.ui.theme.kanriPressFeedback
+import com.omkarnub.kanri.ui.theme.KanriMotion
 
 enum class TransferDirection {
     WITHDRAW_TO_CASH, // ONLINE -> CASH
@@ -67,19 +72,17 @@ fun MoveMoneyDialog(
     val fromWallet = if (direction == TransferDirection.WITHDRAW_TO_CASH) "ONLINE" else "CASH"
     val toWallet = if (direction == TransferDirection.WITHDRAW_TO_CASH) "CASH" else "ONLINE"
 
-    Dialog(onDismissRequest = onDismiss) {
-        Surface(
-            shape = RoundedCornerShape(24.dp),
-            color = MaterialTheme.colorScheme.surface,
-            border = BorderStroke(1.dp, MaterialTheme.colorScheme.outlineVariant),
-            modifier = Modifier.fillMaxWidth()
+    KanriGlassDialog(
+        onDismissRequest = onDismiss,
+        modifier = Modifier.fillMaxWidth(0.92f),
+        shape = RoundedCornerShape(24.dp)
+    ) {
+        Column(
+            modifier = Modifier
+                .fillMaxWidth()
+                .padding(24.dp)
         ) {
-            Column(
-                modifier = Modifier
-                    .fillMaxWidth()
-                    .padding(24.dp)
-            ) {
-                // Header
+            // Header
                 Row(
                     modifier = Modifier.fillMaxWidth(),
                     horizontalArrangement = Arrangement.SpaceBetween,
@@ -131,10 +134,10 @@ fun MoveMoneyDialog(
                     Surface(
                         modifier = Modifier
                             .weight(1f)
-                            .clickable {
-                                haptics.tick()
-                                direction = TransferDirection.WITHDRAW_TO_CASH
-                            },
+                            .kanriPressFeedback(
+                                pressedScale = 0.96f,
+                                onClick = { direction = TransferDirection.WITHDRAW_TO_CASH }
+                            ),
                         shape = RoundedCornerShape(12.dp),
                         color = if (isWithdraw) MaterialTheme.colorScheme.primary else MaterialTheme.colorScheme.surfaceVariant,
                         border = BorderStroke(
@@ -165,10 +168,10 @@ fun MoveMoneyDialog(
                     Surface(
                         modifier = Modifier
                             .weight(1f)
-                            .clickable {
-                                haptics.tick()
-                                direction = TransferDirection.DEPOSIT_TO_BANK
-                            },
+                            .kanriPressFeedback(
+                                pressedScale = 0.96f,
+                                onClick = { direction = TransferDirection.DEPOSIT_TO_BANK }
+                            ),
                         shape = RoundedCornerShape(12.dp),
                         color = if (isDeposit) MaterialTheme.colorScheme.primary else MaterialTheme.colorScheme.surfaceVariant,
                         border = BorderStroke(
@@ -260,16 +263,13 @@ fun MoveMoneyDialog(
                             }
                         },
                         enabled = isValid && !isSubmitting,
+                        modifier = Modifier.kanriPressFeedback(pressedScale = 0.96f, enabled = isValid && !isSubmitting),
                         shape = RoundedCornerShape(12.dp),
-                        colors = ButtonDefaults.buttonColors(
-                            containerColor = MaterialTheme.colorScheme.onSurface,
-                            contentColor = MaterialTheme.colorScheme.surface
-                        )
+                        colors = kanriPrimaryButtonColors()
                     ) {
                         Text("Move Money", fontWeight = FontWeight.SemiBold)
                     }
                 }
             }
         }
-    }
 }

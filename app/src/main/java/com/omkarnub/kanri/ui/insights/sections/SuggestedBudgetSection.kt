@@ -9,8 +9,8 @@ import androidx.compose.foundation.layout.fillMaxWidth
 import androidx.compose.foundation.layout.height
 import androidx.compose.foundation.layout.padding
 import androidx.compose.foundation.layout.size
+import androidx.compose.foundation.layout.width
 import androidx.compose.foundation.shape.RoundedCornerShape
-import androidx.compose.material3.AlertDialog
 import androidx.compose.material3.Button
 import androidx.compose.material3.ButtonDefaults
 import androidx.compose.material3.Card
@@ -35,6 +35,11 @@ import com.omkarnub.kanri.ui.home.formatCurrency
 import com.omkarnub.kanri.ui.insights.SuggestedBudgetData
 import com.omkarnub.kanri.ui.insights.SuggestedCategoryRow
 
+import com.omkarnub.kanri.ui.common.GlassLevel
+import com.omkarnub.kanri.ui.common.KanriGlassButton
+import com.omkarnub.kanri.ui.common.KanriGlassCard
+import com.omkarnub.kanri.ui.common.KanriGlassDialog
+
 @Composable
 fun SuggestedBudgetSection(
     data: SuggestedBudgetData,
@@ -44,17 +49,14 @@ fun SuggestedBudgetSection(
 ) {
     var showConfirmDialog by remember { mutableStateOf(false) }
 
-    Card(
+    KanriGlassCard(
         modifier = modifier
             .fillMaxWidth()
             .semantics {
                 contentDescription = "Suggested budgets based on past ${data.completedMonthsAvailable} months, total suggested ${formatCurrency(data.overallSuggestedBudget)}"
             },
         shape = RoundedCornerShape(20.dp),
-        colors = CardDefaults.cardColors(
-            containerColor = MaterialTheme.colorScheme.surfaceVariant.copy(alpha = 0.35f)
-        ),
-        border = BorderStroke(1.dp, MaterialTheme.colorScheme.outlineVariant)
+        level = GlassLevel.Blur
     ) {
         Column(
             modifier = Modifier
@@ -175,56 +177,70 @@ fun SuggestedBudgetSection(
 
     // Frosted Confirmation Dialog for Apply All
     if (showConfirmDialog) {
-        AlertDialog(
-            onDismissRequest = { showConfirmDialog = false },
-            title = {
-                Text(
-                    text = "Apply Suggested Budgets",
-                    style = MaterialTheme.typography.titleMedium.copy(fontWeight = FontWeight.Bold)
-                )
-            },
-            text = {
-                Column(verticalArrangement = Arrangement.spacedBy(8.dp)) {
+        KanriGlassDialog(
+            onDismissRequest = { showConfirmDialog = false }
+        ) {
+            KanriGlassCard(
+                modifier = Modifier
+                    .fillMaxWidth(0.92f)
+                    .padding(16.dp),
+                shape = RoundedCornerShape(24.dp),
+                level = GlassLevel.Strong
+            ) {
+                Column(
+                    modifier = Modifier.padding(20.dp),
+                    verticalArrangement = Arrangement.spacedBy(14.dp)
+                ) {
                     Text(
-                        text = "This will update your monthly and category budgets:",
-                        style = MaterialTheme.typography.bodySmall.copy(color = MaterialTheme.colorScheme.onSurfaceVariant)
+                        text = "Apply Suggested Budgets",
+                        style = MaterialTheme.typography.titleMedium.copy(fontWeight = FontWeight.Bold),
+                        color = MaterialTheme.colorScheme.onSurface
                     )
-                    Spacer(modifier = Modifier.height(4.dp))
-                    data.categories.forEach { item ->
-                        val oldVal = if (item.currentBudget != null) formatCurrency(item.currentBudget) else "—"
-                        Row(
-                            modifier = Modifier.fillMaxWidth(),
-                            horizontalArrangement = Arrangement.SpaceBetween
-                        ) {
-                            Text(
-                                text = item.categoryName,
-                                style = MaterialTheme.typography.bodySmall.copy(fontWeight = FontWeight.Medium)
-                            )
-                            Text(
-                                text = "$oldVal → ${formatCurrency(item.suggestedBudget)}",
-                                style = MaterialTheme.typography.bodySmall.copy(color = MaterialTheme.colorScheme.onSurfaceVariant)
-                            )
+                    Column(verticalArrangement = Arrangement.spacedBy(8.dp)) {
+                        Text(
+                            text = "This will update your monthly and category budgets:",
+                            style = MaterialTheme.typography.bodySmall.copy(color = MaterialTheme.colorScheme.onSurfaceVariant)
+                        )
+                        Spacer(modifier = Modifier.height(4.dp))
+                        data.categories.forEach { item ->
+                            val oldVal = if (item.currentBudget != null) formatCurrency(item.currentBudget) else "—"
+                            Row(
+                                modifier = Modifier.fillMaxWidth(),
+                                horizontalArrangement = Arrangement.SpaceBetween
+                            ) {
+                                Text(
+                                    text = item.categoryName,
+                                    style = MaterialTheme.typography.bodySmall.copy(fontWeight = FontWeight.Medium),
+                                    color = MaterialTheme.colorScheme.onSurface
+                                )
+                                Text(
+                                    text = "$oldVal → ${formatCurrency(item.suggestedBudget)}",
+                                    style = MaterialTheme.typography.bodySmall.copy(color = MaterialTheme.colorScheme.onSurfaceVariant)
+                                )
+                            }
                         }
                     }
-                }
-            },
-            confirmButton = {
-                Button(
-                    onClick = {
-                        onApplyAll(data)
-                        showConfirmDialog = false
+                    Row(
+                        modifier = Modifier.fillMaxWidth(),
+                        horizontalArrangement = Arrangement.End,
+                        verticalAlignment = Alignment.CenterVertically
+                    ) {
+                        TextButton(onClick = { showConfirmDialog = false }) {
+                            Text("Cancel", color = MaterialTheme.colorScheme.onSurfaceVariant)
+                        }
+                        Spacer(modifier = Modifier.width(8.dp))
+                        KanriGlassButton(
+                            text = "Apply",
+                            onClick = {
+                                onApplyAll(data)
+                                showConfirmDialog = false
+                            },
+                            level = GlassLevel.Strong
+                        )
                     }
-                ) {
-                    Text("Apply", fontWeight = FontWeight.Bold)
                 }
-            },
-            dismissButton = {
-                TextButton(onClick = { showConfirmDialog = false }) {
-                    Text("Cancel")
-                }
-            },
-            containerColor = MaterialTheme.colorScheme.surface
-        )
+            }
+        }
     }
 }
 

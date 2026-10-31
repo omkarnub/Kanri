@@ -29,11 +29,14 @@ import androidx.compose.material3.CardDefaults
 import androidx.compose.material3.ExperimentalMaterial3Api
 import androidx.compose.material3.Icon
 import androidx.compose.material3.MaterialTheme
-import androidx.compose.material3.ModalBottomSheet
 import androidx.compose.material3.Switch
 import androidx.compose.material3.SwitchDefaults
 import androidx.compose.material3.Text
 import androidx.compose.material3.rememberModalBottomSheetState
+import com.omkarnub.kanri.ui.common.GlassLevel
+import com.omkarnub.kanri.ui.common.KanriGlassButton
+import com.omkarnub.kanri.ui.common.KanriGlassCard
+import com.omkarnub.kanri.ui.common.KanriModalBottomSheet
 import androidx.compose.runtime.Composable
 import androidx.compose.runtime.getValue
 import androidx.compose.runtime.mutableStateOf
@@ -62,10 +65,9 @@ fun SecuritySettingsSheet(
 
     var isLockEnabled by remember { mutableStateOf(prefs.isLockEnabled) }
 
-    ModalBottomSheet(
+    KanriModalBottomSheet(
         onDismissRequest = onDismiss,
         sheetState = sheetState,
-        containerColor = MaterialTheme.colorScheme.surface,
         dragHandle = {
             Box(
                 modifier = Modifier
@@ -119,11 +121,10 @@ fun SecuritySettingsSheet(
             }
 
             // Card 1: Master Lock Switch (Using Android's system screen lock)
-            Card(
+            KanriGlassCard(
                 modifier = Modifier.fillMaxWidth(),
                 shape = RoundedCornerShape(16.dp),
-                colors = CardDefaults.cardColors(containerColor = MaterialTheme.colorScheme.surfaceVariant),
-                border = BorderStroke(1.dp, MaterialTheme.colorScheme.outlineVariant)
+                level = GlassLevel.Blur
             ) {
                 Row(
                     modifier = Modifier
@@ -173,33 +174,25 @@ fun SecuritySettingsSheet(
 
             // Option to test lock immediately when enabled
             AnimatedVisibility(visible = isLockEnabled) {
-                Button(
+                KanriGlassButton(
+                    text = "Test Device Lock Screen Now",
+                    level = GlassLevel.Strong,
+                    shape = RoundedCornerShape(12.dp),
+                    icon = {
+                        Icon(
+                            imageVector = Icons.Default.Lock,
+                            contentDescription = null,
+                            modifier = Modifier.size(18.dp)
+                        )
+                    },
                     onClick = {
                         onDismiss()
                         SecurityManager.lockImmediately()
                     },
                     modifier = Modifier
                         .fillMaxWidth()
-                        .height(50.dp),
-                    shape = RoundedCornerShape(12.dp),
-                    colors = ButtonDefaults.buttonColors(
-                        containerColor = MaterialTheme.colorScheme.primary,
-                        contentColor = MaterialTheme.colorScheme.onPrimary
-                    )
-                ) {
-                    Icon(
-                        imageVector = Icons.Default.Lock,
-                        contentDescription = null,
-                        modifier = Modifier.size(18.dp)
-                    )
-                    Spacer(modifier = Modifier.width(8.dp))
-                    Text(
-                        text = "Test Device Lock Screen Now",
-                        fontSize = 14.sp,
-                        fontWeight = FontWeight.Bold,
-                        color = MaterialTheme.colorScheme.onPrimary
-                    )
-                }
+                        .height(50.dp)
+                )
             }
         }
     }

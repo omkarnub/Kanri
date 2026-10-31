@@ -10,6 +10,8 @@ import androidx.compose.animation.fadeOut
 import androidx.compose.animation.slideInHorizontally
 import androidx.compose.animation.slideOutHorizontally
 import androidx.compose.animation.togetherWith
+import androidx.compose.foundation.background
+import androidx.compose.foundation.border
 import androidx.compose.foundation.layout.Arrangement
 import androidx.compose.foundation.layout.Box
 import androidx.compose.foundation.layout.Column
@@ -23,6 +25,8 @@ import androidx.compose.foundation.layout.size
 import androidx.compose.foundation.layout.width
 import androidx.compose.foundation.lazy.LazyColumn
 import androidx.compose.foundation.shape.CircleShape
+import androidx.compose.ui.graphics.Brush
+import androidx.compose.ui.graphics.Color
 import androidx.compose.material.icons.Icons
 import androidx.compose.material.icons.automirrored.filled.CallSplit
 import androidx.compose.material.icons.filled.Add
@@ -41,6 +45,8 @@ import androidx.compose.material3.Surface
 import androidx.compose.material3.Text
 import androidx.compose.material3.TopAppBar
 import androidx.compose.material3.TopAppBarDefaults
+import com.omkarnub.kanri.ui.common.GlassLevel
+import com.omkarnub.kanri.ui.common.KanriGlassButton
 import androidx.compose.material3.rememberModalBottomSheetState
 import androidx.compose.runtime.Composable
 import androidx.compose.runtime.CompositionLocalProvider
@@ -61,6 +67,7 @@ import androidx.lifecycle.viewmodel.compose.viewModel
 import com.omkarnub.kanri.data.db.LendingWithRepayments
 import com.omkarnub.kanri.ui.common.LocalHazeState
 import com.omkarnub.kanri.ui.theme.Panchang
+import com.omkarnub.kanri.ui.theme.KanriMotion
 import com.omkarnub.kanri.util.rememberKanriHaptics
 import dev.chrisbanes.haze.HazeState
 import dev.chrisbanes.haze.haze
@@ -109,88 +116,97 @@ fun LendingScreen(
         launch {
             headerAlpha.animateTo(
                 targetValue = 1f,
-                animationSpec = tween(durationMillis = 400, delayMillis = 0, easing = FastOutSlowInEasing)
+                animationSpec = tween(durationMillis = 200, delayMillis = 0, easing = KanriMotion.EaseOut)
             )
         }
         launch {
             heroAlpha.animateTo(
                 targetValue = 1f,
-                animationSpec = tween(durationMillis = 420, delayMillis = 60, easing = FastOutSlowInEasing)
+                animationSpec = tween(durationMillis = 220, delayMillis = 20, easing = KanriMotion.EaseOut)
             )
         }
         launch {
             controlAlpha.animateTo(
                 targetValue = 1f,
-                animationSpec = tween(durationMillis = 440, delayMillis = 130, easing = FastOutSlowInEasing)
+                animationSpec = tween(durationMillis = 220, delayMillis = 40, easing = KanriMotion.EaseOut)
             )
         }
         launch {
             listAlpha.animateTo(
                 targetValue = 1f,
-                animationSpec = tween(durationMillis = 460, delayMillis = 180, easing = FastOutSlowInEasing)
+                animationSpec = tween(durationMillis = 240, delayMillis = 60, easing = KanriMotion.EaseOut)
             )
         }
     }
 
-    Box(modifier = modifier.fillMaxSize()) {
-        Scaffold(
-            modifier = Modifier
-                .fillMaxSize()
-                .haze(lendingHazeState),
-            snackbarHost = { SnackbarHost(snackbarHostState) },
-        topBar = {
-            if (hubState.selectedPersonSummary == null) {
-                TopAppBar(
-                    title = {
-                        Text(
-                            text = "LEND & BORROW",
-                            style = MaterialTheme.typography.titleLarge.copy(
-                                fontFamily = Panchang,
-                                fontWeight = FontWeight.Bold,
-                                letterSpacing = 1.8.sp,
-                                fontSize = 16.sp
-                            ),
-                            color = MaterialTheme.colorScheme.onSurface
-                        )
-                    },
-                    actions = {
-                        // Pill-shaped Add Record Action Button
-                        Surface(
-                            onClick = {
-                                haptics.primaryAction()
-                                addEntryInitialType = "LENT"
-                                addEntryInitialPerson = ""
-                                editingEntry = null
-                                showAddEntryDialog = true
-                            },
-                            shape = CircleShape,
-                            color = MaterialTheme.colorScheme.primary,
-                            contentColor = MaterialTheme.colorScheme.onPrimary,
-                            modifier = Modifier.padding(end = 12.dp)
-                        ) {
-                            Row(
-                                modifier = Modifier.padding(horizontal = 14.dp, vertical = 8.dp),
-                                verticalAlignment = Alignment.CenterVertically,
-                                horizontalArrangement = Arrangement.spacedBy(4.dp)
-                            ) {
-                                Icon(
-                                    imageVector = Icons.Default.Add,
-                                    contentDescription = "Add Record",
-                                    tint = MaterialTheme.colorScheme.onPrimary,
-                                    modifier = Modifier.size(16.dp)
-                                )
-                                Text(
-                                    text = "Add Record",
-                                    style = MaterialTheme.typography.labelMedium.copy(
-                                        fontWeight = FontWeight.SemiBold
+    val tokens = com.omkarnub.kanri.ui.theme.LocalKanriGlass.current
+
+    CompositionLocalProvider(LocalHazeState provides lendingHazeState) {
+        Box(modifier = modifier.fillMaxSize()) {
+            Scaffold(
+                modifier = Modifier
+                    .fillMaxSize()
+                    .haze(lendingHazeState),
+                containerColor = if (tokens != null) androidx.compose.ui.graphics.Color.Transparent else MaterialTheme.colorScheme.background,
+                snackbarHost = { SnackbarHost(snackbarHostState) },
+            topBar = {
+                if (hubState.selectedPersonSummary == null) {
+                    TopAppBar(
+                        title = {
+                            Text(
+                                text = "LEND & BORROW",
+                                style = MaterialTheme.typography.titleLarge.copy(
+                                    fontFamily = Panchang,
+                                    fontWeight = FontWeight.Bold,
+                                    letterSpacing = 1.8.sp,
+                                    fontSize = 16.sp
+                                ),
+                                color = MaterialTheme.colorScheme.onSurface
+                            )
+                        },
+                        actions = {
+                            // Pill-shaped Add Record Action Button with Frosted Glass
+                            KanriGlassButton(
+                                text = "Add Record",
+                                onClick = {
+                                    haptics.primaryAction()
+                                    addEntryInitialType = "LENT"
+                                    addEntryInitialPerson = ""
+                                    editingEntry = null
+                                    showAddEntryDialog = true
+                                },
+                                shape = CircleShape,
+                                level = GlassLevel.Strong,
+                                hazeState = lendingHazeState,
+                                modifier = Modifier
+                                    .padding(end = 12.dp)
+                                    .border(
+                                        width = 1.2.dp,
+                                        brush = Brush.linearGradient(
+                                            listOf(
+                                                Color.White.copy(alpha = 0.50f),
+                                                Color.White.copy(alpha = 0.18f)
+                                            )
+                                        ),
+                                        shape = CircleShape
+                                    )
+                                    .background(
+                                        color = if (tokens?.isDark != false) Color.White.copy(alpha = 0.16f) else Color.Black.copy(alpha = 0.08f),
+                                        shape = CircleShape
                                     ),
-                                    color = MaterialTheme.colorScheme.onPrimary
-                                )
-                            }
-                        }
-                    },
+                                textColor = tokens?.textPrimary ?: MaterialTheme.colorScheme.onSurface,
+                                icon = {
+                                    Icon(
+                                        imageVector = Icons.Default.Add,
+                                        contentDescription = "Add Record",
+                                        modifier = Modifier.size(16.dp),
+                                        tint = tokens?.textPrimary ?: MaterialTheme.colorScheme.onSurface
+                                    )
+                                }
+                            )
+                        },
                     colors = TopAppBarDefaults.topAppBarColors(
-                        containerColor = MaterialTheme.colorScheme.surface
+                        containerColor = if (tokens != null) androidx.compose.ui.graphics.Color.Transparent else MaterialTheme.colorScheme.surface
                     ),
                     modifier = Modifier.graphicsLayer {
                         alpha = headerAlpha.value
@@ -376,7 +392,8 @@ fun LendingScreen(
                                         style = MaterialTheme.typography.bodySmall,
                                         color = MaterialTheme.colorScheme.onSurfaceVariant.copy(alpha = 0.7f)
                                     )
-                                    Button(
+                                    KanriGlassButton(
+                                        text = "Add First Entry",
                                         onClick = {
                                             addEntryInitialType = "LENT"
                                             addEntryInitialPerson = ""
@@ -384,20 +401,16 @@ fun LendingScreen(
                                             showAddEntryDialog = true
                                         },
                                         shape = androidx.compose.foundation.shape.RoundedCornerShape(14.dp),
-                                        colors = ButtonDefaults.buttonColors(
-                                            containerColor = MaterialTheme.colorScheme.onSurface,
-                                            contentColor = MaterialTheme.colorScheme.surface
-                                        ),
-                                        modifier = Modifier.padding(top = 8.dp)
-                                    ) {
-                                        Icon(
-                                            imageVector = Icons.Default.Add,
-                                            contentDescription = null,
-                                            modifier = Modifier.size(18.dp)
-                                        )
-                                        Spacer(modifier = Modifier.width(6.dp))
-                                        Text("Add First Entry", fontWeight = FontWeight.Bold)
-                                    }
+                                        level = GlassLevel.Strong,
+                                        modifier = Modifier.padding(top = 8.dp),
+                                        icon = {
+                                            Icon(
+                                                imageVector = Icons.Default.Add,
+                                                contentDescription = null,
+                                                modifier = Modifier.size(18.dp)
+                                            )
+                                        }
+                                    )
                                 }
                             } else {
                                 when (hubState.selectedTab) {
@@ -649,6 +662,7 @@ fun LendingScreen(
             },
             existingPeople = existingPeople
         )
+    }
     }
     }
 }

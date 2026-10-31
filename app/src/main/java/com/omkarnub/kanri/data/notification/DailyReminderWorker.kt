@@ -1,4 +1,4 @@
-package com.omkarnub.kanri.data.notification
+﻿package com.omkarnub.kanri.data.notification
 
 import android.app.NotificationChannel
 import android.app.NotificationManager
@@ -123,7 +123,7 @@ class DailyReminderWorker(
         val body = "Take a moment to categorize today's transactions for better insights."
 
         val notification = NotificationCompat.Builder(applicationContext, CHANNEL_ID)
-            .setSmallIcon(R.mipmap.ic_launcher)
+            .setSmallIcon(R.drawable.ic_notification)
             .setContentTitle(title)
             .setContentText(body)
             .setPriority(NotificationCompat.PRIORITY_DEFAULT)
@@ -137,7 +137,7 @@ class DailyReminderWorker(
     private fun fireNoTransactionsNotification() {
         val nm = applicationContext.getSystemService(Context.NOTIFICATION_SERVICE) as NotificationManager
         val notification = NotificationCompat.Builder(applicationContext, CHANNEL_ID)
-            .setSmallIcon(R.mipmap.ic_launcher)
+            .setSmallIcon(R.drawable.ic_notification)
             .setContentTitle("No expenses tracked today")
             .setContentText("Did you forget to add a transaction? Tap to add one now.")
             .setPriority(NotificationCompat.PRIORITY_LOW)

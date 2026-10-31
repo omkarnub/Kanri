@@ -46,6 +46,8 @@ import androidx.fragment.app.FragmentActivity
 import com.omkarnub.kanri.R
 import com.omkarnub.kanri.data.security.BiometricHelper
 import com.omkarnub.kanri.ui.theme.Panchang
+import com.omkarnub.kanri.ui.theme.kanriPressFeedback
+import com.omkarnub.kanri.ui.theme.KanriMotion
 
 @Composable
 fun LockScreen(
@@ -85,76 +87,100 @@ fun LockScreen(
         triggerSystemLock()
     }
 
+    val tokens = com.omkarnub.kanri.ui.theme.LocalKanriGlass.current
+
     Surface(
         modifier = modifier.fillMaxSize(),
-        color = MaterialTheme.colorScheme.background
+        color = if (tokens != null) Color.Transparent else MaterialTheme.colorScheme.background
     ) {
-        Column(
-            modifier = Modifier
-                .fillMaxSize()
-                .padding(horizontal = 32.dp, vertical = 56.dp),
-            horizontalAlignment = Alignment.CenterHorizontally,
-            verticalArrangement = Arrangement.Center
+        Box(
+            modifier = Modifier.fillMaxSize(),
+            contentAlignment = Alignment.Center
         ) {
-            // KANRI logo in Panchang font
-            Text(
-                text = "KANRI",
-                style = MaterialTheme.typography.titleLarge.copy(
-                    fontFamily = Panchang,
-                    fontWeight = FontWeight.Bold,
-                    letterSpacing = 4.sp,
-                    fontSize = 32.sp
-                ),
-                color = MaterialTheme.colorScheme.onBackground
-            )
+            val contentBlock = @Composable {
+                Column(
+                    modifier = Modifier
+                        .fillMaxWidth()
+                        .padding(horizontal = 28.dp, vertical = 36.dp),
+                    horizontalAlignment = Alignment.CenterHorizontally,
+                    verticalArrangement = Arrangement.Center
+                ) {
+                    // KANRI logo in Panchang font
+                    Text(
+                        text = "KANRI",
+                        style = MaterialTheme.typography.titleLarge.copy(
+                            fontFamily = Panchang,
+                            fontWeight = FontWeight.Bold,
+                            letterSpacing = 4.sp,
+                            fontSize = 32.sp
+                        ),
+                        color = tokens?.textPrimary ?: MaterialTheme.colorScheme.onBackground
+                    )
 
-            Spacer(modifier = Modifier.height(8.dp))
+                    Spacer(modifier = Modifier.height(8.dp))
 
-            Text(
-                text = "Kanri is Locked",
-                fontSize = 15.sp,
-                fontWeight = FontWeight.Medium,
-                color = MaterialTheme.colorScheme.onSurfaceVariant
-            )
+                    Text(
+                        text = "Kanri is Locked",
+                        fontSize = 15.sp,
+                        fontWeight = FontWeight.Medium,
+                        color = tokens?.textSecondary ?: MaterialTheme.colorScheme.onSurfaceVariant
+                    )
 
-            Spacer(modifier = Modifier.height(36.dp))
+                    Spacer(modifier = Modifier.height(36.dp))
 
-            // Unlock Now Button with Lock SVG
-            Button(
-                onClick = { triggerSystemLock() },
-                modifier = Modifier
-                    .fillMaxWidth(0.85f)
-                    .height(54.dp),
-                shape = RoundedCornerShape(16.dp),
-                colors = ButtonDefaults.buttonColors(
-                    containerColor = MaterialTheme.colorScheme.primary,
-                    contentColor = MaterialTheme.colorScheme.onPrimary
-                )
-            ) {
-                Icon(
-                    imageVector = Icons.Default.Lock,
-                    contentDescription = "Unlock",
-                    modifier = Modifier.size(20.dp)
-                )
-                Spacer(modifier = Modifier.width(10.dp))
-                Text(
-                    text = "Unlock Now",
-                    fontSize = 15.sp,
-                    fontWeight = FontWeight.Bold,
-                    letterSpacing = 0.5.sp
-                )
+                    // Unlock Now Button with Lock SVG
+                    Button(
+                        onClick = { triggerSystemLock() },
+                        modifier = Modifier
+                            .fillMaxWidth(0.92f)
+                            .height(54.dp)
+                            .kanriPressFeedback(pressedScale = 0.96f),
+                        shape = RoundedCornerShape(16.dp),
+                        colors = ButtonDefaults.buttonColors(
+                            containerColor = tokens?.accent ?: MaterialTheme.colorScheme.primary,
+                            contentColor = tokens?.onAccent ?: MaterialTheme.colorScheme.onPrimary
+                        )
+                    ) {
+                        Icon(
+                            imageVector = Icons.Default.Lock,
+                            contentDescription = "Unlock",
+                            modifier = Modifier.size(20.dp)
+                        )
+                        Spacer(modifier = Modifier.width(10.dp))
+                        Text(
+                            text = "Unlock Now",
+                            fontSize = 15.sp,
+                            fontWeight = FontWeight.Bold,
+                            letterSpacing = 0.5.sp
+                        )
+                    }
+
+                    // Status or error message
+                    if (statusMessage != null) {
+                        Spacer(modifier = Modifier.height(18.dp))
+                        Text(
+                            text = statusMessage ?: "",
+                            color = tokens?.debit ?: MaterialTheme.colorScheme.error,
+                            fontSize = 13.sp,
+                            textAlign = TextAlign.Center,
+                            modifier = Modifier.padding(horizontal = 16.dp)
+                        )
+                    }
+                }
             }
 
-            // Status or error message
-            if (statusMessage != null) {
-                Spacer(modifier = Modifier.height(18.dp))
-                Text(
-                    text = statusMessage ?: "",
-                    color = MaterialTheme.colorScheme.error,
-                    fontSize = 13.sp,
-                    textAlign = TextAlign.Center,
-                    modifier = Modifier.padding(horizontal = 16.dp)
-                )
+            if (tokens != null) {
+                com.omkarnub.kanri.ui.common.KanriGlassCard(
+                    modifier = Modifier
+                        .fillMaxWidth(0.88f)
+                        .padding(16.dp),
+                    level = com.omkarnub.kanri.ui.common.GlassLevel.Blur,
+                    shape = RoundedCornerShape(28.dp)
+                ) {
+                    contentBlock()
+                }
+            } else {
+                contentBlock()
             }
         }
     }

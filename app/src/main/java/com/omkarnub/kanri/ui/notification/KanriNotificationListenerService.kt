@@ -123,34 +123,47 @@ class KanriNotificationListenerService : NotificationListenerService() {
 
         Log.d(TAG, "Intercepted payment notification from $packageName: Title='$title', Text='$text', BigText='$bigText'")
 
-        // 2. Parse payment notification payload
-        val parsed = NotificationParser.parse(
-            packageName = packageName,
-            title = title,
-            text = bigText ?: text,
-            subText = subText,
-            timestamp = sbn.postTime
-        )
-
-        if (parsed == null) {
-            Log.d(TAG, "Notification from $packageName is not a recognized payment. Skipping.")
-            return
-        }
-
-        // 3. CORE PRINCIPLE ENFORCEMENT: Only process CREDIT (incoming money/rewards).
-        // Debit events from payment apps are strictly dropped because bank SMS is the ONLY reliable authority for debits.
-        if (parsed.type != TransactionType.CREDIT) {
-            Log.d(TAG, "Ignoring non-credit notification (${parsed.type}) from $packageName. SMS is the sole authority for debits.")
-            return
-        }
-
-        Log.i(
-            TAG,
-            "Parsed Incoming Notification: Type=${parsed.type}, Amount=${parsed.amount}, Counterparty=${parsed.counterparty}, Bank=${parsed.bank}, Ref=${parsed.refNo}"
-        )
-
-        serviceScope.launch {
+        serviceScope.launch(Dispatchers.Default) {
             try {
+                // Verify package exists and is genuine installed application
+                val isVerified = try {
+                    packageManager.getPackageInfo(packageName, 0).applicationInfo != null
+                } catch (_: Exception) {
+                    false
+                }
+
+                // 2. Parse payment notification payload on background dispatcher
+                val parsedRaw = NotificationParser.parse(
+                    packageName = packageName,
+                    title = title,
+                    text = bigText ?: text,
+                    subText = subText,
+                    timestamp = sbn.postTime
+                )
+
+                if (parsedRaw == null) {
+                    Log.d(TAG, "Notification from $packageName is not a recognized payment. Skipping.")
+                    return@launch
+                }
+
+                // If publisher is unverified, flag for review so it cannot fabricate unverified ledger credits
+                val parsed = if (!isVerified) {
+                    parsedRaw.copy(isTrustedSender = false)
+                } else {
+                    parsedRaw
+                }
+
+                // 3. CORE PRINCIPLE ENFORCEMENT: Only process CREDIT (incoming money/rewards).
+                if (parsed.type != TransactionType.CREDIT) {
+                    Log.d(TAG, "Ignoring non-credit notification (${parsed.type}) from $packageName. SMS is the sole authority for debits.")
+                    return@launch
+                }
+
+                Log.i(
+                    TAG,
+                    "Parsed Incoming Notification: Type=${parsed.type}, Amount=${parsed.amount}, Counterparty=${parsed.counterparty}, Bank=${parsed.bank}, Ref=${parsed.refNo}"
+                )
+
                 val db = KanriDatabase.getDatabase(applicationContext)
                 val atmMode = com.omkarnub.kanri.data.wallet.WalletPreferences.getInstance(applicationContext).atmWithdrawalMode
                 val result = NotificationDeduplicationHelper.processIncomingTransaction(

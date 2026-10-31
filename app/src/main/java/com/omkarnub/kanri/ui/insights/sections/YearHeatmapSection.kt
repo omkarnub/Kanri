@@ -1,4 +1,4 @@
-package com.omkarnub.kanri.ui.insights.sections
+﻿package com.omkarnub.kanri.ui.insights.sections
 
 import androidx.compose.foundation.BorderStroke
 import androidx.compose.foundation.Canvas
@@ -20,6 +20,8 @@ import androidx.compose.material.icons.automirrored.filled.KeyboardArrowLeft
 import androidx.compose.material.icons.automirrored.filled.KeyboardArrowRight
 import androidx.compose.material3.Card
 import androidx.compose.material3.CardDefaults
+import com.omkarnub.kanri.ui.common.GlassLevel
+import com.omkarnub.kanri.ui.common.KanriGlassCard
 import androidx.compose.material3.Icon
 import androidx.compose.material3.IconButton
 import androidx.compose.material3.MaterialTheme
@@ -110,17 +112,14 @@ fun YearHeatmapSection(
         }
     }
 
-    Card(
+    KanriGlassCard(
         modifier = modifier
             .fillMaxWidth()
             .semantics {
                 contentDescription = "Year heatmap for ${data.year}: ${data.spendingDaysCount} spending days, ${data.noSpendDaysCount} no-spend days"
             },
         shape = RoundedCornerShape(20.dp),
-        colors = CardDefaults.cardColors(
-            containerColor = surfaceVariant.copy(alpha = 0.35f)
-        ),
-        border = BorderStroke(1.dp, outlineVariant)
+        level = GlassLevel.Blur
     ) {
         Column(
             modifier = Modifier

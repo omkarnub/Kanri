@@ -1,0 +1,194 @@
+<!DOCTYPE html>
+<html>
+<head>
+  <meta charset="utf-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1, user-scalable=no">
+  <style>
+    * { margin: 0; padding: 0; box-sizing: border-box; }
+    html, body { width: 100%; height: 100%; overflow: hidden; background: #111115; }
+    canvas { display: block; width: 100vw; height: 100vh; pointer-events: none; }
+  </style>
+</head>
+<body>
+<canvas id="glcanvas"></canvas>
+<script>
+(function() {
+  const canvas = document.getElementById('glcanvas');
+  const gl = canvas.getContext('webgl', { alpha: false, antialias: false, depth: false, powerPreference: 'low-power' });
+  if (!gl) return;
+
+  const vertexShader = `attribute vec2 a_pos;
+varying vec2 vUv;
+void main() {
+  vUv = a_pos * 0.5 + 0.5;
+  gl_Position = vec4(a_pos, 0.0, 1.0);
+}`;
+
+  const fragmentShader = `precision highp float;
+uniform float uTime;
+uniform vec2 uResolution;
+uniform vec3 uColor1;
+uniform vec3 uColor2;
+varying vec2 vUv;
+
+vec3 permute(vec3 x) { return mod(((x * 34.0) + 1.0) * x, 289.0); }
+
+float snoise(vec2 v) {
+  const vec4 C = vec4(0.211324865405187, 0.366025403784439, -0.577350269189626, 0.024390243902439);
+  vec2 i  = floor(v + dot(v, C.yy));
+  vec2 x0 = v - i + dot(i, C.xx);
+  vec2 i1 = (x0.x > x0.y) ? vec2(1.0, 0.0) : vec2(0.0, 1.0);
+  vec4 x12 = x0.xyxy + C.xxzz;
+  x12.xy -= i1;
+  i = mod(i, 289.0);
+  vec3 p = permute(permute(i.y + vec3(0.0, i1.y, 1.0)) + i.x + vec3(0.0, i1.x, 1.0));
+  vec3 m = max(0.5 - vec3(dot(x0, x0), dot(x12.xy, x12.xy), dot(x12.zw, x12.zw)), 0.0);
+  m = m * m;
+  m = m * m;
+  vec3 x = 2.0 * fract(p * C.www) - 1.0;
+  vec3 h = abs(x) - 0.5;
+  vec3 ox = floor(x + 0.5);
+  vec3 a0 = x - ox;
+  m *= 1.79284291400159 - 0.85373472095314 * (a0 * a0 + h * h);
+  vec3 g;
+  g.x  = a0.x * x0.x + h.x * x0.y;
+  g.yz = a0.yz * x12.xz + h.yz * x12.yw;
+  return 130.0 * dot(m, g);
+}
+
+// Fixed WebGL 1.0 compliant 4x4 Bayer dither (no dynamic array indexing)
+float bayerDither4x4(vec2 coord) {
+  vec2 p = mod(floor(coord), 4.0);
+  float d = 0.0;
+  if (p.y < 0.5) {
+    if (p.x < 0.5) d = 0.0; else if (p.x < 1.5) d = 8.0; else if (p.x < 2.5) d = 2.0; else d = 10.0;
+  } else if (p.y < 1.5) {
+    if (p.x < 0.5) d = 12.0; else if (p.x < 1.5) d = 4.0; else if (p.x < 2.5) d = 14.0; else d = 6.0;
+  } else if (p.y < 2.5) {
+    if (p.x < 0.5) d = 3.0; else if (p.x < 1.5) d = 11.0; else if (p.x < 2.5) d = 1.0; else d = 9.0;
+  } else {
+    if (p.x < 0.5) d = 15.0; else if (p.x < 1.5) d = 7.0; else if (p.x < 2.5) d = 13.0; else d = 5.0;
+  }
+  return d / 16.0;
+}
+
+void main() {
+  vec2 uv = vUv;
+  vec2 coord = gl_FragCoord.xy;
+  
+  float noise = snoise(uv * 1.5 + vec2(uTime * 0.05, uTime * 0.03)) * 0.25;
+  float diagonal = (uv.x + uv.y) * 0.5;
+  float gradient = diagonal * 1.2 + noise;
+  
+  vec3 darkGrey = uColor1;
+  vec3 lightGrey = uColor2;
+  vec3 midDark = mix(darkGrey, lightGrey, 0.33);
+  vec3 midLight = mix(darkGrey, lightGrey, 0.66);
+  
+  vec3 color;
+  if (gradient < 0.3) {
+    color = darkGrey;
+  } else if (gradient < 0.55) {
+    color = midDark;
+  } else if (gradient < 0.8) {
+    color = midLight;
+  } else {
+    color = lightGrey;
+  }
+  
+  float dither = bayerDither4x4(coord);
+  float threshold = fract(gradient * 4.0);
+  
+  if (gradient < 0.3 && threshold > dither * 0.5) {
+    color = midDark;
+  } else if (gradient >= 0.3 && gradient < 0.55 && threshold > dither * 0.5) {
+    color = midLight;
+  } else if (gradient >= 0.55 && gradient < 0.8 && threshold > dither * 0.5) {
+    color = lightGrey;
+  }
+  
+  vec2 cornerDist = vec2(uv.x, uv.y);
+  float fadeMask = smoothstep(0.0, 0.25, length(cornerDist));
+  color = mix(vec3(0.16), color, fadeMask);
+  
+  float vignette = smoothstep(1.2, 0.3, length(uv - 0.5));
+  color = mix(color, color * 0.95, (1.0 - vignette) * 0.3);
+  
+  gl_FragColor = vec4(color, 1.0);
+}`;
+
+  function compile(type, src) {
+    const s = gl.createShader(type);
+    gl.shaderSource(s, src);
+    gl.compileShader(s);
+    if (!gl.getShaderParameter(s, gl.COMPILE_STATUS)) {
+      console.error(gl.getShaderInfoLog(s));
+      return null;
+    }
+    return s;
+  }
+
+  const vs = compile(gl.VERTEX_SHADER, vertexShader);
+  const fs = compile(gl.FRAGMENT_SHADER, fragmentShader);
+  if (!vs || !fs) return;
+
+  const prog = gl.createProgram();
+  gl.attachShader(prog, vs);
+  gl.attachShader(prog, fs);
+  gl.linkProgram(prog);
+  if (!gl.getProgramParameter(prog, gl.LINK_STATUS)) {
+    console.error(gl.getProgramInfoLog(prog));
+    return;
+  }
+  gl.useProgram(prog);
+
+  const buf = gl.createBuffer();
+  gl.bindBuffer(gl.ARRAY_BUFFER, buf);
+  gl.bufferData(gl.ARRAY_BUFFER, new Float32Array([-1, -1, 3, -1, -1, 3]), gl.STATIC_DRAW);
+  const aPos = gl.getAttribLocation(prog, "a_pos");
+  gl.enableVertexAttribArray(aPos);
+  gl.vertexAttribPointer(aPos, 2, gl.FLOAT, false, 0, 0);
+
+  const uTimeLoc = gl.getUniformLocation(prog, "uTime");
+  const uResLoc = gl.getUniformLocation(prog, "uResolution");
+  const uCol1Loc = gl.getUniformLocation(prog, "uColor1");
+  const uCol2Loc = gl.getUniformLocation(prog, "uColor2");
+
+  function hex(val, def) {
+    let clean = (val || def).replace('#', '');
+    if (clean.length === 3) clean = clean.split('').map(c => c + c).join('');
+    return [0, 2, 4].map(i => parseInt(clean.slice(i, i + 2), 16) / 255);
+  }
+
+  const col1 = hex("#0e0e12", "#0e0e12"); // Pure deep dark grey / charcoal
+  const col2 = hex("#7a7a86", "#7a7a86"); // Pure refined architectural grey
+
+  function resize() {
+    const ratio = Math.min(window.devicePixelRatio || 1, 1.25);
+    canvas.width = Math.max(1, Math.floor(window.innerWidth * ratio));
+    canvas.height = Math.max(1, Math.floor(window.innerHeight * ratio));
+    gl.viewport(0, 0, canvas.width, canvas.height);
+  }
+  window.addEventListener('resize', resize);
+  resize();
+
+  let prev = performance.now();
+  let elapsed = 0;
+  function draw(now) {
+    const dt = Math.min((now - prev) / 1000, 0.05);
+    prev = now;
+    elapsed += dt;
+
+    gl.uniform1f(uTimeLoc, elapsed);
+    gl.uniform2f(uResLoc, canvas.width, canvas.height);
+    gl.uniform3fv(uCol1Loc, col1);
+    gl.uniform3fv(uCol2Loc, col2);
+
+    gl.drawArrays(gl.TRIANGLES, 0, 3);
+    requestAnimationFrame(draw);
+  }
+  requestAnimationFrame(draw);
+})();
+</script>
+</body>
+</html>

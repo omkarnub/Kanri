@@ -24,7 +24,11 @@ import androidx.compose.material.icons.Icons
 import androidx.compose.material.icons.automirrored.filled.ArrowForwardIos
 import androidx.compose.material.icons.automirrored.filled.TrendingDown
 import androidx.compose.material.icons.automirrored.filled.TrendingUp
+import com.omkarnub.kanri.ui.common.GlassLevel
+import com.omkarnub.kanri.ui.common.KanriGlassCard
 import androidx.compose.material3.Card
+import com.omkarnub.kanri.ui.common.GlassLevel
+import com.omkarnub.kanri.ui.common.KanriGlassCard
 import androidx.compose.material3.CardDefaults
 import androidx.compose.material3.FilterChip
 import androidx.compose.material3.FilterChipDefaults
@@ -158,11 +162,10 @@ fun AllTimeTrendsView(
 
 @Composable
 fun AllTimeOverviewCard(state: AllTimeTrendsUiState) {
-    Card(
+    KanriGlassCard(
         modifier = Modifier.fillMaxWidth(),
         shape = RoundedCornerShape(22.dp),
-        colors = CardDefaults.cardColors(containerColor = MaterialTheme.colorScheme.surface),
-        border = BorderStroke(1.dp, MaterialTheme.colorScheme.outlineVariant)
+        level = GlassLevel.Blur
     ) {
         Column(
             modifier = Modifier
@@ -282,16 +285,14 @@ fun MonthTrajectoryCard(
     onClick: () -> Unit
 ) {
     val haptics = rememberKanriHaptics()
-    Card(
-        modifier = Modifier
-            .fillMaxWidth()
-            .clickable(onClick = {
-                haptics.click()
-                onClick()
-            }),
+    KanriGlassCard(
+        modifier = Modifier.fillMaxWidth(),
         shape = RoundedCornerShape(16.dp),
-        colors = CardDefaults.cardColors(containerColor = MaterialTheme.colorScheme.surface),
-        border = BorderStroke(1.dp, MaterialTheme.colorScheme.outlineVariant)
+        level = GlassLevel.Blur,
+        onClick = {
+            haptics.click()
+            onClick()
+        }
     ) {
         Row(
             modifier = Modifier

@@ -1,4 +1,4 @@
-package com.omkarnub.kanri.ui.lending
+﻿package com.omkarnub.kanri.ui.lending
 
 import androidx.compose.foundation.clickable
 import androidx.compose.foundation.layout.Column
@@ -25,6 +25,9 @@ import androidx.compose.ui.draw.clip
 import androidx.compose.ui.text.font.FontWeight
 import androidx.compose.ui.unit.dp
 import androidx.compose.ui.unit.sp
+import com.omkarnub.kanri.ui.common.GlassLevel
+import com.omkarnub.kanri.ui.common.KanriGlassCard
+import com.omkarnub.kanri.ui.theme.LocalKanriGlass
 
 /**
  * A sleek, borderless card featured prominently in the Lend & Borrow menu
@@ -35,24 +38,42 @@ fun LendingSplitGroupCard(
     onClick: () -> Unit,
     modifier: Modifier = Modifier
 ) {
-    Card(
-        modifier = modifier
-            .fillMaxWidth()
-            .clip(RoundedCornerShape(20.dp))
-            .clickable(onClick = onClick),
-        shape = RoundedCornerShape(20.dp),
-        colors = CardDefaults.cardColors(
-            containerColor = MaterialTheme.colorScheme.surfaceVariant.copy(alpha = 0.35f)
-        ),
-        border = null, // Strictly borderless
-        elevation = CardDefaults.cardElevation(defaultElevation = 0.dp)
-    ) {
-        Row(
-            modifier = Modifier
-                .fillMaxWidth()
-                .padding(horizontal = 20.dp, vertical = 18.dp),
-            verticalAlignment = Alignment.CenterVertically
+    val tokens = LocalKanriGlass.current
+    if (tokens != null) {
+        KanriGlassCard(
+            modifier = modifier.fillMaxWidth(),
+            shape = RoundedCornerShape(20.dp),
+            level = GlassLevel.Flat,
+            onClick = onClick
         ) {
+            LendingSplitGroupContent()
+        }
+    } else {
+        Card(
+            modifier = modifier
+                .fillMaxWidth()
+                .clip(RoundedCornerShape(20.dp))
+                .clickable(onClick = onClick),
+            shape = RoundedCornerShape(20.dp),
+            colors = CardDefaults.cardColors(
+                containerColor = MaterialTheme.colorScheme.surfaceVariant.copy(alpha = 0.35f)
+            ),
+            border = null, // Strictly borderless
+            elevation = CardDefaults.cardElevation(defaultElevation = 0.dp)
+        ) {
+            LendingSplitGroupContent()
+        }
+    }
+}
+
+@Composable
+private fun LendingSplitGroupContent() {
+    Row(
+        modifier = Modifier
+            .fillMaxWidth()
+            .padding(horizontal = 20.dp, vertical = 18.dp),
+        verticalAlignment = Alignment.CenterVertically
+    ) {
             Icon(
                 imageVector = Icons.AutoMirrored.Filled.CallSplit,
                 contentDescription = "Split a Group Expense",
@@ -93,4 +114,3 @@ fun LendingSplitGroupCard(
             )
         }
     }
-}

@@ -13,6 +13,7 @@ import androidx.compose.foundation.layout.Box
 import androidx.compose.foundation.layout.Row
 import androidx.compose.foundation.layout.Spacer
 import androidx.compose.foundation.layout.fillMaxWidth
+import androidx.compose.foundation.layout.height
 import androidx.compose.foundation.layout.padding
 import androidx.compose.foundation.layout.size
 import androidx.compose.foundation.layout.sizeIn
@@ -34,6 +35,9 @@ import androidx.compose.ui.semantics.semantics
 import androidx.compose.ui.text.font.FontWeight
 import androidx.compose.ui.unit.dp
 import androidx.compose.ui.unit.sp
+import com.omkarnub.kanri.ui.common.GlassLevel
+import com.omkarnub.kanri.ui.common.KanriGlassCard
+import com.omkarnub.kanri.ui.theme.LocalKanriGlass
 
 @Composable
 fun NeedsReviewCard(
@@ -41,6 +45,8 @@ fun NeedsReviewCard(
     onClick: () -> Unit,
     modifier: Modifier = Modifier
 ) {
+    val tokens = LocalKanriGlass.current
+
     AnimatedVisibility(
         visible = reviewCount > 0,
         enter = fadeIn() + slideInVertically(initialOffsetY = { -it / 2 }),
@@ -53,60 +59,118 @@ fun NeedsReviewCard(
             "$reviewCount transactions need categorization"
         }
 
-        Surface(
-            shape = RoundedCornerShape(16.dp),
-            color = MaterialTheme.colorScheme.surfaceVariant,
-            border = BorderStroke(1.dp, MaterialTheme.colorScheme.outlineVariant),
-            modifier = Modifier
-                .fillMaxWidth()
-                .sizeIn(minHeight = 48.dp)
-                .clip(RoundedCornerShape(16.dp))
-                .semantics {
-                    contentDescription = "$labelText. Tap to categorize transactions."
-                    role = Role.Button
-                }
-                .clickable(onClick = onClick)
-        ) {
-            Row(
+        if (tokens != null) {
+            KanriGlassCard(
+                level = GlassLevel.Flat,
+                shape = RoundedCornerShape(18.dp),
+                onClick = onClick,
                 modifier = Modifier
                     .fillMaxWidth()
-                    .padding(horizontal = 16.dp, vertical = 12.dp),
-                verticalAlignment = Alignment.CenterVertically,
-                horizontalArrangement = Arrangement.SpaceBetween
+                    .sizeIn(minHeight = 48.dp)
+                    .semantics {
+                        contentDescription = "$labelText. Tap to categorize transactions."
+                        role = Role.Button
+                    }
             ) {
                 Row(
+                    modifier = Modifier
+                        .fillMaxWidth()
+                        .padding(horizontal = 16.dp, vertical = 12.dp),
                     verticalAlignment = Alignment.CenterVertically,
-                    modifier = Modifier.weight(1f)
+                    horizontalArrangement = Arrangement.SpaceBetween
                 ) {
-                    // White Dot
-                    Box(
-                        modifier = Modifier
-                            .size(8.dp)
-                            .clip(CircleShape)
-                            .background(Color.White)
-                    )
+                    Row(
+                        verticalAlignment = Alignment.CenterVertically,
+                        modifier = Modifier.weight(1f)
+                    ) {
+                        // Thin debit-tinted leading accent strip
+                        Box(
+                            modifier = Modifier
+                                .width(3.dp)
+                                .height(20.dp)
+                                .clip(RoundedCornerShape(1.5.dp))
+                                .background(tokens.debit)
+                        )
 
-                    Spacer(modifier = Modifier.width(10.dp))
+                        Spacer(modifier = Modifier.width(12.dp))
 
+                        Text(
+                            text = labelText,
+                            style = MaterialTheme.typography.bodyMedium.copy(
+                                fontWeight = FontWeight.SemiBold,
+                                fontSize = 13.5.sp
+                            ),
+                            color = tokens.textPrimary
+                        )
+                    }
+
+                    // Trailing chevron
                     Text(
-                        text = labelText,
-                        style = MaterialTheme.typography.bodyMedium.copy(
-                            fontWeight = FontWeight.SemiBold,
-                            fontSize = 14.sp
+                        text = "›",
+                        style = MaterialTheme.typography.titleLarge.copy(
+                            fontWeight = FontWeight.Bold,
+                            fontSize = 20.sp
                         ),
-                        color = MaterialTheme.colorScheme.onSurface
+                        color = tokens.textTertiary
                     )
                 }
+            }
+        } else {
+            Surface(
+                shape = RoundedCornerShape(16.dp),
+                color = MaterialTheme.colorScheme.surfaceVariant,
+                border = BorderStroke(1.dp, MaterialTheme.colorScheme.outlineVariant),
+                modifier = Modifier
+                    .fillMaxWidth()
+                    .sizeIn(minHeight = 48.dp)
+                    .clip(RoundedCornerShape(16.dp))
+                    .semantics {
+                        contentDescription = "$labelText. Tap to categorize transactions."
+                        role = Role.Button
+                    }
+                    .clickable(onClick = onClick)
+            ) {
+                Row(
+                    modifier = Modifier
+                        .fillMaxWidth()
+                        .padding(horizontal = 16.dp, vertical = 12.dp),
+                    verticalAlignment = Alignment.CenterVertically,
+                    horizontalArrangement = Arrangement.SpaceBetween
+                ) {
+                    Row(
+                        verticalAlignment = Alignment.CenterVertically,
+                        modifier = Modifier.weight(1f)
+                    ) {
+                        // White Dot
+                        Box(
+                            modifier = Modifier
+                                .size(8.dp)
+                                .clip(CircleShape)
+                                .background(Color.White)
+                        )
 
-                // Trailing chevron
-                Text(
-                    text = "›",
-                    style = MaterialTheme.typography.titleLarge.copy(
-                        fontWeight = FontWeight.Bold,
-                        fontSize = 20.sp
-                    ),
-                    color = MaterialTheme.colorScheme.onSurfaceVariant
-                )
+                        Spacer(modifier = Modifier.width(10.dp))
+
+                        Text(
+                            text = labelText,
+                            style = MaterialTheme.typography.bodyMedium.copy(
+                                fontWeight = FontWeight.SemiBold,
+                                fontSize = 14.sp
+                            ),
+                            color = MaterialTheme.colorScheme.onSurface
+                        )
+                    }
+
+                    // Trailing chevron
+                    Text(
+                        text = "›",
+                        style = MaterialTheme.typography.titleLarge.copy(
+                            fontWeight = FontWeight.Bold,
+                            fontSize = 20.sp
+                        ),
+                        color = MaterialTheme.colorScheme.onSurfaceVariant
+                    )
+                }
             }
         }
     }

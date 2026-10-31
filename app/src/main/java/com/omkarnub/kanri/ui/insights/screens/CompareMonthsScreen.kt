@@ -4,6 +4,11 @@ import androidx.compose.foundation.BorderStroke
 import androidx.compose.foundation.Canvas
 import androidx.compose.foundation.background
 import androidx.compose.foundation.border
+import com.omkarnub.kanri.ui.common.GlassLevel
+import com.omkarnub.kanri.ui.common.KanriDropdownMenu
+import com.omkarnub.kanri.ui.common.KanriDropdownMenuItem
+import com.omkarnub.kanri.ui.common.KanriGlassCard
+import com.omkarnub.kanri.ui.theme.LocalKanriGlass
 import androidx.compose.foundation.clickable
 import androidx.compose.foundation.gestures.detectDragGestures
 import androidx.compose.foundation.layout.Arrangement
@@ -92,8 +97,11 @@ fun CompareMonthsScreen(
         .collectAsState(initial = null)
     val availableMonths: List<YearMonth> by viewModel.availableMonthsFlow.collectAsState(initial = emptyList<YearMonth>())
 
+    val tokens = LocalKanriGlass.current
+
     Scaffold(
         modifier = modifier.fillMaxSize(),
+        containerColor = if (tokens != null) Color.Transparent else MaterialTheme.colorScheme.background,
         topBar = {
             TopAppBar(
                 title = {
@@ -116,7 +124,7 @@ fun CompareMonthsScreen(
                     }
                 },
                 colors = TopAppBarDefaults.topAppBarColors(
-                    containerColor = MaterialTheme.colorScheme.surface
+                    containerColor = if (tokens != null) Color.Transparent else MaterialTheme.colorScheme.surface
                 )
             )
         }
@@ -130,13 +138,10 @@ fun CompareMonthsScreen(
         ) {
             // Month Pickers & Controls
             item {
-                Card(
+                KanriGlassCard(
                     modifier = Modifier.fillMaxWidth(),
                     shape = RoundedCornerShape(20.dp),
-                    colors = CardDefaults.cardColors(
-                        containerColor = MaterialTheme.colorScheme.surfaceVariant.copy(alpha = 0.35f)
-                    ),
-                    border = BorderStroke(1.dp, MaterialTheme.colorScheme.outlineVariant)
+                    level = GlassLevel.Blur
                 ) {
                     Column(
                         modifier = Modifier
@@ -289,11 +294,10 @@ fun CompareMonthsScreen(
             // Summary sentence
             if (data.summarySentence.isNotEmpty()) {
                 item {
-                    Surface(
+                    KanriGlassCard(
+                        modifier = Modifier.fillMaxWidth(),
                         shape = RoundedCornerShape(14.dp),
-                        color = MaterialTheme.colorScheme.surfaceVariant.copy(alpha = 0.5f),
-                        border = BorderStroke(1.dp, MaterialTheme.colorScheme.outlineVariant),
-                        modifier = Modifier.fillMaxWidth()
+                        level = GlassLevel.Flat
                     ) {
                         Text(
                             text = data.summarySentence,
@@ -313,13 +317,10 @@ fun CompareMonthsScreen(
                 val mB = data.metricsB
                 val dtf = DateTimeFormatter.ofPattern("MMM yyyy")
 
-                Card(
+                KanriGlassCard(
                     modifier = Modifier.fillMaxWidth(),
                     shape = RoundedCornerShape(20.dp),
-                    colors = CardDefaults.cardColors(
-                        containerColor = MaterialTheme.colorScheme.surfaceVariant.copy(alpha = 0.35f)
-                    ),
-                    border = BorderStroke(1.dp, MaterialTheme.colorScheme.outlineVariant)
+                    level = GlassLevel.Blur
                 ) {
                     Column(
                         modifier = Modifier
@@ -364,13 +365,10 @@ fun CompareMonthsScreen(
             // 2. Cumulative Overlay Chart
             if (data.dailyCumulativeA.isNotEmpty()) {
                 item {
-                    Card(
+                    KanriGlassCard(
                         modifier = Modifier.fillMaxWidth(),
                         shape = RoundedCornerShape(20.dp),
-                        colors = CardDefaults.cardColors(
-                            containerColor = MaterialTheme.colorScheme.surfaceVariant.copy(alpha = 0.35f)
-                        ),
-                        border = BorderStroke(1.dp, MaterialTheme.colorScheme.outlineVariant)
+                        level = GlassLevel.Blur
                     ) {
                         Column(
                             modifier = Modifier
@@ -439,6 +437,7 @@ private fun MonthDropdownSelector(
 ) {
     var expanded by remember { mutableStateOf(false) }
     val dtf = DateTimeFormatter.ofPattern("MMM yyyy")
+    val tokens = LocalKanriGlass.current
 
     Column(modifier = modifier) {
         Text(
@@ -451,8 +450,8 @@ private fun MonthDropdownSelector(
         Spacer(modifier = Modifier.height(4.dp))
         Surface(
             shape = RoundedCornerShape(10.dp),
-            color = MaterialTheme.colorScheme.surface,
-            border = BorderStroke(1.dp, MaterialTheme.colorScheme.outlineVariant),
+            color = if (tokens != null) tokens.tintFlat else MaterialTheme.colorScheme.surface,
+            border = if (tokens != null) BorderStroke(1.dp, tokens.borderStart.copy(alpha = 0.3f)) else BorderStroke(1.dp, MaterialTheme.colorScheme.outlineVariant),
             modifier = Modifier
                 .fillMaxWidth()
                 .clip(RoundedCornerShape(10.dp))
@@ -467,12 +466,13 @@ private fun MonthDropdownSelector(
                 modifier = Modifier.padding(horizontal = 10.dp, vertical = 8.dp)
             )
 
-            DropdownMenu(
+            val monthsToDisplay = if (availableMonths.isEmpty()) listOf(selectedMonth, selectedMonth.minusMonths(1)) else availableMonths
+            KanriDropdownMenu(
                 expanded = expanded,
                 onDismissRequest = { expanded = false }
             ) {
-                availableMonths.forEach { ym ->
-                    DropdownMenuItem(
+                monthsToDisplay.forEach { ym ->
+                    KanriDropdownMenuItem(
                         text = { Text(ym.format(dtf)) },
                         onClick = {
                             onSelect(ym)
@@ -632,13 +632,10 @@ private fun CategoryComparisonSection(categories: List<CompareCategoryItem>) {
     val displayList = if (showAll) categories else categories.take(8)
     val maxCategorySpend = (categories.maxOfOrNull { maxOf(it.amountA, it.amountB) } ?: 1.0).coerceAtLeast(1.0)
 
-    Card(
+    KanriGlassCard(
         modifier = Modifier.fillMaxWidth(),
         shape = RoundedCornerShape(20.dp),
-        colors = CardDefaults.cardColors(
-            containerColor = MaterialTheme.colorScheme.surfaceVariant.copy(alpha = 0.35f)
-        ),
-        border = BorderStroke(1.dp, MaterialTheme.colorScheme.outlineVariant)
+        level = GlassLevel.Blur
     ) {
         Column(
             modifier = Modifier

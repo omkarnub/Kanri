@@ -1,4 +1,4 @@
-package com.omkarnub.kanri.data.cloud
+﻿package com.omkarnub.kanri.data.cloud
 
 import android.content.Context
 import android.util.Log
@@ -48,9 +48,10 @@ class CloudBackupManager(
             return custom
         }
         val targetEmail = email?.takeIf { it.isNotBlank() } ?: "kanri_offline_default"
-        // Deterministic zero-knowledge salt bound to the user's Google account
+        val secret = preferences.getOrCreateDeviceSecret()
+        // Strong cryptographic passphrase incorporating user account identity and a Keystore-backed unpredictable secret
         val digest = MessageDigest.getInstance("SHA-256")
-        val hash = digest.digest("kanri_sovereign_vault_${targetEmail.lowercase()}".toByteArray(Charsets.UTF_8))
+        val hash = digest.digest("kanri_vault_${targetEmail.lowercase()}_$secret".toByteArray(Charsets.UTF_8))
         return hash.joinToString("") { "%02x".format(it) }
     }
 
@@ -183,14 +184,14 @@ class CloudBackupManager(
             val encryptedBytes = downloadResult.getOrThrow()
 
             // 3. Decrypt file
+            if (!BackupCryptoHelper.isEncryptedBackup(encryptedBytes)) {
+                val error = SecurityException("Cloud backup file is not an authentic encrypted Kanri container. Plaintext cloud restoration is rejected.")
+                handleError(error)
+                return@withContext Result.failure(error)
+            }
             val passphrase = resolvePassphrase(explicitPassphrase, email)
             val jsonString = try {
-                if (BackupCryptoHelper.isEncryptedBackup(encryptedBytes)) {
-                    BackupCryptoHelper.decryptJson(encryptedBytes, passphrase)
-                } else {
-                    // Fallback plain UTF-8 if legacy
-                    String(encryptedBytes, Charsets.UTF_8)
-                }
+                BackupCryptoHelper.decryptJson(encryptedBytes, passphrase)
             } catch (e: Exception) {
                 Log.e(TAG, "Decryption failed: ${e.message}", e)
                 preferences.recordBackupError(

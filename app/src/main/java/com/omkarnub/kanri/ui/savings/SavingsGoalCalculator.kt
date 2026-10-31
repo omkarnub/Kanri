@@ -1,4 +1,4 @@
-package com.omkarnub.kanri.ui.savings
+﻿package com.omkarnub.kanri.ui.savings
 
 import com.omkarnub.kanri.data.db.SavingsGoalEntity
 import java.util.concurrent.TimeUnit

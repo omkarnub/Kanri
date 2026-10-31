@@ -44,10 +44,13 @@ import androidx.compose.material3.FilterChip
 import androidx.compose.material3.FilterChipDefaults
 import androidx.compose.material3.Icon
 import androidx.compose.material3.MaterialTheme
-import androidx.compose.material3.ModalBottomSheet
 import androidx.compose.material3.OutlinedButton
 import androidx.compose.material3.Text
 import androidx.compose.material3.rememberModalBottomSheetState
+import com.omkarnub.kanri.ui.common.GlassLevel
+import com.omkarnub.kanri.ui.common.KanriGlassButton
+import com.omkarnub.kanri.ui.common.KanriGlassCard
+import com.omkarnub.kanri.ui.common.KanriModalBottomSheet
 import androidx.compose.runtime.Composable
 import androidx.compose.runtime.LaunchedEffect
 import androidx.compose.runtime.getValue
@@ -122,10 +125,9 @@ fun ExportStatementSheet(
         }
     }
 
-    ModalBottomSheet(
+    KanriModalBottomSheet(
         onDismissRequest = onDismiss,
         sheetState = sheetState,
-        containerColor = MaterialTheme.colorScheme.surface,
         dragHandle = {
             Box(
                 modifier = Modifier
@@ -180,11 +182,10 @@ fun ExportStatementSheet(
 
             // Success Notification Card
             if (exportSuccessSummary != null && exportedUri != null) {
-                Card(
+                KanriGlassCard(
                     modifier = Modifier.fillMaxWidth(),
                     shape = RoundedCornerShape(14.dp),
-                    colors = CardDefaults.cardColors(containerColor = Color(0xFF0D2818)),
-                    border = BorderStroke(1.dp, Color(0xFF238636))
+                    level = GlassLevel.Blur
                 ) {
                     Column(
                         modifier = Modifier
@@ -274,11 +275,10 @@ fun ExportStatementSheet(
 
             // Error Card
             if (errorMessage != null) {
-                Card(
+                KanriGlassCard(
                     modifier = Modifier.fillMaxWidth(),
                     shape = RoundedCornerShape(12.dp),
-                    colors = CardDefaults.cardColors(containerColor = Color(0xFF2B1015)),
-                    border = BorderStroke(1.dp, Color(0xFFF85149))
+                    level = GlassLevel.Blur
                 ) {
                     Text(
                         text = errorMessage ?: "",
@@ -388,11 +388,10 @@ fun ExportStatementSheet(
             }
 
             // Preview Info Card
-            Card(
+            KanriGlassCard(
                 modifier = Modifier.fillMaxWidth(),
                 shape = RoundedCornerShape(14.dp),
-                colors = CardDefaults.cardColors(containerColor = MaterialTheme.colorScheme.surfaceVariant),
-                border = BorderStroke(1.dp, MaterialTheme.colorScheme.outlineVariant)
+                level = GlassLevel.Blur
             ) {
                 Column(
                     modifier = Modifier
@@ -442,40 +441,32 @@ fun ExportStatementSheet(
             }
 
             // Export Action Button
-            Button(
+            KanriGlassButton(
+                text = if (isProcessing) "Exporting..." else "Export ${selectedFormat.label}",
+                level = GlassLevel.Strong,
+                shape = RoundedCornerShape(12.dp),
+                icon = {
+                    if (isProcessing) {
+                        CircularProgressIndicator(modifier = Modifier.size(18.dp), color = MaterialTheme.colorScheme.onSurface, strokeWidth = 2.dp)
+                    } else {
+                        Icon(
+                            imageVector = Icons.Default.Download,
+                            contentDescription = null,
+                            modifier = Modifier.size(18.dp)
+                        )
+                    }
+                },
+                enabled = !isProcessing,
                 onClick = {
                     haptics.primaryAction()
                     SecurityManager.isTemporarilyExempt = true
                     val suggestedFilename = repository.getSuggestedFilename(selectedFormat, selectedRange)
                     createDocLauncher.launch(suggestedFilename)
                 },
-                enabled = !isProcessing,
                 modifier = Modifier
                     .fillMaxWidth()
-                    .height(50.dp),
-                shape = RoundedCornerShape(12.dp),
-                colors = ButtonDefaults.buttonColors(
-                    containerColor = MaterialTheme.colorScheme.primary,
-                    contentColor = MaterialTheme.colorScheme.onPrimary
-                )
-            ) {
-                if (isProcessing) {
-                    CircularProgressIndicator(modifier = Modifier.size(20.dp), color = MaterialTheme.colorScheme.onPrimary, strokeWidth = 2.dp)
-                } else {
-                    Icon(
-                        imageVector = Icons.Default.Download,
-                        contentDescription = null,
-                        modifier = Modifier.size(18.dp)
-                    )
-                    Spacer(modifier = Modifier.width(8.dp))
-                    Text(
-                        text = "Export ${selectedFormat.label}",
-                        fontSize = 15.sp,
-                        fontWeight = FontWeight.Bold,
-                        color = MaterialTheme.colorScheme.onPrimary
-                    )
-                }
-            }
+                    .height(50.dp)
+            )
         }
     }
 }
@@ -490,17 +481,11 @@ private fun FormatCard(
     onClick: () -> Unit,
     modifier: Modifier = Modifier
 ) {
-    Card(
-        modifier = modifier
-            .clickable { onClick() },
+    KanriGlassCard(
+        modifier = modifier,
         shape = RoundedCornerShape(14.dp),
-        colors = CardDefaults.cardColors(
-            containerColor = if (isSelected) MaterialTheme.colorScheme.primaryContainer else MaterialTheme.colorScheme.surfaceVariant
-        ),
-        border = BorderStroke(
-            width = if (isSelected) 1.5.dp else 1.dp,
-            color = if (isSelected) MaterialTheme.colorScheme.primary else MaterialTheme.colorScheme.outlineVariant
-        )
+        level = if (isSelected) GlassLevel.Strong else GlassLevel.Flat,
+        onClick = onClick
     ) {
         Column(
             modifier = Modifier

@@ -67,6 +67,7 @@ import androidx.compose.ui.Modifier
 import androidx.compose.ui.draw.clip
 import androidx.compose.ui.graphics.Brush
 import androidx.compose.ui.graphics.Color
+import com.omkarnub.kanri.ui.theme.LocalKanriGlass
 import androidx.compose.ui.graphics.SolidColor
 import androidx.compose.ui.platform.LocalContext
 import androidx.compose.ui.platform.LocalFocusManager
@@ -119,22 +120,27 @@ fun InstantPopupCard(
     val themeMode = remember { ThemePreferences.getInstance(context).themeMode }
     val isLight = themeMode == ThemeMode.LIGHT
     val isAmoled = themeMode == ThemeMode.AMOLED
+    val currentGlass = LocalKanriGlass.current
+    val glassTokens = currentGlass ?: if (themeMode == ThemeMode.GLASS) com.omkarnub.kanri.ui.theme.GlassTokens else null
 
-    // Theme-matched monochrome design tokens strictly matching user theme
+    // Theme-matched monochrome or glass design tokens strictly matching user theme
     val containerBg = when {
+        glassTokens != null -> glassTokens.tintStrong
         isLight -> Color(0xF8FAF9F5) // Soft frosted alabaster
         isAmoled -> Color(0xFA000000) // Deep AMOLED pitch black
         else -> Color(0xF2121212) // Frosted charcoal dark
     }
 
-    val primaryTextColor = if (isLight) Color(0xFF000000) else Color(0xFFF2F2F5)
-    val secondaryTextColor = if (isLight) Color(0xFF6B685F) else Color(0xFFA6A6A6)
-    val chipBg = if (isLight) Color(0xFFF4F2EB) else if (isAmoled) Color(0xFF141414) else Color(0xFF1E1E1E)
-    val inputBg = if (isLight) Color(0xFFECEAE2) else if (isAmoled) Color(0xFF1A1A1A) else Color(0xFF242424)
-    val neutralBorder = if (isLight) Color(0x18000000) else Color(0x22FFFFFF)
-    val activeBorder = if (isLight) Color(0xFF000000) else Color(0xFFFFFFFF)
+    val primaryTextColor = glassTokens?.textPrimary ?: if (isLight) Color(0xFF000000) else Color(0xFFF2F2F5)
+    val secondaryTextColor = glassTokens?.textSecondary ?: if (isLight) Color(0xFF6B685F) else Color(0xFFA6A6A6)
+    val chipBg = glassTokens?.tintFlat ?: if (isLight) Color(0xFFF4F2EB) else if (isAmoled) Color(0xFF141414) else Color(0xFF1E1E1E)
+    val inputBg = glassTokens?.tintFlat ?: if (isLight) Color(0xFFECEAE2) else if (isAmoled) Color(0xFF1A1A1A) else Color(0xFF242424)
+    val neutralBorder = glassTokens?.borderEnd ?: if (isLight) Color(0x18000000) else Color(0x22FFFFFF)
+    val activeBorder = glassTokens?.accent ?: if (isLight) Color(0xFF000000) else Color(0xFFFFFFFF)
 
-    val specularGradient = if (isLight) {
+    val specularGradient = if (glassTokens != null) {
+        Brush.linearGradient(listOf(glassTokens.borderStart, glassTokens.borderEnd))
+    } else if (isLight) {
         Brush.verticalGradient(
             listOf(
                 Color(0x50FFFFFF),
@@ -152,10 +158,10 @@ fun InstantPopupCard(
         )
     }
 
-    val doneBtnBg = if (isLight) Color(0xFF000000) else Color(0xFFFFFFFF)
-    val doneBtnContent = if (isLight) Color(0xFFFAF9F5) else Color(0xFF121212)
-    val secondaryBtnBg = if (isLight) Color(0xFFECEAE2) else if (isAmoled) Color(0xFF1E1E1E) else Color(0xFF262626)
-    val secondaryBtnContent = if (isLight) Color(0xFF000000) else Color(0xFFF2F2F5)
+    val doneBtnBg = glassTokens?.accent ?: if (isLight) Color(0xFF000000) else Color(0xFFFFFFFF)
+    val doneBtnContent = glassTokens?.onAccent ?: if (isLight) Color(0xFFFAF9F5) else Color(0xFF121212)
+    val secondaryBtnBg = glassTokens?.tintFlat ?: if (isLight) Color(0xFFECEAE2) else if (isAmoled) Color(0xFF1E1E1E) else Color(0xFF262626)
+    val secondaryBtnContent = glassTokens?.textPrimary ?: if (isLight) Color(0xFF000000) else Color(0xFFF2F2F5)
 
     // Form state
     var selectedCategoryId by remember { mutableStateOf<Long?>(null) }
@@ -189,7 +195,11 @@ fun InstantPopupCard(
         }
     }
 
-    val accentColor = if (isDebit) Color(0xFFE54D2E) else Color(0xFF30A46C)
+    val accentColor = if (glassTokens != null) {
+        if (isDebit) glassTokens.debit else glassTokens.credit
+    } else {
+        if (isDebit) Color(0xFFE54D2E) else Color(0xFF30A46C)
+    }
 
     AnimatedVisibility(
         visible = isVisible,

@@ -1,0 +1,44 @@
+<vector xmlns:android="http://schemas.android.com/apk/res/android"
+    android:width="220dp"
+    android:height="95dp"
+    android:viewportWidth="220"
+    android:viewportHeight="95">
+
+    <!-- Card Background -->
+    <path
+        android:fillColor="#1E232E"
+        android:pathData="M 16,0 L 204,0 A 16,16 0 0,1 220,16 L 220,79 A 16,16 0 0,1 204,95 L 16,95 A 16,16 0 0,1 0,79 L 0,16 A 16,16 0 0,1 16,0 Z" />
+
+    <!-- Card Border -->
+    <path
+        android:strokeColor="#2EFFFFFF"
+        android:strokeWidth="1.5"
+        android:pathData="M 16,0.75 L 204,0.75 A 15.25,15.25 0 0,1 219.25,16 L 219.25,79 A 15.25,15.25 0 0,1 204,94.25 L 16,94.25 A 15.25,15.25 0 0,1 0.75,79 L 0.75,16 A 15.25,15.25 0 0,1 16,0.75 Z" />
+
+    <!-- Header: LEND & BORROW -->
+    <path
+        android:fillColor="#E0FFFFFF"
+        android:pathData="M 16,14 L 86,14 A 2,2 0 0,1 88,16 L 88,18 A 2,2 0 0,1 86,20 L 16,20 A 2,2 0 0,1 14,18 L 14,16 A 2,2 0 0,1 16,14 Z" />
+
+    <!-- Left: You'll Get (Monochrome) -->
+    <path
+        android:fillColor="#B3FFFFFF"
+        android:pathData="M 16,34 L 56,34 A 2,2 0 0,1 58,36 L 58,38 A 2,2 0 0,1 56,40 L 16,40 A 2,2 0 0,1 14,38 L 14,36 A 2,2 0 0,1 16,34 Z" />
+    <path
+        android:fillColor="#FFFFFF"
+        android:pathData="M 16,46 L 76,46 A 3,3 0 0,1 79,49 L 79,55 A 3,3 0 0,1 76,58 L 16,58 A 3,3 0 0,1 13,55 L 13,49 A 3,3 0 0,1 16,46 Z" />
+
+    <!-- Right: You Owe (Monochrome) -->
+    <path
+        android:fillColor="#B3FFFFFF"
+        android:pathData="M 124,34 L 160,34 A 2,2 0 0,1 162,36 L 162,38 A 2,2 0 0,1 160,40 L 124,40 A 2,2 0 0,1 122,38 L 122,36 A 2,2 0 0,1 124,34 Z" />
+    <path
+        android:fillColor="#FFFFFF"
+        android:pathData="M 124,46 L 180,46 A 3,3 0 0,1 183,49 L 183,55 A 3,3 0 0,1 180,58 L 124,58 A 3,3 0 0,1 121,55 L 121,49 A 3,3 0 0,1 124,46 Z" />
+
+    <!-- Bottom summary row -->
+    <path
+        android:fillColor="#66FFFFFF"
+        android:pathData="M 16,74 L 148,74 A 2,2 0 0,1 150,76 L 150,78 A 2,2 0 0,1 148,80 L 16,80 A 2,2 0 0,1 14,78 L 14,76 A 2,2 0 0,1 16,74 Z" />
+
+</vector>

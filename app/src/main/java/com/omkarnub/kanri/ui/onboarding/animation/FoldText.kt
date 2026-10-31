@@ -1,4 +1,4 @@
-package com.omkarnub.kanri.ui.onboarding.animation
+﻿package com.omkarnub.kanri.ui.onboarding.animation
 
 import androidx.compose.animation.core.Animatable
 import androidx.compose.animation.core.Easing

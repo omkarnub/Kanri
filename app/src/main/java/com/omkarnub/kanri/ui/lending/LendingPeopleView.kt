@@ -43,6 +43,8 @@ import androidx.compose.runtime.mutableStateOf
 import androidx.compose.runtime.remember
 import androidx.compose.runtime.setValue
 import androidx.compose.ui.Alignment
+import com.omkarnub.kanri.ui.common.GlassLevel
+import com.omkarnub.kanri.ui.common.KanriGlassCard
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.draw.clip
 import androidx.compose.ui.draw.rotate
@@ -158,13 +160,13 @@ fun LendingPeopleView(
                     Surface(
                         shape = RoundedCornerShape(12.dp),
                         color = if (isSelected) {
-                            MaterialTheme.colorScheme.onSurface
+                            MaterialTheme.colorScheme.inverseSurface
                         } else {
                             MaterialTheme.colorScheme.surfaceVariant.copy(alpha = 0.3f)
                         },
                         border = BorderStroke(
                             width = if (isSelected) 1.dp else 0.8.dp,
-                            color = if (isSelected) MaterialTheme.colorScheme.onSurface else MaterialTheme.colorScheme.outlineVariant.copy(alpha = 0.6f)
+                            color = if (isSelected) MaterialTheme.colorScheme.inverseSurface else MaterialTheme.colorScheme.outlineVariant.copy(alpha = 0.6f)
                         ),
                         modifier = Modifier
                             .clip(RoundedCornerShape(12.dp))
@@ -177,7 +179,7 @@ fun LendingPeopleView(
                                 fontSize = 11.5.sp
                             ),
                             color = if (isSelected) {
-                                MaterialTheme.colorScheme.surface
+                                MaterialTheme.colorScheme.inverseOnSurface
                             } else {
                                 MaterialTheme.colorScheme.onSurfaceVariant
                             },
@@ -226,13 +228,10 @@ fun LendingPeopleView(
                     modifier = Modifier.padding(horizontal = 4.dp)
                 )
 
-                Card(
+                KanriGlassCard(
                     modifier = Modifier.fillMaxWidth(),
                     shape = RoundedCornerShape(20.dp),
-                    colors = CardDefaults.cardColors(
-                        containerColor = MaterialTheme.colorScheme.surfaceVariant.copy(alpha = 0.35f)
-                    ),
-                    border = BorderStroke(1.dp, MaterialTheme.colorScheme.outlineVariant)
+                    level = GlassLevel.Blur
                 ) {
                     Column(
                         modifier = Modifier.padding(horizontal = 14.dp, vertical = 6.dp),
@@ -269,13 +268,10 @@ fun LendingPeopleView(
                     modifier = Modifier.padding(horizontal = 4.dp)
                 )
 
-                Card(
+                KanriGlassCard(
                     modifier = Modifier.fillMaxWidth(),
                     shape = RoundedCornerShape(20.dp),
-                    colors = CardDefaults.cardColors(
-                        containerColor = MaterialTheme.colorScheme.surfaceVariant.copy(alpha = 0.35f)
-                    ),
-                    border = BorderStroke(1.dp, MaterialTheme.colorScheme.outlineVariant)
+                    level = GlassLevel.Blur
                 ) {
                     Column(
                         modifier = Modifier.padding(horizontal = 14.dp, vertical = 6.dp),
@@ -340,13 +336,10 @@ fun LendingPeopleView(
                     enter = expandVertically() + fadeIn(),
                     exit = shrinkVertically() + fadeOut()
                 ) {
-                    Card(
+                    KanriGlassCard(
                         modifier = Modifier.fillMaxWidth(),
                         shape = RoundedCornerShape(20.dp),
-                        colors = CardDefaults.cardColors(
-                            containerColor = MaterialTheme.colorScheme.surfaceVariant.copy(alpha = 0.35f)
-                        ),
-                        border = BorderStroke(1.dp, MaterialTheme.colorScheme.outlineVariant)
+                        level = GlassLevel.Blur
                     ) {
                         Column(
                             modifier = Modifier.padding(horizontal = 14.dp, vertical = 6.dp),

@@ -1,4 +1,4 @@
-package com.omkarnub.kanri.ui.insights
+﻿package com.omkarnub.kanri.ui.insights
 
 import android.app.Application
 import androidx.lifecycle.AndroidViewModel

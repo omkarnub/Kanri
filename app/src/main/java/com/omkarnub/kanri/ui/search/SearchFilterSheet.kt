@@ -31,11 +31,13 @@ import androidx.compose.material3.FilterChipDefaults
 import androidx.compose.material3.Icon
 import androidx.compose.material3.IconButton
 import androidx.compose.material3.MaterialTheme
-import androidx.compose.material3.ModalBottomSheet
-import androidx.compose.material3.Surface
 import androidx.compose.material3.Text
 import androidx.compose.material3.TextButton
 import androidx.compose.material3.rememberModalBottomSheetState
+import com.omkarnub.kanri.ui.common.GlassLevel
+import com.omkarnub.kanri.ui.common.KanriGlassButton
+import com.omkarnub.kanri.ui.common.KanriGlassCard
+import com.omkarnub.kanri.ui.common.KanriModalBottomSheet
 import androidx.compose.runtime.Composable
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
@@ -65,10 +67,9 @@ fun SearchFilterSheet(
 ) {
     val sheetState = rememberModalBottomSheetState(skipPartiallyExpanded = true)
 
-    ModalBottomSheet(
+    KanriModalBottomSheet(
         onDismissRequest = onDismiss,
         sheetState = sheetState,
-        containerColor = MaterialTheme.colorScheme.surface,
         dragHandle = {
             Box(
                 modifier = Modifier
@@ -146,16 +147,11 @@ fun SearchFilterSheet(
             ) {
                 TransactionTypeFilter.entries.forEach { type ->
                     val isSelected = uiState.typeFilter == type
-                    Surface(
-                        modifier = Modifier
-                            .weight(1f)
-                            .clickable { onTypeSelect(type) },
+                    KanriGlassCard(
+                        modifier = Modifier.weight(1f),
                         shape = RoundedCornerShape(10.dp),
-                        color = if (isSelected) MaterialTheme.colorScheme.primary else MaterialTheme.colorScheme.surfaceVariant,
-                        border = BorderStroke(
-                            1.dp,
-                            if (isSelected) MaterialTheme.colorScheme.primary else MaterialTheme.colorScheme.outlineVariant
-                        )
+                        level = if (isSelected) GlassLevel.Strong else GlassLevel.Flat,
+                        onClick = { onTypeSelect(type) }
                     ) {
                         Box(
                             modifier = Modifier.padding(vertical = 10.dp),
@@ -169,7 +165,7 @@ fun SearchFilterSheet(
                                 },
                                 style = MaterialTheme.typography.bodyMedium,
                                 fontWeight = if (isSelected) FontWeight.Bold else FontWeight.Medium,
-                                color = if (isSelected) MaterialTheme.colorScheme.onPrimary else MaterialTheme.colorScheme.onSurfaceVariant
+                                color = if (isSelected) MaterialTheme.colorScheme.onSurface else MaterialTheme.colorScheme.onSurfaceVariant
                             )
                         }
                     }
@@ -186,16 +182,11 @@ fun SearchFilterSheet(
             ) {
                 WalletFilter.entries.forEach { filter ->
                     val isSelected = uiState.walletFilter == filter
-                    Surface(
-                        modifier = Modifier
-                            .weight(1f)
-                            .clickable { onWalletFilterSelect(filter) },
+                    KanriGlassCard(
+                        modifier = Modifier.weight(1f),
                         shape = RoundedCornerShape(10.dp),
-                        color = if (isSelected) MaterialTheme.colorScheme.primary else MaterialTheme.colorScheme.surfaceVariant,
-                        border = BorderStroke(
-                            1.dp,
-                            if (isSelected) MaterialTheme.colorScheme.primary else MaterialTheme.colorScheme.outlineVariant
-                        )
+                        level = if (isSelected) GlassLevel.Strong else GlassLevel.Flat,
+                        onClick = { onWalletFilterSelect(filter) }
                     ) {
                         Box(
                             modifier = Modifier.padding(vertical = 10.dp),
@@ -205,7 +196,7 @@ fun SearchFilterSheet(
                                 text = filter.displayName,
                                 style = MaterialTheme.typography.bodyMedium,
                                 fontWeight = if (isSelected) FontWeight.Bold else FontWeight.Medium,
-                                color = if (isSelected) MaterialTheme.colorScheme.onPrimary else MaterialTheme.colorScheme.onSurfaceVariant
+                                color = if (isSelected) MaterialTheme.colorScheme.onSurface else MaterialTheme.colorScheme.onSurfaceVariant
                             )
                         }
                     }
@@ -391,26 +382,18 @@ fun SearchFilterSheet(
             Spacer(modifier = Modifier.height(24.dp))
 
             // Apply Button
-            Button(
+            KanriGlassButton(
+                text = "Show Results (${uiState.filteredTransactions.size})",
+                level = GlassLevel.Strong,
+                shape = RoundedCornerShape(12.dp),
+                icon = {
+                    Icon(Icons.Default.Check, contentDescription = null, modifier = Modifier.size(18.dp))
+                },
                 onClick = onDismiss,
                 modifier = Modifier
                     .fillMaxWidth()
-                    .height(50.dp),
-                shape = RoundedCornerShape(12.dp),
-                colors = ButtonDefaults.buttonColors(
-                    containerColor = MaterialTheme.colorScheme.primary,
-                    contentColor = MaterialTheme.colorScheme.onPrimary
-                )
-            ) {
-                Icon(Icons.Default.Check, contentDescription = null, modifier = Modifier.size(18.dp))
-                Spacer(modifier = Modifier.width(8.dp))
-                Text(
-                    text = "Show Results (${uiState.filteredTransactions.size})",
-                    fontWeight = FontWeight.Bold,
-                    fontSize = 15.sp,
-                    color = MaterialTheme.colorScheme.onPrimary
-                )
-            }
+                    .height(50.dp)
+            )
 
             Spacer(modifier = Modifier.height(28.dp))
         }

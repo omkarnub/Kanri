@@ -1,4 +1,4 @@
-package com.omkarnub.kanri.data.parser
+﻿package com.omkarnub.kanri.data.parser
 
 import java.util.regex.Pattern
 
@@ -153,14 +153,14 @@ object NotificationParser {
     // Patterns for Inbound / Credit payments
     private val SENDER_PATTERNS = listOf(
         // FamPay "YOU GOT #FAMPAID XYZ SENT YOU ₹1" or "#FAMPAID XYZ sent you"
-        Pattern.compile("""(?:#fampaid|you got)\s+([A-Za-z0-9 .'-]+?)\s+(?:sent|paid)\s+(?:you|to you)""", Pattern.CASE_INSENSITIVE),
+        Pattern.compile("""(?:#fampaid|you\s+got)\s+([A-Za-z0-9.'-]+(?:\s+[A-Za-z0-9.'-]+)*)\s+(?:sent|paid)\s+(?:you|to\s+you)""", Pattern.CASE_INSENSITIVE),
         // "Rahul Sharma sent you ₹500" or "Rahul Sharma paid you ₹500"
-        Pattern.compile("""^([A-Za-z0-9 .'-]+?)\s+(?:sent|paid)\s+you""", Pattern.CASE_INSENSITIVE),
-        Pattern.compile("""\b([A-Za-z0-9 .'-]+?)\s+(?:sent|paid)\s+(?:you|to you)""", Pattern.CASE_INSENSITIVE),
+        Pattern.compile("""^([A-Za-z0-9.'-]+(?:\s+[A-Za-z0-9.'-]+)*)\s+(?:sent|paid)\s+you""", Pattern.CASE_INSENSITIVE),
+        Pattern.compile("""\b([A-Za-z0-9.'-]+(?:\s+[A-Za-z0-9.'-]+)*)\s+(?:sent|paid)\s+(?:you|to\s+you)""", Pattern.CASE_INSENSITIVE),
         // "You received ₹500 from Rahul Sharma" or "Payment of ₹300 received from Suresh"
-        Pattern.compile("""(?:received|credited|payment of).*?from\s+([A-Za-z0-9 .'-]+?)(?:\s+(?:via|on|ref|using|with|to|in|at)\b|[.,!]|$)""", Pattern.CASE_INSENSITIVE),
+        Pattern.compile("""(?:received|credited|payment\s+of).*?from\s+([A-Za-z0-9.'-]+(?:\s+[A-Za-z0-9.'-]+)*)(?:\s+(?:via|on|ref|using|with|to|in|at)\b|[.,!]|$)""", Pattern.CASE_INSENSITIVE),
         // General "from Rahul Sharma via UPI" or "from Rahul Sharma"
-        Pattern.compile("""\bfrom\s+([A-Za-z0-9 .'-]+?)(?:\s+(?:via|on|ref|using|with|to|in|at)\b|[.,!]|$)""", Pattern.CASE_INSENSITIVE)
+        Pattern.compile("""\bfrom\s+([A-Za-z0-9.'-]+(?:\s+[A-Za-z0-9.'-]+)*)(?:\s+(?:via|on|ref|using|with|to|in|at)\b|[.,!]|$)""", Pattern.CASE_INSENSITIVE)
     )
 
     // Patterns for Outbound / Debit payments
@@ -285,6 +285,9 @@ object NotificationParser {
     }
 
     private fun extractCreditCounterparty(title: String, text: String, lower: String): String {
+        val boundedText = if (text.length > 300) text.take(300) else text
+        val boundedTitle = if (title.length > 150) title.take(150) else title
+
         // Check for cashback / rewards first
         if (lower.contains("cashback") || lower.contains("you won") || lower.contains("reward")) {
             return "Cashback & Rewards"
@@ -292,7 +295,7 @@ object NotificationParser {
 
         // Try sender regexes on text then title
         for (pattern in SENDER_PATTERNS) {
-            val matcher = pattern.matcher(text)
+            val matcher = pattern.matcher(boundedText)
             if (matcher.find()) {
                 val candidate = matcher.group(1)?.trim()
                 if (!candidate.isNullOrBlank() && isValidName(candidate)) {
@@ -302,7 +305,7 @@ object NotificationParser {
         }
 
         for (pattern in SENDER_PATTERNS) {
-            val matcher = pattern.matcher(title)
+            val matcher = pattern.matcher(boundedTitle)
             if (matcher.find()) {
                 val candidate = matcher.group(1)?.trim()
                 if (!candidate.isNullOrBlank() && isValidName(candidate)) {

@@ -31,11 +31,12 @@ import androidx.compose.material3.ExperimentalMaterial3Api
 import androidx.compose.material3.Icon
 import androidx.compose.material3.IconButton
 import androidx.compose.material3.MaterialTheme
-import androidx.compose.material3.ModalBottomSheet
-import androidx.compose.material3.OutlinedButton
 import androidx.compose.material3.Surface
 import androidx.compose.material3.Text
 import androidx.compose.material3.rememberModalBottomSheetState
+import com.omkarnub.kanri.ui.common.GlassLevel
+import com.omkarnub.kanri.ui.common.KanriGlassCard
+import com.omkarnub.kanri.ui.common.KanriModalBottomSheet
 import androidx.compose.runtime.Composable
 import androidx.compose.runtime.LaunchedEffect
 import androidx.compose.runtime.getValue
@@ -66,10 +67,9 @@ fun DiagnosticsSheet(
         healthStatus = HealthCheckHelper.checkHealth(context)
     }
 
-    ModalBottomSheet(
+    KanriModalBottomSheet(
         onDismissRequest = onDismiss,
         sheetState = sheetState,
-        containerColor = MaterialTheme.colorScheme.surface,
         dragHandle = null
     ) {
         Column(
@@ -140,20 +140,10 @@ fun DiagnosticsSheet(
             val allOk = healthyCount == totalCount
             val isLightMode = MaterialTheme.colorScheme.background == com.omkarnub.kanri.ui.theme.CreamSplashBackground
 
-            Card(
+            KanriGlassCard(
                 modifier = Modifier.fillMaxWidth(),
                 shape = RoundedCornerShape(16.dp),
-                colors = CardDefaults.cardColors(
-                    containerColor = if (isLightMode) {
-                        if (allOk) Color(0xFFEDFBF5) else Color(0xFFFDF6E2)
-                    } else {
-                        if (allOk) Color(0xFF0E231F) else Color(0xFF261912)
-                    }
-                ),
-                border = BorderStroke(
-                    1.dp,
-                    if (allOk) Color(0xFF06D6A0).copy(alpha = 0.4f) else Color(0xFFFFD166).copy(alpha = 0.4f)
-                )
+                level = GlassLevel.Blur
             ) {
                 Row(
                     modifier = Modifier
@@ -194,14 +184,10 @@ fun DiagnosticsSheet(
                 contentPadding = PaddingValues(bottom = 16.dp)
             ) {
                 items(healthStatus.items, key = { it.id }) { item ->
-                    Card(
+                    KanriGlassCard(
                         modifier = Modifier.fillMaxWidth(),
                         shape = RoundedCornerShape(14.dp),
-                        colors = CardDefaults.cardColors(containerColor = MaterialTheme.colorScheme.surfaceVariant),
-                        border = BorderStroke(
-                            1.dp,
-                            if (item.isHealthy) MaterialTheme.colorScheme.outlineVariant else Color(0xFFE63946).copy(alpha = 0.4f)
-                        )
+                        level = GlassLevel.Flat
                     ) {
                         Column(
                             modifier = Modifier

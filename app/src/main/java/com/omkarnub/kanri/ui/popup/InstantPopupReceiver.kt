@@ -32,6 +32,17 @@ class InstantPopupReceiver : BroadcastReceiver() {
 
         when (intent.action) {
             ACTION_CATEGORIZE -> {
+                val secPrefs = com.omkarnub.kanri.data.security.SecurityPreferences.getInstance(context)
+                if (secPrefs.isLockEnabled && com.omkarnub.kanri.data.security.SecurityManager.isAppLocked.value) {
+                    Log.w("InstantPopupReceiver", "App lock is active. Direct notification categorization rejected.")
+                    val launchIntent = (context.packageManager.getLaunchIntentForPackage(context.packageName)
+                        ?: Intent(context, com.omkarnub.kanri.MainActivity::class.java)).apply {
+                        flags = Intent.FLAG_ACTIVITY_NEW_TASK or Intent.FLAG_ACTIVITY_CLEAR_TOP
+                    }
+                    context.startActivity(launchIntent)
+                    return
+                }
+
                 val txId = intent.getLongExtra(EXTRA_TX_ID, -1L)
                 val categoryId = intent.getLongExtra(EXTRA_CATEGORY_ID, -1L)
                 val counterparty = intent.getStringExtra(EXTRA_COUNTERPARTY) ?: ""

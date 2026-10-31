@@ -1,4 +1,4 @@
-package com.omkarnub.kanri.data.parser
+﻿package com.omkarnub.kanri.data.parser
 
 data class BankSmsPattern(
     val bankCode: String,
@@ -410,6 +410,17 @@ object BankSmsPatterns {
             trimmed = trimmed.substring(0, lastDash)
         }
         return trimmed
+    }
+
+    fun isTrustedSender(sender: String?): Boolean {
+        if (sender.isNullOrBlank()) return false
+        val clean = sender.trim()
+        val digitsOnly = clean.filter { it.isDigit() }
+        // If it looks like a personal mobile phone number (10+ digits, starts with + or all digits)
+        if (digitsOnly.length >= 10 && (clean.startsWith("+") || digitsOnly.length == clean.length)) {
+            return false
+        }
+        return isAllowlistedSender(clean) || findBySender(clean) != null
     }
 
     fun isAllowlistedSender(sender: String?): Boolean {

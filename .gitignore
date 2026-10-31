@@ -17,3 +17,6 @@ build_apks/
 .agents/
 .kotlin/
 app/release/
+
+skills-lock.json
+*.png

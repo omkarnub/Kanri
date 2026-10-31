@@ -1,4 +1,4 @@
-package com.omkarnub.kanri.ui.backup
+﻿package com.omkarnub.kanri.ui.backup
 
 import android.net.Uri
 import android.widget.Toast
@@ -29,7 +29,6 @@ import androidx.compose.material.icons.filled.CloudDownload
 import androidx.compose.material.icons.filled.CloudUpload
 import androidx.compose.material.icons.filled.Error
 import androidx.compose.material.icons.filled.Warning
-import androidx.compose.material3.AlertDialog
 import androidx.compose.material3.Button
 import androidx.compose.material3.ButtonDefaults
 import androidx.compose.material3.Card
@@ -38,11 +37,14 @@ import androidx.compose.material3.CircularProgressIndicator
 import androidx.compose.material3.ExperimentalMaterial3Api
 import androidx.compose.material3.Icon
 import androidx.compose.material3.MaterialTheme
-import androidx.compose.material3.ModalBottomSheet
-import androidx.compose.material3.OutlinedButton
 import androidx.compose.material3.Text
 import androidx.compose.material3.TextButton
 import androidx.compose.material3.rememberModalBottomSheetState
+import com.omkarnub.kanri.ui.common.GlassLevel
+import com.omkarnub.kanri.ui.common.KanriGlassButton
+import com.omkarnub.kanri.ui.common.KanriGlassCard
+import com.omkarnub.kanri.ui.common.KanriGlassDialog
+import com.omkarnub.kanri.ui.common.KanriModalBottomSheet
 import androidx.compose.runtime.Composable
 import androidx.compose.runtime.getValue
 import androidx.compose.runtime.mutableStateOf
@@ -118,10 +120,9 @@ fun BackupRestoreSheet(
         }
     }
 
-    ModalBottomSheet(
+    KanriModalBottomSheet(
         onDismissRequest = onDismiss,
         sheetState = sheetState,
-        containerColor = MaterialTheme.colorScheme.surface,
         dragHandle = {
             Box(
                 modifier = Modifier
@@ -177,11 +178,10 @@ fun BackupRestoreSheet(
 
             // Success Notification Card
             if (successStats != null) {
-                Card(
+                KanriGlassCard(
                     modifier = Modifier.fillMaxWidth(),
                     shape = RoundedCornerShape(14.dp),
-                    colors = CardDefaults.cardColors(containerColor = MaterialTheme.colorScheme.surfaceVariant),
-                    border = BorderStroke(1.dp, MaterialTheme.colorScheme.outlineVariant)
+                    level = GlassLevel.Blur
                 ) {
                     Row(
                         modifier = Modifier
@@ -216,11 +216,10 @@ fun BackupRestoreSheet(
 
             // Error Message
             if (errorMessage != null) {
-                Card(
+                KanriGlassCard(
                     modifier = Modifier.fillMaxWidth(),
                     shape = RoundedCornerShape(14.dp),
-                    colors = CardDefaults.cardColors(containerColor = MaterialTheme.colorScheme.errorContainer),
-                    border = BorderStroke(1.dp, MaterialTheme.colorScheme.error)
+                    level = GlassLevel.Blur
                 ) {
                     Row(
                         modifier = Modifier
@@ -245,11 +244,10 @@ fun BackupRestoreSheet(
             }
 
             // Card 1: Export Full Backup
-            Card(
+            KanriGlassCard(
                 modifier = Modifier.fillMaxWidth(),
                 shape = RoundedCornerShape(16.dp),
-                colors = CardDefaults.cardColors(containerColor = MaterialTheme.colorScheme.surfaceVariant),
-                border = BorderStroke(1.dp, MaterialTheme.colorScheme.outlineVariant)
+                level = GlassLevel.Blur
             ) {
                 Column(
                     modifier = Modifier
@@ -282,7 +280,26 @@ fun BackupRestoreSheet(
                         lineHeight = 18.sp
                     )
 
-                    Button(
+                    KanriGlassButton(
+                        text = if (isProcessing) "Exporting..." else "Export Full Backup File",
+                        level = GlassLevel.Strong,
+                        shape = RoundedCornerShape(12.dp),
+                        icon = {
+                            if (isProcessing) {
+                                CircularProgressIndicator(
+                                    modifier = Modifier.size(18.dp),
+                                    color = MaterialTheme.colorScheme.onSurface,
+                                    strokeWidth = 2.dp
+                                )
+                            } else {
+                                Icon(
+                                    imageVector = Icons.Default.CloudUpload,
+                                    contentDescription = null,
+                                    modifier = Modifier.size(18.dp)
+                                )
+                            }
+                        },
+                        enabled = !isProcessing,
                         onClick = {
                             haptics.primaryAction()
                             SecurityManager.isTemporarilyExempt = true
@@ -290,45 +307,18 @@ fun BackupRestoreSheet(
                             val defaultName = "kanri_backup_$timeStamp.json"
                             exportLauncher.launch(defaultName)
                         },
-                        enabled = !isProcessing,
                         modifier = Modifier
                             .fillMaxWidth()
-                            .height(48.dp),
-                        shape = RoundedCornerShape(12.dp),
-                        colors = ButtonDefaults.buttonColors(
-                            containerColor = MaterialTheme.colorScheme.primary,
-                            contentColor = MaterialTheme.colorScheme.onPrimary
-                        )
-                    ) {
-                        if (isProcessing) {
-                            CircularProgressIndicator(
-                                modifier = Modifier.size(20.dp),
-                                color = MaterialTheme.colorScheme.onPrimary,
-                                strokeWidth = 2.dp
-                            )
-                        } else {
-                            Icon(
-                                imageVector = Icons.Default.CloudUpload,
-                                contentDescription = null,
-                                modifier = Modifier.size(18.dp)
-                            )
-                            Spacer(modifier = Modifier.width(8.dp))
-                            Text(
-                                text = "Export Full Backup File",
-                                fontSize = 14.sp,
-                                fontWeight = FontWeight.Bold
-                            )
-                        }
-                    }
+                            .height(48.dp)
+                    )
                 }
             }
 
             // Card 2: Restore from Backup
-            Card(
+            KanriGlassCard(
                 modifier = Modifier.fillMaxWidth(),
                 shape = RoundedCornerShape(16.dp),
-                colors = CardDefaults.cardColors(containerColor = MaterialTheme.colorScheme.surfaceVariant),
-                border = BorderStroke(1.dp, MaterialTheme.colorScheme.outlineVariant)
+                level = GlassLevel.Blur
             ) {
                 Column(
                     modifier = Modifier
@@ -361,33 +351,28 @@ fun BackupRestoreSheet(
                         lineHeight = 18.sp
                     )
 
-                    OutlinedButton(
+                    KanriGlassButton(
+                        text = "Select Backup File to Restore",
+                        level = GlassLevel.Flat,
+                        shape = RoundedCornerShape(12.dp),
+                        icon = {
+                            Icon(
+                                imageVector = Icons.Default.CloudDownload,
+                                contentDescription = null,
+                                tint = MaterialTheme.colorScheme.onSurface,
+                                modifier = Modifier.size(18.dp)
+                            )
+                        },
+                        enabled = !isProcessing,
                         onClick = {
                             haptics.click()
                             SecurityManager.isTemporarilyExempt = true
                             restoreLauncher.launch(arrayOf("application/json", "*/*"))
                         },
-                        enabled = !isProcessing,
                         modifier = Modifier
                             .fillMaxWidth()
-                            .height(48.dp),
-                        shape = RoundedCornerShape(12.dp),
-                        border = BorderStroke(1.dp, MaterialTheme.colorScheme.outlineVariant)
-                    ) {
-                        Icon(
-                            imageVector = Icons.Default.CloudDownload,
-                            contentDescription = null,
-                            tint = MaterialTheme.colorScheme.primary,
-                            modifier = Modifier.size(18.dp)
-                        )
-                        Spacer(modifier = Modifier.width(8.dp))
-                        Text(
-                            text = "Select Backup File to Restore",
-                            color = MaterialTheme.colorScheme.primary,
-                            fontSize = 14.sp,
-                            fontWeight = FontWeight.Bold
-                        )
-                    }
+                            .height(48.dp)
+                    )
                 }
             }
         }
@@ -395,69 +380,88 @@ fun BackupRestoreSheet(
 
     // Confirmation Dialog before restoring
     if (pendingRestoreUri != null) {
-        AlertDialog(
-            onDismissRequest = { pendingRestoreUri = null },
-            icon = {
-                Icon(
-                    imageVector = Icons.Default.Warning,
-                    contentDescription = null,
-                    tint = MaterialTheme.colorScheme.primary,
-                    modifier = Modifier.size(32.dp)
-                )
-            },
-            title = {
-                Text(
-                    text = "Restore Database?",
-                    color = MaterialTheme.colorScheme.onSurface,
-                    fontWeight = FontWeight.Bold
-                )
-            },
-            text = {
-                Text(
-                    text = "Restoring will replace current transaction records, budgets, and debt tracking with data from the backup file. This cannot be undone.",
-                    color = MaterialTheme.colorScheme.onSurfaceVariant,
-                    fontSize = 14.sp
-                )
-            },
-            confirmButton = {
-                Button(
-                    onClick = {
-                        haptics.warning()
-                        val uri = pendingRestoreUri
-                        pendingRestoreUri = null
-                        if (uri != null) {
-                            isProcessing = true
-                            errorMessage = null
-                            successStats = null
-                            coroutineScope.launch {
-                                val result = repository.restoreBackupFromUri(uri, clearExisting = true)
-                                isProcessing = false
-                                result.onSuccess { stats ->
-                                    successStats = stats
-                                    successOperation = "Restore"
-                                    haptics.success()
-                                    Toast.makeText(context, "Database restored successfully!", Toast.LENGTH_LONG).show()
-                                }.onFailure { error ->
-                                    haptics.warning()
-                                    errorMessage = "Restore failed: ${error.localizedMessage}"
+        KanriGlassDialog(
+            onDismissRequest = { pendingRestoreUri = null }
+        ) {
+            KanriGlassCard(
+                shape = RoundedCornerShape(24.dp),
+                level = GlassLevel.Strong,
+                modifier = Modifier.fillMaxWidth()
+            ) {
+                Column(
+                    modifier = Modifier
+                        .fillMaxWidth()
+                        .padding(24.dp)
+                ) {
+                    Row(
+                        verticalAlignment = Alignment.CenterVertically,
+                        horizontalArrangement = Arrangement.spacedBy(12.dp)
+                    ) {
+                        Icon(
+                            imageVector = Icons.Default.Warning,
+                            contentDescription = null,
+                            tint = MaterialTheme.colorScheme.onSurface,
+                            modifier = Modifier.size(28.dp)
+                        )
+                        Text(
+                            text = "Restore Database?",
+                            color = MaterialTheme.colorScheme.onSurface,
+                            fontWeight = FontWeight.Bold,
+                            fontSize = 18.sp
+                        )
+                    }
+
+                    Spacer(modifier = Modifier.height(12.dp))
+
+                    Text(
+                        text = "Restoring will replace current transaction records, budgets, and debt tracking with data from the backup file. This cannot be undone.",
+                        color = MaterialTheme.colorScheme.onSurfaceVariant,
+                        fontSize = 13.sp,
+                        lineHeight = 18.sp
+                    )
+
+                    Spacer(modifier = Modifier.height(20.dp))
+
+                    Row(
+                        modifier = Modifier.fillMaxWidth(),
+                        horizontalArrangement = Arrangement.End,
+                        verticalAlignment = Alignment.CenterVertically
+                    ) {
+                        TextButton(onClick = { pendingRestoreUri = null }) {
+                            Text("Cancel", color = MaterialTheme.colorScheme.onSurfaceVariant)
+                        }
+                        Spacer(modifier = Modifier.width(8.dp))
+                        KanriGlassButton(
+                            text = "Confirm Restore",
+                            level = GlassLevel.Strong,
+                            shape = RoundedCornerShape(12.dp),
+                            onClick = {
+                                haptics.warning()
+                                val uri = pendingRestoreUri
+                                pendingRestoreUri = null
+                                if (uri != null) {
+                                    isProcessing = true
+                                    errorMessage = null
+                                    successStats = null
+                                    coroutineScope.launch {
+                                        val result = repository.restoreBackupFromUri(uri, clearExisting = true)
+                                        isProcessing = false
+                                        result.onSuccess { stats ->
+                                            successStats = stats
+                                            successOperation = "Restore"
+                                            haptics.success()
+                                            Toast.makeText(context, "Database restored successfully!", Toast.LENGTH_LONG).show()
+                                        }.onFailure { error ->
+                                            haptics.warning()
+                                            errorMessage = "Restore failed: ${error.localizedMessage}"
+                                        }
+                                    }
                                 }
                             }
-                        }
-                    },
-                    colors = ButtonDefaults.buttonColors(
-                        containerColor = MaterialTheme.colorScheme.primary,
-                        contentColor = MaterialTheme.colorScheme.onPrimary
-                    )
-                ) {
-                    Text("Confirm Restore", fontWeight = FontWeight.Bold)
+                        )
+                    }
                 }
-            },
-            dismissButton = {
-                TextButton(onClick = { pendingRestoreUri = null }) {
-                    Text("Cancel", color = MaterialTheme.colorScheme.onSurfaceVariant)
-                }
-            },
-            containerColor = MaterialTheme.colorScheme.surface
-        )
+            }
+        }
     }
 }

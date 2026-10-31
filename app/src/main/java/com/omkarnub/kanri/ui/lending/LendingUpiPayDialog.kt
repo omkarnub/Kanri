@@ -1,9 +1,10 @@
-package com.omkarnub.kanri.ui.lending
+﻿package com.omkarnub.kanri.ui.lending
 
 import android.content.Context
 import androidx.activity.compose.BackHandler
 import androidx.compose.foundation.BorderStroke
 import androidx.compose.foundation.background
+import androidx.compose.foundation.border
 import androidx.compose.foundation.clickable
 import androidx.compose.foundation.interaction.MutableInteractionSource
 import androidx.compose.foundation.layout.Arrangement
@@ -49,6 +50,12 @@ import androidx.compose.ui.text.input.ImeAction
 import androidx.compose.ui.text.input.KeyboardType
 import androidx.compose.ui.unit.dp
 import androidx.compose.ui.unit.sp
+import androidx.compose.foundation.shape.CircleShape
+import androidx.compose.ui.window.DialogProperties
+import com.omkarnub.kanri.ui.common.GlassLevel
+import com.omkarnub.kanri.ui.common.KanriGlassButton
+import com.omkarnub.kanri.ui.common.KanriGlassCard
+import com.omkarnub.kanri.ui.common.KanriGlassDialog
 import com.omkarnub.kanri.ui.common.LocalHazeState
 import com.omkarnub.kanri.ui.common.rememberKanriGlassTheme
 import com.omkarnub.kanri.util.CurrencyUtils
@@ -75,98 +82,72 @@ fun LendingUpiPayDialog(
     var note by remember { mutableStateOf("Repaying $personName") }
     var hasLaunchedUpi by remember { mutableStateOf(false) }
 
-    Box(
-        modifier = Modifier.fillMaxSize(),
-        contentAlignment = Alignment.Center
+    KanriGlassDialog(
+        onDismissRequest = onDismiss,
+        properties = DialogProperties(usePlatformDefaultWidth = false)
     ) {
-        // Scrim
-        Box(
+        KanriGlassCard(
             modifier = Modifier
-                .fillMaxSize()
-                .background(Color.Black.copy(alpha = 0.5f))
-                .clickable(
-                    interactionSource = remember { MutableInteractionSource() },
-                    indication = null,
-                    onClick = onDismiss
-                )
-        )
-
-        // Frosted Glass Card
-        Box(
-            modifier = Modifier
-                .fillMaxWidth()
+                .fillMaxWidth(0.92f)
                 .imePadding()
-                .padding(horizontal = 20.dp),
-            contentAlignment = Alignment.Center
+                .padding(vertical = 24.dp),
+            shape = RoundedCornerShape(24.dp),
+            level = GlassLevel.Strong,
+            hazeState = hazeState
         ) {
-            Surface(
+            Column(
                 modifier = Modifier
                     .fillMaxWidth()
-                    .shadow(
-                        elevation = glassTheme.shadowElevation + 8.dp,
-                        shape = RoundedCornerShape(24.dp),
-                        spotColor = glassTheme.shadowColor,
-                        ambientColor = glassTheme.shadowColor.copy(alpha = 0.6f)
-                    )
-                    .clip(RoundedCornerShape(24.dp))
-                    .then(
-                        if (hazeState != null) {
-                            Modifier.hazeChild(
-                                state = hazeState,
-                                style = glassTheme.popupHazeStyle
-                            ) {
-                                canDrawArea = { true }
-                            }
-                        } else {
-                            Modifier.background(glassTheme.fallbackBackgroundColor)
-                        }
-                    ),
-                color = Color.Transparent,
-                border = glassTheme.glassBorder
+                    .padding(20.dp),
+                horizontalAlignment = Alignment.CenterHorizontally
             ) {
-                Column(
-                    modifier = Modifier
-                        .fillMaxWidth()
-                        .padding(20.dp),
-                    horizontalAlignment = Alignment.CenterHorizontally
+                // Header
+                Row(
+                    modifier = Modifier.fillMaxWidth(),
+                    horizontalArrangement = Arrangement.SpaceBetween,
+                    verticalAlignment = Alignment.CenterVertically
                 ) {
-                    // Header
-                    Row(
-                        modifier = Modifier.fillMaxWidth(),
-                        horizontalArrangement = Arrangement.SpaceBetween,
-                        verticalAlignment = Alignment.CenterVertically
+                    Column {
+                        Text(
+                            text = "Pay via UPI",
+                            style = MaterialTheme.typography.titleLarge.copy(
+                                fontWeight = FontWeight.Bold,
+                                fontSize = 20.sp
+                            ),
+                            color = MaterialTheme.colorScheme.onSurface
+                        )
+                        Text(
+                            text = "Settle up with $personName",
+                            style = MaterialTheme.typography.bodySmall.copy(fontSize = 12.sp),
+                            color = MaterialTheme.colorScheme.onSurfaceVariant
+                        )
+                    }
+                    KanriGlassCard(
+                        modifier = Modifier.size(32.dp),
+                        shape = CircleShape,
+                        level = GlassLevel.Flat,
+                        onClick = onDismiss
                     ) {
-                        Column {
-                            Text(
-                                text = "Pay via UPI",
-                                style = MaterialTheme.typography.titleLarge.copy(
-                                    fontWeight = FontWeight.Bold,
-                                    fontSize = 20.sp
-                                ),
-                                color = MaterialTheme.colorScheme.onSurface
-                            )
-                            Text(
-                                text = "Settle up with $personName",
-                                style = MaterialTheme.typography.bodySmall.copy(fontSize = 12.sp),
-                                color = MaterialTheme.colorScheme.onSurfaceVariant
-                            )
-                        }
-                        IconButton(onClick = onDismiss) {
+                        Box(
+                            modifier = Modifier.fillMaxSize(),
+                            contentAlignment = Alignment.Center
+                        ) {
                             Icon(
                                 imageVector = Icons.Default.Close,
                                 contentDescription = "Close",
-                                tint = MaterialTheme.colorScheme.onSurfaceVariant
+                                tint = MaterialTheme.colorScheme.onSurfaceVariant,
+                                modifier = Modifier.size(16.dp)
                             )
                         }
                     }
+                }
 
                     Spacer(modifier = Modifier.height(16.dp))
 
                     // Amount Display
-                    Surface(
+                    KanriGlassCard(
                         shape = RoundedCornerShape(16.dp),
-                        color = MaterialTheme.colorScheme.onSurface.copy(alpha = 0.05f),
-                        border = BorderStroke(1.dp, MaterialTheme.colorScheme.onSurface.copy(alpha = 0.1f)),
+                        level = GlassLevel.Flat,
                         modifier = Modifier.fillMaxWidth()
                     ) {
                         Column(
@@ -237,7 +218,8 @@ fun LendingUpiPayDialog(
                     Spacer(modifier = Modifier.height(20.dp))
 
                     // Launch UPI Button
-                    Button(
+                    KanriGlassButton(
+                        text = "Open UPI App (GPay / PhonePe / Paytm)",
                         onClick = {
                             val launched = LendingUpiHelper.launchUpiPayment(
                                 context = context,
@@ -254,28 +236,21 @@ fun LendingUpiPayDialog(
                             .fillMaxWidth()
                             .height(50.dp),
                         shape = RoundedCornerShape(14.dp),
-                        colors = ButtonDefaults.buttonColors(
-                            containerColor = MaterialTheme.colorScheme.onSurface,
-                            contentColor = MaterialTheme.colorScheme.surface
-                        )
-                    ) {
-                        Icon(
-                            imageVector = Icons.Default.Payments,
-                            contentDescription = null,
-                            modifier = Modifier.size(18.dp)
-                        )
-                        Spacer(modifier = Modifier.size(8.dp))
-                        Text(
-                            text = "Open UPI App (GPay / PhonePe / Paytm)",
-                            fontWeight = FontWeight.Bold,
-                            fontSize = 13.sp
-                        )
-                    }
+                        level = GlassLevel.Strong,
+                        icon = {
+                            Icon(
+                                imageVector = Icons.Default.Payments,
+                                contentDescription = null,
+                                modifier = Modifier.size(18.dp)
+                            )
+                        }
+                    )
 
                     // If user launched UPI, offer 1-tap "Mark as Repaid in Kanri"
                     if (hasLaunchedUpi) {
                         Spacer(modifier = Modifier.height(12.dp))
-                        Button(
+                        KanriGlassButton(
+                            text = "✓ Payment Completed? Mark as Repaid",
                             onClick = {
                                 onMarkAsRepaid()
                                 onDismiss()
@@ -284,20 +259,11 @@ fun LendingUpiPayDialog(
                                 .fillMaxWidth()
                                 .height(48.dp),
                             shape = RoundedCornerShape(14.dp),
-                            colors = ButtonDefaults.buttonColors(
-                                containerColor = Color(0xFF30A46C),
-                                contentColor = Color.White
-                            )
-                        ) {
-                            Text(
-                                text = "✓ Payment Completed? Mark as Repaid",
-                                fontWeight = FontWeight.Bold,
-                                fontSize = 13.sp
-                            )
-                        }
+                            level = GlassLevel.Strong
+                        )
                     }
                 }
             }
         }
     }
-}
+

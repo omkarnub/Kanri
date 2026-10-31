@@ -1,4 +1,4 @@
-package com.omkarnub.kanri.ui.lending
+﻿package com.omkarnub.kanri.ui.lending
 
 import androidx.compose.runtime.Composable
 import androidx.compose.runtime.CompositionLocalProvider
@@ -103,78 +103,69 @@ fun LendingTransactionBridgeDialog(
         val initialPersonName = existingEntry?.lending?.personName ?: matchedPerson
         val initialNotes = existingEntry?.lending?.notes ?: (targetTransaction.transaction.notes ?: targetTransaction.transaction.counterparty)
 
-        Dialog(
-            onDismissRequest = onDismiss,
-            properties = DialogProperties(
-                usePlatformDefaultWidth = false
-            )
-        ) {
-            CompositionLocalProvider(LocalHazeState provides null) {
-                LendingEntryDialog(
-                    initialType = initialType,
-                    initialPersonName = initialPersonName,
-                    initialAmount = initialAmount,
-                    initialDate = initialDate,
-                    initialDueDate = initialDueDate,
-                    initialNotes = initialNotes,
-                    existingEntry = existingEntry,
-                    recentPeople = recentPeople,
-                    allPeople = allPeople,
-                    onDismiss = onDismiss,
-                    onSave = { personName, amount, type, date, dueDate, notes, _ ->
-                        coroutineScope.launch {
-                            val catId = LendingTransactionSyncHelper.getOrCreateLendBorrowCategoryId(db.categoryDao())
-                            val recordId = if (existingEntry != null) {
-                                val updatedRecord = existingEntry!!.lending.copy(
-                                    personName = personName,
-                                    amount = amount,
-                                    type = type,
-                                    date = date,
-                                    dueDate = dueDate,
-                                    notes = notes,
-                                    linkedTransactionId = targetTransaction.transaction.id
-                                )
-                                db.lendingDao().update(updatedRecord)
-                                existingEntry!!.lending.id
-                            } else {
-                                db.lendingDao().insert(
-                                    LendingEntity(
-                                        personName = personName,
-                                        amount = amount,
-                                        type = type,
-                                        date = date,
-                                        dueDate = dueDate,
-                                        notes = notes,
-                                        linkedTransactionId = targetTransaction.transaction.id
-                                    )
-                                )
-                            }
-
-                            // Update the linked transaction with correct financial type and reference
-                            val txType = if (type.equals("LENT", ignoreCase = true)) "DEBIT" else "CREDIT"
-                            val refNo = "${LendingTransactionSyncHelper.REF_PREFIX_RECORD}$recordId"
-                            val updatedTx = targetTransaction.transaction.copy(
-                                type = txType,
+        LendingEntryDialog(
+            initialType = initialType,
+            initialPersonName = initialPersonName,
+            initialAmount = initialAmount,
+            initialDate = initialDate,
+            initialDueDate = initialDueDate,
+            initialNotes = initialNotes,
+            existingEntry = existingEntry,
+            recentPeople = recentPeople,
+            allPeople = allPeople,
+            onDismiss = onDismiss,
+            onSave = { personName, amount, type, date, dueDate, notes, _ ->
+                coroutineScope.launch {
+                    val catId = LendingTransactionSyncHelper.getOrCreateLendBorrowCategoryId(db.categoryDao())
+                    val recordId = if (existingEntry != null) {
+                        val updatedRecord = existingEntry!!.lending.copy(
+                            personName = personName,
+                            amount = amount,
+                            type = type,
+                            date = date,
+                            dueDate = dueDate,
+                            notes = notes,
+                            linkedTransactionId = targetTransaction.transaction.id
+                        )
+                        db.lendingDao().update(updatedRecord)
+                        existingEntry!!.lending.id
+                    } else {
+                        db.lendingDao().insert(
+                            LendingEntity(
+                                personName = personName,
                                 amount = amount,
-                                categoryId = catId,
-                                refNo = refNo,
-                                counterparty = personName,
-                                displayName = personName,
-                                timestamp = date,
+                                type = type,
+                                date = date,
+                                dueDate = dueDate,
                                 notes = notes,
-                                needsReview = false
+                                linkedTransactionId = targetTransaction.transaction.id
                             )
-                            db.transactionDao().insert(updatedTx)
-
-                            // Synchronize with helper for widgets and downstream logic
-                            LendingTransactionSyncHelper.syncLendingRecord(recordId, db, context)
-
-                            onRecordSaved?.invoke(recordId)
-                            onDismiss()
-                        }
+                        )
                     }
-                )
+
+                    // Update the linked transaction with correct financial type and reference
+                    val txType = if (type.equals("LENT", ignoreCase = true)) "DEBIT" else "CREDIT"
+                    val refNo = "${LendingTransactionSyncHelper.REF_PREFIX_RECORD}$recordId"
+                    val updatedTx = targetTransaction.transaction.copy(
+                        type = txType,
+                        amount = amount,
+                        categoryId = catId,
+                        refNo = refNo,
+                        counterparty = personName,
+                        displayName = personName,
+                        timestamp = date,
+                        notes = notes,
+                        needsReview = false
+                    )
+                    db.transactionDao().insert(updatedTx)
+
+                    // Synchronize with helper for widgets and downstream logic
+                    LendingTransactionSyncHelper.syncLendingRecord(recordId, db, context)
+
+                    onRecordSaved?.invoke(recordId)
+                    onDismiss()
+                }
             }
-        }
+        )
     }
 }

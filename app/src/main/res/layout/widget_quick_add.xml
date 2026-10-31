@@ -15,6 +15,7 @@
         android:layout_width="match_parent"
         android:layout_height="wrap_content"
         android:fontFamily="@font/google_sans_bold"
+        android:textStyle="bold"
         android:letterSpacing="0.08"
         android:text="QUICK RECORD"
         android:textColor="#FFFFFF"
@@ -52,6 +53,7 @@
                 android:layout_height="wrap_content"
                 android:layout_marginStart="6dp"
                 android:fontFamily="@font/google_sans_bold"
+                android:textStyle="bold"
                 android:text="Expense"
                 android:textColor="#FFFFFF"
                 android:textSize="12.5sp" />
@@ -81,6 +83,7 @@
                 android:layout_height="wrap_content"
                 android:layout_marginStart="6dp"
                 android:fontFamily="@font/google_sans_bold"
+                android:textStyle="bold"
                 android:text="Income"
                 android:textColor="#FFFFFF"
                 android:textSize="12.5sp" />

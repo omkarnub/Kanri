@@ -1,4 +1,4 @@
-package com.omkarnub.kanri
+﻿package com.omkarnub.kanri
 
 import android.os.Bundle
 import androidx.activity.compose.setContent
@@ -29,18 +29,38 @@ open class MainActivity : FragmentActivity() {
 
     override fun onCreate(savedInstanceState: Bundle?) {
         val themePrefs = ThemePreferences.getInstance(applicationContext)
-        if (themePrefs.themeMode == ThemeMode.LIGHT) {
+        val isLight = when (themePrefs.themeMode) {
+            ThemeMode.LIGHT -> true
+            ThemeMode.DARK, ThemeMode.AMOLED, ThemeMode.GLASS -> false
+            ThemeMode.SYSTEM -> {
+                val nightModeFlags = resources.configuration.uiMode and android.content.res.Configuration.UI_MODE_NIGHT_MASK
+                nightModeFlags != android.content.res.Configuration.UI_MODE_NIGHT_YES
+            }
+        }
+        if (isLight) {
             setTheme(R.style.Theme_Kanri_Light)
         } else {
             setTheme(R.style.Theme_Kanri)
         }
+        val backdropColor = when (themePrefs.themeMode) {
+            ThemeMode.GLASS -> android.graphics.Color.parseColor("#0B0B0E")
+            ThemeMode.AMOLED -> android.graphics.Color.BLACK
+            ThemeMode.DARK -> android.graphics.Color.parseColor("#121212")
+            ThemeMode.LIGHT -> android.graphics.Color.parseColor("#FEFAEC")
+            ThemeMode.SYSTEM -> if (isLight) android.graphics.Color.parseColor("#FEFAEC") else android.graphics.Color.parseColor("#121212")
+        }
+        window.setBackgroundDrawable(android.graphics.drawable.ColorDrawable(backdropColor))
         super.onCreate(savedInstanceState)
         enableEdgeToEdge()
 
         SecurityManager.init(applicationContext)
         ExportScheduler.init(applicationContext)
         com.omkarnub.kanri.data.lending.LendingReminderScheduler.init(applicationContext)
+        com.omkarnub.kanri.util.AppShortcutManager.publishShortcuts(applicationContext)
         com.omkarnub.kanri.widget.KanriWidgetActions.handleIntent(intent)
+        if (intent.getBooleanExtra(com.omkarnub.kanri.data.update.AppUpdateManager.EXTRA_SHOW_UPDATE_POPUP, false)) {
+            com.omkarnub.kanri.data.update.AppUpdateManager.getInstance(applicationContext).triggerUpdatePopup()
+        }
 
         val onboardingPrefs = com.omkarnub.kanri.ui.onboarding.OnboardingPreferences.getInstance(applicationContext)
         if (onboardingPrefs.hasCompletedOnboarding && !com.omkarnub.kanri.util.SmsPermissionHelper.hasSmsPermissions(this)) {
@@ -57,37 +77,39 @@ open class MainActivity : FragmentActivity() {
 
         setContent {
             KanriTheme {
-                val onboardingPrefs = remember { OnboardingPreferences.getInstance(applicationContext) }
-                val hasCompletedOnboarding by onboardingPrefs.hasCompletedFlow.collectAsState()
-                var isTestingLock by remember { mutableStateOf(false) }
+                com.omkarnub.kanri.ui.common.KanriBackdropHost {
+                    val onboardingPrefs = remember { OnboardingPreferences.getInstance(applicationContext) }
+                    val hasCompletedOnboarding by onboardingPrefs.hasCompletedFlow.collectAsState()
+                    var isTestingLock by remember { mutableStateOf(false) }
 
-                val isLocked by SecurityManager.isAppLocked.collectAsState()
+                    val isLocked by SecurityManager.isAppLocked.collectAsState()
 
-                when {
-                    !hasCompletedOnboarding -> {
-                        OnboardingScreen(
-                            onComplete = {
-                                onboardingPrefs.hasCompletedOnboarding = true
-                            }
-                        )
-                    }
-                    isLocked || isTestingLock -> {
-                        LockScreen(
-                            onUnlocked = {
-                                SecurityManager.unlock()
-                                isTestingLock = false
-                            }
-                        )
-                    }
-                    else -> {
-                        MainNavigationScreen(
-                            onReplayOnboarding = {
-                                onboardingPrefs.hasCompletedOnboarding = false
-                            },
-                            onTestLockScreen = {
-                                isTestingLock = true
-                            }
-                        )
+                    when {
+                        !hasCompletedOnboarding -> {
+                            OnboardingScreen(
+                                onComplete = {
+                                    onboardingPrefs.hasCompletedOnboarding = true
+                                }
+                            )
+                        }
+                        isLocked || isTestingLock -> {
+                            LockScreen(
+                                onUnlocked = {
+                                    SecurityManager.unlock()
+                                    isTestingLock = false
+                                }
+                            )
+                        }
+                        else -> {
+                            MainNavigationScreen(
+                                onReplayOnboarding = {
+                                    onboardingPrefs.hasCompletedOnboarding = false
+                                },
+                                onTestLockScreen = {
+                                    isTestingLock = true
+                                }
+                            )
+                        }
                     }
                 }
             }
@@ -103,6 +125,9 @@ open class MainActivity : FragmentActivity() {
         super.onNewIntent(intent)
         setIntent(intent)
         com.omkarnub.kanri.widget.KanriWidgetActions.handleIntent(intent)
+        if (intent.getBooleanExtra(com.omkarnub.kanri.data.update.AppUpdateManager.EXTRA_SHOW_UPDATE_POPUP, false)) {
+            com.omkarnub.kanri.data.update.AppUpdateManager.getInstance(applicationContext).triggerUpdatePopup()
+        }
     }
 
     override fun onStop() {

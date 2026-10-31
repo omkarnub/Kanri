@@ -25,6 +25,8 @@ import androidx.compose.material3.Text
 import androidx.compose.runtime.Composable
 import androidx.compose.runtime.getValue
 import androidx.compose.ui.Alignment
+import com.omkarnub.kanri.ui.common.GlassLevel
+import com.omkarnub.kanri.ui.common.KanriGlassCard
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.draw.clip
 import androidx.compose.ui.graphics.Color
@@ -68,11 +70,11 @@ fun LendingTimelineView(
                 }
 
                 val bgColor by animateColorAsState(
-                    targetValue = if (isSelected) MaterialTheme.colorScheme.onSurface else MaterialTheme.colorScheme.surfaceVariant.copy(alpha = 0.4f),
+                    targetValue = if (isSelected) MaterialTheme.colorScheme.inverseSurface else MaterialTheme.colorScheme.surfaceVariant.copy(alpha = 0.4f),
                     label = "chipBg"
                 )
                 val textColor by animateColorAsState(
-                    targetValue = if (isSelected) MaterialTheme.colorScheme.surface else MaterialTheme.colorScheme.onSurfaceVariant,
+                    targetValue = if (isSelected) MaterialTheme.colorScheme.inverseOnSurface else MaterialTheme.colorScheme.onSurfaceVariant,
                     label = "chipText"
                 )
 
@@ -126,13 +128,10 @@ fun LendingTimelineView(
                             modifier = Modifier.padding(horizontal = 4.dp)
                         )
 
-                        Card(
+                        KanriGlassCard(
                             modifier = Modifier.fillMaxWidth(),
                             shape = RoundedCornerShape(20.dp),
-                            colors = CardDefaults.cardColors(
-                                containerColor = MaterialTheme.colorScheme.surfaceVariant.copy(alpha = 0.35f)
-                            ),
-                            border = BorderStroke(1.dp, MaterialTheme.colorScheme.outlineVariant)
+                            level = GlassLevel.Blur
                         ) {
                             Column(
                                 modifier = Modifier.padding(horizontal = 14.dp, vertical = 6.dp),

@@ -1,4 +1,4 @@
-package com.omkarnub.kanri.data.cloud
+﻿package com.omkarnub.kanri.data.cloud
 
 import android.content.Context
 import android.content.SharedPreferences
@@ -115,6 +115,7 @@ class CloudBackupPreferences(private val context: Context) {
         private const val KEY_DRIVE_FILE_ID = "key_drive_file_id"
         private const val KEY_CUSTOM_PASSPHRASE = "key_custom_passphrase"
         private const val KEY_AUTO_BACKUP_ENABLED = "key_auto_backup_enabled"
+        private const val KEY_DEVICE_RECOVERY_KEY = "key_device_recovery_key"
 
         @Volatile
         private var INSTANCE: CloudBackupPreferences? = null
@@ -225,6 +226,17 @@ class CloudBackupPreferences(private val context: Context) {
         set(value) {
             securePrefs.edit().putString(KEY_CUSTOM_PASSPHRASE, value).apply()
         }
+
+    fun getOrCreateDeviceSecret(): String {
+        var secret = securePrefs.getString(KEY_DEVICE_RECOVERY_KEY, null)
+        if (secret.isNullOrBlank()) {
+            val bytes = ByteArray(32)
+            java.security.SecureRandom().nextBytes(bytes)
+            secret = bytes.joinToString("") { "%02x".format(it) }
+            securePrefs.edit().putString(KEY_DEVICE_RECOVERY_KEY, secret).apply()
+        }
+        return secret
+    }
 
     var isAutoBackupEnabled: Boolean
         get() = prefs.getBoolean(KEY_AUTO_BACKUP_ENABLED, true)

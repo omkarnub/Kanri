@@ -32,6 +32,9 @@ import androidx.compose.ui.graphics.Color
 import androidx.compose.ui.text.font.FontWeight
 import androidx.compose.ui.unit.dp
 import androidx.compose.ui.unit.sp
+import com.omkarnub.kanri.ui.common.GlassLevel
+import com.omkarnub.kanri.ui.common.KanriGlassCard
+import com.omkarnub.kanri.ui.common.KanriGlassPill
 import com.omkarnub.kanri.ui.home.formatCurrency
 
 @Composable
@@ -58,11 +61,10 @@ fun DailySpendBarChart(
         }
     }
 
-    Card(
+    KanriGlassCard(
         modifier = modifier.fillMaxWidth(),
         shape = RoundedCornerShape(24.dp),
-        colors = CardDefaults.cardColors(containerColor = MaterialTheme.colorScheme.surface),
-        border = androidx.compose.foundation.BorderStroke(1.dp, MaterialTheme.colorScheme.outlineVariant)
+        level = GlassLevel.Blur
     ) {
         Column(
             modifier = Modifier
@@ -84,17 +86,15 @@ fun DailySpendBarChart(
                     )
                 )
 
-                Box(
-                    modifier = Modifier
-                        .clip(RoundedCornerShape(8.dp))
-                        .background(MaterialTheme.colorScheme.surfaceVariant)
-                        .padding(horizontal = 8.dp, vertical = 3.dp)
+                KanriGlassPill(
+                    level = GlassLevel.Flat
                 ) {
                     Text(
                         text = "Avg: ₹%,.0f/day".format(avgDailySpend),
                         color = MaterialTheme.colorScheme.primary,
                         fontSize = 11.sp,
-                        fontWeight = FontWeight.SemiBold
+                        fontWeight = FontWeight.SemiBold,
+                        modifier = Modifier.padding(horizontal = 8.dp, vertical = 3.dp)
                     )
                 }
             }

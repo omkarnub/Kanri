@@ -1,4 +1,4 @@
-package com.omkarnub.kanri.widget
+﻿package com.omkarnub.kanri.widget
 
 import android.app.PendingIntent
 import android.content.Context
@@ -6,6 +6,11 @@ import android.content.Intent
 import com.omkarnub.kanri.MainActivityDarkDark
 import kotlinx.coroutines.flow.MutableStateFlow
 import kotlinx.coroutines.flow.asStateFlow
+
+data class WidgetActionEvent(
+    val action: String,
+    val id: Long = System.nanoTime()
+)
 
 /**
  * Handles deep linking and action routing from Android phone home screen widgets.
@@ -17,9 +22,13 @@ object KanriWidgetActions {
     const val ACTION_OPEN_GOALS = "com.omkarnub.kanri.action.OPEN_GOALS"
     const val ACTION_OPEN_LENDING = "com.omkarnub.kanri.action.OPEN_LENDING"
     const val ACTION_OPEN_HOME = "com.omkarnub.kanri.action.OPEN_HOME"
+    const val ACTION_OPEN_WALLET = "com.omkarnub.kanri.action.OPEN_WALLET"
 
     const val EXTRA_AMOUNT = "extra_split_amount"
     const val EXTRA_DESCRIPTION = "extra_split_description"
+
+    private val _pendingActionEvent = MutableStateFlow<WidgetActionEvent?>(null)
+    val pendingActionEvent = _pendingActionEvent.asStateFlow()
 
     private val _pendingAction = MutableStateFlow<String?>(null)
     val pendingAction = _pendingAction.asStateFlow()
@@ -33,6 +42,7 @@ object KanriWidgetActions {
         pendingSplitAmount = amount
         pendingSplitDescription = description
         _pendingAction.value = ACTION_SPLIT_BILL
+        _pendingActionEvent.value = WidgetActionEvent(ACTION_SPLIT_BILL)
     }
 
     fun handleAction(action: String?, amount: Double? = null, description: String? = null) {
@@ -42,6 +52,7 @@ object KanriWidgetActions {
                 if (description != null) pendingSplitDescription = description
             }
             _pendingAction.value = action
+            _pendingActionEvent.value = WidgetActionEvent(action)
         }
     }
 
@@ -53,9 +64,10 @@ object KanriWidgetActions {
     }
 
     fun consumeAction(): String? {
-        val current = _pendingAction.value
+        val action = _pendingAction.value
         _pendingAction.value = null
-        return current
+        _pendingActionEvent.value = null
+        return action
     }
 
     fun consumeSplitPayload(): Pair<Double?, String?> {

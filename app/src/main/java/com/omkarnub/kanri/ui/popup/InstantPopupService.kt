@@ -1,4 +1,4 @@
-package com.omkarnub.kanri.ui.popup
+﻿package com.omkarnub.kanri.ui.popup
 
 import android.app.Notification
 import android.app.NotificationChannel
@@ -37,6 +37,7 @@ import com.omkarnub.kanri.data.db.CounterpartyCategoryMapEntity
 import com.omkarnub.kanri.data.db.KanriDatabase
 import com.omkarnub.kanri.data.db.LendingEntity
 import com.omkarnub.kanri.ui.home.formatCurrency
+import android.util.Log
 import com.omkarnub.kanri.ui.theme.KanriTheme
 import com.omkarnub.kanri.util.BrandFormatter
 import com.omkarnub.kanri.widget.KanriWidgetsUpdater
@@ -56,6 +57,7 @@ class InstantPopupService : Service() {
     private var lifecycleOwner: OverlayLifecycleOwner? = null
 
     companion object {
+        private const val TAG = "InstantPopupService"
         const val EXTRA_TRANSACTION_ID = "extra_tx_id"
         const val EXTRA_AMOUNT = "extra_amount"
         const val EXTRA_IS_DEBIT = "extra_is_debit"
@@ -79,7 +81,7 @@ class InstantPopupService : Service() {
         val notification: Notification = NotificationCompat.Builder(this, CHANNEL_ID)
             .setContentTitle("Kanri Overlay")
             .setContentText("Detecting payment...")
-            .setSmallIcon(R.mipmap.ic_launcher)
+            .setSmallIcon(R.drawable.ic_notification)
             .setPriority(NotificationCompat.PRIORITY_MIN)
             .setSilent(true)
             .build()
@@ -107,6 +109,13 @@ class InstantPopupService : Service() {
         val counterparty = intent.getStringExtra(EXTRA_COUNTERPARTY) ?: ""
         val bank = intent.getStringExtra(EXTRA_BANK)
         val sourceType = intent.getStringExtra(EXTRA_SOURCE_TYPE) ?: "UPI"
+
+        val secPrefs = com.omkarnub.kanri.data.security.SecurityPreferences.getInstance(this)
+        if (secPrefs.isLockEnabled && com.omkarnub.kanri.data.security.SecurityManager.isAppLocked.value) {
+            Log.w(TAG, "App is locked. Suppressing payment overlay.")
+            stopSelf()
+            return START_NOT_STICKY
+        }
 
         if (txId <= 0L && amount <= 0.0) {
             stopSelf()

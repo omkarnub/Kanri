@@ -46,14 +46,21 @@ import androidx.compose.ui.draw.scale
 import androidx.compose.ui.focus.FocusRequester
 import androidx.compose.ui.focus.focusRequester
 import androidx.compose.ui.graphics.Color
+import androidx.compose.ui.text.TextRange
 import androidx.compose.ui.text.font.FontWeight
 import androidx.compose.ui.text.input.ImeAction
 import androidx.compose.ui.text.input.KeyboardType
+import androidx.compose.ui.text.input.TextFieldValue
 import androidx.compose.ui.text.style.TextAlign
 import androidx.compose.ui.unit.dp
 import androidx.compose.ui.unit.sp
 import androidx.compose.ui.window.Dialog
 import androidx.compose.ui.window.DialogProperties
+import com.omkarnub.kanri.ui.common.GlassLevel
+import com.omkarnub.kanri.ui.common.KanriGlassCard
+import com.omkarnub.kanri.ui.common.KanriGlassDialog
+import com.omkarnub.kanri.ui.common.kanriPrimaryButtonColors
+import com.omkarnub.kanri.ui.theme.LocalKanriGlass
 import com.omkarnub.kanri.data.wallet.AtmWithdrawalMode
 import com.omkarnub.kanri.data.wallet.WalletBalanceCalculator
 import com.omkarnub.kanri.ui.common.AnimatedNumberText
@@ -100,6 +107,10 @@ fun WalletSetupDialog(
     var customText by remember(currentTab, currentAmount) {
         mutableStateOf(currentAmount.toLong().toString())
     }
+    var customTextFieldValue by remember(currentTab, currentAmount) {
+        val str = currentAmount.toLong().toString()
+        mutableStateOf(TextFieldValue(text = str, selection = TextRange(str.length)))
+    }
 
     val focusRequester = remember { FocusRequester() }
 
@@ -116,149 +127,179 @@ fun WalletSetupDialog(
         } else {
             onlineAmount = safe
         }
-        customText = safe.toLong().toString()
+        val str = safe.toLong().toString()
+        customText = str
+        customTextFieldValue = TextFieldValue(text = str, selection = TextRange(str.length))
     }
 
-    Dialog(
+    val tokens = LocalKanriGlass.current
+
+    KanriGlassDialog(
         onDismissRequest = onDismiss,
-        properties = DialogProperties(usePlatformDefaultWidth = false)
+        modifier = Modifier.fillMaxWidth(0.92f),
+        shape = RoundedCornerShape(28.dp)
     ) {
-        Surface(
-            shape = RoundedCornerShape(28.dp),
-            color = glassTheme.fallbackBackgroundColor.copy(alpha = 0.93f),
-            border = glassTheme.glassBorder,
-            shadowElevation = glassTheme.shadowElevation + 8.dp,
+        Column(
             modifier = Modifier
-                .fillMaxWidth(0.92f)
-                .clip(RoundedCornerShape(28.dp))
+                .fillMaxWidth()
+                .padding(horizontal = 22.dp, vertical = 24.dp),
+            horizontalAlignment = Alignment.CenterHorizontally
         ) {
-            Column(
+            // Header
+            Text(
+                text = if (isInitialSetup) {
+                    if (currentTab == WalletSetupTab.CASH) "Set opening Cash balance" else "Set opening Online balance"
+                } else {
+                    if (currentTab == WalletSetupTab.CASH) "Edit Cash Balance" else "Edit Bank Balance"
+                },
+                style = MaterialTheme.typography.titleLarge.copy(
+                    fontWeight = FontWeight.Bold,
+                    color = MaterialTheme.colorScheme.onSurface
+                ),
+                textAlign = TextAlign.Center
+            )
+
+            Text(
+                text = if (currentTab == WalletSetupTab.CASH) {
+                    "How much physical cash do you have in hand right now? Kanri tracks paper cash spent live."
+                } else {
+                    "How much money do you currently have in bank accounts & UPI? Kanri deducts this from SMS."
+                },
+                color = MaterialTheme.colorScheme.onSurfaceVariant,
+                fontSize = 12.5.sp,
+                textAlign = TextAlign.Center,
+                lineHeight = 17.sp,
+                modifier = Modifier.padding(top = 6.dp, bottom = 16.dp)
+            )
+
+            // -------------------------------------------------------------
+            // Segmented Step Tabs: Cash in Hand vs Online / Bank
+            // -------------------------------------------------------------
+            Row(
                 modifier = Modifier
                     .fillMaxWidth()
-                    .padding(horizontal = 22.dp, vertical = 24.dp),
-                horizontalAlignment = Alignment.CenterHorizontally
-            ) {
-                // Header
-                Text(
-                    text = if (isInitialSetup) {
-                        if (currentTab == WalletSetupTab.CASH) "Set opening Cash balance" else "Set opening Online balance"
-                    } else {
-                        if (currentTab == WalletSetupTab.CASH) "Edit Cash Balance" else "Edit Bank Balance"
-                    },
-                    style = MaterialTheme.typography.titleLarge.copy(
-                        fontWeight = FontWeight.Bold,
-                        color = MaterialTheme.colorScheme.onSurface
-                    ),
-                    textAlign = TextAlign.Center
-                )
-
-                Text(
-                    text = if (currentTab == WalletSetupTab.CASH) {
-                        "How much physical cash do you have in hand right now? Kanri tracks paper cash spent live."
-                    } else {
-                        "How much money do you currently have in bank accounts & UPI? Kanri deducts this from SMS."
-                    },
-                    color = MaterialTheme.colorScheme.onSurfaceVariant,
-                    fontSize = 12.5.sp,
-                    textAlign = TextAlign.Center,
-                    lineHeight = 17.sp,
-                    modifier = Modifier.padding(top = 6.dp, bottom = 16.dp)
-                )
-
-                // -------------------------------------------------------------
-                // Segmented Step Tabs: Cash in Hand vs Online / Bank
-                // -------------------------------------------------------------
-                Row(
-                    modifier = Modifier
-                        .fillMaxWidth()
-                        .clip(RoundedCornerShape(14.dp))
-                        .background(MaterialTheme.colorScheme.surfaceVariant.copy(alpha = 0.35f))
-                        .padding(4.dp),
-                    horizontalArrangement = Arrangement.spacedBy(4.dp)
-                ) {
-                    // Cash Tab
-                    Surface(
-                        modifier = Modifier
-                            .weight(1f)
-                            .clip(RoundedCornerShape(10.dp))
-                            .clickable {
-                                haptics.tick()
-                                currentTab = WalletSetupTab.CASH
-                                customText = cashAmount.toLong().toString()
-                                isManualInput = false
-                            },
-                        color = if (currentTab == WalletSetupTab.CASH)
-                            MaterialTheme.colorScheme.surface
-                        else Color.Transparent,
-                        shape = RoundedCornerShape(10.dp),
-                        border = if (currentTab == WalletSetupTab.CASH)
-                            BorderStroke(0.5.dp, MaterialTheme.colorScheme.outlineVariant)
-                        else null
-                    ) {
-                        Column(
-                            modifier = Modifier.padding(vertical = 8.dp, horizontal = 6.dp),
-                            horizontalAlignment = Alignment.CenterHorizontally
-                        ) {
-                            Text(
-                                text = "💵 1. Cash in Hand",
-                                style = MaterialTheme.typography.labelSmall.copy(
-                                    fontWeight = if (currentTab == WalletSetupTab.CASH) FontWeight.Bold else FontWeight.Medium
-                                ),
-                                color = if (currentTab == WalletSetupTab.CASH)
-                                    MaterialTheme.colorScheme.onSurface
-                                else MaterialTheme.colorScheme.onSurfaceVariant
-                            )
-                            Spacer(modifier = Modifier.height(2.dp))
-                            Text(
-                                text = CurrencyUtils.formatCurrency(cashAmount, includeDecimals = false),
-                                style = MaterialTheme.typography.bodySmall.copy(fontWeight = FontWeight.Bold),
-                                color = if (currentTab == WalletSetupTab.CASH)
-                                    MaterialTheme.colorScheme.onSurface
-                                else MaterialTheme.colorScheme.onSurfaceVariant
-                            )
+                    .clip(RoundedCornerShape(14.dp))
+                    .background(
+                        if (tokens != null) {
+                            if (tokens.isDark) Color.White.copy(alpha = 0.08f) else Color.Black.copy(alpha = 0.05f)
+                        } else {
+                            MaterialTheme.colorScheme.surfaceVariant.copy(alpha = 0.35f)
                         }
-                    }
+                    )
+                    .padding(4.dp),
+                horizontalArrangement = Arrangement.spacedBy(4.dp)
+            ) {
+                // Cash Tab
+                val isCashSelected = currentTab == WalletSetupTab.CASH
+                val cashTabBg = if (isCashSelected) {
+                    if (tokens != null) {
+                        if (tokens.isDark) Color.White.copy(alpha = 0.18f) else Color.White.copy(alpha = 0.88f)
+                    } else MaterialTheme.colorScheme.surface
+                } else Color.Transparent
+                val cashTabBorder = if (isCashSelected) {
+                    if (tokens != null) {
+                        BorderStroke(1.dp, if (tokens.isDark) Color.White.copy(alpha = 0.32f) else Color.Black.copy(alpha = 0.15f))
+                    } else BorderStroke(0.5.dp, MaterialTheme.colorScheme.outlineVariant)
+                } else null
 
-                    // Online Tab
-                    Surface(
-                        modifier = Modifier
-                            .weight(1f)
-                            .clip(RoundedCornerShape(10.dp))
-                            .clickable {
-                                haptics.tick()
-                                currentTab = WalletSetupTab.ONLINE
-                                customText = onlineAmount.toLong().toString()
-                                isManualInput = false
-                            },
-                        color = if (currentTab == WalletSetupTab.ONLINE)
-                            MaterialTheme.colorScheme.surface
-                        else Color.Transparent,
-                        shape = RoundedCornerShape(10.dp),
-                        border = if (currentTab == WalletSetupTab.ONLINE)
-                            BorderStroke(0.5.dp, MaterialTheme.colorScheme.outlineVariant)
-                        else null
+                Surface(
+                    modifier = Modifier
+                        .weight(1f)
+                        .clip(RoundedCornerShape(10.dp))
+                        .clickable {
+                            haptics.tick()
+                            currentTab = WalletSetupTab.CASH
+                            val str = cashAmount.toLong().toString()
+                            customText = str
+                            customTextFieldValue = TextFieldValue(text = str, selection = TextRange(str.length))
+                            isManualInput = false
+                        },
+                    color = cashTabBg,
+                    shape = RoundedCornerShape(10.dp),
+                    border = cashTabBorder
+                ) {
+                    Column(
+                        modifier = Modifier.padding(vertical = 8.dp, horizontal = 6.dp),
+                        horizontalAlignment = Alignment.CenterHorizontally
                     ) {
-                        Column(
-                            modifier = Modifier.padding(vertical = 8.dp, horizontal = 6.dp),
-                            horizontalAlignment = Alignment.CenterHorizontally
-                        ) {
-                            Text(
-                                text = "🏦 2. Online / Bank",
-                                style = MaterialTheme.typography.labelSmall.copy(
-                                    fontWeight = if (currentTab == WalletSetupTab.ONLINE) FontWeight.Bold else FontWeight.Medium
-                                ),
-                                color = if (currentTab == WalletSetupTab.ONLINE)
-                                    MaterialTheme.colorScheme.onSurface
-                                else MaterialTheme.colorScheme.onSurfaceVariant
-                            )
-                            Spacer(modifier = Modifier.height(2.dp))
-                            Text(
-                                text = CurrencyUtils.formatCurrency(onlineAmount, includeDecimals = false),
-                                style = MaterialTheme.typography.bodySmall.copy(fontWeight = FontWeight.Bold),
-                                color = if (currentTab == WalletSetupTab.ONLINE)
-                                    MaterialTheme.colorScheme.onSurface
-                                else MaterialTheme.colorScheme.onSurfaceVariant
-                            )
+                        Text(
+                            text = "💵 1. Cash in Hand",
+                            style = MaterialTheme.typography.labelSmall.copy(
+                                fontWeight = if (isCashSelected) FontWeight.Bold else FontWeight.Medium
+                            ),
+                            color = if (isCashSelected) {
+                                if (tokens != null) tokens.textPrimary else MaterialTheme.colorScheme.onSurface
+                            } else {
+                                if (tokens != null) tokens.textSecondary else MaterialTheme.colorScheme.onSurfaceVariant
+                            }
+                        )
+                        Spacer(modifier = Modifier.height(2.dp))
+                        Text(
+                            text = CurrencyUtils.formatCurrency(cashAmount, includeDecimals = false),
+                            style = MaterialTheme.typography.bodySmall.copy(fontWeight = FontWeight.Bold),
+                            color = if (isCashSelected) {
+                                if (tokens != null) tokens.textPrimary else MaterialTheme.colorScheme.onSurface
+                            } else {
+                                if (tokens != null) tokens.textSecondary else MaterialTheme.colorScheme.onSurfaceVariant
+                            }
+                        )
+                    }
+                }
+
+                // Online Tab
+                val isOnlineSelected = currentTab == WalletSetupTab.ONLINE
+                val onlineTabBg = if (isOnlineSelected) {
+                    if (tokens != null) {
+                        if (tokens.isDark) Color.White.copy(alpha = 0.18f) else Color.White.copy(alpha = 0.88f)
+                    } else MaterialTheme.colorScheme.surface
+                } else Color.Transparent
+                val onlineTabBorder = if (isOnlineSelected) {
+                    if (tokens != null) {
+                        BorderStroke(1.dp, if (tokens.isDark) Color.White.copy(alpha = 0.32f) else Color.Black.copy(alpha = 0.15f))
+                    } else BorderStroke(0.5.dp, MaterialTheme.colorScheme.outlineVariant)
+                } else null
+
+                Surface(
+                    modifier = Modifier
+                        .weight(1f)
+                        .clip(RoundedCornerShape(10.dp))
+                        .clickable {
+                            haptics.tick()
+                            currentTab = WalletSetupTab.ONLINE
+                            val str = onlineAmount.toLong().toString()
+                            customText = str
+                            customTextFieldValue = TextFieldValue(text = str, selection = TextRange(str.length))
+                            isManualInput = false
+                        },
+                    color = onlineTabBg,
+                    shape = RoundedCornerShape(10.dp),
+                    border = onlineTabBorder
+                ) {
+                    Column(
+                        modifier = Modifier.padding(vertical = 8.dp, horizontal = 6.dp),
+                        horizontalAlignment = Alignment.CenterHorizontally
+                    ) {
+                        Text(
+                            text = "🏦 2. Online / Bank",
+                            style = MaterialTheme.typography.labelSmall.copy(
+                                fontWeight = if (isOnlineSelected) FontWeight.Bold else FontWeight.Medium
+                            ),
+                            color = if (isOnlineSelected) {
+                                if (tokens != null) tokens.textPrimary else MaterialTheme.colorScheme.onSurface
+                            } else {
+                                if (tokens != null) tokens.textSecondary else MaterialTheme.colorScheme.onSurfaceVariant
+                            }
+                        )
+                        Spacer(modifier = Modifier.height(2.dp))
+                        Text(
+                            text = CurrencyUtils.formatCurrency(onlineAmount, includeDecimals = false),
+                            style = MaterialTheme.typography.bodySmall.copy(fontWeight = FontWeight.Bold),
+                            color = if (isOnlineSelected) {
+                                if (tokens != null) tokens.textPrimary else MaterialTheme.colorScheme.onSurface
+                            } else {
+                                if (tokens != null) tokens.textSecondary else MaterialTheme.colorScheme.onSurfaceVariant
+                            }
+                        )
                         }
                     }
                 }
@@ -311,16 +352,17 @@ fun WalletSetupDialog(
                         ) {
                             if (isManualInput) {
                                 OutlinedTextField(
-                                    value = customText,
-                                    onValueChange = {
-                                        val filtered = it.filter { ch -> ch.isDigit() }
+                                    value = customTextFieldValue,
+                                    onValueChange = { newValue ->
+                                        val filtered = newValue.text.filter { ch -> ch.isDigit() }
+                                        customTextFieldValue = newValue.copy(text = filtered)
                                         customText = filtered
                                         val parsed = filtered.toDoubleOrNull()
                                         if (parsed != null && parsed >= 0) {
                                             if (currentTab == WalletSetupTab.CASH) cashAmount = parsed else onlineAmount = parsed
                                         }
                                     },
-                                    prefix = { Text("₹ ", fontWeight = FontWeight.Bold) },
+                                    prefix = { Text("${CurrencyUtils.getCurrencySymbol()} ", fontWeight = FontWeight.Bold) },
                                     singleLine = true,
                                     keyboardOptions = KeyboardOptions(
                                         keyboardType = KeyboardType.Number,
@@ -328,7 +370,7 @@ fun WalletSetupDialog(
                                     ),
                                     keyboardActions = KeyboardActions(
                                         onDone = {
-                                            val parsed = customText.toDoubleOrNull()
+                                            val parsed = customTextFieldValue.text.toDoubleOrNull()
                                             if (parsed != null && parsed >= 0) {
                                                 if (currentTab == WalletSetupTab.CASH) cashAmount = parsed else onlineAmount = parsed
                                             }
@@ -348,7 +390,9 @@ fun WalletSetupDialog(
                                     modifier = Modifier
                                         .clip(RoundedCornerShape(12.dp))
                                         .clickable {
-                                            customText = currentAmount.toLong().toString()
+                                            val str = currentAmount.toLong().toString()
+                                            customText = str
+                                            customTextFieldValue = TextFieldValue(text = str, selection = TextRange(str.length))
                                             isManualInput = true
                                         }
                                         .padding(horizontal = 4.dp, vertical = 2.dp),
@@ -446,7 +490,7 @@ fun WalletSetupDialog(
                                 contentAlignment = Alignment.Center
                             ) {
                                 Text(
-                                    text = "+₹%,d".format(inc.toInt()),
+                                    text = "+${CurrencyUtils.getCurrencySymbol()}%,d".format(inc.toInt()),
                                     color = MaterialTheme.colorScheme.onSurface,
                                     fontSize = 12.sp,
                                     fontWeight = FontWeight.SemiBold
@@ -532,10 +576,7 @@ fun WalletSetupDialog(
                                 customText = onlineAmount.toLong().toString()
                                 isManualInput = false
                             },
-                            colors = ButtonDefaults.buttonColors(
-                                containerColor = MaterialTheme.colorScheme.onSurface,
-                                contentColor = MaterialTheme.colorScheme.surface
-                            ),
+                            colors = kanriPrimaryButtonColors(),
                             shape = RoundedCornerShape(12.dp)
                         ) {
                             Text(
@@ -565,10 +606,7 @@ fun WalletSetupDialog(
                                 val roundedOnline = WalletBalanceCalculator.roundTo2Decimals(onlineAmount)
                                 onConfirm(roundedCash, roundedOnline, atmMode)
                             },
-                            colors = ButtonDefaults.buttonColors(
-                                containerColor = MaterialTheme.colorScheme.onSurface,
-                                contentColor = MaterialTheme.colorScheme.surface
-                            ),
+                            colors = kanriPrimaryButtonColors(),
                             shape = RoundedCornerShape(12.dp)
                         ) {
                             Text(
@@ -581,5 +619,4 @@ fun WalletSetupDialog(
                 }
             }
         }
-    }
 }

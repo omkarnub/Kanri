@@ -21,11 +21,11 @@ object AppIconManager {
     fun getTargetActivityClass(iconStyle: AppIconStyle, themeMode: ThemeMode): Class<out MainActivity> {
         return when (iconStyle) {
             AppIconStyle.DARK -> when (themeMode) {
-                ThemeMode.DARK, ThemeMode.AMOLED -> MainActivityDarkDark::class.java
+                ThemeMode.DARK, ThemeMode.AMOLED, ThemeMode.GLASS, ThemeMode.SYSTEM -> MainActivityDarkDark::class.java
                 ThemeMode.LIGHT -> MainActivityDarkLight::class.java
             }
             AppIconStyle.LIGHT -> when (themeMode) {
-                ThemeMode.DARK, ThemeMode.AMOLED -> MainActivityLightDark::class.java
+                ThemeMode.DARK, ThemeMode.AMOLED, ThemeMode.GLASS, ThemeMode.SYSTEM -> MainActivityLightDark::class.java
                 ThemeMode.LIGHT -> MainActivityLightLight::class.java
             }
         }
@@ -83,6 +83,9 @@ object AppIconManager {
                 }
             } catch (ignored: Exception) {}
         }
+
+        // Re-align dynamic shortcuts with the active launcher activity
+        com.omkarnub.kanri.util.AppShortcutManager.publishShortcuts(context)
     }
 
     fun getCurrentIconStyle(context: Context): AppIconStyle {

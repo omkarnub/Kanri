@@ -1,4 +1,4 @@
-package com.omkarnub.kanri.service
+﻿package com.omkarnub.kanri.service
 
 import android.app.PendingIntent
 import android.content.Intent
@@ -19,19 +19,22 @@ class QuickAddTileService : TileService() {
     override fun onStartListening() {
         super.onStartListening()
         val tile = qsTile ?: return
-        tile.state = Tile.STATE_INACTIVE
+        tile.state = Tile.STATE_ACTIVE
         tile.label = getString(R.string.quick_add_tile_label)
         if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.Q) {
             tile.subtitle = getString(R.string.quick_add_tile_subtitle)
         }
-        tile.icon = Icon.createWithResource(this, R.drawable.ic_widget_add)
+        tile.icon = Icon.createWithResource(this, R.drawable.ic_quick_add_tile)
         tile.updateTile()
     }
 
     override fun onClick() {
         super.onClick()
+        val themePrefs = com.omkarnub.kanri.ui.theme.ThemePreferences.getInstance(this)
+        val targetClass = com.omkarnub.kanri.ui.theme.AppIconManager.getTargetActivityClass(themePrefs.appIconStyle, themePrefs.themeMode)
+
         val launchIntent = (packageManager.getLaunchIntentForPackage(packageName)
-            ?: Intent(this, MainActivityDarkDark::class.java)).apply {
+            ?: Intent(this, targetClass)).apply {
             action = KanriWidgetActions.ACTION_ADD_EXPENSE
             flags = Intent.FLAG_ACTIVITY_NEW_TASK or Intent.FLAG_ACTIVITY_CLEAR_TOP or Intent.FLAG_ACTIVITY_SINGLE_TOP
         }

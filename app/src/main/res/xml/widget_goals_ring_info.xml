@@ -11,7 +11,7 @@
     android:updatePeriodMillis="1800000"
     android:initialLayout="@layout/widget_goals_ring"
     android:previewLayout="@layout/widget_goals_ring"
-    android:previewImage="@mipmap/ic_launcher"
+    android:previewImage="@drawable/preview_goal_ring"
     android:widgetCategory="home_screen"
     android:description="@string/widget_goals_ring_name"
     android:resizeMode="horizontal|vertical" />

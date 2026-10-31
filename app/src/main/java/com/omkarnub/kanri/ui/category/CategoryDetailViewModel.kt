@@ -1,4 +1,4 @@
-package com.omkarnub.kanri.ui.category
+﻿package com.omkarnub.kanri.ui.category
 
 import android.app.Application
 import androidx.compose.ui.graphics.Color

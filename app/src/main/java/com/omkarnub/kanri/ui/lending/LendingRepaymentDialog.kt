@@ -1,4 +1,4 @@
-package com.omkarnub.kanri.ui.lending
+﻿package com.omkarnub.kanri.ui.lending
 
 import androidx.activity.compose.BackHandler
 import androidx.compose.foundation.BorderStroke
@@ -15,6 +15,7 @@ import androidx.compose.foundation.layout.fillMaxSize
 import androidx.compose.foundation.layout.fillMaxWidth
 import androidx.compose.foundation.layout.height
 import androidx.compose.foundation.layout.imePadding
+import androidx.compose.foundation.layout.navigationBarsPadding
 import androidx.compose.foundation.layout.padding
 import androidx.compose.foundation.layout.size
 import androidx.compose.foundation.layout.width
@@ -54,12 +55,19 @@ import androidx.compose.ui.draw.shadow
 import androidx.compose.ui.focus.FocusRequester
 import androidx.compose.ui.focus.focusRequester
 import androidx.compose.ui.graphics.Color
+import androidx.compose.ui.text.TextRange
 import androidx.compose.ui.text.font.FontWeight
 import androidx.compose.ui.text.input.ImeAction
 import androidx.compose.ui.text.input.KeyboardType
+import androidx.compose.ui.text.input.TextFieldValue
 import androidx.compose.ui.unit.dp
 import androidx.compose.ui.unit.sp
+import androidx.compose.ui.window.DialogProperties
 import com.omkarnub.kanri.ui.common.AnimatedNumberText
+import com.omkarnub.kanri.ui.common.GlassLevel
+import com.omkarnub.kanri.ui.common.KanriGlassButton
+import com.omkarnub.kanri.ui.common.KanriGlassCard
+import com.omkarnub.kanri.ui.common.KanriGlassDialog
 import com.omkarnub.kanri.ui.common.LocalHazeState
 import com.omkarnub.kanri.ui.common.rememberKanriGlassTheme
 import com.omkarnub.kanri.util.CurrencyUtils
@@ -94,6 +102,10 @@ fun LendingRepaymentDialog(
     var amount by remember { mutableDoubleStateOf(currentOutstanding.coerceAtLeast(1.0)) }
     var isManualInput by remember { mutableStateOf(false) }
     var manualText by remember { mutableStateOf(amount.toLong().toString()) }
+    var manualTextFieldValue by remember {
+        val str = amount.toLong().toString()
+        mutableStateOf(TextFieldValue(text = str, selection = TextRange(str.length)))
+    }
     var note by remember { mutableStateOf("") }
     val focusRequester = remember { FocusRequester() }
 
@@ -106,70 +118,33 @@ fun LendingRepaymentDialog(
     LaunchedEffect(selectedDirection) {
         val newOutstanding = maxAllowed ?: if (selectedDirection == "LENT") toReceive else toPay
         amount = newOutstanding.coerceAtLeast(1.0)
-        manualText = amount.toLong().toString()
+        val str = amount.toLong().toString()
+        manualText = str
+        manualTextFieldValue = TextFieldValue(text = str, selection = TextRange(str.length))
     }
 
     val isValid = amount > 0.0 && amount <= (currentOutstanding + 0.0001)
 
-    Box(
-        modifier = Modifier.fillMaxSize(),
-        contentAlignment = Alignment.Center
-    ) {        // Backdrop Scrim
-        Box(
+    KanriGlassDialog(
+        onDismissRequest = onDismiss,
+        properties = DialogProperties(usePlatformDefaultWidth = false)
+    ) {
+        KanriGlassCard(
             modifier = Modifier
-                .fillMaxSize()
-                .background(Color.Black.copy(alpha = 0.65f))
-                .clickable(
-                    interactionSource = remember { MutableInteractionSource() },
-                    indication = null,
-                    onClick = onDismiss
-                )
-        )
-
-        // Frosted Dialog Card
-        Box(
-            modifier = Modifier
-                .fillMaxSize()
+                .fillMaxWidth(0.92f)
                 .imePadding()
-                .padding(horizontal = 18.dp, vertical = 24.dp),
-            contentAlignment = Alignment.Center
+                .padding(vertical = 24.dp),
+            shape = RoundedCornerShape(28.dp),
+            level = GlassLevel.Strong,
+            hazeState = hazeState
         ) {
-            Surface(
+            Column(
                 modifier = Modifier
                     .fillMaxWidth()
-                    .shadow(
-                        elevation = glassTheme.shadowElevation + 8.dp,
-                        shape = RoundedCornerShape(28.dp),
-                        spotColor = glassTheme.shadowColor,
-                        ambientColor = glassTheme.shadowColor.copy(alpha = 0.6f)
-                    )
-                    .clip(RoundedCornerShape(28.dp))
-                    .then(
-                        if (hazeState != null) {
-                            Modifier.hazeChild(
-                                state = hazeState,
-                                style = glassTheme.popupHazeStyle
-                            ) {
-                                canDrawArea = { true }
-                            }
-                        } else {
-                            Modifier
-                        }
-                    )
-                    .border(
-                        glassTheme.glassBorder,
-                        shape = RoundedCornerShape(28.dp)
-                    ),
-                shape = RoundedCornerShape(28.dp),
-                color = if (hazeState != null) Color.Transparent else glassTheme.fallbackBackgroundColor
+                    .verticalScroll(rememberScrollState())
+                    .padding(horizontal = 22.dp, vertical = 22.dp),
+                horizontalAlignment = Alignment.CenterHorizontally
             ) {
-                Column(
-                    modifier = Modifier
-                        .fillMaxWidth()
-                        .verticalScroll(rememberScrollState())
-                        .padding(horizontal = 22.dp, vertical = 22.dp),
-                    horizontalAlignment = Alignment.CenterHorizontally
-                ) {
                     // Header
                     Row(
                         modifier = Modifier.fillMaxWidth(),
@@ -191,15 +166,23 @@ fun LendingRepaymentDialog(
                             )
                         }
 
-                        IconButton(
-                            onClick = onDismiss,
-                            modifier = Modifier.size(32.dp)
+                        KanriGlassCard(
+                            modifier = Modifier.size(32.dp),
+                            shape = CircleShape,
+                            level = GlassLevel.Flat,
+                            onClick = onDismiss
                         ) {
-                            Icon(
-                                imageVector = Icons.Default.Close,
-                                contentDescription = "Close",
-                                tint = MaterialTheme.colorScheme.onSurfaceVariant
-                            )
+                            Box(
+                                modifier = Modifier.fillMaxSize(),
+                                contentAlignment = Alignment.Center
+                            ) {
+                                Icon(
+                                    imageVector = Icons.Default.Close,
+                                    contentDescription = "Close",
+                                    tint = MaterialTheme.colorScheme.onSurfaceVariant,
+                                    modifier = Modifier.size(16.dp)
+                                )
+                            }
                         }
                     }
 
@@ -270,10 +253,9 @@ fun LendingRepaymentDialog(
                     Spacer(modifier = Modifier.height(16.dp))
 
                     // Amount Stepper with [-] and [+]
-                    Surface(
+                    KanriGlassCard(
                         shape = RoundedCornerShape(20.dp),
-                        color = MaterialTheme.colorScheme.onSurface.copy(alpha = 0.05f),
-                        border = BorderStroke(0.8.dp, MaterialTheme.colorScheme.onSurface.copy(alpha = 0.14f)),
+                        level = GlassLevel.Flat,
                         modifier = Modifier.fillMaxWidth()
                     ) {
                         Row(
@@ -289,7 +271,9 @@ fun LendingRepaymentDialog(
                                     val step = if (amount <= 50) 10.0 else 50.0
                                     val next = (amount - step).coerceAtLeast(0.0)
                                     amount = next
-                                    manualText = next.toLong().toString()
+                                    val str = next.toLong().toString()
+                                    manualText = str
+                                    manualTextFieldValue = TextFieldValue(text = str, selection = TextRange(str.length))
                                     isManualInput = false
                                 },
                                 modifier = Modifier
@@ -314,16 +298,17 @@ fun LendingRepaymentDialog(
                             ) {
                                 if (isManualInput) {
                                     OutlinedTextField(
-                                        value = manualText,
-                                        onValueChange = {
-                                            val filtered = it.filter { ch -> ch.isDigit() }
+                                        value = manualTextFieldValue,
+                                        onValueChange = { newValue ->
+                                            val filtered = newValue.text.filter { ch -> ch.isDigit() }
+                                            manualTextFieldValue = newValue.copy(text = filtered)
                                             manualText = filtered
                                             val parsed = filtered.toDoubleOrNull()
                                             if (parsed != null) {
                                                 amount = parsed
                                             }
                                         },
-                                        prefix = { Text("₹ ", fontWeight = FontWeight.Bold) },
+                                        prefix = { Text("${CurrencyUtils.getCurrencySymbol()} ", fontWeight = FontWeight.Bold) },
                                         singleLine = true,
                                         keyboardOptions = KeyboardOptions(
                                             keyboardType = KeyboardType.Number,
@@ -331,7 +316,7 @@ fun LendingRepaymentDialog(
                                         ),
                                         keyboardActions = KeyboardActions(
                                             onDone = {
-                                                val parsed = manualText.toDoubleOrNull()
+                                                val parsed = manualTextFieldValue.text.toDoubleOrNull()
                                                 if (parsed != null) amount = parsed
                                                 isManualInput = false
                                             }
@@ -349,7 +334,9 @@ fun LendingRepaymentDialog(
                                         modifier = Modifier
                                             .clip(RoundedCornerShape(12.dp))
                                             .clickable {
-                                                manualText = amount.toLong().toString()
+                                                val str = amount.toLong().toString()
+                                                manualText = str
+                                                manualTextFieldValue = TextFieldValue(text = str, selection = TextRange(str.length))
                                                 isManualInput = true
                                             }
                                             .padding(horizontal = 4.dp, vertical = 2.dp),
@@ -392,7 +379,9 @@ fun LendingRepaymentDialog(
                                     val step = if (amount < 50) 10.0 else 50.0
                                     val next = min(currentOutstanding, amount + step)
                                     amount = next
-                                    manualText = next.toLong().toString()
+                                    val str = next.toLong().toString()
+                                    manualText = str
+                                    manualTextFieldValue = TextFieldValue(text = str, selection = TextRange(str.length))
                                     isManualInput = false
                                 },
                                 modifier = Modifier
@@ -425,7 +414,9 @@ fun LendingRepaymentDialog(
                                 .clip(RoundedCornerShape(12.dp))
                                 .clickable {
                                     amount = currentOutstanding
-                                    manualText = currentOutstanding.toLong().toString()
+                                    val str = currentOutstanding.toLong().toString()
+                                    manualText = str
+                                    manualTextFieldValue = TextFieldValue(text = str, selection = TextRange(str.length))
                                 }
                         ) {
                             Text(
@@ -459,7 +450,8 @@ fun LendingRepaymentDialog(
                     Spacer(modifier = Modifier.height(20.dp))
 
                     // Save Button
-                    Button(
+                    KanriGlassButton(
+                        text = "Record Repayment",
                         onClick = {
                             if (isValid) {
                                 onConfirm(selectedDirection, amount, System.currentTimeMillis(), note.ifBlank { null })
@@ -467,24 +459,17 @@ fun LendingRepaymentDialog(
                         },
                         enabled = isValid,
                         shape = RoundedCornerShape(16.dp),
-                        colors = ButtonDefaults.buttonColors(
-                            containerColor = MaterialTheme.colorScheme.onSurface,
-                            contentColor = MaterialTheme.colorScheme.surface
-                        ),
+                        level = GlassLevel.Strong,
                         modifier = Modifier
                             .fillMaxWidth()
                             .height(50.dp)
-                    ) {
-                        Text(
-                            text = "Record Repayment",
-                            style = MaterialTheme.typography.titleMedium.copy(fontWeight = FontWeight.Bold)
-                        )
-                    }
+                    )
 
                     // UPI Pay Button (when paying what you borrowed)
                     if (selectedDirection.equals("BORROWED", ignoreCase = true)) {
                         Spacer(modifier = Modifier.height(10.dp))
-                        androidx.compose.material3.OutlinedButton(
+                        KanriGlassButton(
+                            text = "Pay with UPI (GPay / PhonePe / Paytm)",
                             onClick = {
                                 LendingUpiHelper.launchUpiPayment(
                                     context = context,
@@ -494,24 +479,21 @@ fun LendingRepaymentDialog(
                                 )
                             },
                             shape = RoundedCornerShape(16.dp),
+                            level = GlassLevel.Strong,
                             modifier = Modifier
                                 .fillMaxWidth()
-                                .height(48.dp)
-                        ) {
-                            Icon(
-                                imageVector = Icons.Default.Payments,
-                                contentDescription = null,
-                                modifier = Modifier.size(18.dp)
-                            )
-                            Spacer(modifier = Modifier.width(8.dp))
-                            Text(
-                                text = "Pay with UPI (GPay / PhonePe / Paytm)",
-                                style = MaterialTheme.typography.bodyMedium.copy(fontWeight = FontWeight.SemiBold)
-                            )
-                        }
+                                .height(48.dp),
+                            icon = {
+                                Icon(
+                                    imageVector = Icons.Default.Payments,
+                                    contentDescription = null,
+                                    modifier = Modifier.size(18.dp)
+                                )
+                            }
+                        )
                     }
                 }
             }
         }
     }
-}
+

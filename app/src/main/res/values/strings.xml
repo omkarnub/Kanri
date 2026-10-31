@@ -10,10 +10,22 @@
     <string name="widget_split_bill_name">Split The Bill</string>
     <string name="widget_quick_add_name">Quick Add Expense/Income</string>
     <string name="widget_spent_today_name">Money Spent Today</string>
+    <string name="widget_wallet_balance_name">Cash &amp; Online Balances</string>
+    <string name="widget_wallet_balance_desc">Live cash wallet and online bank balance overview</string>
 
     <!-- Quick Settings Tile -->
     <string name="quick_add_tile_label">Quick Add</string>
     <string name="quick_add_tile_subtitle">Log Expense</string>
+
+    <!-- Launcher App Shortcuts -->
+    <string name="shortcut_add_expense_short">Add Expense</string>
+    <string name="shortcut_add_expense_long">Record a new expense</string>
+    <string name="shortcut_add_income_short">Add Income</string>
+    <string name="shortcut_add_income_long">Record new income</string>
+    <string name="shortcut_split_bill_short">Split Bill</string>
+    <string name="shortcut_split_bill_long">Split an expense with friends</string>
+    <string name="shortcut_lend_borrow_short">Lend &amp; Borrow</string>
+    <string name="shortcut_lend_borrow_long">Track debts and dues</string>
 
     <!-- Onboarding Hero Redesign Strings -->
     <string name="onboarding_headline">Know where every rupee went.</string>

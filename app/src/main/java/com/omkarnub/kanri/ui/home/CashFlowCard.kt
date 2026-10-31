@@ -8,8 +8,6 @@ import androidx.compose.foundation.layout.fillMaxWidth
 import androidx.compose.foundation.layout.height
 import androidx.compose.foundation.layout.padding
 import androidx.compose.foundation.shape.RoundedCornerShape
-import androidx.compose.material3.Card
-import androidx.compose.material3.CardDefaults
 import androidx.compose.material3.MaterialTheme
 import androidx.compose.material3.Text
 import androidx.compose.runtime.Composable
@@ -19,6 +17,9 @@ import androidx.compose.ui.graphics.Color
 import androidx.compose.ui.text.font.FontWeight
 import androidx.compose.ui.unit.dp
 import androidx.compose.ui.unit.sp
+import com.omkarnub.kanri.ui.common.GlassLevel
+import com.omkarnub.kanri.ui.common.KanriGlassCard
+import com.omkarnub.kanri.ui.theme.LocalKanriGlass
 import com.omkarnub.kanri.util.CurrencyUtils
 import kotlin.math.abs
 
@@ -30,18 +31,17 @@ fun CashFlowCard(
     monthName: String,
     modifier: Modifier = Modifier
 ) {
-    Card(
+    val tokens = LocalKanriGlass.current
+
+    KanriGlassCard(
         modifier = modifier.fillMaxWidth(),
-        shape = RoundedCornerShape(20.dp),
-        colors = CardDefaults.cardColors(
-            containerColor = MaterialTheme.colorScheme.surfaceVariant.copy(alpha = 0.35f)
-        ),
-        border = null
+        level = GlassLevel.Blur,
+        shape = RoundedCornerShape(24.dp)
     ) {
         Column(
             modifier = Modifier
                 .fillMaxWidth()
-                .padding(horizontal = 16.dp, vertical = 14.dp)
+                .padding(horizontal = 18.dp, vertical = 16.dp)
         ) {
             // Header: Section label & Month tag
             Row(
@@ -55,14 +55,14 @@ fun CashFlowCard(
                         fontWeight = FontWeight.Bold,
                         letterSpacing = 1.3.sp
                     ),
-                    color = MaterialTheme.colorScheme.onSurfaceVariant
+                    color = tokens?.textSecondary ?: MaterialTheme.colorScheme.onSurfaceVariant
                 )
                 Text(
                     text = monthName.ifEmpty { "This Month" },
                     style = MaterialTheme.typography.labelSmall.copy(
                         fontWeight = FontWeight.Medium
                     ),
-                    color = MaterialTheme.colorScheme.onSurfaceVariant.copy(alpha = 0.7f)
+                    color = (tokens?.textTertiary ?: MaterialTheme.colorScheme.onSurfaceVariant).copy(alpha = 0.7f)
                 )
             }
 
@@ -86,16 +86,21 @@ fun CashFlowCard(
                             fontWeight = FontWeight.SemiBold,
                             letterSpacing = 0.8.sp
                         ),
-                        color = MaterialTheme.colorScheme.onSurfaceVariant
+                        color = tokens?.textSecondary ?: MaterialTheme.colorScheme.onSurfaceVariant
                     )
                     Spacer(modifier = Modifier.height(2.dp))
+                    val incomeColor = if (monthIncome > 0) {
+                        tokens?.credit ?: Color(0xFF30A46C)
+                    } else {
+                        tokens?.textPrimary ?: MaterialTheme.colorScheme.onSurface
+                    }
                     com.omkarnub.kanri.ui.common.AnimatedNumberText(
                         text = "+${CurrencyUtils.formatCurrency(monthIncome)}",
                         style = MaterialTheme.typography.titleSmall.copy(
                             fontWeight = FontWeight.Bold,
                             fontSize = 15.sp
                         ),
-                        color = if (monthIncome > 0) Color(0xFF30A46C) else MaterialTheme.colorScheme.onSurface,
+                        color = incomeColor,
                         animateFromZero = true
                     )
                 }
@@ -112,7 +117,7 @@ fun CashFlowCard(
                             fontWeight = FontWeight.SemiBold,
                             letterSpacing = 0.8.sp
                         ),
-                        color = MaterialTheme.colorScheme.onSurfaceVariant
+                        color = tokens?.textSecondary ?: MaterialTheme.colorScheme.onSurfaceVariant
                     )
                     Spacer(modifier = Modifier.height(2.dp))
                     com.omkarnub.kanri.ui.common.AnimatedNumberText(
@@ -121,7 +126,7 @@ fun CashFlowCard(
                             fontWeight = FontWeight.Bold,
                             fontSize = 15.sp
                         ),
-                        color = MaterialTheme.colorScheme.onSurface,
+                        color = tokens?.textPrimary ?: MaterialTheme.colorScheme.onSurface,
                         animateFromZero = true
                     )
                 }
@@ -138,14 +143,14 @@ fun CashFlowCard(
                             fontWeight = FontWeight.SemiBold,
                             letterSpacing = 0.8.sp
                         ),
-                        color = MaterialTheme.colorScheme.onSurfaceVariant
+                        color = tokens?.textSecondary ?: MaterialTheme.colorScheme.onSurfaceVariant
                     )
                     Spacer(modifier = Modifier.height(2.dp))
                     val sign = if (monthNet >= 0) "+" else "-"
                     val netColor = when {
-                        monthNet > 0 -> Color(0xFF30A46C)
-                        monthNet < 0 -> Color(0xFFEF4444)
-                        else -> MaterialTheme.colorScheme.onSurface
+                        monthNet > 0 -> tokens?.credit ?: Color(0xFF30A46C)
+                        monthNet < 0 -> tokens?.debit ?: Color(0xFFEF4444)
+                        else -> tokens?.textPrimary ?: MaterialTheme.colorScheme.onSurface
                     }
                     com.omkarnub.kanri.ui.common.AnimatedNumberText(
                         text = "$sign${CurrencyUtils.formatCurrency(abs(monthNet))}",

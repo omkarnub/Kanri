@@ -1,4 +1,4 @@
-package com.omkarnub.kanri.ui.lending
+﻿package com.omkarnub.kanri.ui.lending
 
 import androidx.activity.compose.BackHandler
 import androidx.compose.foundation.BorderStroke
@@ -43,7 +43,12 @@ import androidx.compose.ui.draw.shadow
 import androidx.compose.ui.graphics.Color
 import androidx.compose.ui.text.font.FontWeight
 import androidx.compose.ui.unit.dp
-import androidx.compose.ui.unit.sp
+import androidx.compose.foundation.shape.CircleShape
+import androidx.compose.ui.window.DialogProperties
+import com.omkarnub.kanri.ui.common.GlassLevel
+import com.omkarnub.kanri.ui.common.KanriGlassButton
+import com.omkarnub.kanri.ui.common.KanriGlassCard
+import com.omkarnub.kanri.ui.common.KanriGlassDialog
 import com.omkarnub.kanri.ui.common.LocalHazeState
 import com.omkarnub.kanri.ui.common.rememberKanriGlassTheme
 import dev.chrisbanes.haze.ExperimentalHazeApi
@@ -64,125 +69,89 @@ fun LendingRenameDialog(
 
     val isValid = newName.trim().isNotEmpty() && newName.trim().length <= 40
 
-    Box(
-        modifier = Modifier.fillMaxSize(),
-        contentAlignment = Alignment.Center
+    KanriGlassDialog(
+        onDismissRequest = onDismiss,
+        properties = DialogProperties(usePlatformDefaultWidth = false)
     ) {
-        Box(
+        KanriGlassCard(
             modifier = Modifier
-                .fillMaxSize()
-                .background(Color.Black.copy(alpha = 0.65f))
-                .clickable(
-                    interactionSource = remember { MutableInteractionSource() },
-                    indication = null,
-                    onClick = onDismiss
-                )
-        )
-
-        Box(
-            modifier = Modifier
-                .fillMaxSize()
+                .fillMaxWidth(0.92f)
                 .imePadding()
-                .padding(horizontal = 24.dp),
-            contentAlignment = Alignment.Center
+                .padding(vertical = 24.dp),
+            shape = RoundedCornerShape(24.dp),
+            level = GlassLevel.Strong,
+            hazeState = hazeState
         ) {
-            Surface(
+            Column(
                 modifier = Modifier
                     .fillMaxWidth()
-                    .shadow(
-                        elevation = glassTheme.shadowElevation + 8.dp,
-                        shape = RoundedCornerShape(24.dp),
-                        spotColor = glassTheme.shadowColor,
-                        ambientColor = glassTheme.shadowColor.copy(alpha = 0.6f)
-                    )
-                    .clip(RoundedCornerShape(24.dp))
-                    .then(
-                        if (hazeState != null) {
-                            Modifier.hazeChild(
-                                state = hazeState,
-                                style = glassTheme.popupHazeStyle
-                            ) {
-                                canDrawArea = { true }
-                            }
-                        } else {
-                            Modifier
-                        }
-                    )
-                    .border(
-                        glassTheme.glassBorder,
-                        shape = RoundedCornerShape(24.dp)
-                    ),
-                shape = RoundedCornerShape(24.dp),
-                color = if (hazeState != null) Color.Transparent else glassTheme.fallbackBackgroundColor
+                    .padding(22.dp),
+                verticalArrangement = Arrangement.spacedBy(16.dp)
             ) {
-                Column(
-                    modifier = Modifier
-                        .fillMaxWidth()
-                        .padding(22.dp),
-                    verticalArrangement = Arrangement.spacedBy(16.dp)
+                Row(
+                    modifier = Modifier.fillMaxWidth(),
+                    verticalAlignment = Alignment.CenterVertically,
+                    horizontalArrangement = Arrangement.SpaceBetween
                 ) {
-                    Row(
-                        modifier = Modifier.fillMaxWidth(),
-                        verticalAlignment = Alignment.CenterVertically,
-                        horizontalArrangement = Arrangement.SpaceBetween
-                    ) {
-                        Text(
-                            text = "Rename Person",
-                            style = MaterialTheme.typography.titleLarge.copy(
-                                fontWeight = FontWeight.Bold,
-                                color = MaterialTheme.colorScheme.onSurface
-                            )
+                    Text(
+                        text = "Rename Person",
+                        style = MaterialTheme.typography.titleLarge.copy(
+                            fontWeight = FontWeight.Bold,
+                            color = MaterialTheme.colorScheme.onSurface
                         )
+                    )
 
-                        IconButton(
-                            onClick = onDismiss,
-                            modifier = Modifier.size(32.dp)
+                    KanriGlassCard(
+                        modifier = Modifier.size(32.dp),
+                        shape = CircleShape,
+                        level = GlassLevel.Flat,
+                        onClick = onDismiss
+                    ) {
+                        Box(
+                            modifier = Modifier.fillMaxSize(),
+                            contentAlignment = Alignment.Center
                         ) {
                             Icon(
                                 imageVector = Icons.Default.Close,
                                 contentDescription = "Close",
-                                tint = MaterialTheme.colorScheme.onSurfaceVariant
+                                tint = MaterialTheme.colorScheme.onSurfaceVariant,
+                                modifier = Modifier.size(16.dp)
                             )
                         }
                     }
+                }
 
-                    OutlinedTextField(
-                        value = newName,
-                        onValueChange = { newName = it.take(40) },
-                        label = { Text("Person Name") },
-                        singleLine = true,
-                        modifier = Modifier.fillMaxWidth(),
-                        colors = OutlinedTextFieldDefaults.colors(
-                            focusedBorderColor = MaterialTheme.colorScheme.onSurface,
-                            unfocusedBorderColor = MaterialTheme.colorScheme.outlineVariant
-                        )
+                OutlinedTextField(
+                    value = newName,
+                    onValueChange = { newName = it.take(40) },
+                    label = { Text("Person Name") },
+                    singleLine = true,
+                    modifier = Modifier.fillMaxWidth(),
+                    colors = OutlinedTextFieldDefaults.colors(
+                        focusedBorderColor = MaterialTheme.colorScheme.onSurface,
+                        unfocusedBorderColor = MaterialTheme.colorScheme.outlineVariant
                     )
+                )
 
-                    Row(
-                        modifier = Modifier.fillMaxWidth(),
-                        horizontalArrangement = Arrangement.End,
-                        verticalAlignment = Alignment.CenterVertically
-                    ) {
-                        TextButton(onClick = onDismiss) {
-                            Text("Cancel", color = MaterialTheme.colorScheme.onSurfaceVariant)
-                        }
-                        Spacer(modifier = Modifier.width(8.dp))
-                        Button(
-                            onClick = {
-                                if (isValid) {
-                                    onConfirm(newName.trim())
-                                }
-                            },
-                            enabled = isValid,
-                            shape = RoundedCornerShape(12.dp),
-                            colors = ButtonDefaults.buttonColors(
-                                containerColor = MaterialTheme.colorScheme.onSurface,
-                                contentColor = MaterialTheme.colorScheme.surface
-                            )
-                        ) {
-                            Text("Rename", fontWeight = FontWeight.Bold)
-                        }
+                Row(
+                    modifier = Modifier.fillMaxWidth(),
+                    horizontalArrangement = Arrangement.End,
+                    verticalAlignment = Alignment.CenterVertically
+                ) {
+                    TextButton(onClick = onDismiss) {
+                        Text("Cancel", color = MaterialTheme.colorScheme.onSurfaceVariant)
                     }
+                    Spacer(modifier = Modifier.width(8.dp))
+                    KanriGlassButton(
+                        text = "Rename",
+                        onClick = {
+                            if (isValid) {
+                                onConfirm(newName.trim())
+                            }
+                        },
+                        enabled = isValid,
+                        level = GlassLevel.Strong
+                    )
                 }
             }
         }
@@ -201,87 +170,52 @@ fun LendingMergeConfirmationDialog(
     val hazeState = LocalHazeState.current
     val glassTheme = rememberKanriGlassTheme()
 
-    Box(
-        modifier = Modifier.fillMaxSize(),
-        contentAlignment = Alignment.Center
+    KanriGlassDialog(
+        onDismissRequest = onDismiss,
+        properties = DialogProperties(usePlatformDefaultWidth = false)
     ) {
-        Box(
+        KanriGlassCard(
             modifier = Modifier
-                .fillMaxSize()
-                .background(Color.Black.copy(alpha = 0.55f))
-                .clickable(
-                    interactionSource = remember { MutableInteractionSource() },
-                    indication = null,
-                    onClick = onDismiss
-                )
-        )
-
-        Box(
-            modifier = Modifier
-                .fillMaxSize()
-                .padding(horizontal = 24.dp),
-            contentAlignment = Alignment.Center
+                .fillMaxWidth(0.92f)
+                .padding(vertical = 24.dp),
+            shape = RoundedCornerShape(24.dp),
+            level = GlassLevel.Strong,
+            hazeState = hazeState
         ) {
-            Surface(
+            Column(
                 modifier = Modifier
                     .fillMaxWidth()
-                    .clip(RoundedCornerShape(24.dp))
-                    .then(
-                        if (hazeState != null) {
-                            Modifier.hazeChild(
-                                state = hazeState,
-                                style = glassTheme.popupHazeStyle
-                            ) {
-                                canDrawArea = { true }
-                            }
-                        } else {
-                            Modifier
-                        }
-                    )
-                    .border(glassTheme.glassBorder, shape = RoundedCornerShape(24.dp)),
-                shape = RoundedCornerShape(24.dp),
-                color = if (hazeState != null) Color.Transparent else glassTheme.fallbackBackgroundColor
+                    .padding(22.dp),
+                verticalArrangement = Arrangement.spacedBy(14.dp)
             ) {
-                Column(
-                    modifier = Modifier
-                        .fillMaxWidth()
-                        .padding(22.dp),
-                    verticalArrangement = Arrangement.spacedBy(14.dp)
+                Text(
+                    text = "Merge People?",
+                    style = MaterialTheme.typography.titleLarge.copy(
+                        fontWeight = FontWeight.Bold,
+                        color = MaterialTheme.colorScheme.onSurface
+                    )
+                )
+
+                Text(
+                    text = "A person named \"${prompt.targetName}\" already exists. Renaming \"${prompt.sourceName}\" to \"${prompt.targetName}\" will merge all their transaction records into one person ledger.",
+                    style = MaterialTheme.typography.bodyMedium,
+                    color = MaterialTheme.colorScheme.onSurfaceVariant
+                )
+
+                Row(
+                    modifier = Modifier.fillMaxWidth(),
+                    horizontalArrangement = Arrangement.End,
+                    verticalAlignment = Alignment.CenterVertically
                 ) {
-                    Text(
-                        text = "Merge People?",
-                        style = MaterialTheme.typography.titleLarge.copy(
-                            fontWeight = FontWeight.Bold,
-                            color = MaterialTheme.colorScheme.onSurface
-                        )
-                    )
-
-                    Text(
-                        text = "A person named \"${prompt.targetName}\" already exists. Renaming \"${prompt.sourceName}\" to \"${prompt.targetName}\" will merge all their transaction records into one person ledger.",
-                        style = MaterialTheme.typography.bodyMedium,
-                        color = MaterialTheme.colorScheme.onSurfaceVariant
-                    )
-
-                    Row(
-                        modifier = Modifier.fillMaxWidth(),
-                        horizontalArrangement = Arrangement.End,
-                        verticalAlignment = Alignment.CenterVertically
-                    ) {
-                        TextButton(onClick = onDismiss) {
-                            Text("Cancel", color = MaterialTheme.colorScheme.onSurfaceVariant)
-                        }
-                        Spacer(modifier = Modifier.width(8.dp))
-                        Button(
-                            onClick = onConfirm,
-                            shape = RoundedCornerShape(12.dp),
-                            colors = ButtonDefaults.buttonColors(
-                                containerColor = MaterialTheme.colorScheme.onSurface,
-                                contentColor = MaterialTheme.colorScheme.surface
-                            )
-                        ) {
-                            Text("Merge", fontWeight = FontWeight.Bold)
-                        }
+                    TextButton(onClick = onDismiss) {
+                        Text("Cancel", color = MaterialTheme.colorScheme.onSurfaceVariant)
                     }
+                    Spacer(modifier = Modifier.width(8.dp))
+                    KanriGlassButton(
+                        text = "Merge",
+                        onClick = onConfirm,
+                        level = GlassLevel.Strong
+                    )
                 }
             }
         }

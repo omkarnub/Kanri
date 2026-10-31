@@ -16,14 +16,21 @@ import androidx.compose.foundation.BorderStroke
 import androidx.compose.foundation.background
 import androidx.compose.foundation.border
 import androidx.compose.foundation.clickable
+import androidx.compose.ui.geometry.Offset
+import androidx.compose.ui.graphics.Brush
+import com.omkarnub.kanri.ui.theme.LocalKanriGlass
+import com.omkarnub.kanri.ui.common.GlassLevel
+import com.omkarnub.kanri.ui.common.KanriGlassCard
 import androidx.compose.foundation.layout.Arrangement
 import androidx.compose.foundation.layout.Box
 import androidx.compose.foundation.layout.Column
+import androidx.compose.foundation.layout.ColumnScope
 import androidx.compose.foundation.layout.Row
 import androidx.compose.foundation.layout.Spacer
 import androidx.compose.foundation.layout.fillMaxSize
 import androidx.compose.foundation.layout.fillMaxWidth
 import androidx.compose.foundation.layout.height
+import androidx.compose.foundation.layout.heightIn
 import androidx.compose.foundation.layout.padding
 import androidx.compose.foundation.layout.size
 import androidx.compose.foundation.layout.width
@@ -51,6 +58,8 @@ import androidx.compose.material.icons.filled.Edit
 import androidx.compose.material.icons.filled.Email
 import androidx.compose.material.icons.filled.HealthAndSafety
 import androidx.compose.material.icons.filled.Lock
+import androidx.compose.material.icons.filled.ChevronRight
+import androidx.compose.material.icons.filled.Paid
 import androidx.compose.material.icons.filled.PowerSettingsNew
 import androidx.compose.material.icons.filled.Refresh
 import androidx.compose.material.icons.filled.AccountBalanceWallet
@@ -58,32 +67,17 @@ import androidx.compose.material.icons.filled.Security
 import androidx.compose.material.icons.filled.Shield
 import androidx.compose.material.icons.filled.Tune
 import androidx.compose.material.icons.filled.Warning
+import androidx.compose.material.icons.filled.SystemUpdate
+import com.omkarnub.kanri.BuildConfig
+import com.omkarnub.kanri.util.AppCurrency
+import com.omkarnub.kanri.util.CurrencyPreferences
 import com.omkarnub.kanri.ui.wallet.WalletSetupDialog
 import com.omkarnub.kanri.ui.wallet.CorrectBalanceDialog
 import com.omkarnub.kanri.data.wallet.WalletRepository
 import com.omkarnub.kanri.data.wallet.WalletPreferences
 import com.omkarnub.kanri.data.wallet.AtmWithdrawalMode
-import androidx.activity.compose.rememberLauncherForActivityResult
-import androidx.activity.result.IntentSenderRequest
-import androidx.activity.result.contract.ActivityResultContracts
-import androidx.compose.material.icons.filled.AccountCircle
-import androidx.compose.material.icons.filled.Cloud
-import androidx.compose.material.icons.filled.CloudDone
-import androidx.compose.material.icons.filled.CloudDownload
-import androidx.compose.material.icons.filled.CloudOff
-import androidx.compose.material.icons.filled.CloudUpload
-import androidx.compose.material.icons.filled.Sync
-import androidx.compose.material3.CircularProgressIndicator
-import com.omkarnub.kanri.data.cloud.BackupMode
 import com.omkarnub.kanri.ui.notification.NotificationAccessHelper
-import com.omkarnub.kanri.data.cloud.CloudBackupErrorType
-import com.omkarnub.kanri.data.cloud.CloudBackupManager
-import com.omkarnub.kanri.data.cloud.CloudBackupPreferences
-import com.omkarnub.kanri.data.cloud.CloudBackupStatus
-import com.omkarnub.kanri.data.cloud.CloudBackupWorker
-import com.omkarnub.kanri.data.cloud.DriveAuthResult
-import com.omkarnub.kanri.data.cloud.GoogleAuthManager
-import androidx.compose.material3.AlertDialog
+import com.omkarnub.kanri.ui.common.KanriGlassAlertDialog as AlertDialog
 import androidx.compose.material3.Button
 import androidx.compose.material3.ButtonDefaults
 import androidx.compose.material3.Card
@@ -133,6 +127,7 @@ import com.omkarnub.kanri.data.reset.FactoryResetManager
 import com.omkarnub.kanri.data.security.SecurityPreferences
 import com.omkarnub.kanri.ui.common.AVAILABLE_CATEGORY_ICONS
 import com.omkarnub.kanri.ui.common.CategoryIcon
+import com.omkarnub.kanri.ui.common.GlassBackgroundType
 import com.omkarnub.kanri.ui.home.isCustomCategory
 import com.omkarnub.kanri.ui.theme.AppIconManager
 import com.omkarnub.kanri.ui.theme.AppIconStyle
@@ -168,6 +163,10 @@ fun SettingsScreen(
     var pendingIconStyle by remember { mutableStateOf<AppIconStyle?>(null) }
     var showIconRestartDialog by remember { mutableStateOf(false) }
 
+    val currencyPrefs = remember { CurrencyPreferences.getInstance(context) }
+    val currentCurrency by currencyPrefs.currencyFlow.collectAsState()
+    var showCurrencyDialog by remember { mutableStateOf(false) }
+
     // 6. Custom Categories
     val db = remember { KanriDatabase.getDatabase(context) }
     val allCategories by db.categoryDao().getAllCategories().collectAsState(initial = emptyList())
@@ -193,24 +192,11 @@ fun SettingsScreen(
     var showContactDialog by remember { mutableStateOf(false) }
     var showPrivacyPolicyDialog by remember { mutableStateOf(false) }
 
-    // Cloud Backup State
-    val cloudBackupPrefs = remember { CloudBackupPreferences.getInstance(context) }
-    val cloudBackupManager = remember { CloudBackupManager.getInstance(context) }
-    val googleAuthManager = remember { GoogleAuthManager.getInstance(context) }
+    val appUpdateManager = remember { com.omkarnub.kanri.data.update.AppUpdateManager.getInstance(context) }
+    var isCheckingForUpdates by remember { mutableStateOf(false) }
+    var activeUpdateDialogInfo by remember { mutableStateOf<com.omkarnub.kanri.data.update.AppUpdateInfo?>(null) }
 
-    val currentBackupMode by cloudBackupPrefs.backupModeFlow.collectAsState()
-    val accountEmail by cloudBackupPrefs.accountEmailFlow.collectAsState()
-    val accountName by cloudBackupPrefs.accountNameFlow.collectAsState()
-    val lastBackupTimestamp by cloudBackupPrefs.lastBackupTimestampFlow.collectAsState()
-    val lastBackupStatus by cloudBackupPrefs.lastBackupStatusFlow.collectAsState()
-    val lastErrorMessage by cloudBackupPrefs.lastErrorMessageFlow.collectAsState()
-    val lastErrorType by cloudBackupPrefs.lastErrorTypeFlow.collectAsState()
 
-    var showSignOutOrOfflineDialog by remember { mutableStateOf(false) }
-    var isSwitchingToOfflineOnly by remember { mutableStateOf(false) }
-    var showRestoreFromCloudDialog by remember { mutableStateOf(false) }
-    var restorePassphraseInput by remember { mutableStateOf("") }
-    var isCloudActionInProgress by remember { mutableStateOf(false) }
 
     // Wallets & Balances
     val walletRepo = remember { WalletRepository(context) }
@@ -223,22 +209,16 @@ fun SettingsScreen(
     var walletToCorrect by remember { mutableStateOf<String?>(null) }
     var showResetWalletsDialog by remember { mutableStateOf(false) }
 
-    val driveConsentLauncher = rememberLauncherForActivityResult(
-        contract = ActivityResultContracts.StartIntentSenderForResult()
-    ) { result ->
-        if (result.resultCode == Activity.RESULT_OK) {
-            haptics.success()
-            Toast.makeText(context, "Google Drive authorization granted", Toast.LENGTH_SHORT).show()
-            CloudBackupWorker.schedule(context)
-            scope.launch {
-                isCloudActionInProgress = true
-                cloudBackupManager.performCloudBackup()
-                isCloudActionInProgress = false
-            }
-        } else {
-            haptics.warning()
-            Toast.makeText(context, "Drive authorization was cancelled or denied", Toast.LENGTH_SHORT).show()
-        }
+
+
+    var showGlassCustomizerScreen by remember { mutableStateOf(false) }
+
+    if (showGlassCustomizerScreen) {
+        GlassCustomizerScreen(
+            onBack = { showGlassCustomizerScreen = false },
+            modifier = modifier
+        )
+        return
     }
 
     if (showMerchantRulesScreen) {
@@ -252,6 +232,18 @@ fun SettingsScreen(
     // =========================================================================
     // MODALS & DIALOGS
     // =========================================================================
+
+    if (showCurrencyDialog) {
+        SelectCurrencyDialog(
+            currentCurrency = currentCurrency,
+            onSelectCurrency = { selected ->
+                haptics.success()
+                currencyPrefs.currency = selected
+                showCurrencyDialog = false
+            },
+            onDismiss = { showCurrencyDialog = false }
+        )
+    }
 
     if (showPrivacyPolicyDialog) {
         PrivacyPolicyDialog(onDismiss = { showPrivacyPolicyDialog = false })
@@ -526,178 +518,6 @@ fun SettingsScreen(
         )
     }
 
-    // 11] Cloud Backup Sign-Out or Switch-to-Offline Dialog
-    if (showSignOutOrOfflineDialog) {
-        val titleText = if (isSwitchingToOfflineOnly) "Switch to Fully Offline?" else "Sign Out of Google Drive?"
-        val messageText = if (isSwitchingToOfflineOnly) {
-            "Automatic cloud backups will stop and Kanri will operate in 100% offline mode. What would you like to do with your existing encrypted backup ('kanri_backup.enc') in Google Drive?"
-        } else {
-            "You will be signed out of Google Drive. Automatic cloud backups will stop. What would you like to do with your existing backup file in Google Drive?"
-        }
-
-        AlertDialog(
-            onDismissRequest = { if (!isCloudActionInProgress) showSignOutOrOfflineDialog = false },
-            icon = {
-                Icon(
-                    imageVector = Icons.Default.CloudOff,
-                    contentDescription = null,
-                    tint = MaterialTheme.colorScheme.primary,
-                    modifier = Modifier.size(36.dp)
-                )
-            },
-            title = {
-                Text(text = titleText, fontWeight = FontWeight.Bold)
-            },
-            text = {
-                Text(
-                    text = messageText,
-                    fontSize = 13.sp,
-                    color = MaterialTheme.colorScheme.onSurfaceVariant
-                )
-            },
-            confirmButton = {
-                Button(
-                    onClick = {
-                        haptics.tick()
-                        scope.launch {
-                            isCloudActionInProgress = true
-                            cloudBackupManager.deleteCloudBackup()
-                            if (isSwitchingToOfflineOnly) {
-                                cloudBackupPrefs.backupMode = BackupMode.OFFLINE
-                            } else {
-                                googleAuthManager.signOut()
-                                cloudBackupPrefs.clearAccount()
-                                cloudBackupPrefs.backupMode = BackupMode.OFFLINE
-                            }
-                            CloudBackupWorker.cancel(context)
-                            isCloudActionInProgress = false
-                            showSignOutOrOfflineDialog = false
-                            Toast.makeText(context, "Cloud copy deleted & switched to Fully Offline", Toast.LENGTH_SHORT).show()
-                        }
-                    },
-                    colors = ButtonDefaults.buttonColors(containerColor = MaterialTheme.colorScheme.error),
-                    enabled = !isCloudActionInProgress
-                ) {
-                    Text(if (isCloudActionInProgress) "Deleting..." else "Delete from Drive")
-                }
-            },
-            dismissButton = {
-                Row {
-                    TextButton(
-                        onClick = { if (!isCloudActionInProgress) showSignOutOrOfflineDialog = false },
-                        enabled = !isCloudActionInProgress
-                    ) {
-                        Text("Cancel")
-                    }
-                    TextButton(
-                        onClick = {
-                            haptics.tick()
-                            scope.launch {
-                                if (isSwitchingToOfflineOnly) {
-                                    cloudBackupPrefs.backupMode = BackupMode.OFFLINE
-                                } else {
-                                    googleAuthManager.signOut()
-                                    cloudBackupPrefs.clearAccount()
-                                    cloudBackupPrefs.backupMode = BackupMode.OFFLINE
-                                }
-                                CloudBackupWorker.cancel(context)
-                                showSignOutOrOfflineDialog = false
-                                Toast.makeText(context, "Backup file kept in Drive. Switched to Fully Offline.", Toast.LENGTH_SHORT).show()
-                            }
-                        },
-                        enabled = !isCloudActionInProgress
-                    ) {
-                        Text("Leave in Drive", fontWeight = FontWeight.SemiBold)
-                    }
-                }
-            }
-        )
-    }
-
-    // 12] Restore from Cloud Confirmation Dialog
-    if (showRestoreFromCloudDialog) {
-        AlertDialog(
-            onDismissRequest = { if (!isCloudActionInProgress) showRestoreFromCloudDialog = false },
-            icon = {
-                Icon(
-                    imageVector = Icons.Default.CloudDownload,
-                    contentDescription = null,
-                    tint = MaterialTheme.colorScheme.primary,
-                    modifier = Modifier.size(36.dp)
-                )
-            },
-            title = {
-                Text(text = "Restore from Google Drive?", fontWeight = FontWeight.Bold)
-            },
-            text = {
-                Column {
-                    Text(
-                        text = "Restoring will replace all current transactions, categories, budgets, and debt records with the encrypted backup from your Google Drive. This cannot be undone.",
-                        fontSize = 13.sp,
-                        color = MaterialTheme.colorScheme.onSurfaceVariant
-                    )
-                    Spacer(modifier = Modifier.height(12.dp))
-                    Text(
-                        text = "Encryption Passphrase (Optional):",
-                        fontSize = 12.sp,
-                        fontWeight = FontWeight.SemiBold,
-                        color = MaterialTheme.colorScheme.onSurface
-                    )
-                    Text(
-                        text = "Leave blank if you use standard Google Account encryption.",
-                        fontSize = 11.sp,
-                        color = MaterialTheme.colorScheme.onSurfaceVariant
-                    )
-                    Spacer(modifier = Modifier.height(6.dp))
-                    OutlinedTextField(
-                        value = restorePassphraseInput,
-                        onValueChange = { restorePassphraseInput = it },
-                        placeholder = { Text("Custom passphrase if set") },
-                        singleLine = true,
-                        modifier = Modifier.fillMaxWidth()
-                    )
-                }
-            },
-            confirmButton = {
-                Button(
-                    onClick = {
-                        haptics.warning()
-                        scope.launch {
-                            isCloudActionInProgress = true
-                            val result = cloudBackupManager.restoreFromCloud(
-                                explicitPassphrase = restorePassphraseInput.takeIf { it.isNotBlank() },
-                                clearExisting = true
-                            )
-                            isCloudActionInProgress = false
-                            showRestoreFromCloudDialog = false
-                            result.onSuccess { stats ->
-                                haptics.success()
-                                Toast.makeText(
-                                    context,
-                                    "Restored ${stats.transactionCount} transactions & ${stats.lendingCount} debt records from Google Drive!",
-                                    Toast.LENGTH_LONG
-                                ).show()
-                            }.onFailure { error ->
-                                haptics.warning()
-                                Toast.makeText(context, "Restore failed: ${error.localizedMessage}", Toast.LENGTH_LONG).show()
-                            }
-                        }
-                    },
-                    enabled = !isCloudActionInProgress
-                ) {
-                    Text(if (isCloudActionInProgress) "Restoring..." else "Confirm Restore")
-                }
-            },
-            dismissButton = {
-                TextButton(
-                    onClick = { showRestoreFromCloudDialog = false },
-                    enabled = !isCloudActionInProgress
-                ) {
-                    Text("Cancel")
-                }
-            }
-        )
-    }
 
     // Wallets & Balances Dialogs
     if (showWalletSetupDialog) {
@@ -765,11 +585,21 @@ fun SettingsScreen(
         )
     }
 
+    if (activeUpdateDialogInfo != null) {
+        com.omkarnub.kanri.ui.update.AppUpdateDialog(
+            updateInfo = activeUpdateDialogInfo!!,
+            onDismiss = { activeUpdateDialogInfo = null }
+        )
+    }
+
+    val tokens = LocalKanriGlass.current
+
     // =========================================================================
     // MAIN SETTINGS LAYOUT
     // =========================================================================
     Scaffold(
         modifier = modifier.fillMaxSize(),
+        containerColor = if (tokens != null) Color.Transparent else MaterialTheme.colorScheme.background,
         topBar = {
             TopAppBar(
                 title = { Text("Settings", fontWeight = FontWeight.Bold) },
@@ -785,7 +615,7 @@ fun SettingsScreen(
                     }
                 },
                 colors = TopAppBarDefaults.topAppBarColors(
-                    containerColor = MaterialTheme.colorScheme.surface,
+                    containerColor = if (tokens != null) Color.Transparent else MaterialTheme.colorScheme.surface,
                     titleContentColor = MaterialTheme.colorScheme.onSurface,
                     navigationIconContentColor = MaterialTheme.colorScheme.onSurface
                 )
@@ -801,17 +631,64 @@ fun SettingsScreen(
             verticalArrangement = Arrangement.spacedBy(16.dp)
         ) {
             // -----------------------------------------------------------------
+            // CURRENCY & LOCALIZATION
+            // -----------------------------------------------------------------
+            SettingsSectionHeader(title = "CURRENCY & LOCALIZATION", icon = Icons.Default.Paid)
+            SettingsSectionCard {
+                Row(
+                    modifier = Modifier.fillMaxWidth(),
+                    horizontalArrangement = Arrangement.SpaceBetween,
+                    verticalAlignment = Alignment.CenterVertically
+                ) {
+                    Column(modifier = Modifier.weight(1f)) {
+                        Text(
+                            text = "App Currency",
+                            fontWeight = FontWeight.SemiBold,
+                            fontSize = 15.sp,
+                            color = MaterialTheme.colorScheme.onSurface
+                        )
+                        Text(
+                            text = "${currentCurrency.flag} ${currentCurrency.displayName} (${currentCurrency.symbol} ${currentCurrency.code})",
+                            fontSize = 12.5.sp,
+                            color = MaterialTheme.colorScheme.onSurfaceVariant
+                        )
+                    }
+                    Surface(
+                        onClick = {
+                            haptics.click()
+                            showCurrencyDialog = true
+                        },
+                        shape = RoundedCornerShape(12.dp),
+                        color = MaterialTheme.colorScheme.surfaceVariant.copy(alpha = 0.4f),
+                        border = BorderStroke(1.dp, MaterialTheme.colorScheme.outlineVariant)
+                    ) {
+                        Row(
+                            modifier = Modifier.padding(horizontal = 12.dp, vertical = 7.dp),
+                            verticalAlignment = Alignment.CenterVertically,
+                            horizontalArrangement = Arrangement.spacedBy(4.dp)
+                        ) {
+                            Text(
+                                text = "Change",
+                                style = MaterialTheme.typography.labelMedium.copy(fontWeight = FontWeight.SemiBold),
+                                color = MaterialTheme.colorScheme.onSurface
+                            )
+                            Icon(
+                                imageVector = Icons.Default.ChevronRight,
+                                contentDescription = null,
+                                tint = MaterialTheme.colorScheme.onSurfaceVariant,
+                                modifier = Modifier.size(16.dp)
+                            )
+                        }
+                    }
+                }
+            }
+
+            // -----------------------------------------------------------------
             // BALANCES & WALLETS
             // -----------------------------------------------------------------
             SettingsSectionHeader(title = "BALANCES & WALLETS", icon = Icons.Default.AccountBalanceWallet)
-            Card(
-                modifier = Modifier.fillMaxWidth(),
-                shape = RoundedCornerShape(18.dp),
-                colors = CardDefaults.cardColors(containerColor = MaterialTheme.colorScheme.surface),
-                border = BorderStroke(1.dp, MaterialTheme.colorScheme.outlineVariant)
-            ) {
-                Column(modifier = Modifier.padding(16.dp)) {
-                    // Status & Balances
+            SettingsSectionCard {
+                // Status & Balances
                     Row(
                         modifier = Modifier.fillMaxWidth(),
                         horizontalArrangement = Arrangement.SpaceBetween,
@@ -980,21 +857,14 @@ fun SettingsScreen(
                             }
                         }
                     }
-                }
             }
 
             // -----------------------------------------------------------------
             // 1 & 3: SECURITY & PERMISSIONS
             // -----------------------------------------------------------------
             SettingsSectionHeader(title = "SECURITY & ACCESS", icon = Icons.Default.Shield)
-            Card(
-                modifier = Modifier.fillMaxWidth(),
-                shape = RoundedCornerShape(18.dp),
-                colors = CardDefaults.cardColors(containerColor = MaterialTheme.colorScheme.surface),
-                border = BorderStroke(1.dp, MaterialTheme.colorScheme.outlineVariant)
-            ) {
-                Column(modifier = Modifier.padding(16.dp)) {
-                    // 1] App Lock
+            SettingsSectionCard {
+                // 1] App Lock
                     Row(
                         modifier = Modifier.fillMaxWidth(),
                         horizontalArrangement = Arrangement.SpaceBetween,
@@ -1046,393 +916,11 @@ fun SettingsScreen(
                     Spacer(modifier = Modifier.height(10.dp))
 
                     PermissionsStatusOverview(context = context)
-                }
             }
 
-            // -----------------------------------------------------------------
-            // CLOUD BACKUP & STORAGE
-            // -----------------------------------------------------------------
-            SettingsSectionHeader(title = "CLOUD BACKUP & SYNC", icon = Icons.Default.Cloud)
-            Card(
-                modifier = Modifier.fillMaxWidth(),
-                shape = RoundedCornerShape(18.dp),
-                colors = CardDefaults.cardColors(containerColor = MaterialTheme.colorScheme.surface),
-                border = BorderStroke(1.dp, MaterialTheme.colorScheme.outlineVariant)
-            ) {
-                Column(modifier = Modifier.padding(16.dp)) {
-                    Text(
-                        text = "Data Storage & Privacy",
-                        fontWeight = FontWeight.SemiBold,
-                        fontSize = 15.sp,
-                        color = MaterialTheme.colorScheme.onSurface
-                    )
-                    Text(
-                        text = "Your financial ledger is purely local and completely private to your device",
-                        fontSize = 12.sp,
-                        color = MaterialTheme.colorScheme.onSurfaceVariant
-                    )
-                    Spacer(modifier = Modifier.height(14.dp))
 
-                    Spacer(modifier = Modifier.height(14.dp))
-                    HorizontalDivider(color = MaterialTheme.colorScheme.outlineVariant.copy(alpha = 0.5f))
-                    Spacer(modifier = Modifier.height(14.dp))
-
-                    // Offline Mode Content
-                    Row(
-                            modifier = Modifier.fillMaxWidth(),
-                            verticalAlignment = Alignment.CenterVertically,
-                            horizontalArrangement = Arrangement.spacedBy(12.dp)
-                        ) {
-                            Box(
-                                modifier = Modifier
-                                    .size(38.dp)
-                                    .clip(CircleShape)
-                                    .background(MaterialTheme.colorScheme.primaryContainer),
-                                contentAlignment = Alignment.Center
-                            ) {
-                                Icon(
-                                    imageVector = Icons.Default.Shield,
-                                    contentDescription = null,
-                                    tint = MaterialTheme.colorScheme.primary,
-                                    modifier = Modifier.size(20.dp)
-                                )
-                            }
-                            Column(modifier = Modifier.weight(1f)) {
-                                Text(
-                                    text = "100% Offline Mode Active",
-                                    fontWeight = FontWeight.Bold,
-                                    fontSize = 14.sp,
-                                    color = MaterialTheme.colorScheme.onSurface
-                                )
-                                Text(
-                                    text = "Zero telemetry, zero network calls. Your transactions are stored securely in local SQLCipher AES-256 storage.",
-                                    fontSize = 12.sp,
-                                    color = MaterialTheme.colorScheme.onSurfaceVariant,
-                                    lineHeight = 16.sp
-                                )
-                            }
-                        }
-                    if (false) {
-                        // Cloud Backup Mode Content
-                        if (accountEmail.isNullOrBlank()) {
-                            // Not signed in yet
-                            Text(
-                                text = "Sign In with Google",
-                                fontWeight = FontWeight.SemiBold,
-                                fontSize = 14.sp,
-                                color = MaterialTheme.colorScheme.onSurface
-                            )
-                            Text(
-                                text = "Connect your personal Google Drive to enable silent, encrypted automatic backups (kanri_backup.enc). Kanri only requests the restricted drive.file scope.",
-                                fontSize = 12.sp,
-                                color = MaterialTheme.colorScheme.onSurfaceVariant,
-                                lineHeight = 16.sp
-                            )
-                            Spacer(modifier = Modifier.height(14.dp))
-
-                            Button(
-                                onClick = {
-                                    haptics.tick()
-                                    scope.launch {
-                                        isCloudActionInProgress = true
-                                        val signInResult = googleAuthManager.signInWithGoogle(context)
-                                        signInResult.onSuccess { account ->
-                                            cloudBackupPrefs.setSignedInAccount(account.email, account.displayName, account.id)
-                                            val authResult = googleAuthManager.requestDriveAuthorization(account.email)
-                                            authResult.onSuccess { driveAuth ->
-                                                when (driveAuth) {
-                                                    is DriveAuthResult.NeedsResolution -> {
-                                                        driveConsentLauncher.launch(
-                                                            IntentSenderRequest.Builder(driveAuth.pendingIntent.intentSender).build()
-                                                        )
-                                                    }
-                                                    is DriveAuthResult.Authorized -> {
-                                                        CloudBackupWorker.schedule(context)
-                                                        cloudBackupManager.performCloudBackup()
-                                                        haptics.success()
-                                                        Toast.makeText(context, "Connected to Google Drive!", Toast.LENGTH_SHORT).show()
-                                                    }
-                                                }
-                                            }.onFailure { e ->
-                                                Toast.makeText(context, "Drive authorization failed: ${e.message}", Toast.LENGTH_SHORT).show()
-                                            }
-                                        }.onFailure { e ->
-                                            Toast.makeText(context, "Google sign-in failed: ${e.message}", Toast.LENGTH_SHORT).show()
-                                        }
-                                        isCloudActionInProgress = false
-                                    }
-                                },
-                                enabled = !isCloudActionInProgress,
-                                modifier = Modifier
-                                    .fillMaxWidth()
-                                    .height(48.dp),
-                                shape = RoundedCornerShape(12.dp)
-                            ) {
-                                if (isCloudActionInProgress) {
-                                    CircularProgressIndicator(
-                                        modifier = Modifier.size(20.dp),
-                                        color = MaterialTheme.colorScheme.onPrimary,
-                                        strokeWidth = 2.dp
-                                    )
-                                    Spacer(modifier = Modifier.width(8.dp))
-                                    Text("Signing In...")
-                                } else {
-                                    Icon(
-                                        imageVector = Icons.Default.AccountCircle,
-                                        contentDescription = null,
-                                        modifier = Modifier.size(20.dp)
-                                    )
-                                    Spacer(modifier = Modifier.width(8.dp))
-                                    Text("Sign In with Google", fontWeight = FontWeight.Bold)
-                                }
-                            }
-                        } else {
-                            // Signed in account row
-                            Row(
-                                modifier = Modifier.fillMaxWidth(),
-                                verticalAlignment = Alignment.CenterVertically,
-                                horizontalArrangement = Arrangement.SpaceBetween
-                            ) {
-                                Row(
-                                    verticalAlignment = Alignment.CenterVertically,
-                                    horizontalArrangement = Arrangement.spacedBy(10.dp),
-                                    modifier = Modifier.weight(1f)
-                                ) {
-                                    Box(
-                                        modifier = Modifier
-                                            .size(38.dp)
-                                            .clip(CircleShape)
-                                            .background(MaterialTheme.colorScheme.primaryContainer),
-                                        contentAlignment = Alignment.Center
-                                    ) {
-                                        Icon(
-                                            imageVector = Icons.Default.AccountCircle,
-                                            contentDescription = null,
-                                            tint = MaterialTheme.colorScheme.primary,
-                                            modifier = Modifier.size(24.dp)
-                                        )
-                                    }
-                                    Column {
-                                        if (!accountName.isNullOrBlank()) {
-                                            Text(
-                                                text = accountName ?: "",
-                                                fontWeight = FontWeight.Bold,
-                                                fontSize = 14.sp,
-                                                color = MaterialTheme.colorScheme.onSurface
-                                            )
-                                        }
-                                        Text(
-                                            text = accountEmail ?: "",
-                                            fontSize = 12.sp,
-                                            color = MaterialTheme.colorScheme.onSurfaceVariant
-                                        )
-                                    }
-                                }
-
-                                TextButton(
-                                    onClick = {
-                                        isSwitchingToOfflineOnly = false
-                                        showSignOutOrOfflineDialog = true
-                                    }
-                                ) {
-                                    Text(
-                                        text = "Sign Out",
-                                        color = MaterialTheme.colorScheme.error,
-                                        fontSize = 13.sp,
-                                        fontWeight = FontWeight.SemiBold
-                                    )
-                                }
-                            }
-
-                            Spacer(modifier = Modifier.height(10.dp))
-                            HorizontalDivider(color = MaterialTheme.colorScheme.outlineVariant.copy(alpha = 0.3f))
-                            Spacer(modifier = Modifier.height(10.dp))
-
-                            // Last Backup Timestamp
-                            val currentLocale = androidx.compose.ui.platform.LocalConfiguration.current.locales[0]
-                            val formattedDate = if (lastBackupTimestamp > 0L) {
-                                SimpleDateFormat("MMM d, yyyy 'at' h:mm a", currentLocale).format(Date(lastBackupTimestamp))
-                            } else {
-                                "Never"
-                            }
-
-                            Row(
-                                modifier = Modifier.fillMaxWidth(),
-                                verticalAlignment = Alignment.CenterVertically,
-                                horizontalArrangement = Arrangement.SpaceBetween
-                            ) {
-                                Row(
-                                    verticalAlignment = Alignment.CenterVertically,
-                                    horizontalArrangement = Arrangement.spacedBy(8.dp)
-                                ) {
-                                    Icon(
-                                        imageVector = if (lastBackupTimestamp > 0L) Icons.Default.CloudDone else Icons.Default.CloudUpload,
-                                        contentDescription = null,
-                                        tint = if (lastBackupTimestamp > 0L) Color(0xFF06D6A0) else MaterialTheme.colorScheme.onSurfaceVariant,
-                                        modifier = Modifier.size(18.dp)
-                                    )
-                                    Text(
-                                        text = "Last backed up: $formattedDate",
-                                        fontSize = 12.sp,
-                                        color = MaterialTheme.colorScheme.onSurfaceVariant
-                                    )
-                                }
-
-                                if (isCloudActionInProgress || lastBackupStatus == CloudBackupStatus.IN_PROGRESS) {
-                                    CircularProgressIndicator(
-                                        modifier = Modifier.size(16.dp),
-                                        strokeWidth = 2.dp,
-                                        color = MaterialTheme.colorScheme.primary
-                                    )
-                                }
-                            }
-
-                            // Diagnostics Banner (reusing HealthCheck style)
-                            if (lastErrorType != null) {
-                                Spacer(modifier = Modifier.height(12.dp))
-                                val errorType = lastErrorType!!
-                                Card(
-                                    modifier = Modifier.fillMaxWidth(),
-                                    shape = RoundedCornerShape(12.dp),
-                                    colors = CardDefaults.cardColors(
-                                        containerColor = MaterialTheme.colorScheme.errorContainer.copy(alpha = 0.7f)
-                                    ),
-                                    border = BorderStroke(1.dp, MaterialTheme.colorScheme.error.copy(alpha = 0.5f))
-                                ) {
-                                    Row(
-                                        modifier = Modifier
-                                            .fillMaxWidth()
-                                            .padding(12.dp),
-                                        verticalAlignment = Alignment.CenterVertically,
-                                        horizontalArrangement = Arrangement.spacedBy(10.dp)
-                                    ) {
-                                        Icon(
-                                            imageVector = Icons.Default.Warning,
-                                            contentDescription = null,
-                                            tint = MaterialTheme.colorScheme.error,
-                                            modifier = Modifier.size(22.dp)
-                                        )
-                                        Column(modifier = Modifier.weight(1f)) {
-                                            Text(
-                                                text = errorType.name.replace("_", " "),
-                                                fontWeight = FontWeight.Bold,
-                                                fontSize = 12.sp,
-                                                color = MaterialTheme.colorScheme.error
-                                            )
-                                            Text(
-                                                text = lastErrorMessage ?: errorType.userMessage,
-                                                fontSize = 11.sp,
-                                                color = MaterialTheme.colorScheme.onErrorContainer,
-                                                lineHeight = 15.sp
-                                            )
-                                        }
-
-                                        TextButton(
-                                            onClick = {
-                                                when (errorType) {
-                                                    CloudBackupErrorType.TOKEN_EXPIRED,
-                                                    CloudBackupErrorType.PERMISSION_REVOKED -> {
-                                                        scope.launch {
-                                                            isCloudActionInProgress = true
-                                                            val driveAuth = googleAuthManager.requestDriveAuthorization(accountEmail)
-                                                            driveAuth.onSuccess { auth ->
-                                                                if (auth is DriveAuthResult.NeedsResolution) {
-                                                                    driveConsentLauncher.launch(
-                                                                        IntentSenderRequest.Builder(auth.pendingIntent.intentSender).build()
-                                                                    )
-                                                                } else {
-                                                                    cloudBackupManager.performCloudBackup()
-                                                                }
-                                                            }
-                                                            isCloudActionInProgress = false
-                                                        }
-                                                    }
-                                                    CloudBackupErrorType.DECRYPTION_FAILED -> {
-                                                        showRestoreFromCloudDialog = true
-                                                    }
-                                                    else -> {
-                                                        scope.launch {
-                                                            isCloudActionInProgress = true
-                                                            cloudBackupManager.performCloudBackup()
-                                                            isCloudActionInProgress = false
-                                                        }
-                                                    }
-                                                }
-                                            }
-                                        ) {
-                                            Text(
-                                                text = errorType.actionLabel,
-                                                fontSize = 12.sp,
-                                                fontWeight = FontWeight.Bold,
-                                                color = MaterialTheme.colorScheme.error
-                                            )
-                                        }
-                                    }
-                                }
-                            }
-
-                            Spacer(modifier = Modifier.height(14.dp))
-
-                            // Manual Actions: "Back Up Now" and "Restore from Cloud"
-                            Row(
-                                modifier = Modifier.fillMaxWidth(),
-                                horizontalArrangement = Arrangement.spacedBy(10.dp)
-                            ) {
-                                Button(
-                                    onClick = {
-                                        haptics.primaryAction()
-                                        scope.launch {
-                                            isCloudActionInProgress = true
-                                            val res = cloudBackupManager.performCloudBackup()
-                                            isCloudActionInProgress = false
-                                            res.onSuccess {
-                                                haptics.success()
-                                                Toast.makeText(context, "Encrypted backup saved to Google Drive!", Toast.LENGTH_SHORT).show()
-                                            }.onFailure { e ->
-                                                haptics.warning()
-                                                Toast.makeText(context, "Backup failed: ${e.localizedMessage}", Toast.LENGTH_SHORT).show()
-                                            }
-                                        }
-                                    },
-                                    enabled = !isCloudActionInProgress,
-                                    modifier = Modifier
-                                        .weight(1f)
-                                        .height(44.dp),
-                                    shape = RoundedCornerShape(12.dp)
-                                ) {
-                                    Icon(Icons.Default.CloudUpload, contentDescription = null, modifier = Modifier.size(18.dp))
-                                    Spacer(modifier = Modifier.width(6.dp))
-                                    Text("Back Up Now", fontSize = 13.sp, fontWeight = FontWeight.Bold)
-                                }
-
-                                OutlinedButton(
-                                    onClick = {
-                                        haptics.click()
-                                        showRestoreFromCloudDialog = true
-                                    },
-                                    enabled = !isCloudActionInProgress,
-                                    modifier = Modifier
-                                        .weight(1f)
-                                        .height(44.dp),
-                                    shape = RoundedCornerShape(12.dp)
-                                ) {
-                                    Icon(Icons.Default.CloudDownload, contentDescription = null, modifier = Modifier.size(18.dp))
-                                    Spacer(modifier = Modifier.width(6.dp))
-                                    Text("Restore Cloud", fontSize = 13.sp, fontWeight = FontWeight.Bold)
-                                }
-                            }
-                        }
-                    }
-                }
-            }
             SettingsSectionHeader(title = "THEMES & PREVIEW", icon = Icons.Default.ColorLens)
-            Card(
-                modifier = Modifier.fillMaxWidth(),
-                shape = RoundedCornerShape(18.dp),
-                colors = CardDefaults.cardColors(containerColor = MaterialTheme.colorScheme.surface),
-                border = BorderStroke(1.dp, MaterialTheme.colorScheme.outlineVariant)
-            ) {
-                Column(modifier = Modifier.padding(16.dp)) {
+            SettingsSectionCard {
                     Text(
                         text = "Theme Selection",
                         fontWeight = FontWeight.SemiBold,
@@ -1446,25 +934,35 @@ fun SettingsScreen(
                     )
                     Spacer(modifier = Modifier.height(14.dp))
 
-                    // Realistic Mini Theme Previews Row
-                    Row(
-                        modifier = Modifier.fillMaxWidth(),
-                        horizontalArrangement = Arrangement.spacedBy(10.dp)
-                    ) {
-                        ThemeMode.entries.forEach { mode ->
-                            ThemePreviewCard(
-                                mode = mode,
-                                isSelected = currentThemeMode == mode,
-                                onClick = {
-                                    haptics.tick()
-                                    if (mode != currentThemeMode) {
-                                        themePrefs.themeMode = mode
-                                    }
-                                },
-                                modifier = Modifier.weight(1f)
-                            )
+                    // Realistic Mini Theme Previews Grid (Row 1: 3, Row 2: 2 balanced)
+                    Column(verticalArrangement = Arrangement.spacedBy(10.dp)) {
+                        ThemeMode.entries.chunked(3).forEach { rowModes ->
+                            Row(
+                                modifier = Modifier.fillMaxWidth(),
+                                horizontalArrangement = Arrangement.spacedBy(10.dp)
+                            ) {
+                                rowModes.forEach { mode ->
+                                    ThemePreviewCard(
+                                        mode = mode,
+                                        isSelected = currentThemeMode == mode,
+                                        onClick = {
+                                            haptics.tick()
+                                            if (mode != currentThemeMode) {
+                                                themePrefs.themeMode = mode
+                                            }
+                                        },
+                                        modifier = Modifier.weight(1f)
+                                    )
+                                }
+                                repeat(3 - rowModes.size) {
+                                    Spacer(modifier = Modifier.weight(1f))
+                                }
+                            }
                         }
                     }
+
+                    val isGlassActive = currentThemeMode == ThemeMode.GLASS
+                    val isReduceTransparency by themePrefs.reduceTransparencyFlow.collectAsState()
 
                     if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.S) {
                         Spacer(modifier = Modifier.height(14.dp))
@@ -1481,16 +979,17 @@ fun SettingsScreen(
                                     text = "Material You Dynamic Color",
                                     fontWeight = FontWeight.SemiBold,
                                     fontSize = 14.sp,
-                                    color = MaterialTheme.colorScheme.onSurface
+                                    color = if (isGlassActive) MaterialTheme.colorScheme.onSurface.copy(alpha = 0.4f) else MaterialTheme.colorScheme.onSurface
                                 )
                                 Text(
-                                    text = "Tint interface based on your system wallpaper",
+                                    text = if (isGlassActive) "Disabled for glass themes to maintain hand-tuned optical contrast" else "Tint interface based on your system wallpaper",
                                     fontSize = 11.sp,
                                     color = MaterialTheme.colorScheme.onSurfaceVariant
                                 )
                             }
                             Switch(
-                                checked = isDynamicEnabled,
+                                checked = isDynamicEnabled && !isGlassActive,
+                                enabled = !isGlassActive,
                                 onCheckedChange = { checked ->
                                     haptics.tick()
                                     themePrefs.isDynamicColor = checked
@@ -1498,21 +997,186 @@ fun SettingsScreen(
                             )
                         }
                     }
-                }
+
+                    if (isGlassActive) {
+                        val currentGlassBg by themePrefs.glassBackgroundFlow.collectAsState()
+
+                        Spacer(modifier = Modifier.height(14.dp))
+                        HorizontalDivider(color = MaterialTheme.colorScheme.outlineVariant.copy(alpha = 0.5f))
+                        Spacer(modifier = Modifier.height(14.dp))
+
+                        // Customize Glass Components Window Button
+                        Surface(
+                            modifier = Modifier
+                                .fillMaxWidth()
+                                .clip(RoundedCornerShape(14.dp))
+                                .clickable {
+                                    haptics.click()
+                                    showGlassCustomizerScreen = true
+                                },
+                            shape = RoundedCornerShape(14.dp),
+                            color = MaterialTheme.colorScheme.primaryContainer.copy(alpha = 0.5f),
+                            border = BorderStroke(1.dp, MaterialTheme.colorScheme.primary.copy(alpha = 0.45f))
+                        ) {
+                            Row(
+                                modifier = Modifier
+                                    .fillMaxWidth()
+                                    .padding(horizontal = 16.dp, vertical = 13.dp),
+                                horizontalArrangement = Arrangement.SpaceBetween,
+                                verticalAlignment = Alignment.CenterVertically
+                            ) {
+                                Row(
+                                    verticalAlignment = Alignment.CenterVertically,
+                                    horizontalArrangement = Arrangement.spacedBy(12.dp)
+                                ) {
+                                    Box(
+                                        modifier = Modifier
+                                            .size(38.dp)
+                                            .clip(CircleShape)
+                                            .background(MaterialTheme.colorScheme.primary.copy(alpha = 0.15f)),
+                                        contentAlignment = Alignment.Center
+                                    ) {
+                                        Icon(
+                                            imageVector = Icons.Default.Tune,
+                                            contentDescription = null,
+                                            tint = MaterialTheme.colorScheme.primary,
+                                            modifier = Modifier.size(20.dp)
+                                        )
+                                    }
+                                    Column {
+                                        Text(
+                                            text = "Customize Glass Components",
+                                            fontWeight = FontWeight.Bold,
+                                            fontSize = 14.sp,
+                                            color = MaterialTheme.colorScheme.onSurface
+                                        )
+                                        Text(
+                                            text = "Blur, opacity, tint lightness & button factors",
+                                            fontSize = 11.5.sp,
+                                            color = MaterialTheme.colorScheme.onSurfaceVariant
+                                        )
+                                    }
+                                }
+                                Icon(
+                                    imageVector = Icons.Default.ChevronRight,
+                                    contentDescription = "Customize Glass",
+                                    tint = MaterialTheme.colorScheme.onSurfaceVariant,
+                                    modifier = Modifier.size(20.dp)
+                                )
+                            }
+                        }
+
+                        Spacer(modifier = Modifier.height(14.dp))
+                        HorizontalDivider(color = MaterialTheme.colorScheme.outlineVariant.copy(alpha = 0.5f))
+                        Spacer(modifier = Modifier.height(12.dp))
+
+                        Column(modifier = Modifier.fillMaxWidth()) {
+                            Text(
+                                text = "Animated Glass Background",
+                                fontWeight = FontWeight.SemiBold,
+                                fontSize = 14.sp,
+                                color = MaterialTheme.colorScheme.onSurface
+                            )
+                            Text(
+                                text = "Hardware-accelerated ambient animated backgrounds for Glass mode",
+                                fontSize = 11.sp,
+                                color = MaterialTheme.colorScheme.onSurfaceVariant
+                            )
+                            Spacer(modifier = Modifier.height(10.dp))
+
+                            Column(verticalArrangement = Arrangement.spacedBy(8.dp)) {
+                                GlassBackgroundType.entries.chunked(2).forEach { rowBgs ->
+                                    Row(
+                                        modifier = Modifier.fillMaxWidth(),
+                                        horizontalArrangement = Arrangement.spacedBy(8.dp)
+                                    ) {
+                                        rowBgs.forEach { bgType ->
+                                            val isBgSelected = currentGlassBg == bgType
+                                            Box(
+                                                modifier = Modifier
+                                                    .weight(1f)
+                                                    .clip(RoundedCornerShape(12.dp))
+                                                    .background(
+                                                        if (isBgSelected) MaterialTheme.colorScheme.primaryContainer
+                                                        else MaterialTheme.colorScheme.surfaceVariant.copy(alpha = 0.4f)
+                                                    )
+                                                    .border(
+                                                        width = if (isBgSelected) 1.5.dp else 1.dp,
+                                                        color = if (isBgSelected) MaterialTheme.colorScheme.primary
+                                                        else MaterialTheme.colorScheme.outlineVariant,
+                                                        shape = RoundedCornerShape(12.dp)
+                                                    )
+                                                    .clickable {
+                                                        haptics.tick()
+                                                        themePrefs.glassBackground = bgType
+                                                    }
+                                                    .padding(vertical = 10.dp, horizontal = 4.dp),
+                                                contentAlignment = Alignment.Center
+                                            ) {
+                                                Text(
+                                                    text = bgType.displayName,
+                                                    fontSize = 11.sp,
+                                                    fontWeight = if (isBgSelected) FontWeight.Bold else FontWeight.Medium,
+                                                    color = if (isBgSelected) MaterialTheme.colorScheme.onPrimaryContainer
+                                                    else MaterialTheme.colorScheme.onSurface,
+                                                    maxLines = 1,
+                                                    overflow = TextOverflow.Ellipsis
+                                                )
+                                            }
+                                        }
+                                    }
+                                }
+                            }
+                        }
+
+                        Spacer(modifier = Modifier.height(14.dp))
+                        HorizontalDivider(color = MaterialTheme.colorScheme.outlineVariant.copy(alpha = 0.5f))
+                        Spacer(modifier = Modifier.height(12.dp))
+
+                        Row(
+                            modifier = Modifier.fillMaxWidth(),
+                            horizontalArrangement = Arrangement.SpaceBetween,
+                            verticalAlignment = Alignment.CenterVertically
+                        ) {
+                            Column(modifier = Modifier.weight(1f)) {
+                                Text(
+                                    text = "Reduce Transparency",
+                                    fontWeight = FontWeight.SemiBold,
+                                    fontSize = 14.sp,
+                                    color = MaterialTheme.colorScheme.onSurface
+                                )
+                                Text(
+                                    text = "Replaces live backdrop blur with solid frosted surfaces",
+                                    fontSize = 11.sp,
+                                    color = MaterialTheme.colorScheme.onSurfaceVariant
+                                )
+                            }
+                            Switch(
+                                checked = isReduceTransparency,
+                                onCheckedChange = { checked ->
+                                    haptics.tick()
+                                    themePrefs.isReduceTransparency = checked
+                                }
+                            )
+                        }
+
+                        if (Build.VERSION.SDK_INT < Build.VERSION_CODES.S) {
+                            Spacer(modifier = Modifier.height(8.dp))
+                            Text(
+                                text = "Blur needs Android 12 or newer. A frosted look is used instead.",
+                                fontSize = 11.sp,
+                                color = MaterialTheme.colorScheme.onSurfaceVariant
+                            )
+                        }
+                    }
             }
 
             // -----------------------------------------------------------------
             // 5: APP ICON
             // -----------------------------------------------------------------
             SettingsSectionHeader(title = "APP ICON", icon = Icons.Default.Apps)
-            Card(
-                modifier = Modifier.fillMaxWidth(),
-                shape = RoundedCornerShape(18.dp),
-                colors = CardDefaults.cardColors(containerColor = MaterialTheme.colorScheme.surface),
-                border = BorderStroke(1.dp, MaterialTheme.colorScheme.outlineVariant)
-            ) {
-                Column(modifier = Modifier.padding(16.dp)) {
-                    Text(
+            SettingsSectionCard {
+                Text(
                         text = "Launcher App Icon",
                         fontWeight = FontWeight.SemiBold,
                         fontSize = 15.sp,
@@ -1605,21 +1269,14 @@ fun SettingsScreen(
                             }
                         }
                     }
-                }
             }
 
             // -----------------------------------------------------------------
             // 6: CUSTOM CATEGORIES
             // -----------------------------------------------------------------
             SettingsSectionHeader(title = "CUSTOM CATEGORIES", icon = Icons.Default.Tune)
-            Card(
-                modifier = Modifier.fillMaxWidth(),
-                shape = RoundedCornerShape(18.dp),
-                colors = CardDefaults.cardColors(containerColor = MaterialTheme.colorScheme.surface),
-                border = BorderStroke(1.dp, MaterialTheme.colorScheme.outlineVariant)
-            ) {
-                Column(modifier = Modifier.padding(16.dp)) {
-                    Row(
+            SettingsSectionCard {
+                Row(
                         modifier = Modifier.fillMaxWidth(),
                         horizontalArrangement = Arrangement.SpaceBetween,
                         verticalAlignment = Alignment.CenterVertically
@@ -1728,29 +1385,87 @@ fun SettingsScreen(
                             }
                         }
                     }
-                }
+            }
+
+            // -----------------------------------------------------------------
+            // QUICK ACCESS & SHORTCUTS
+            // -----------------------------------------------------------------
+            SettingsSectionHeader(title = "QUICK ACCESS & SHORTCUTS", icon = Icons.Default.Apps)
+            SettingsSectionCard {
+                Row(
+                        modifier = Modifier.fillMaxWidth(),
+                        horizontalArrangement = Arrangement.SpaceBetween,
+                        verticalAlignment = Alignment.CenterVertically
+                    ) {
+                        Column(modifier = Modifier.weight(1f)) {
+                            Text(
+                                text = "Launcher App Shortcuts",
+                                fontWeight = FontWeight.SemiBold,
+                                fontSize = 15.sp,
+                                color = MaterialTheme.colorScheme.onSurface
+                            )
+                            Text(
+                                text = "Long-press the Kanri icon on your home screen to quickly Add Expense, Add Income, or Split Bill",
+                                fontSize = 12.sp,
+                                color = MaterialTheme.colorScheme.onSurfaceVariant
+                            )
+                        }
+                    }
+
+                    if (com.omkarnub.kanri.util.AppShortcutManager.isQuickSettingsTileRequestSupported()) {
+                        HorizontalDivider(
+                            modifier = Modifier.padding(vertical = 12.dp),
+                            color = MaterialTheme.colorScheme.outlineVariant.copy(alpha = 0.5f)
+                        )
+                        Row(
+                            modifier = Modifier.fillMaxWidth(),
+                            horizontalArrangement = Arrangement.SpaceBetween,
+                            verticalAlignment = Alignment.CenterVertically
+                        ) {
+                            Column(modifier = Modifier.weight(1f)) {
+                                Text(
+                                    text = "Quick Settings Tile",
+                                    fontWeight = FontWeight.SemiBold,
+                                    fontSize = 15.sp,
+                                    color = MaterialTheme.colorScheme.onSurface
+                                )
+                                Text(
+                                    text = "Add 'Quick Add' to your phone's notification pull-down shade",
+                                    fontSize = 12.sp,
+                                    color = MaterialTheme.colorScheme.onSurfaceVariant
+                                )
+                            }
+                            OutlinedButton(
+                                onClick = {
+                                    haptics.click()
+                                    com.omkarnub.kanri.util.AppShortcutManager.requestAddQuickSettingsTile(context) { result ->
+                                        if (result == 1) {
+                                            Toast.makeText(context, "Quick Add tile added to Quick Settings!", Toast.LENGTH_SHORT).show()
+                                        } else if (result == 2) {
+                                            Toast.makeText(context, "Tile is already in your Quick Settings", Toast.LENGTH_SHORT).show()
+                                        }
+                                    }
+                                },
+                                shape = RoundedCornerShape(12.dp)
+                            ) {
+                                Text("Add Tile", fontSize = 12.sp)
+                            }
+                        }
+                    }
             }
 
             // -----------------------------------------------------------------
             // 7: AUTOMATIONS & SMART MERCHANT RULES
             // -----------------------------------------------------------------
             SettingsSectionHeader(title = "AUTOMATIONS & RULES", icon = Icons.Default.AutoFixHigh)
-            Card(
-                modifier = Modifier
-                    .fillMaxWidth()
-                    .clip(RoundedCornerShape(18.dp))
-                    .clickable {
-                        haptics.tick()
-                        showMerchantRulesScreen = true
-                    },
-                shape = RoundedCornerShape(18.dp),
-                colors = CardDefaults.cardColors(containerColor = MaterialTheme.colorScheme.surface),
-                border = BorderStroke(1.dp, MaterialTheme.colorScheme.outlineVariant)
+            SettingsSectionCard(
+                onClick = {
+                    haptics.tick()
+                    showMerchantRulesScreen = true
+                }
             ) {
                 Row(
-                    modifier = Modifier
-                        .fillMaxWidth()
-                        .padding(16.dp),
+                    modifier = Modifier.fillMaxWidth(),
                     verticalAlignment = Alignment.CenterVertically
                 ) {
                     Box(
@@ -1813,95 +1528,113 @@ fun SettingsScreen(
             // 8: SUPPORT, CRASH LOGS & FEEDBACK
             // -----------------------------------------------------------------
             SettingsSectionHeader(title = "SUPPORT & FEEDBACK", icon = Icons.Default.HealthAndSafety)
-            Card(
-                modifier = Modifier.fillMaxWidth(),
-                shape = RoundedCornerShape(18.dp),
-                colors = CardDefaults.cardColors(containerColor = MaterialTheme.colorScheme.surface),
-                border = BorderStroke(1.dp, MaterialTheme.colorScheme.outlineVariant)
-            ) {
-                Column(modifier = Modifier.padding(16.dp)) {
-                    // 7] Crash Logs
-                    SettingsRow(
-                        icon = Icons.Default.HealthAndSafety,
-                        title = "App Health & Crash Logs",
-                        subtitle = "Review local stability diagnostics with zero cloud telemetry",
-                        onClick = { showCrashLogsDialog = true }
-                    )
+            SettingsSectionCard {
+                // 7] Crash Logs
+                SettingsRow(
+                    icon = Icons.Default.HealthAndSafety,
+                    title = "App Health & Crash Logs",
+                    subtitle = "Review local stability diagnostics with zero cloud telemetry",
+                    onClick = { showCrashLogsDialog = true }
+                )
 
-                    Spacer(modifier = Modifier.height(12.dp))
-                    HorizontalDivider(color = MaterialTheme.colorScheme.outlineVariant.copy(alpha = 0.5f))
-                    Spacer(modifier = Modifier.height(12.dp))
+                Spacer(modifier = Modifier.height(12.dp))
+                HorizontalDivider(color = MaterialTheme.colorScheme.outlineVariant.copy(alpha = 0.5f))
+                Spacer(modifier = Modifier.height(12.dp))
 
-                    // 8] Contact Us
-                    SettingsRow(
-                        icon = Icons.Default.Email,
-                        title = "Contact Us",
-                        subtitle = "support@kanri.app • Reach the developer directly",
-                        onClick = { showContactDialog = true }
-                    )
+                // 8] Contact Us
+                SettingsRow(
+                    icon = Icons.Default.Email,
+                    title = "Contact Us",
+                    subtitle = "support@kanri.app • Reach the developer directly",
+                    onClick = { showContactDialog = true }
+                )
 
-                    Spacer(modifier = Modifier.height(12.dp))
-                    HorizontalDivider(color = MaterialTheme.colorScheme.outlineVariant.copy(alpha = 0.5f))
-                    Spacer(modifier = Modifier.height(12.dp))
+                Spacer(modifier = Modifier.height(12.dp))
+                HorizontalDivider(color = MaterialTheme.colorScheme.outlineVariant.copy(alpha = 0.5f))
+                Spacer(modifier = Modifier.height(12.dp))
 
-                    // 9] Suggest a Feature
-                    SettingsRow(
-                        icon = Icons.Default.AutoAwesome,
-                        title = "Suggest a Feature",
-                        subtitle = "Share your feedback and feature requests",
-                        onClick = { showSuggestFeatureDialog = true }
-                    )
+                // 9] Suggest a Feature
+                SettingsRow(
+                    icon = Icons.Default.AutoAwesome,
+                    title = "Suggest a Feature",
+                    subtitle = "Share your feedback and feature requests",
+                    onClick = { showSuggestFeatureDialog = true }
+                )
 
-                    Spacer(modifier = Modifier.height(12.dp))
-                    HorizontalDivider(color = MaterialTheme.colorScheme.outlineVariant.copy(alpha = 0.5f))
-                    Spacer(modifier = Modifier.height(12.dp))
+                Spacer(modifier = Modifier.height(12.dp))
+                HorizontalDivider(color = MaterialTheme.colorScheme.outlineVariant.copy(alpha = 0.5f))
+                Spacer(modifier = Modifier.height(12.dp))
 
-                    // 10] Privacy Policy
-                    SettingsRow(
-                        icon = Icons.Default.Shield,
-                        title = "Privacy Policy",
-                        subtitle = "Offline-first data sovereignty, zero trackers & permissions transparency",
-                        onClick = { showPrivacyPolicyDialog = true }
-                    )
-                }
+                // 10] Privacy Policy
+                SettingsRow(
+                    icon = Icons.Default.Shield,
+                    title = "Privacy Policy",
+                    subtitle = "Offline-first data sovereignty, zero trackers & permissions transparency",
+                    onClick = { showPrivacyPolicyDialog = true }
+                )
             }
 
             // -----------------------------------------------------------------
             // 2 & 10: DANGER ZONE (RESET APP & KILL APP)
             // -----------------------------------------------------------------
             SettingsSectionHeader(title = "SYSTEM & ACTIONS", icon = Icons.Default.PowerSettingsNew)
-            Card(
-                modifier = Modifier.fillMaxWidth(),
-                shape = RoundedCornerShape(18.dp),
-                colors = CardDefaults.cardColors(containerColor = MaterialTheme.colorScheme.surface),
-                border = BorderStroke(1.dp, MaterialTheme.colorScheme.outlineVariant)
-            ) {
-                Column(modifier = Modifier.padding(16.dp)) {
-                    // 2] Reset App
-                    SettingsRow(
-                        icon = Icons.Default.DeleteForever,
-                        title = "Reset App",
-                        subtitle = "Permanently wipe all records, categories, and encryption keys",
-                        tint = MaterialTheme.colorScheme.error,
-                        onClick = {
-                            resetConfirmationInput = ""
-                            showResetDialog = true
+            SettingsSectionCard {
+                // Check for Updates
+                SettingsRow(
+                    icon = Icons.Default.SystemUpdate,
+                    title = "Check for Updates",
+                    subtitle = if (isCheckingForUpdates) "Checking GitHub for updates..." else "Current: v${BuildConfig.VERSION_NAME} • Tap to check",
+                    onClick = {
+                        if (!isCheckingForUpdates) {
+                            isCheckingForUpdates = true
+                            scope.launch {
+                                val res = appUpdateManager.checkForUpdate()
+                                isCheckingForUpdates = false
+                                res.onSuccess { updateInfo ->
+                                    if (updateInfo != null) {
+                                        activeUpdateDialogInfo = updateInfo
+                                        haptics.success()
+                                    } else {
+                                        haptics.tick()
+                                        Toast.makeText(context, "Kanri is up to date (v${BuildConfig.VERSION_NAME})", Toast.LENGTH_SHORT).show()
+                                    }
+                                }.onFailure { e ->
+                                    haptics.warning()
+                                    Toast.makeText(context, "Could not check for updates: ${e.message}", Toast.LENGTH_SHORT).show()
+                                }
+                            }
                         }
-                    )
+                    }
+                )
 
-                    Spacer(modifier = Modifier.height(12.dp))
-                    HorizontalDivider(color = MaterialTheme.colorScheme.outlineVariant.copy(alpha = 0.5f))
-                    Spacer(modifier = Modifier.height(12.dp))
+                Spacer(modifier = Modifier.height(12.dp))
+                HorizontalDivider(color = MaterialTheme.colorScheme.outlineVariant.copy(alpha = 0.5f))
+                Spacer(modifier = Modifier.height(12.dp))
 
-                    // 10] Kill App
-                    SettingsRow(
-                        icon = Icons.Default.PowerSettingsNew,
-                        title = "Kill App",
-                        subtitle = "Immediately terminate application process and close memory",
-                        tint = MaterialTheme.colorScheme.onSurface,
-                        onClick = { showKillAppDialog = true }
-                    )
-                }
+                // 2] Reset App
+                SettingsRow(
+                    icon = Icons.Default.DeleteForever,
+                    title = "Reset App",
+                    subtitle = "Permanently wipe all records, categories, and encryption keys",
+                    tint = MaterialTheme.colorScheme.error,
+                    onClick = {
+                        resetConfirmationInput = ""
+                        showResetDialog = true
+                    }
+                )
+
+                Spacer(modifier = Modifier.height(12.dp))
+                HorizontalDivider(color = MaterialTheme.colorScheme.outlineVariant.copy(alpha = 0.5f))
+                Spacer(modifier = Modifier.height(12.dp))
+
+                // 10] Kill App
+                SettingsRow(
+                    icon = Icons.Default.PowerSettingsNew,
+                    title = "Kill App",
+                    subtitle = "Immediately terminate application process and close memory",
+                    tint = MaterialTheme.colorScheme.onSurface,
+                    onClick = { showKillAppDialog = true }
+                )
             }
 
             Spacer(modifier = Modifier.height(20.dp))
@@ -2037,8 +1770,16 @@ private fun ThemePreviewCard(
     onClick: () -> Unit,
     modifier: Modifier = Modifier
 ) {
+    val tokens = LocalKanriGlass.current
     // Theme palette constants for realistic previews
     val (bgColor, cardColor, cardBorder, barColor, dockColor) = when (mode) {
+        ThemeMode.SYSTEM -> listOf(
+            Color(0xFF1B1B1F),
+            Color(0xFF26262B),
+            Color(0xFF383840),
+            Color(0xFFDDDDDD),
+            Color(0xFF1E1E24)
+        )
         ThemeMode.DARK -> listOf(
             Color(0xFF141414),
             Color(0xFF222222),
@@ -2060,17 +1801,24 @@ private fun ThemePreviewCard(
             Color(0xFF222222),
             Color(0xFFEDE8DD)
         )
+        ThemeMode.GLASS -> listOf(
+            Color(0xFF0B0B0E),
+            tokens?.tintBlur ?: Color(0x26FFFFFF),
+            tokens?.borderStart ?: Color(0x47FFFFFF),
+            tokens?.textPrimary ?: Color(0xFFF5F5F7),
+            tokens?.tintFlat ?: Color(0x2EFFFFFF)
+        )
     }
 
     Card(
         modifier = modifier
-            .clip(RoundedCornerShape(14.dp))
+            .clip(RoundedCornerShape(tokens?.cornerRadius ?: 14.dp))
             .clickable(onClick = onClick),
-        shape = RoundedCornerShape(14.dp),
-        colors = CardDefaults.cardColors(containerColor = MaterialTheme.colorScheme.surfaceVariant.copy(alpha = 0.35f)),
+        shape = RoundedCornerShape(tokens?.cornerRadius ?: 14.dp),
+        colors = CardDefaults.cardColors(containerColor = tokens?.tintFlat ?: MaterialTheme.colorScheme.surfaceVariant.copy(alpha = 0.35f)),
         border = BorderStroke(
-            width = if (isSelected) 1.5.dp else 1.dp,
-            color = if (isSelected) MaterialTheme.colorScheme.primary else MaterialTheme.colorScheme.outlineVariant
+            width = if (isSelected) 1.5.dp else (tokens?.borderWidth ?: 1.dp),
+            color = if (isSelected) MaterialTheme.colorScheme.primary else (tokens?.borderEnd ?: MaterialTheme.colorScheme.outlineVariant)
         )
     ) {
         Column(
@@ -2089,6 +1837,21 @@ private fun ThemePreviewCard(
                     .border(1.dp, cardBorder, RoundedCornerShape(10.dp))
                     .padding(6.dp)
             ) {
+                // If glass theme, draw a subtle frosted glow in the miniature preview
+                if (mode == ThemeMode.GLASS) {
+                    androidx.compose.foundation.Canvas(modifier = Modifier.fillMaxSize()) {
+                        drawCircle(
+                            brush = Brush.radialGradient(
+                                colors = listOf(Color.White.copy(alpha = 0.12f), Color.Transparent),
+                                center = Offset(size.width * 0.2f, size.height * 0.2f),
+                                radius = size.width * 0.8f
+                            ),
+                            radius = size.width * 0.8f,
+                            center = Offset(size.width * 0.2f, size.height * 0.2f)
+                        )
+                    }
+                }
+
                 Column(
                     modifier = Modifier.fillMaxSize(),
                     verticalArrangement = Arrangement.SpaceBetween
@@ -2205,9 +1968,11 @@ private fun ThemePreviewCard(
 
             Text(
                 text = when (mode) {
+                    ThemeMode.SYSTEM -> "System"
                     ThemeMode.DARK -> "Charcoal"
                     ThemeMode.AMOLED -> "Pitch Black"
                     ThemeMode.LIGHT -> "Soft Cream"
+                    ThemeMode.GLASS -> "Frosted Glass"
                 },
                 fontSize = 10.sp,
                 color = MaterialTheme.colorScheme.onSurfaceVariant
@@ -2525,7 +2290,39 @@ private fun SuggestFeatureDialog(onDismiss: () -> Unit) {
 // REUSABLE SETTINGS HELPERS
 // =============================================================================
 @Composable
+private fun SettingsSectionCard(
+    modifier: Modifier = Modifier,
+    onClick: (() -> Unit)? = null,
+    content: @Composable ColumnScope.() -> Unit
+) {
+    val tokens = LocalKanriGlass.current
+    if (tokens != null) {
+        KanriGlassCard(
+            modifier = modifier.fillMaxWidth(),
+            level = GlassLevel.Blur,
+            shape = RoundedCornerShape(tokens.cornerRadius),
+            onClick = onClick
+        ) {
+            Column(modifier = Modifier.padding(16.dp), content = content)
+        }
+    } else {
+        Card(
+            modifier = modifier
+                .fillMaxWidth()
+                .then(if (onClick != null) Modifier.clickable(onClick = onClick) else Modifier),
+            shape = RoundedCornerShape(18.dp),
+            colors = CardDefaults.cardColors(containerColor = MaterialTheme.colorScheme.surface),
+            border = BorderStroke(1.dp, MaterialTheme.colorScheme.outlineVariant)
+        ) {
+            Column(modifier = Modifier.padding(16.dp), content = content)
+        }
+    }
+}
+
+@Composable
 private fun SettingsSectionHeader(title: String, icon: ImageVector) {
+    val tokens = LocalKanriGlass.current
+    val headerColor = tokens?.textSecondary ?: MaterialTheme.colorScheme.primary
     Row(
         verticalAlignment = Alignment.CenterVertically,
         modifier = Modifier.padding(start = 4.dp, top = 4.dp)
@@ -2533,14 +2330,14 @@ private fun SettingsSectionHeader(title: String, icon: ImageVector) {
         Icon(
             imageVector = icon,
             contentDescription = null,
-            tint = MaterialTheme.colorScheme.primary,
+            tint = headerColor,
             modifier = Modifier.size(16.dp)
         )
         Spacer(modifier = Modifier.width(6.dp))
         Text(
             text = title,
             style = MaterialTheme.typography.labelSmall.copy(
-                color = MaterialTheme.colorScheme.primary,
+                color = headerColor,
                 letterSpacing = 1.2.sp,
                 fontWeight = FontWeight.Bold
             )
@@ -2556,7 +2353,14 @@ private fun SettingsRow(
     tint: Color = MaterialTheme.colorScheme.onSurface,
     onClick: () -> Unit
 ) {
+    val tokens = LocalKanriGlass.current
     val haptics = rememberKanriHaptics()
+    val effectiveTint = if (tint == MaterialTheme.colorScheme.onSurface && tokens != null) {
+        tokens.textPrimary
+    } else tint
+    val subtitleColor = tokens?.textSecondary ?: MaterialTheme.colorScheme.onSurfaceVariant
+    val arrowColor = tokens?.textTertiary ?: MaterialTheme.colorScheme.onSurfaceVariant
+
     Row(
         modifier = Modifier
             .fillMaxWidth()
@@ -2575,7 +2379,7 @@ private fun SettingsRow(
             Icon(
                 imageVector = icon,
                 contentDescription = null,
-                tint = tint,
+                tint = effectiveTint,
                 modifier = Modifier.size(20.dp)
             )
             Spacer(modifier = Modifier.width(12.dp))
@@ -2584,19 +2388,19 @@ private fun SettingsRow(
                     text = title,
                     fontWeight = FontWeight.SemiBold,
                     fontSize = 14.sp,
-                    color = tint
+                    color = effectiveTint
                 )
                 Text(
                     text = subtitle,
                     fontSize = 11.sp,
-                    color = MaterialTheme.colorScheme.onSurfaceVariant
+                    color = subtitleColor
                 )
             }
         }
         Icon(
             imageVector = Icons.AutoMirrored.Filled.KeyboardArrowRight,
             contentDescription = null,
-            tint = MaterialTheme.colorScheme.onSurfaceVariant,
+            tint = arrowColor,
             modifier = Modifier.size(18.dp)
         )
     }
@@ -2688,6 +2492,138 @@ private fun CategoryEditCreateDialog(
         dismissButton = {
             TextButton(onClick = onDismiss) {
                 Text("Cancel")
+            }
+        }
+    )
+}
+
+@Composable
+private fun SelectCurrencyDialog(
+    currentCurrency: AppCurrency,
+    onSelectCurrency: (AppCurrency) -> Unit,
+    onDismiss: () -> Unit
+) {
+    var searchQuery by remember { mutableStateOf("") }
+    val filteredCurrencies = remember(searchQuery) {
+        val query = searchQuery.trim().lowercase()
+        if (query.isEmpty()) {
+            AppCurrency.entries
+        } else {
+            AppCurrency.entries.filter { currency ->
+                currency.code.lowercase().contains(query) ||
+                    currency.displayName.lowercase().contains(query) ||
+                    currency.symbol.lowercase().contains(query)
+            }
+        }
+    }
+
+    AlertDialog(
+        onDismissRequest = onDismiss,
+        title = {
+            Text(
+                text = "Choose Currency",
+                fontWeight = FontWeight.Bold,
+                color = MaterialTheme.colorScheme.onSurface
+            )
+        },
+        text = {
+            Column(
+                modifier = Modifier.fillMaxWidth(),
+                verticalArrangement = Arrangement.spacedBy(10.dp)
+            ) {
+                Text(
+                    text = "Select your primary currency. Amounts and widgets will format using this currency.",
+                    fontSize = 12.5.sp,
+                    color = MaterialTheme.colorScheme.onSurfaceVariant
+                )
+
+                // Search field
+                OutlinedTextField(
+                    value = searchQuery,
+                    onValueChange = { searchQuery = it },
+                    placeholder = { Text("Search currency or code...") },
+                    singleLine = true,
+                    modifier = Modifier.fillMaxWidth(),
+                    shape = RoundedCornerShape(12.dp)
+                )
+
+                Column(
+                    modifier = Modifier
+                        .fillMaxWidth()
+                        .heightIn(max = 380.dp)
+                        .verticalScroll(rememberScrollState()),
+                    verticalArrangement = Arrangement.spacedBy(8.dp)
+                ) {
+                    if (filteredCurrencies.isEmpty()) {
+                        Box(
+                            modifier = Modifier
+                                .fillMaxWidth()
+                                .padding(vertical = 24.dp),
+                            contentAlignment = Alignment.Center
+                        ) {
+                            Text(
+                                text = "No currency matching \"$searchQuery\"",
+                                color = MaterialTheme.colorScheme.onSurfaceVariant,
+                                fontSize = 13.sp
+                            )
+                        }
+                    } else {
+                        filteredCurrencies.forEach { currency ->
+                            val isSelected = currency == currentCurrency
+                            Surface(
+                                onClick = { onSelectCurrency(currency) },
+                                shape = RoundedCornerShape(14.dp),
+                                color = if (isSelected) MaterialTheme.colorScheme.onSurface.copy(alpha = 0.12f) else Color.Transparent,
+                                border = BorderStroke(
+                                    1.dp,
+                                    if (isSelected) MaterialTheme.colorScheme.onSurface else MaterialTheme.colorScheme.outlineVariant.copy(alpha = 0.5f)
+                                ),
+                                modifier = Modifier.fillMaxWidth()
+                            ) {
+                                Row(
+                                    modifier = Modifier
+                                        .fillMaxWidth()
+                                        .padding(horizontal = 14.dp, vertical = 12.dp),
+                                    verticalAlignment = Alignment.CenterVertically,
+                                    horizontalArrangement = Arrangement.SpaceBetween
+                                ) {
+                                    Row(
+                                        verticalAlignment = Alignment.CenterVertically,
+                                        horizontalArrangement = Arrangement.spacedBy(10.dp)
+                                    ) {
+                                        Text(text = currency.flag, fontSize = 20.sp)
+                                        Column {
+                                            Text(
+                                                text = "${currency.displayName} (${currency.code})",
+                                                fontWeight = if (isSelected) FontWeight.Bold else FontWeight.Medium,
+                                                fontSize = 14.sp,
+                                                color = MaterialTheme.colorScheme.onSurface
+                                            )
+                                            Text(
+                                                text = "Symbol: ${currency.symbol}",
+                                                fontSize = 12.sp,
+                                                color = MaterialTheme.colorScheme.onSurfaceVariant
+                                            )
+                                        }
+                                    }
+                                    if (isSelected) {
+                                        Icon(
+                                            imageVector = Icons.Default.CheckCircle,
+                                            contentDescription = "Selected",
+                                            tint = MaterialTheme.colorScheme.onSurface,
+                                            modifier = Modifier.size(20.dp)
+                                        )
+                                    }
+                                }
+                            }
+                        }
+                    }
+                }
+            }
+        },
+        confirmButton = {
+            TextButton(onClick = onDismiss) {
+                Text("Cancel", color = MaterialTheme.colorScheme.onSurfaceVariant)
             }
         }
     )

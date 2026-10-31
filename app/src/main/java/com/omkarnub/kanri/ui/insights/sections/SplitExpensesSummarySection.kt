@@ -30,6 +30,8 @@ import androidx.compose.ui.semantics.semantics
 import androidx.compose.ui.text.font.FontWeight
 import androidx.compose.ui.unit.dp
 import androidx.compose.ui.unit.sp
+import com.omkarnub.kanri.ui.common.GlassLevel
+import com.omkarnub.kanri.ui.common.KanriGlassCard
 import com.omkarnub.kanri.ui.home.formatCurrency
 import com.omkarnub.kanri.ui.insights.SplitExpensesSummaryData
 import com.omkarnub.kanri.ui.insights.SplitPendingPerson
@@ -43,16 +45,15 @@ fun SplitExpensesSummarySection(
     onOpenLending: () -> Unit,
     modifier: Modifier = Modifier
 ) {
-    Surface(
+    KanriGlassCard(
         modifier = modifier
             .fillMaxWidth()
-            .clip(RoundedCornerShape(20.dp))
-            .clickable(onClick = onOpenLending)
             .semantics {
                 contentDescription = "Split expenses: your share ${formatCurrency(data.myOwnShareTotal)} of ${formatCurrency(data.billsPaidByMeTotal)}"
             },
+        level = GlassLevel.Blur,
         shape = RoundedCornerShape(20.dp),
-        color = MaterialTheme.colorScheme.surfaceVariant.copy(alpha = 0.18f)
+        onClick = onOpenLending
     ) {
         Column(
             modifier = Modifier

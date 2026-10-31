@@ -1,4 +1,4 @@
-package com.omkarnub.kanri.data.lending
+﻿package com.omkarnub.kanri.data.lending
 
 import com.omkarnub.kanri.data.db.LendingEntity
 import com.omkarnub.kanri.data.db.LendingRepaymentEntity

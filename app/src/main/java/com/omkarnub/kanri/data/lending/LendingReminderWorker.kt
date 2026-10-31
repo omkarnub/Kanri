@@ -1,4 +1,4 @@
-package com.omkarnub.kanri.data.lending
+﻿package com.omkarnub.kanri.data.lending
 
 import android.app.NotificationChannel
 import android.app.NotificationManager
@@ -146,7 +146,7 @@ class LendingReminderWorker(
             .bigText(lines.joinToString("\n"))
 
         val notification = NotificationCompat.Builder(applicationContext, CHANNEL_ID)
-            .setSmallIcon(R.mipmap.ic_launcher)
+            .setSmallIcon(R.drawable.ic_notification)
             .setContentTitle(title)
             .setContentText(previewText)
             .setStyle(bigTextStyle)

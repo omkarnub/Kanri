@@ -14,6 +14,7 @@
     <uses-permission android:name="android.permission.INTERNET" />
     <uses-permission android:name="android.permission.ACCESS_NETWORK_STATE" />
     <uses-permission android:name="android.permission.VIBRATE" />
+    <uses-permission android:name="android.permission.REQUEST_INSTALL_PACKAGES" />
 
     <application
         android:name=".KanriApplication"
@@ -34,6 +35,7 @@
             android:icon="@mipmap/ic_launcher_dark"
             android:roundIcon="@mipmap/ic_launcher_dark_round"
             android:taskAffinity="com.omkarnub.kanri.dark.dark"
+            android:launchMode="singleTop"
             android:windowSoftInputMode="adjustResize">
             <intent-filter>
                 <action android:name="android.intent.action.MAIN" />
@@ -41,6 +43,16 @@
                 <category android:name="android.intent.category.LAUNCHER" />
                 <category android:name="android.intent.category.DEFAULT" />
             </intent-filter>
+            <intent-filter>
+                <action android:name="com.omkarnub.kanri.action.ADD_EXPENSE" />
+                <action android:name="com.omkarnub.kanri.action.ADD_INCOME" />
+                <action android:name="com.omkarnub.kanri.action.SPLIT_BILL" />
+                <action android:name="com.omkarnub.kanri.action.OPEN_LENDING" />
+                <category android:name="android.intent.category.DEFAULT" />
+            </intent-filter>
+            <meta-data
+                android:name="android.app.shortcuts"
+                android:resource="@xml/shortcuts" />
         </activity>
 
         <!-- 2. Dark Icon + Light Splash (for Light Theme) -->
@@ -53,6 +65,7 @@
             android:icon="@mipmap/ic_launcher_dark"
             android:roundIcon="@mipmap/ic_launcher_dark_round"
             android:taskAffinity="com.omkarnub.kanri.dark.light"
+            android:launchMode="singleTop"
             android:windowSoftInputMode="adjustResize">
             <intent-filter>
                 <action android:name="android.intent.action.MAIN" />
@@ -60,6 +73,16 @@
                 <category android:name="android.intent.category.LAUNCHER" />
                 <category android:name="android.intent.category.DEFAULT" />
             </intent-filter>
+            <intent-filter>
+                <action android:name="com.omkarnub.kanri.action.ADD_EXPENSE" />
+                <action android:name="com.omkarnub.kanri.action.ADD_INCOME" />
+                <action android:name="com.omkarnub.kanri.action.SPLIT_BILL" />
+                <action android:name="com.omkarnub.kanri.action.OPEN_LENDING" />
+                <category android:name="android.intent.category.DEFAULT" />
+            </intent-filter>
+            <meta-data
+                android:name="android.app.shortcuts"
+                android:resource="@xml/shortcuts" />
         </activity>
 
         <!-- 3. Light Icon + Dark Splash (for Dark Theme) -->
@@ -72,6 +95,7 @@
             android:icon="@mipmap/ic_launcher_light"
             android:roundIcon="@mipmap/ic_launcher_light_round"
             android:taskAffinity="com.omkarnub.kanri.light.dark"
+            android:launchMode="singleTop"
             android:windowSoftInputMode="adjustResize">
             <intent-filter>
                 <action android:name="android.intent.action.MAIN" />
@@ -79,6 +103,16 @@
                 <category android:name="android.intent.category.LAUNCHER" />
                 <category android:name="android.intent.category.DEFAULT" />
             </intent-filter>
+            <intent-filter>
+                <action android:name="com.omkarnub.kanri.action.ADD_EXPENSE" />
+                <action android:name="com.omkarnub.kanri.action.ADD_INCOME" />
+                <action android:name="com.omkarnub.kanri.action.SPLIT_BILL" />
+                <action android:name="com.omkarnub.kanri.action.OPEN_LENDING" />
+                <category android:name="android.intent.category.DEFAULT" />
+            </intent-filter>
+            <meta-data
+                android:name="android.app.shortcuts"
+                android:resource="@xml/shortcuts" />
         </activity>
 
         <!-- 4. Light Icon + Light Splash (for Light Theme) -->
@@ -91,6 +125,7 @@
             android:icon="@mipmap/ic_launcher_light"
             android:roundIcon="@mipmap/ic_launcher_light_round"
             android:taskAffinity="com.omkarnub.kanri.light.light"
+            android:launchMode="singleTop"
             android:windowSoftInputMode="adjustResize">
             <intent-filter>
                 <action android:name="android.intent.action.MAIN" />
@@ -98,6 +133,16 @@
                 <category android:name="android.intent.category.LAUNCHER" />
                 <category android:name="android.intent.category.DEFAULT" />
             </intent-filter>
+            <intent-filter>
+                <action android:name="com.omkarnub.kanri.action.ADD_EXPENSE" />
+                <action android:name="com.omkarnub.kanri.action.ADD_INCOME" />
+                <action android:name="com.omkarnub.kanri.action.SPLIT_BILL" />
+                <action android:name="com.omkarnub.kanri.action.OPEN_LENDING" />
+                <category android:name="android.intent.category.DEFAULT" />
+            </intent-filter>
+            <meta-data
+                android:name="android.app.shortcuts"
+                android:resource="@xml/shortcuts" />
         </activity>
 
 
@@ -151,7 +196,7 @@
         <service
             android:name=".service.QuickAddTileService"
             android:label="@string/quick_add_tile_label"
-            android:icon="@drawable/ic_widget_add"
+            android:icon="@drawable/ic_quick_add_tile"
             android:permission="android.permission.BIND_QUICK_SETTINGS_TILE"
             android:exported="true">
             <intent-filter>
@@ -249,6 +294,19 @@
             <meta-data
                 android:name="android.appwidget.provider"
                 android:resource="@xml/widget_spent_today_info" />
+        </receiver>
+
+        <!-- 8. Cash & Online Wallet Balances Widget -->
+        <receiver
+            android:name=".widget.WalletBalanceWidgetProvider"
+            android:label="@string/widget_wallet_balance_name"
+            android:exported="true">
+            <intent-filter>
+                <action android:name="android.appwidget.action.APPWIDGET_UPDATE" />
+            </intent-filter>
+            <meta-data
+                android:name="android.appwidget.provider"
+                android:resource="@xml/widget_wallet_balance_info" />
         </receiver>
 
         <provider

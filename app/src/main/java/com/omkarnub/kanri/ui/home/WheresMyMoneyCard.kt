@@ -17,6 +17,9 @@ import androidx.compose.foundation.shape.RoundedCornerShape
 import androidx.compose.material.icons.Icons
 import androidx.compose.material.icons.automirrored.filled.ArrowForward
 import androidx.compose.material.icons.filled.AccountBalanceWallet
+import com.omkarnub.kanri.ui.common.GlassLevel
+import com.omkarnub.kanri.ui.common.KanriGlassCard
+import com.omkarnub.kanri.ui.theme.LocalKanriGlass
 import androidx.compose.material3.Card
 import androidx.compose.material3.CardDefaults
 import androidx.compose.material3.Icon
@@ -51,25 +54,22 @@ fun ManageMoneyBalanceCard(
     onSetupClick: () -> Unit,
     modifier: Modifier = Modifier
 ) {
-    val haptics = rememberKanriHaptics()
+    val tokens = LocalKanriGlass.current
+
+    val secondaryLabelColor = tokens?.textPrimary?.copy(alpha = 0.80f)
+        ?: MaterialTheme.colorScheme.onSurface.copy(alpha = 0.80f)
 
     if (!balances.isConfigured) {
         // Unconfigured minimal setup card
-        Card(
+        KanriGlassCard(
             modifier = modifier
                 .fillMaxWidth()
-                .clickable {
-                    haptics.click()
-                    onSetupClick()
-                }
                 .semantics {
-                    contentDescription = "Manage money Balance, tap to set up Cash and Online balances"
+                    contentDescription = "Wallets, tap to set up Cash and Online balances"
                 },
-            shape = RoundedCornerShape(20.dp),
-            colors = CardDefaults.cardColors(
-                containerColor = MaterialTheme.colorScheme.surfaceVariant.copy(alpha = 0.35f)
-            ),
-            border = BorderStroke(1.dp, MaterialTheme.colorScheme.outlineVariant)
+            level = GlassLevel.Blur,
+            shape = RoundedCornerShape(24.dp),
+            onClick = onSetupClick
         ) {
             Column(
                 modifier = Modifier
@@ -82,18 +82,18 @@ fun ManageMoneyBalanceCard(
                     verticalAlignment = Alignment.CenterVertically
                 ) {
                     Text(
-                        text = "Manage money Balance",
+                        text = "Wallets",
                         style = MaterialTheme.typography.labelSmall.copy(
                             fontWeight = FontWeight.Bold,
                             letterSpacing = 1.1.sp
                         ),
-                        color = MaterialTheme.colorScheme.onSurfaceVariant
+                        color = secondaryLabelColor
                     )
 
                     Icon(
                         imageVector = Icons.AutoMirrored.Filled.ArrowForward,
                         contentDescription = "Set Up Balances",
-                        tint = MaterialTheme.colorScheme.onSurfaceVariant,
+                        tint = secondaryLabelColor,
                         modifier = Modifier.size(18.dp)
                     )
                 }
@@ -132,46 +132,41 @@ fun ManageMoneyBalanceCard(
         return
     }
 
+    val zeroTodayText = "${CurrencyUtils.formatCurrency(0.0)} today"
     val cashTodayNet = balances.cashTodayNet
     val cashFlowText = when {
         cashTodayNet > 0.0001 -> "+${CurrencyUtils.formatCurrency(cashTodayNet)} today"
         cashTodayNet < -0.0001 -> "${CurrencyUtils.formatCurrency(cashTodayNet)} today"
-        else -> "₹0.00 today"
+        else -> zeroTodayText
     }
     val cashFlowColor = when {
         cashTodayNet > 0.0001 -> IncomeGreen
         cashTodayNet < -0.0001 -> ExpenseRed
-        else -> MaterialTheme.colorScheme.onSurfaceVariant.copy(alpha = 0.65f)
+        else -> secondaryLabelColor
     }
 
     val onlineTodayNet = balances.onlineTodayNet
     val onlineFlowText = when {
         onlineTodayNet > 0.0001 -> "+${CurrencyUtils.formatCurrency(onlineTodayNet)} today"
         onlineTodayNet < -0.0001 -> "${CurrencyUtils.formatCurrency(onlineTodayNet)} today"
-        else -> "₹0.00 today"
+        else -> zeroTodayText
     }
     val onlineFlowColor = when {
         onlineTodayNet > 0.0001 -> IncomeGreen
         onlineTodayNet < -0.0001 -> ExpenseRed
-        else -> MaterialTheme.colorScheme.onSurfaceVariant.copy(alpha = 0.65f)
+        else -> secondaryLabelColor
     }
 
     // Configured Minimalist Card
-    Card(
+    KanriGlassCard(
         modifier = modifier
             .fillMaxWidth()
-            .clickable {
-                haptics.click()
-                onClick()
-            }
             .semantics {
-                contentDescription = "Manage money Balance. Cash: ₹${balances.cash}, today: $cashFlowText. Online: ₹${balances.online}, today: $onlineFlowText"
+                contentDescription = "Wallets. Cash: ${CurrencyUtils.formatCurrency(balances.cash)}, today: $cashFlowText. Online: ${CurrencyUtils.formatCurrency(balances.online)}, today: $onlineFlowText"
             },
-        shape = RoundedCornerShape(20.dp),
-        colors = CardDefaults.cardColors(
-            containerColor = MaterialTheme.colorScheme.surfaceVariant.copy(alpha = 0.35f)
-        ),
-        border = BorderStroke(1.dp, MaterialTheme.colorScheme.outlineVariant)
+        level = GlassLevel.Blur,
+        shape = RoundedCornerShape(24.dp),
+        onClick = onClick
     ) {
         Column(
             modifier = Modifier
@@ -185,18 +180,18 @@ fun ManageMoneyBalanceCard(
                 verticalAlignment = Alignment.CenterVertically
             ) {
                 Text(
-                    text = "Manage money Balance",
+                    text = "Wallets",
                     style = MaterialTheme.typography.labelSmall.copy(
                         fontWeight = FontWeight.Bold,
                         letterSpacing = 1.1.sp
                     ),
-                    color = MaterialTheme.colorScheme.onSurfaceVariant
+                    color = secondaryLabelColor
                 )
 
                 Icon(
                     imageVector = Icons.AutoMirrored.Filled.ArrowForward,
                     contentDescription = "Open Full Wallet Window",
-                    tint = MaterialTheme.colorScheme.onSurfaceVariant,
+                    tint = secondaryLabelColor,
                     modifier = Modifier.size(18.dp)
                 )
             }
@@ -224,7 +219,7 @@ fun ManageMoneyBalanceCard(
                         Text(
                             text = "Cash Balance",
                             style = MaterialTheme.typography.labelSmall,
-                            color = MaterialTheme.colorScheme.onSurfaceVariant
+                            color = secondaryLabelColor
                         )
                     }
                     Spacer(modifier = Modifier.height(4.dp))
@@ -264,7 +259,7 @@ fun ManageMoneyBalanceCard(
                         Text(
                             text = "Online Balance",
                             style = MaterialTheme.typography.labelSmall,
-                            color = MaterialTheme.colorScheme.onSurfaceVariant
+                            color = secondaryLabelColor
                         )
                     }
                     Spacer(modifier = Modifier.height(4.dp))

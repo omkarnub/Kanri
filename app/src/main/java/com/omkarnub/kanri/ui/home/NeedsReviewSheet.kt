@@ -1,4 +1,4 @@
-package com.omkarnub.kanri.ui.home
+﻿package com.omkarnub.kanri.ui.home
 
 import androidx.activity.compose.BackHandler
 import androidx.compose.animation.AnimatedContent
@@ -52,10 +52,14 @@ import androidx.compose.material3.ExperimentalMaterial3Api
 import androidx.compose.material3.Icon
 import androidx.compose.material3.IconButton
 import androidx.compose.material3.MaterialTheme
-import androidx.compose.material3.ModalBottomSheet
 import androidx.compose.material3.Surface
 import androidx.compose.material3.Text
 import androidx.compose.material3.rememberModalBottomSheetState
+import com.omkarnub.kanri.ui.common.GlassLevel
+import com.omkarnub.kanri.ui.common.KanriGlassButton
+import com.omkarnub.kanri.ui.common.KanriGlassCard
+import com.omkarnub.kanri.ui.common.KanriModalBottomSheet
+import com.omkarnub.kanri.ui.common.kanriPrimaryButtonColors
 import androidx.compose.runtime.Composable
 import androidx.compose.runtime.getValue
 import androidx.compose.runtime.mutableStateOf
@@ -146,12 +150,9 @@ fun NeedsReviewSheet(
         }
     }
 
-    ModalBottomSheet(
+    KanriModalBottomSheet(
         onDismissRequest = onDismiss,
         sheetState = sheetState,
-        containerColor = MaterialTheme.colorScheme.surface,
-        contentColor = MaterialTheme.colorScheme.onSurface,
-        shape = RoundedCornerShape(topStart = 28.dp, topEnd = 28.dp),
         dragHandle = {
             Box(
                 modifier = Modifier
@@ -444,10 +445,7 @@ fun NeedsReviewSheet(
                                                 selectedTransaction = null
                                             },
                                             shape = RoundedCornerShape(10.dp),
-                                            colors = ButtonDefaults.buttonColors(
-                                                containerColor = MaterialTheme.colorScheme.onSurface,
-                                                contentColor = MaterialTheme.colorScheme.surface
-                                            )
+                                            colors = kanriPrimaryButtonColors()
                                         ) {
                                             Text("Convert", style = MaterialTheme.typography.labelSmall.copy(fontWeight = FontWeight.Bold))
                                         }
@@ -504,22 +502,19 @@ fun NeedsReviewSheet(
                             ) {
                                 items(filteredCategories, key = { it.id }) { cat ->
                                     val isSelected = chosenCategoryId == cat.id
-                                    Surface(
+                                    KanriGlassCard(
                                         shape = RoundedCornerShape(14.dp),
-                                        color = if (isSelected) MaterialTheme.colorScheme.onSurface.copy(alpha = 0.12f) else MaterialTheme.colorScheme.surfaceVariant,
-                                        border = if (isSelected) BorderStroke(1.8.dp, MaterialTheme.colorScheme.onSurface) else BorderStroke(0.5.dp, MaterialTheme.colorScheme.outlineVariant),
-                                        modifier = Modifier
-                                            .fillMaxWidth()
-                                            .clip(RoundedCornerShape(14.dp))
-                                            .clickable {
-                                                haptics.click()
-                                                chosenCategoryId = cat.id
-                                                val isLendBorrow = cat.name.contains("lend", ignoreCase = true) || cat.name.contains("borrow", ignoreCase = true)
-                                                if (isLendBorrow && onOpenLendBorrow != null) {
-                                                    onOpenLendBorrow(targetTx)
-                                                    selectedTransaction = null
-                                                }
+                                        level = if (isSelected) GlassLevel.Strong else GlassLevel.Flat,
+                                        modifier = Modifier.fillMaxWidth(),
+                                        onClick = {
+                                            haptics.click()
+                                            chosenCategoryId = cat.id
+                                            val isLendBorrow = cat.name.contains("lend", ignoreCase = true) || cat.name.contains("borrow", ignoreCase = true)
+                                            if (isLendBorrow && onOpenLendBorrow != null) {
+                                                onOpenLendBorrow(targetTx)
+                                                selectedTransaction = null
                                             }
+                                        }
                                     ) {
                                         Row(
                                             modifier = Modifier
@@ -531,13 +526,13 @@ fun NeedsReviewSheet(
                                                 modifier = Modifier
                                                     .size(30.dp)
                                                     .clip(CircleShape)
-                                                    .background(if (isSelected) MaterialTheme.colorScheme.onSurface else MaterialTheme.colorScheme.surface),
+                                                    .background(if (isSelected) MaterialTheme.colorScheme.inverseSurface else MaterialTheme.colorScheme.surfaceVariant.copy(alpha = 0.5f)),
                                                 contentAlignment = Alignment.Center
                                             ) {
                                                 CategoryIcon(
                                                     categoryName = cat.name,
                                                     iconName = cat.iconName,
-                                                    tint = if (isSelected) MaterialTheme.colorScheme.surface else MaterialTheme.colorScheme.onSurfaceVariant,
+                                                    tint = if (isSelected) MaterialTheme.colorScheme.inverseOnSurface else MaterialTheme.colorScheme.onSurfaceVariant,
                                                     modifier = Modifier.size(16.dp)
                                                 )
                                             }
@@ -607,8 +602,8 @@ fun NeedsReviewSheet(
                                                 checked = isAllocateToGoalEnabled,
                                                 onCheckedChange = { isAllocateToGoalEnabled = it },
                                                 colors = SwitchDefaults.colors(
-                                                    checkedThumbColor = MaterialTheme.colorScheme.surface,
-                                                    checkedTrackColor = MaterialTheme.colorScheme.onSurface,
+                                                    checkedThumbColor = MaterialTheme.colorScheme.inverseOnSurface,
+                                                    checkedTrackColor = MaterialTheme.colorScheme.inverseSurface,
                                                     uncheckedThumbColor = MaterialTheme.colorScheme.onSurfaceVariant,
                                                     uncheckedTrackColor = MaterialTheme.colorScheme.surfaceVariant
                                                 )
@@ -638,10 +633,10 @@ fun NeedsReviewSheet(
                                                     val isGoalSelected = selectedGoalId == g.id
                                                     Surface(
                                                         shape = RoundedCornerShape(12.dp),
-                                                        color = if (isGoalSelected) MaterialTheme.colorScheme.onSurface else MaterialTheme.colorScheme.surface,
+                                                        color = if (isGoalSelected) MaterialTheme.colorScheme.inverseSurface else MaterialTheme.colorScheme.surfaceVariant.copy(alpha = 0.5f),
                                                         border = BorderStroke(
                                                             1.dp,
-                                                            if (isGoalSelected) MaterialTheme.colorScheme.onSurface else MaterialTheme.colorScheme.outlineVariant
+                                                            if (isGoalSelected) MaterialTheme.colorScheme.inverseSurface else MaterialTheme.colorScheme.outlineVariant
                                                         ),
                                                         modifier = Modifier
                                                             .clip(RoundedCornerShape(12.dp))
@@ -654,7 +649,7 @@ fun NeedsReviewSheet(
                                                         ) {
                                                             GoalIcon(
                                                                 iconKey = g.emoji,
-                                                                tint = if (isGoalSelected) MaterialTheme.colorScheme.surface else MaterialTheme.colorScheme.onSurface,
+                                                                tint = if (isGoalSelected) MaterialTheme.colorScheme.inverseOnSurface else MaterialTheme.colorScheme.onSurface,
                                                                 modifier = Modifier.size(16.dp)
                                                             )
                                                             Text(
@@ -662,7 +657,7 @@ fun NeedsReviewSheet(
                                                                 fontFamily = GoogleSansFlex,
                                                                 fontSize = 12.sp,
                                                                 fontWeight = if (isGoalSelected) FontWeight.Bold else FontWeight.Medium,
-                                                                color = if (isGoalSelected) MaterialTheme.colorScheme.surface else MaterialTheme.colorScheme.onSurface
+                                                                color = if (isGoalSelected) MaterialTheme.colorScheme.inverseOnSurface else MaterialTheme.colorScheme.onSurface
                                                             )
                                                         }
                                                     }
@@ -761,7 +756,8 @@ fun NeedsReviewSheet(
 
                             Spacer(modifier = Modifier.height(12.dp))
 
-                            Button(
+                            KanriGlassButton(
+                                text = "Confirm",
                                 onClick = {
                                     haptics.success()
                                     chosenCategoryId?.let { catId ->
@@ -811,22 +807,8 @@ fun NeedsReviewSheet(
                                     .fillMaxWidth()
                                     .height(50.dp),
                                 shape = RoundedCornerShape(14.dp),
-                                colors = ButtonDefaults.buttonColors(
-                                    containerColor = MaterialTheme.colorScheme.onSurface,
-                                    contentColor = MaterialTheme.colorScheme.surface,
-                                    disabledContainerColor = MaterialTheme.colorScheme.onSurface.copy(alpha = 0.12f),
-                                    disabledContentColor = MaterialTheme.colorScheme.onSurface.copy(alpha = 0.38f)
-                                )
-                            ) {
-                                Text(
-                                    text = "Confirm",
-                                    fontFamily = GoogleSansFlex,
-                                    style = MaterialTheme.typography.titleMedium.copy(
-                                        fontWeight = FontWeight.SemiBold,
-                                        fontSize = 15.sp
-                                    )
-                                )
-                            }
+                                level = GlassLevel.Strong
+                            )
                         }
                     }
                 }
@@ -846,18 +828,16 @@ private fun ReviewQueueItem(
     val amountPrefix = if (isCredit) "+ " else "- "
     val merchant = transaction.counterparty?.ifBlank { "Unknown Merchant" } ?: "Unknown Merchant"
 
-    Surface(
+    KanriGlassCard(
         shape = RoundedCornerShape(14.dp),
-        color = MaterialTheme.colorScheme.surfaceVariant,
-        border = BorderStroke(1.dp, MaterialTheme.colorScheme.outlineVariant),
+        level = GlassLevel.Flat,
         modifier = Modifier
             .fillMaxWidth()
-            .clip(RoundedCornerShape(14.dp))
-            .clickable(onClick = onClick)
             .semantics {
                 contentDescription = "Transaction $merchant for $amountPrefix${CurrencyUtils.formatCurrency(transaction.amount)}. Tap to categorize."
                 role = Role.Button
-            }
+            },
+        onClick = onClick
     ) {
         Row(
             modifier = Modifier

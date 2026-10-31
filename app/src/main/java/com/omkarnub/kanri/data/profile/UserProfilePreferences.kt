@@ -1,4 +1,4 @@
-package com.omkarnub.kanri.data.profile
+﻿package com.omkarnub.kanri.data.profile
 
 import android.content.Context
 import android.content.SharedPreferences

@@ -51,7 +51,7 @@ fun GrainGradientBackground(
 
             val baseBg = when (effectiveTheme) {
                 ThemeMode.AMOLED -> AmoledBackground
-                ThemeMode.DARK -> DarkBackground
+                ThemeMode.DARK, ThemeMode.GLASS, ThemeMode.SYSTEM -> DarkBackground
                 ThemeMode.LIGHT -> LightBackground
             }
 
@@ -78,7 +78,7 @@ fun GrainGradientBackground(
                     )
                 }
 
-                ThemeMode.DARK -> {
+                ThemeMode.DARK, ThemeMode.GLASS, ThemeMode.SYSTEM -> {
                     // Refined dark charcoal ambient spotlight
                     val glowColor = Color(0xFF26262D).copy(alpha = (0.28f + boost).coerceAtMost(0.48f))
                     drawCircle(

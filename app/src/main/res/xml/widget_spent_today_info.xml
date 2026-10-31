@@ -11,7 +11,7 @@
     android:updatePeriodMillis="1800000"
     android:initialLayout="@layout/widget_spent_today"
     android:previewLayout="@layout/widget_spent_today"
-    android:previewImage="@mipmap/ic_launcher"
+    android:previewImage="@drawable/preview_widget_spent_today"
     android:widgetCategory="home_screen"
     android:description="@string/widget_spent_today_name"
     android:resizeMode="horizontal|vertical" />

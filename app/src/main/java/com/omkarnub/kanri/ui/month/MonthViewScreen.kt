@@ -42,7 +42,6 @@ import androidx.compose.material3.MaterialTheme
 import androidx.compose.material3.Scaffold
 import androidx.compose.material3.SnackbarHost
 import androidx.compose.material3.SnackbarHostState
-import androidx.compose.material3.SnackbarResult
 import androidx.compose.material3.Surface
 import androidx.compose.material3.Text
 import androidx.compose.material3.TopAppBar
@@ -92,31 +91,36 @@ import com.omkarnub.kanri.ui.insights.sections.InsightsToolsRow
 import com.omkarnub.kanri.ui.insights.sections.MonthEndProjectionSection
 import com.omkarnub.kanri.ui.insights.sections.MonthSummaryStripSection
 import com.omkarnub.kanri.ui.insights.sections.PaymentMethodSplitSection
-import com.omkarnub.kanri.ui.insights.sections.PersonalRecordsSection
-import com.omkarnub.kanri.ui.insights.sections.SmallSpendsSection
-import com.omkarnub.kanri.ui.insights.sections.SplitExpensesSummarySection
-import com.omkarnub.kanri.ui.insights.sections.SuggestedBudgetSection
 import com.omkarnub.kanri.ui.insights.sections.TopPayeesSection
-import com.omkarnub.kanri.ui.insights.sections.WeekendVsWeekdaySection
 import com.omkarnub.kanri.ui.insights.sections.YearHeatmapSection
-import com.omkarnub.kanri.ui.search.AmountRangePreset
 import com.omkarnub.kanri.ui.search.DateRangePreset
 import com.omkarnub.kanri.ui.search.SearchFilterState
 import com.omkarnub.kanri.ui.search.SearchScreen
 import com.omkarnub.kanri.ui.search.TransactionTypeFilter
 import com.omkarnub.kanri.ui.theme.Panchang
+import com.omkarnub.kanri.ui.theme.KanriMotion
 import com.omkarnub.kanri.util.rememberKanriHaptics
 import kotlinx.coroutines.launch
 import java.time.LocalDate
 import java.time.YearMonth
 import java.time.ZoneId
 import java.time.format.DateTimeFormatter
-import java.util.Calendar
+
+private sealed interface InsightsDestination {
+    data object Overview : InsightsDestination
+    data object Search : InsightsDestination
+    data class Payee(val payee: String) : InsightsDestination
+    data object CompareMonths : InsightsDestination
+    data object MonthlyRecap : InsightsDestination
+    data class CategoryDetail(val item: CategorySpendItem) : InsightsDestination
+    data object AllTimeTrends : InsightsDestination
+}
 
 @OptIn(ExperimentalMaterial3Api::class)
 @Composable
 fun MonthViewScreen(
     onOpenSettings: () -> Unit = {},
+    onSubScreenStateChanged: (Boolean) -> Unit = {},
     modifier: Modifier = Modifier,
     monthViewModel: MonthViewModel = viewModel(),
     insightsViewModel: InsightsViewModel = viewModel()
@@ -138,12 +142,7 @@ fun MonthViewScreen(
     val topPayeesState by insightsViewModel.topPayeesFlow.collectAsState()
     val biggestTransactionsState by insightsViewModel.biggestTransactionsFlow.collectAsState()
     val paymentMethodState by insightsViewModel.paymentMethodFlow.collectAsState()
-    val weekendVsWeekdayState by insightsViewModel.weekendVsWeekdayFlow.collectAsState()
-    val smallSpendsState by insightsViewModel.smallSpendsFlow.collectAsState()
     val incomeSourcesState by insightsViewModel.incomeSourcesFlow.collectAsState()
-    val splitExpensesState by insightsViewModel.splitExpensesFlow.collectAsState()
-    val suggestedBudgetState by insightsViewModel.suggestedBudgetFlow.collectAsState()
-    val personalRecordsState by insightsViewModel.personalRecordsFlow.collectAsState()
     val yearHeatmapState by insightsViewModel.yearHeatmapFlow.collectAsState()
 
     val allCategories: List<CategoryEntity> by insightsViewModel.allCategoriesFlow.collectAsState(initial = emptyList<CategoryEntity>())
@@ -180,37 +179,6 @@ fun MonthViewScreen(
     var showSetBudgetDialog by remember { mutableStateOf(false) }
     var selectedTxForCategoryPicker by remember { mutableStateOf<TransactionWithCategory?>(null) }
     var lendingEntryForTransaction by remember { mutableStateOf<TransactionWithCategory?>(null) }
-    var showFinancialHealthDetailsSheet by remember { mutableStateOf(false) }
-
-    val daysRemaining = if (monthState.isCurrentMonth) {
-        (monthState.daysInMonth - monthState.currentDay + 1).coerceAtLeast(1)
-    } else 1
-    val currentBudget = when (val bState = budgetVsActualState) {
-        is SectionState.Data -> bState.data.overallBudget
-        else -> com.omkarnub.kanri.data.budget.BudgetCalculator.DEFAULT_MONTHLY_BUDGET
-    }
-    val financialHealth = remember(
-        monthState.totalSpent,
-        monthState.totalReceived,
-        currentBudget,
-        daysRemaining,
-        monthState.selectedYear,
-        monthState.selectedMonth,
-        monthState.currentDay
-    ) {
-        val cal = Calendar.getInstance().apply {
-            if (monthState.selectedYear > 0) set(Calendar.YEAR, monthState.selectedYear)
-            if (monthState.selectedMonth > 0) set(Calendar.MONTH, monthState.selectedMonth - 1)
-            set(Calendar.DAY_OF_MONTH, monthState.currentDay.coerceAtLeast(1))
-        }
-        com.omkarnub.kanri.data.analytics.FinancialHealthCalculator.calculate(
-            monthSpent = monthState.totalSpent,
-            monthIncome = monthState.totalReceived,
-            monthlyBudget = currentBudget,
-            daysRemaining = daysRemaining,
-            calendar = cal
-        )
-    }
 
     val snackbarHostState = remember { SnackbarHostState() }
     val coroutineScope = rememberCoroutineScope()
@@ -241,81 +209,68 @@ fun MonthViewScreen(
         }
     }
 
-    // Destination: Full screen Search
-    if (showSearchScreen) {
-        SearchScreen(
-            onBack = {
-                showSearchScreen = false
-                searchFilterToApply = null
+    BackHandler(enabled = showSearchScreen) {
+        showSearchScreen = false
+        searchFilterToApply = null
+    }
+
+    BackHandler(enabled = selectedPayeeDetail != null && !showSearchScreen) {
+        selectedPayeeDetail = null
+    }
+
+    BackHandler(enabled = showCompareMonths && !showSearchScreen && selectedPayeeDetail == null) {
+        showCompareMonths = false
+    }
+
+    BackHandler(enabled = showMonthlyRecap && !showSearchScreen && selectedPayeeDetail == null && !showCompareMonths) {
+        showMonthlyRecap = false
+    }
+
+    BackHandler(enabled = selectedCategoryDetail != null && !showSearchScreen && selectedPayeeDetail == null && !showCompareMonths && !showMonthlyRecap) {
+        selectedCategoryDetail = null
+    }
+
+    BackHandler(enabled = showAllTimeTrends && !showSearchScreen && selectedPayeeDetail == null && !showCompareMonths && !showMonthlyRecap && selectedCategoryDetail == null) {
+        showAllTimeTrends = false
+    }
+
+    val tokens = com.omkarnub.kanri.ui.theme.LocalKanriGlass.current
+
+    val currentInsightsDest: InsightsDestination = when {
+        showSearchScreen -> InsightsDestination.Search
+        selectedPayeeDetail != null -> InsightsDestination.Payee(selectedPayeeDetail!!)
+        showCompareMonths -> InsightsDestination.CompareMonths
+        showMonthlyRecap -> InsightsDestination.MonthlyRecap
+        selectedCategoryDetail != null -> InsightsDestination.CategoryDetail(selectedCategoryDetail!!)
+        showAllTimeTrends -> InsightsDestination.AllTimeTrends
+        else -> InsightsDestination.Overview
+    }
+
+    LaunchedEffect(currentInsightsDest) {
+        onSubScreenStateChanged(currentInsightsDest != InsightsDestination.Overview)
+    }
+
+    Box(modifier = modifier.fillMaxSize()) {
+        AnimatedContent(
+            targetState = currentInsightsDest,
+            transitionSpec = {
+                if (targetState != InsightsDestination.Overview && initialState == InsightsDestination.Overview) {
+                    KanriMotion.screenPushEnter().togetherWith(KanriMotion.screenPushExit())
+                } else if (targetState == InsightsDestination.Overview && initialState != InsightsDestination.Overview) {
+                    KanriMotion.screenPopEnter().togetherWith(KanriMotion.screenPopExit())
+                } else {
+                    KanriMotion.screenPushEnter().togetherWith(KanriMotion.screenPushExit())
+                }
             },
-            initialFilterState = searchFilterToApply,
-            modifier = modifier
-        )
-        return
-    }
-
-    // Destination: Payee Detail Screen
-    if (selectedPayeeDetail != null) {
-        PayeeDetailScreen(
-            counterparty = selectedPayeeDetail!!,
-            viewModel = insightsViewModel,
-            onBack = { selectedPayeeDetail = null },
-            modifier = modifier
-        )
-        return
-    }
-
-    // Destination: Compare Months Screen
-    if (showCompareMonths) {
-        CompareMonthsScreen(
-            viewModel = insightsViewModel,
-            onBack = { showCompareMonths = false },
-            modifier = modifier
-        )
-        return
-    }
-
-    // Destination: Monthly Recap Screen
-    if (showMonthlyRecap) {
-        MonthlyRecapScreen(
-            targetMonth = activeSelectedMonth,
-            viewModel = insightsViewModel,
-            onBack = { showMonthlyRecap = false },
-            modifier = modifier
-        )
-        return
-    }
-
-    // Destination: Category Detail Screen
-    if (selectedCategoryDetail != null) {
-        CategoryDetailScreen(
-            categoryItem = selectedCategoryDetail!!,
-            selectedYear = monthState.selectedYear,
-            selectedMonth = monthState.selectedMonth,
-            onBack = { selectedCategoryDetail = null },
-            modifier = modifier
-        )
-        return
-    }
-
-    // Destination: All-Time Trends
-    if (showAllTimeTrends) {
-        AllTimeTrendsView(
-            state = allTimeState,
-            onMetricSelect = { monthViewModel.selectTrendMetric(it) },
-            onScrubbedIndexChange = { monthViewModel.setScrubbedMonth(it) },
-            onSelectMonth = { year, month ->
-                monthViewModel.selectMonth(year, month)
-                insightsViewModel.setRange(InsightsRange.Month(YearMonth.of(year, month)))
-                showAllTimeTrends = false
-            }
-        )
-        return
-    }
-
-    Scaffold(
-        modifier = modifier.fillMaxSize(),
-        snackbarHost = { SnackbarHost(snackbarHostState) },
+            label = "insightsScreenTransition",
+            modifier = Modifier.fillMaxSize()
+        ) { dest ->
+            when (dest) {
+                InsightsDestination.Overview -> {
+                    Scaffold(
+                        modifier = Modifier.fillMaxSize(),
+                        containerColor = if (tokens != null) Color.Transparent else MaterialTheme.colorScheme.background,
+                        snackbarHost = { SnackbarHost(snackbarHostState) },
         topBar = {
             TopAppBar(
                 title = {
@@ -354,7 +309,7 @@ fun MonthViewScreen(
                     }
                 },
                 colors = TopAppBarDefaults.topAppBarColors(
-                    containerColor = MaterialTheme.colorScheme.surface
+                    containerColor = if (tokens != null) Color.Transparent else MaterialTheme.colorScheme.surface
                 )
             )
         }
@@ -371,11 +326,10 @@ fun MonthViewScreen(
             // Header Month Selector (visible for Month range, replaced by range label for others)
             item {
                 if (currentRange is InsightsRange.Month) {
-                    Card(
+                    com.omkarnub.kanri.ui.common.KanriGlassCard(
                         modifier = Modifier.fillMaxWidth(),
-                        shape = RoundedCornerShape(18.dp),
-                        colors = CardDefaults.cardColors(containerColor = MaterialTheme.colorScheme.surface),
-                        border = BorderStroke(1.dp, MaterialTheme.colorScheme.outlineVariant)
+                        level = com.omkarnub.kanri.ui.common.GlassLevel.Blur,
+                        shape = RoundedCornerShape(18.dp)
                     ) {
                         Row(
                             modifier = Modifier
@@ -464,13 +418,10 @@ fun MonthViewScreen(
             // Global Empty Check: If Summary Strip is Empty, show a single minimal empty state
             if (summaryStripState is SectionState.Empty) {
                 item {
-                    Card(
+                    com.omkarnub.kanri.ui.common.KanriGlassCard(
                         modifier = Modifier.fillMaxWidth(),
                         shape = RoundedCornerShape(20.dp),
-                        colors = CardDefaults.cardColors(
-                            containerColor = MaterialTheme.colorScheme.surfaceVariant.copy(alpha = 0.35f)
-                        ),
-                        border = BorderStroke(1.dp, MaterialTheme.colorScheme.outlineVariant)
+                        level = com.omkarnub.kanri.ui.common.GlassLevel.Blur
                     ) {
                         Column(
                             modifier = Modifier
@@ -490,15 +441,6 @@ fun MonthViewScreen(
                     }
                 }
                 return@LazyColumn
-            }
-
-            // ═══════════════════════════════════════════════════════════
-            // FINANCIAL HEALTH (CHECK FINANCIAL HEALTH CARD)
-            // ═══════════════════════════════════════════════════════════
-            item {
-                com.omkarnub.kanri.ui.insights.sections.CheckFinancialHealthCard(
-                    onClick = { showFinancialHealthDetailsSheet = true }
-                )
             }
 
             // ═══════════════════════════════════════════════════════════
@@ -819,207 +761,6 @@ fun MonthViewScreen(
             }
 
             // ═══════════════════════════════════════════════════════════
-            // SECTION 11: WEEKEND VS WEEKDAY (All ranges, Expense only) — No Card
-            // ═══════════════════════════════════════════════════════════
-            if (currentMode == InsightsMode.EXPENSE) {
-                item {
-                    when (val st = weekendVsWeekdayState) {
-                        is SectionState.Data -> {
-                            WeekendVsWeekdaySection(data = st.data)
-                        }
-                        is SectionState.Loading -> {
-                            SectionPlaceholder(height = 150.dp)
-                        }
-                        is SectionState.Empty -> {}
-                    }
-                }
-            }
-
-            // ═══════════════════════════════════════════════════════════
-            // SECTION 12: SMALL SPENDS (All ranges, Expense only) — No Card
-            // ═══════════════════════════════════════════════════════════
-            if (currentMode == InsightsMode.EXPENSE) {
-                item {
-                    when (val st = smallSpendsState) {
-                        is SectionState.Data -> {
-                            SmallSpendsSection(
-                                data = st.data,
-                                onThresholdSelected = { th ->
-                                    insightsViewModel.setSmallSpendThreshold(th)
-                                },
-                                onCardClick = {
-                                    val window = InsightsPeriods.calculateWindow(currentRange, ZoneId.systemDefault())
-                                    searchFilterToApply = SearchFilterState(
-                                        typeFilter = TransactionTypeFilter.DEBIT,
-                                        datePreset = DateRangePreset.CUSTOM,
-                                        customStartDate = window.startMillis,
-                                        customEndDate = window.endMillis,
-                                        amountPreset = AmountRangePreset.CUSTOM,
-                                        customMaxAmount = st.data.threshold
-                                    )
-                                    showSearchScreen = true
-                                },
-                                onPayeeClick = { payee ->
-                                    selectedPayeeDetail = payee
-                                }
-                            )
-                        }
-                        is SectionState.Loading -> {
-                            SectionPlaceholder(height = 140.dp)
-                        }
-                        is SectionState.Empty -> {}
-                    }
-                }
-            }
-
-            // ═══════════════════════════════════════════════════════════
-            // SECTION 13: INCOME SOURCES (Expense mode only — already shown for Income above)
-            // ═══════════════════════════════════════════════════════════
-            if (currentMode == InsightsMode.EXPENSE) {
-                item {
-                    when (val st = incomeSourcesState) {
-                        is SectionState.Data -> {
-                            IncomeSourcesSection(
-                                data = st.data,
-                                onSourceClick = { source ->
-                                    selectedPayeeDetail = source
-                                }
-                            )
-                        }
-                        is SectionState.Loading -> {
-                            SectionPlaceholder(height = 180.dp)
-                        }
-                        is SectionState.Empty -> {}
-                    }
-                }
-            }
-
-            // ═══════════════════════════════════════════════════════════
-            // SECTION 14: SPLIT EXPENSES SUMMARY (All ranges, Expense only) — No Card
-            // ═══════════════════════════════════════════════════════════
-            if (currentMode == InsightsMode.EXPENSE) {
-                item {
-                    when (val st = splitExpensesState) {
-                        is SectionState.Data -> {
-                            SplitExpensesSummarySection(
-                                data = st.data,
-                                onOpenLending = {
-                                    val window = InsightsPeriods.calculateWindow(currentRange, ZoneId.systemDefault())
-                                    searchFilterToApply = SearchFilterState(
-                                        query = "Split",
-                                        datePreset = DateRangePreset.CUSTOM,
-                                        customStartDate = window.startMillis,
-                                        customEndDate = window.endMillis
-                                    )
-                                    showSearchScreen = true
-                                }
-                            )
-                        }
-                        is SectionState.Loading -> {
-                            SectionPlaceholder(height = 140.dp)
-                        }
-                        is SectionState.Empty -> {}
-                    }
-                }
-            }
-
-            // ═══════════════════════════════════════════════════════════
-            // SECTION 15: SUGGESTED BUDGET (Month, Expense only) — No Card
-            // ═══════════════════════════════════════════════════════════
-            if (currentRange is InsightsRange.Month && currentMode == InsightsMode.EXPENSE) {
-                item {
-                    when (val st = suggestedBudgetState) {
-                        is SectionState.Data -> {
-                            SuggestedBudgetSection(
-                                data = st.data,
-                                onApplyCategory = { catRow ->
-                                    haptics.success()
-                                    insightsViewModel.applyCategoryBudget(
-                                        categoryId = catRow.categoryId,
-                                        amount = catRow.suggestedBudget,
-                                        yearMonth = activeSelectedMonth
-                                    )
-                                    coroutineScope.launch {
-                                        snackbarHostState.showSnackbar("Budget applied for ${catRow.categoryName}")
-                                    }
-                                },
-                                onApplyAll = { suggestedData ->
-                                    haptics.success()
-                                    insightsViewModel.applyAllSuggestedBudgets(
-                                        suggested = suggestedData,
-                                        yearMonth = activeSelectedMonth
-                                    ) { previousBudgets ->
-                                        coroutineScope.launch {
-                                            val result = snackbarHostState.showSnackbar(
-                                                message = "Applied suggested budgets",
-                                                actionLabel = "Undo"
-                                            )
-                                            if (result == SnackbarResult.ActionPerformed) {
-                                                insightsViewModel.restorePreviousBudgets(previousBudgets)
-                                            }
-                                        }
-                                    }
-                                }
-                            )
-                        }
-                        is SectionState.Empty -> {
-                            Text(
-                                text = st.reason,
-                                style = MaterialTheme.typography.bodySmall.copy(
-                                    color = MaterialTheme.colorScheme.onSurfaceVariant,
-                                    fontSize = 11.sp
-                                ),
-                                modifier = Modifier.padding(horizontal = 4.dp)
-                            )
-                        }
-                        is SectionState.Loading -> {
-                            SectionPlaceholder(height = 160.dp)
-                        }
-                    }
-                }
-            }
-
-            // ═══════════════════════════════════════════════════════════
-            // SECTION 16: PERSONAL RECORDS (Always, Both modes) — No Card
-            // ═══════════════════════════════════════════════════════════
-            item {
-                when (val st = personalRecordsState) {
-                    is SectionState.Data -> {
-                        PersonalRecordsSection(
-                            data = st.data,
-                            onSelectMonth = { ym ->
-                                insightsViewModel.setRange(InsightsRange.Month(ym))
-                                monthViewModel.selectMonth(ym.year, ym.monthValue)
-                            },
-                            onSelectDay = { date ->
-                                val start = InsightsPeriods.toStartOfDayMillis(date, ZoneId.systemDefault())
-                                val end = InsightsPeriods.toEndOfDayMillis(date, ZoneId.systemDefault())
-                                searchFilterToApply = SearchFilterState(
-                                    datePreset = DateRangePreset.CUSTOM,
-                                    customStartDate = start,
-                                    customEndDate = end
-                                )
-                                showSearchScreen = true
-                            }
-                        )
-                    }
-                    is SectionState.Loading -> {
-                        SectionPlaceholder(height = 200.dp)
-                    }
-                    is SectionState.Empty -> {
-                        Text(
-                            text = st.reason,
-                            style = MaterialTheme.typography.bodySmall.copy(
-                                color = MaterialTheme.colorScheme.onSurfaceVariant,
-                                fontSize = 11.sp
-                            ),
-                            modifier = Modifier.padding(horizontal = 4.dp)
-                        )
-                    }
-                }
-            }
-
-            // ═══════════════════════════════════════════════════════════
             // SECTION 17: YEAR HEATMAP (Always, Both modes) — Card
             // ═══════════════════════════════════════════════════════════
             item {
@@ -1074,6 +815,99 @@ fun MonthViewScreen(
             }
         }
     }
+                }
+
+                InsightsDestination.Search -> {
+                    SearchScreen(
+                        onBack = {
+                            showSearchScreen = false
+                            searchFilterToApply = null
+                        },
+                        initialFilterState = searchFilterToApply,
+                        modifier = Modifier.fillMaxSize()
+                    )
+                }
+
+                is InsightsDestination.Payee -> {
+                    PayeeDetailScreen(
+                        counterparty = dest.payee,
+                        viewModel = insightsViewModel,
+                        onBack = { selectedPayeeDetail = null },
+                        modifier = Modifier.fillMaxSize()
+                    )
+                }
+
+                InsightsDestination.CompareMonths -> {
+                    CompareMonthsScreen(
+                        viewModel = insightsViewModel,
+                        onBack = { showCompareMonths = false },
+                        modifier = Modifier.fillMaxSize()
+                    )
+                }
+
+                InsightsDestination.MonthlyRecap -> {
+                    MonthlyRecapScreen(
+                        targetMonth = activeSelectedMonth,
+                        viewModel = insightsViewModel,
+                        onBack = { showMonthlyRecap = false },
+                        modifier = Modifier.fillMaxSize()
+                    )
+                }
+
+                is InsightsDestination.CategoryDetail -> {
+                    CategoryDetailScreen(
+                        categoryItem = dest.item,
+                        selectedYear = monthState.selectedYear,
+                        selectedMonth = monthState.selectedMonth,
+                        onBack = { selectedCategoryDetail = null },
+                        modifier = Modifier.fillMaxSize()
+                    )
+                }
+
+                InsightsDestination.AllTimeTrends -> {
+                    Scaffold(
+                        modifier = Modifier.fillMaxSize(),
+                        containerColor = if (tokens != null) Color.Transparent else MaterialTheme.colorScheme.background,
+                        topBar = {
+                            TopAppBar(
+                                title = {
+                                    Text(
+                                        text = "All-Time Trends",
+                                        fontWeight = FontWeight.Bold,
+                                        fontSize = 18.sp
+                                    )
+                                },
+                                navigationIcon = {
+                                    IconButton(onClick = { showAllTimeTrends = false }) {
+                                        Icon(
+                                            imageVector = Icons.AutoMirrored.Filled.ArrowBack,
+                                            contentDescription = "Back"
+                                        )
+                                    }
+                                },
+                                colors = TopAppBarDefaults.topAppBarColors(
+                                    containerColor = if (tokens != null) Color.Transparent else MaterialTheme.colorScheme.surface
+                                )
+                            )
+                        }
+                    ) { innerPadding ->
+                        AllTimeTrendsView(
+                            state = allTimeState,
+                            onMetricSelect = { monthViewModel.selectTrendMetric(it) },
+                            onScrubbedIndexChange = { monthViewModel.setScrubbedMonth(it) },
+                            onSelectMonth = { year, month ->
+                                monthViewModel.selectMonth(year, month)
+                                insightsViewModel.setRange(InsightsRange.Month(YearMonth.of(year, month)))
+                                showAllTimeTrends = false
+                            },
+                            modifier = Modifier
+                                .fillMaxSize()
+                                .padding(innerPadding)
+                        )
+                    }
+                }
+            }
+        }
 
     // Export Statement Sheet
     if (showExportSheet) {
@@ -1139,14 +973,7 @@ fun MonthViewScreen(
             onDismiss = { lendingEntryForTransaction = null }
         )
     }
-
-    if (showFinancialHealthDetailsSheet) {
-        com.omkarnub.kanri.ui.home.FinancialHealthDetailsSheet(
-            financialHealth = financialHealth,
-            monthName = monthState.monthTitle,
-            onDismiss = { showFinancialHealthDetailsSheet = false }
-        )
-    }
+}
 }
 
 @Composable

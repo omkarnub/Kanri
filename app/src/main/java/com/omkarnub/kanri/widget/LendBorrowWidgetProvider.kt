@@ -1,4 +1,4 @@
-package com.omkarnub.kanri.widget
+﻿package com.omkarnub.kanri.widget
 
 import android.appwidget.AppWidgetManager
 import android.appwidget.AppWidgetProvider
@@ -49,6 +49,12 @@ class LendBorrowWidgetProvider : AppWidgetProvider() {
             appWidgetManager: AppWidgetManager,
             appWidgetIds: IntArray
         ) {
+            val validIds = appWidgetManager.getAppWidgetIds(
+                ComponentName(context, LendBorrowWidgetProvider::class.java)
+            ).toSet()
+            val targetIds = appWidgetIds.filter { it in validIds }.toIntArray()
+            if (targetIds.isEmpty()) return
+
             CoroutineScope(Dispatchers.IO).launch {
                 val db = KanriDatabase.getDatabase(context)
                 val allLending = db.lendingDao().getAllRecordsWithRepaymentsSync()
@@ -68,7 +74,7 @@ class LendBorrowWidgetProvider : AppWidgetProvider() {
                         .thenBy { it.first.dueDate ?: Long.MAX_VALUE }
                 )
 
-                for (widgetId in appWidgetIds) {
+                for (widgetId in targetIds) {
                     val views = RemoteViews(context.packageName, R.layout.widget_lend_borrow)
 
                     // Check resize dimensions

@@ -1,4 +1,4 @@
-package com.omkarnub.kanri.ui.home
+﻿package com.omkarnub.kanri.ui.home
 
 import androidx.compose.foundation.BorderStroke
 import androidx.compose.foundation.background
@@ -44,15 +44,21 @@ import androidx.compose.ui.draw.clip
 import androidx.compose.ui.focus.FocusRequester
 import androidx.compose.ui.focus.focusRequester
 import androidx.compose.ui.graphics.Color
+import androidx.compose.ui.text.TextRange
 import androidx.compose.ui.text.font.FontWeight
 import androidx.compose.ui.text.input.ImeAction
 import androidx.compose.ui.text.input.KeyboardType
+import androidx.compose.ui.text.input.TextFieldValue
 import androidx.compose.ui.text.style.TextAlign
 import androidx.compose.ui.unit.dp
 import androidx.compose.ui.unit.sp
 import androidx.compose.ui.window.Dialog
 import androidx.compose.ui.window.DialogProperties
 import com.omkarnub.kanri.ui.common.AnimatedNumberText
+import com.omkarnub.kanri.ui.common.GlassLevel
+import com.omkarnub.kanri.ui.common.KanriGlassCard
+import com.omkarnub.kanri.ui.common.KanriGlassDialog
+import com.omkarnub.kanri.ui.common.kanriPrimaryButtonColors
 import com.omkarnub.kanri.ui.common.rememberKanriGlassTheme
 import com.omkarnub.kanri.util.CurrencyUtils
 import com.omkarnub.kanri.util.rememberKanriHaptics
@@ -81,6 +87,10 @@ fun SetBudgetDialog(
     }
     var isManualInput by remember { mutableStateOf(false) }
     var customText by remember(budgetAmount) { mutableStateOf(budgetAmount.toLong().toString()) }
+    var customTextFieldValue by remember(budgetAmount) {
+        val str = budgetAmount.toLong().toString()
+        mutableStateOf(TextFieldValue(text = str, selection = TextRange(str.length)))
+    }
     var isError by remember { mutableStateOf(false) }
 
     val focusRequester = remember { FocusRequester() }
@@ -91,25 +101,17 @@ fun SetBudgetDialog(
         }
     }
 
-    Dialog(
+    KanriGlassDialog(
         onDismissRequest = onDismiss,
-        properties = DialogProperties(usePlatformDefaultWidth = false)
+        modifier = Modifier.fillMaxWidth(0.92f),
+        shape = RoundedCornerShape(28.dp)
     ) {
-        Surface(
-            shape = RoundedCornerShape(28.dp),
-            color = glassTheme.fallbackBackgroundColor.copy(alpha = 0.93f),
-            border = glassTheme.glassBorder,
-            shadowElevation = glassTheme.shadowElevation + 8.dp,
+        Column(
             modifier = Modifier
-                .fillMaxWidth(0.92f)
-                .clip(RoundedCornerShape(28.dp))
+                .fillMaxWidth()
+                .padding(horizontal = 22.dp, vertical = 24.dp),
+            horizontalAlignment = Alignment.CenterHorizontally
         ) {
-            Column(
-                modifier = Modifier
-                    .fillMaxWidth()
-                    .padding(horizontal = 22.dp, vertical = 24.dp),
-                horizontalAlignment = Alignment.CenterHorizontally
-            ) {
                 // Header
                 Text(
                     text = if (category != null) "Set budget for ${category.name}" else "Set your budget for this month",
@@ -155,7 +157,9 @@ fun SetBudgetDialog(
                                 haptics.tick()
                                 val next = (budgetAmount - 1000.0).coerceAtLeast(100.0)
                                 budgetAmount = next
-                                customText = next.toLong().toString()
+                                val str = next.toLong().toString()
+                                customText = str
+                                customTextFieldValue = TextFieldValue(text = str, selection = TextRange(str.length))
                                 isManualInput = false
                                 isError = false
                             },
@@ -181,9 +185,10 @@ fun SetBudgetDialog(
                         ) {
                             if (isManualInput) {
                                 OutlinedTextField(
-                                    value = customText,
-                                    onValueChange = {
-                                        val filtered = it.filter { ch -> ch.isDigit() }
+                                    value = customTextFieldValue,
+                                    onValueChange = { newValue ->
+                                        val filtered = newValue.text.filter { ch -> ch.isDigit() }
+                                        customTextFieldValue = newValue.copy(text = filtered)
                                         customText = filtered
                                         val parsed = filtered.toDoubleOrNull()
                                         if (parsed != null && parsed > 0) {
@@ -191,7 +196,7 @@ fun SetBudgetDialog(
                                             isError = false
                                         }
                                     },
-                                    prefix = { Text("₹ ", fontWeight = FontWeight.Bold) },
+                                    prefix = { Text("${CurrencyUtils.getCurrencySymbol()} ", fontWeight = FontWeight.Bold) },
                                     singleLine = true,
                                     keyboardOptions = KeyboardOptions(
                                         keyboardType = KeyboardType.Number,
@@ -199,7 +204,7 @@ fun SetBudgetDialog(
                                     ),
                                     keyboardActions = KeyboardActions(
                                         onDone = {
-                                            val parsed = customText.toDoubleOrNull()
+                                            val parsed = customTextFieldValue.text.toDoubleOrNull()
                                             if (parsed != null && parsed > 0) {
                                                 budgetAmount = parsed
                                             }
@@ -219,7 +224,9 @@ fun SetBudgetDialog(
                                     modifier = Modifier
                                         .clip(RoundedCornerShape(12.dp))
                                         .clickable {
-                                            customText = budgetAmount.toLong().toString()
+                                            val str = budgetAmount.toLong().toString()
+                                            customText = str
+                                            customTextFieldValue = TextFieldValue(text = str, selection = TextRange(str.length))
                                             isManualInput = true
                                         }
                                         .padding(horizontal = 4.dp, vertical = 2.dp),
@@ -267,7 +274,9 @@ fun SetBudgetDialog(
                                 haptics.tick()
                                 val next = budgetAmount + 1000.0
                                 budgetAmount = next
-                                customText = next.toLong().toString()
+                                val str = next.toLong().toString()
+                                customText = str
+                                customTextFieldValue = TextFieldValue(text = str, selection = TextRange(str.length))
                                 isManualInput = false
                                 isError = false
                             },
@@ -307,7 +316,9 @@ fun SetBudgetDialog(
                                 .clickable {
                                     haptics.tick()
                                     budgetAmount += inc
-                                    customText = budgetAmount.toLong().toString()
+                                    val str = budgetAmount.toLong().toString()
+                                    customText = str
+                                    customTextFieldValue = TextFieldValue(text = str, selection = TextRange(str.length))
                                     isManualInput = false
                                     isError = false
                                 }
@@ -317,7 +328,7 @@ fun SetBudgetDialog(
                                 contentAlignment = Alignment.Center
                             ) {
                                 Text(
-                                    text = "+₹%,d".format(inc.toInt()),
+                                    text = "+${CurrencyUtils.getCurrencySymbol()}%,d".format(inc.toInt()),
                                     color = MaterialTheme.colorScheme.onSurface,
                                     fontSize = 12.sp,
                                     fontWeight = FontWeight.SemiBold
@@ -368,10 +379,7 @@ fun SetBudgetDialog(
                                 isError = true
                             }
                         },
-                        colors = ButtonDefaults.buttonColors(
-                            containerColor = MaterialTheme.colorScheme.onSurface,
-                            contentColor = MaterialTheme.colorScheme.surface
-                        ),
+                        colors = kanriPrimaryButtonColors(),
                         shape = RoundedCornerShape(12.dp)
                     ) {
                         Text(
@@ -383,5 +391,4 @@ fun SetBudgetDialog(
                 }
             }
         }
-    }
 }

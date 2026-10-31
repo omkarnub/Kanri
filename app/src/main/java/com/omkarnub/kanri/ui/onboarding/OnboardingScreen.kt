@@ -1,4 +1,4 @@
-package com.omkarnub.kanri.ui.onboarding
+﻿package com.omkarnub.kanri.ui.onboarding
 
 import android.Manifest
 import android.graphics.BitmapFactory
@@ -457,10 +457,12 @@ private fun HeroSlide(onGetStarted: () -> Unit) {
     val buttonBgColor = if (isLight) MonochromeBlack else DarkOffWhite
     val buttonContentColor = if (isLight) DarkOffWhite else MonochromeBlack
 
+    val tokens = com.omkarnub.kanri.ui.theme.LocalKanriGlass.current
+
     Box(
         modifier = Modifier
             .fillMaxSize()
-            .background(MaterialTheme.colorScheme.background)
+            .background(if (tokens != null) Color.Transparent else MaterialTheme.colorScheme.background)
     ) {
         // 1. Background: Full-bleed animated mesh gradient + film grain with pulse hook
         GrainGradientBackground(

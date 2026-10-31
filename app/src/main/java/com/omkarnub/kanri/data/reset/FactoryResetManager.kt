@@ -1,4 +1,4 @@
-package com.omkarnub.kanri.data.reset
+﻿package com.omkarnub.kanri.data.reset
 
 import android.content.Context
 import androidx.room.withTransaction
@@ -45,7 +45,34 @@ object FactoryResetManager {
             // 5. Delete all local crash logs
             CrashLogger.clearAllLogs(context)
 
-            // 6. Delete database files and rotate encryption key in Keystore
+            // 6. Cancel scheduled export tasks
+            try {
+                com.omkarnub.kanri.data.export.ExportScheduler.cancelScheduledExport(context)
+            } catch (e: Exception) {
+                // Ignore if scheduler was not initialized
+            }
+
+            // 7. Dismiss all active notifications
+            try {
+                val notificationManager = context.getSystemService(Context.NOTIFICATION_SERVICE) as? android.app.NotificationManager
+                notificationManager?.cancelAll()
+            } catch (e: Exception) {
+                // Ignore notification service errors
+            }
+
+            // 8. Delete generated statements and exports from internal and external storage
+            try {
+                java.io.File(context.filesDir, "auto_exports").deleteRecursively()
+                context.getExternalFilesDir(null)?.let { externalDir ->
+                    java.io.File(externalDir, "Kanri/AutoExports").deleteRecursively()
+                    java.io.File(externalDir, "Kanri").deleteRecursively()
+                }
+                java.io.File(context.cacheDir, "exports").deleteRecursively()
+            } catch (e: Exception) {
+                // Ignore file cleanup errors
+            }
+
+            // 9. Delete database files and rotate encryption key in Keystore
             try {
                 KanriDatabase.resetDatabase(context)
                 DatabaseKeyManager.rotatePassphrase(context)
@@ -53,7 +80,7 @@ object FactoryResetManager {
                 // Ignore in non-keystore environments
             }
 
-            // 7. Invalidate widgets
+            // 10. Invalidate widgets
             try {
                 KanriWidgetsUpdater.updateAllWidgets(context)
             } catch (e: Exception) {

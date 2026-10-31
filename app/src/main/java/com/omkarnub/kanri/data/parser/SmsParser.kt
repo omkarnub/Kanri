@@ -1,4 +1,4 @@
-package com.omkarnub.kanri.data.parser
+﻿package com.omkarnub.kanri.data.parser
 
 import java.util.regex.Pattern
 
@@ -29,7 +29,9 @@ data class ParsedTransaction(
     val balance: Double? = null,
     val creditLimit: Double? = null,
     val isCard: Boolean = false,
-    val isRefund: Boolean = false
+    val isRefund: Boolean = false,
+    val isTrustedSender: Boolean = true,
+    val sender: String = ""
 )
 
 object SmsParser {
@@ -78,7 +80,7 @@ object SmsParser {
 
     // Regex for extracting account masks across all major bank variations (A/C, AC, Card, etc.)
     private val ACCOUNT_PATTERN = Pattern.compile(
-        """(?i)\b(?:A/c|Account|acct|acc|ac|Card)\b\s*(?:no\.?)?\s*(?:ending\s+(?:in\s+|with\s+)?)?(?:with\s+)?(?:\.\.\.\s*|X+|\*+|-+)?(\d{3,6})"""
+        """(?i)\b(?:a/c|account|acct|acc|ac|card)\b(?:\s+no\.?)?(?:\s+ending\s+(?:in\s+|with\s+)?)?(?:\s+with)?[\s.*X-]*?(\d{3,6})"""
     )
 
     fun parse(body: String, sender: String? = null, timestamp: Long = System.currentTimeMillis()): ParsedTransaction? {
@@ -108,6 +110,8 @@ object SmsParser {
         val counterparty = extractCounterparty(trimmed, sourceType)
         val resolvedTimestamp = extractTimestamp(trimmed, timestamp)
 
+        val isTrusted = sender.isNullOrBlank() || BankSmsPatterns.isTrustedSender(sender)
+
         return ParsedTransaction(
             type = type,
             amount = amount,
@@ -121,7 +125,9 @@ object SmsParser {
             balance = balance,
             creditLimit = creditLimit,
             isCard = isCard,
-            isRefund = isRefund
+            isRefund = isRefund,
+            isTrustedSender = isTrusted,
+            sender = sender ?: ""
         )
     }
 
@@ -573,7 +579,8 @@ object SmsParser {
     }
 
     fun extractAccount(body: String): String? {
-        val pattern = ACCOUNT_PATTERN.matcher(body)
+        val bounded = if (body.length > 350) body.take(350) else body
+        val pattern = ACCOUNT_PATTERN.matcher(bounded)
         if (pattern.find()) {
             val digits = pattern.group(1)?.trim() ?: return null
             val cleanDigits = digits.filter { it.isDigit() }

@@ -62,10 +62,22 @@ class BackupRepository(private val context: Context) {
         }
     }
 
+    suspend fun isBackupFileEncrypted(uri: Uri): Boolean = withContext(Dispatchers.IO) {
+        try {
+            val headerBytes = ByteArray(BackupCryptoHelper.MAGIC_HEADER.size)
+            context.contentResolver.openInputStream(uri)?.use { inputStream ->
+                val read = inputStream.read(headerBytes)
+                read == headerBytes.size && BackupCryptoHelper.isEncryptedBackup(headerBytes)
+            } ?: false
+        } catch (_: Exception) {
+            false
+        }
+    }
+
     suspend fun restoreBackupFromUri(
         uri: Uri,
         passphrase: String? = null,
-        clearExisting: Boolean = true
+        clearExisting: Boolean = false
     ): Result<BackupStats> = withContext(Dispatchers.IO) {
         try {
             val bytes = context.contentResolver.openInputStream(uri)?.use { inputStream ->

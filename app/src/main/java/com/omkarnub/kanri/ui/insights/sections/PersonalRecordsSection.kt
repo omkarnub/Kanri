@@ -27,6 +27,9 @@ import androidx.compose.ui.text.style.TextOverflow
 import androidx.compose.ui.unit.dp
 import androidx.compose.ui.unit.sp
 import com.omkarnub.kanri.ui.common.AnimatedNumberText
+import com.omkarnub.kanri.ui.common.GlassLevel
+import com.omkarnub.kanri.ui.common.KanriGlassCard
+import com.omkarnub.kanri.ui.common.KanriGlassPill
 import com.omkarnub.kanri.ui.home.formatCurrency
 import com.omkarnub.kanri.ui.insights.PersonalRecordsData
 import java.time.LocalDate
@@ -160,14 +163,14 @@ fun PersonalRecordsSection(
         )
     }
 
-    Surface(
+    KanriGlassCard(
         modifier = modifier
             .fillMaxWidth()
             .semantics {
                 contentDescription = "Personal records: all-time financial records"
             },
-        shape = RoundedCornerShape(20.dp),
-        color = MaterialTheme.colorScheme.surfaceVariant.copy(alpha = 0.18f)
+        level = GlassLevel.Blur,
+        shape = RoundedCornerShape(20.dp)
     ) {
         Column(
             modifier = Modifier
@@ -219,21 +222,16 @@ private fun RecordTileView(
 ) {
     val isClickable = item.associatedMonth != null || item.associatedDay != null
 
-    Surface(
-        modifier = modifier
-            .then(
-                if (isClickable) {
-                    Modifier
-                        .clip(RoundedCornerShape(14.dp))
-                        .clickable {
-                            item.associatedMonth?.let { onSelectMonth(it) }
-                            item.associatedDay?.let { onSelectDay(it) }
-                        }
-                } else Modifier
-            ),
+    KanriGlassCard(
+        modifier = modifier,
         shape = RoundedCornerShape(14.dp),
-        color = MaterialTheme.colorScheme.surface,
-        border = BorderStroke(1.dp, MaterialTheme.colorScheme.outlineVariant)
+        level = GlassLevel.Flat,
+        onClick = if (isClickable) {
+            {
+                item.associatedMonth?.let { onSelectMonth(it) }
+                item.associatedDay?.let { onSelectDay(it) }
+            }
+        } else null
     ) {
         Column(
             modifier = Modifier
@@ -256,18 +254,10 @@ private fun RecordTileView(
                 )
 
                 if (item.isNewRecord) {
-                    Surface(
-                        shape = RoundedCornerShape(4.dp),
-                        color = IncomeSage.copy(alpha = 0.15f)
-                    ) {
-                        Text(
-                            text = "New",
-                            color = IncomeSage,
-                            fontSize = 8.sp,
-                            fontWeight = FontWeight.Bold,
-                            modifier = Modifier.padding(horizontal = 4.dp, vertical = 1.dp)
-                        )
-                    }
+                    KanriGlassPill(
+                        text = "New",
+                        level = GlassLevel.Flat
+                    )
                 }
             }
 

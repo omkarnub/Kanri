@@ -23,6 +23,7 @@ import androidx.compose.material.icons.filled.Close
 import androidx.compose.material.icons.filled.Edit
 import androidx.compose.material.icons.filled.SwapHoriz
 import androidx.compose.material.icons.filled.Tune
+import androidx.compose.material3.BottomSheetDefaults
 import androidx.compose.material3.Button
 import androidx.compose.material3.ButtonDefaults
 import androidx.compose.material3.ExperimentalMaterial3Api
@@ -33,6 +34,11 @@ import androidx.compose.material3.ModalBottomSheet
 import androidx.compose.material3.Surface
 import androidx.compose.material3.Text
 import androidx.compose.material3.rememberModalBottomSheetState
+import com.omkarnub.kanri.ui.theme.LocalKanriGlass
+import com.omkarnub.kanri.ui.common.GlassLevel
+import com.omkarnub.kanri.ui.common.KanriGlassCard
+import com.omkarnub.kanri.ui.common.KanriGlassDialog
+import com.omkarnub.kanri.ui.common.KanriModalBottomSheet
 import androidx.compose.runtime.Composable
 import androidx.compose.runtime.getValue
 import androidx.compose.runtime.mutableStateOf
@@ -72,24 +78,12 @@ fun WalletSheet(
     val haptics = rememberKanriHaptics()
     val sheetState = rememberModalBottomSheetState(skipPartiallyExpanded = true)
 
+    val tokens = LocalKanriGlass.current
     var showCorrectWalletPicker by remember { mutableStateOf(false) }
 
-    ModalBottomSheet(
+    KanriModalBottomSheet(
         onDismissRequest = onDismiss,
-        sheetState = sheetState,
-        containerColor = MaterialTheme.colorScheme.surface,
-        contentColor = MaterialTheme.colorScheme.onSurface,
-        shape = RoundedCornerShape(topStart = 28.dp, topEnd = 28.dp),
-        dragHandle = {
-            Box(
-                modifier = Modifier
-                    .padding(vertical = 12.dp)
-                    .size(width = 44.dp, height = 5.dp)
-                    .clip(CircleShape)
-                    .background(MaterialTheme.colorScheme.onSurfaceVariant.copy(alpha = 0.45f))
-                    .clickable { onDismiss() }
-            )
-        }
+        sheetState = sheetState
     ) {
         Column(
             modifier = Modifier
@@ -136,13 +130,12 @@ fun WalletSheet(
             Spacer(modifier = Modifier.height(16.dp))
 
             // Total Hero Card
-            Surface(
-                shape = RoundedCornerShape(18.dp),
-                color = MaterialTheme.colorScheme.surfaceVariant.copy(alpha = 0.4f),
-                border = BorderStroke(1.dp, MaterialTheme.colorScheme.outlineVariant),
+            KanriGlassCard(
+                level = GlassLevel.Blur,
+                shape = RoundedCornerShape(22.dp),
                 modifier = Modifier.fillMaxWidth()
             ) {
-                Column(modifier = Modifier.padding(16.dp)) {
+                Column(modifier = Modifier.padding(18.dp)) {
                     Text(
                         text = "TOTAL LIQUID BALANCE",
                         style = MaterialTheme.typography.labelSmall.copy(
@@ -170,16 +163,14 @@ fun WalletSheet(
                 horizontalArrangement = Arrangement.spacedBy(10.dp)
             ) {
                 // Cash Card
-                Surface(
-                    shape = RoundedCornerShape(16.dp),
-                    color = MaterialTheme.colorScheme.surfaceVariant.copy(alpha = 0.35f),
-                    border = BorderStroke(1.dp, MaterialTheme.colorScheme.outlineVariant),
-                    modifier = Modifier
-                        .weight(1f)
-                        .clickable {
-                            haptics.tick()
-                            onCorrectBalanceClick("CASH", balances.cash)
-                        }
+                KanriGlassCard(
+                    level = GlassLevel.Blur,
+                    shape = RoundedCornerShape(18.dp),
+                    modifier = Modifier.weight(1f),
+                    onClick = {
+                        haptics.tick()
+                        onCorrectBalanceClick("CASH", balances.cash)
+                    }
                 ) {
                     Column(modifier = Modifier.padding(14.dp)) {
                         Row(
@@ -209,16 +200,14 @@ fun WalletSheet(
                 }
 
                 // Online Card
-                Surface(
-                    shape = RoundedCornerShape(16.dp),
-                    color = MaterialTheme.colorScheme.surfaceVariant.copy(alpha = 0.35f),
-                    border = BorderStroke(1.dp, MaterialTheme.colorScheme.outlineVariant),
-                    modifier = Modifier
-                        .weight(1f)
-                        .clickable {
-                            haptics.tick()
-                            onCorrectBalanceClick("ONLINE", balances.online)
-                        }
+                KanriGlassCard(
+                    level = GlassLevel.Blur,
+                    shape = RoundedCornerShape(18.dp),
+                    modifier = Modifier.weight(1f),
+                    onClick = {
+                        haptics.tick()
+                        onCorrectBalanceClick("ONLINE", balances.online)
+                    }
                 ) {
                     Column(modifier = Modifier.padding(14.dp)) {
                         Row(
@@ -256,19 +245,17 @@ fun WalletSheet(
                 horizontalArrangement = Arrangement.spacedBy(8.dp)
             ) {
                 // Correct Balance Button
-                Surface(
-                    modifier = Modifier
-                        .weight(1f)
-                        .clickable {
-                            haptics.click()
-                            showCorrectWalletPicker = true
-                        },
-                    shape = RoundedCornerShape(12.dp),
-                    color = MaterialTheme.colorScheme.surfaceVariant,
-                    border = BorderStroke(1.dp, MaterialTheme.colorScheme.outlineVariant)
+                KanriGlassCard(
+                    level = GlassLevel.Flat,
+                    shape = RoundedCornerShape(14.dp),
+                    modifier = Modifier.weight(1f),
+                    onClick = {
+                        haptics.click()
+                        showCorrectWalletPicker = true
+                    }
                 ) {
                     Row(
-                        modifier = Modifier.padding(vertical = 10.dp, horizontal = 8.dp),
+                        modifier = Modifier.padding(vertical = 12.dp, horizontal = 8.dp),
                         verticalAlignment = Alignment.CenterVertically,
                         horizontalArrangement = Arrangement.Center
                     ) {
@@ -287,50 +274,48 @@ fun WalletSheet(
                     }
                 }
 
-                // Move Money Button
-                Surface(
-                    modifier = Modifier
-                        .weight(1f)
-                        .clickable {
-                            haptics.click()
-                            onMoveMoneyClick()
-                        },
-                    shape = RoundedCornerShape(12.dp),
-                    color = MaterialTheme.colorScheme.onSurface,
-                    contentColor = MaterialTheme.colorScheme.surface
+                // Move Money Button (Strong/Primary Glass)
+                KanriGlassCard(
+                    level = GlassLevel.Strong,
+                    shape = RoundedCornerShape(14.dp),
+                    modifier = Modifier.weight(1f),
+                    onClick = {
+                        haptics.click()
+                        onMoveMoneyClick()
+                    }
                 ) {
                     Row(
-                        modifier = Modifier.padding(vertical = 10.dp, horizontal = 8.dp),
+                        modifier = Modifier.padding(vertical = 12.dp, horizontal = 8.dp),
                         verticalAlignment = Alignment.CenterVertically,
                         horizontalArrangement = Arrangement.Center
                     ) {
                         Icon(
                             imageVector = Icons.Default.SwapHoriz,
                             contentDescription = null,
+                            tint = MaterialTheme.colorScheme.primary,
                             modifier = Modifier.size(16.dp)
                         )
                         Spacer(modifier = Modifier.width(6.dp))
                         Text(
                             text = "Move Money",
-                            style = MaterialTheme.typography.labelMedium.copy(fontWeight = FontWeight.Bold)
+                            style = MaterialTheme.typography.labelMedium.copy(fontWeight = FontWeight.Bold),
+                            color = MaterialTheme.colorScheme.onSurface
                         )
                     }
                 }
 
                 // Edit Openings Button
-                Surface(
-                    modifier = Modifier
-                        .weight(1f)
-                        .clickable {
-                            haptics.click()
-                            onEditOpeningBalancesClick()
-                        },
-                    shape = RoundedCornerShape(12.dp),
-                    color = MaterialTheme.colorScheme.surfaceVariant,
-                    border = BorderStroke(1.dp, MaterialTheme.colorScheme.outlineVariant)
+                KanriGlassCard(
+                    level = GlassLevel.Flat,
+                    shape = RoundedCornerShape(14.dp),
+                    modifier = Modifier.weight(1f),
+                    onClick = {
+                        haptics.click()
+                        onEditOpeningBalancesClick()
+                    }
                 ) {
                     Row(
-                        modifier = Modifier.padding(vertical = 10.dp, horizontal = 8.dp),
+                        modifier = Modifier.padding(vertical = 12.dp, horizontal = 8.dp),
                         verticalAlignment = Alignment.CenterVertically,
                         horizontalArrangement = Arrangement.Center
                     ) {
@@ -412,67 +397,59 @@ fun WalletSheet(
     }
 
     if (showCorrectWalletPicker) {
-        androidx.compose.ui.window.Dialog(onDismissRequest = { showCorrectWalletPicker = false }) {
-            Surface(
-                shape = RoundedCornerShape(20.dp),
-                color = MaterialTheme.colorScheme.surface,
-                border = BorderStroke(1.dp, MaterialTheme.colorScheme.outlineVariant),
-                modifier = Modifier.fillMaxWidth()
-            ) {
-                Column(modifier = Modifier.padding(20.dp)) {
-                    Text(
-                        text = "Select Wallet to Correct",
-                        style = MaterialTheme.typography.titleMedium.copy(fontWeight = FontWeight.Bold),
-                        color = MaterialTheme.colorScheme.onSurface
-                    )
-                    Spacer(modifier = Modifier.height(14.dp))
+        KanriGlassDialog(
+            onDismissRequest = { showCorrectWalletPicker = false },
+            shape = RoundedCornerShape(24.dp)
+        ) {
+            Column(modifier = Modifier.padding(20.dp)) {
+                Text(
+                    text = "Select Wallet to Correct",
+                    style = MaterialTheme.typography.titleMedium.copy(fontWeight = FontWeight.Bold),
+                    color = MaterialTheme.colorScheme.onSurface
+                )
+                Spacer(modifier = Modifier.height(14.dp))
 
-                    Surface(
-                        modifier = Modifier
-                            .fillMaxWidth()
-                            .clickable {
-                                showCorrectWalletPicker = false
-                                onCorrectBalanceClick("CASH", balances.cash)
-                            },
-                        shape = RoundedCornerShape(12.dp),
-                        color = MaterialTheme.colorScheme.surfaceVariant.copy(alpha = 0.5f),
-                        border = BorderStroke(1.dp, MaterialTheme.colorScheme.outlineVariant)
-                    ) {
-                        Row(
-                            modifier = Modifier
-                                .fillMaxWidth()
-                                .padding(14.dp),
-                            horizontalArrangement = Arrangement.SpaceBetween,
-                            verticalAlignment = Alignment.CenterVertically
-                        ) {
-                            Text("Cash Balance", fontWeight = FontWeight.SemiBold)
-                            Text(CurrencyUtils.formatCurrency(balances.cash), fontWeight = FontWeight.Bold)
-                        }
+                KanriGlassCard(
+                    modifier = Modifier.fillMaxWidth(),
+                    shape = RoundedCornerShape(14.dp),
+                    level = GlassLevel.Flat,
+                    onClick = {
+                        showCorrectWalletPicker = false
+                        onCorrectBalanceClick("CASH", balances.cash)
                     }
-
-                    Spacer(modifier = Modifier.height(10.dp))
-
-                    Surface(
+                ) {
+                    Row(
                         modifier = Modifier
                             .fillMaxWidth()
-                            .clickable {
-                                showCorrectWalletPicker = false
-                                onCorrectBalanceClick("ONLINE", balances.online)
-                            },
-                        shape = RoundedCornerShape(12.dp),
-                        color = MaterialTheme.colorScheme.surfaceVariant.copy(alpha = 0.5f),
-                        border = BorderStroke(1.dp, MaterialTheme.colorScheme.outlineVariant)
+                            .padding(14.dp),
+                        horizontalArrangement = Arrangement.SpaceBetween,
+                        verticalAlignment = Alignment.CenterVertically
                     ) {
-                        Row(
-                            modifier = Modifier
-                                .fillMaxWidth()
-                                .padding(14.dp),
-                            horizontalArrangement = Arrangement.SpaceBetween,
-                            verticalAlignment = Alignment.CenterVertically
-                        ) {
-                            Text("Online (Bank/UPI) Balance", fontWeight = FontWeight.SemiBold)
-                            Text(CurrencyUtils.formatCurrency(balances.online), fontWeight = FontWeight.Bold)
-                        }
+                        Text("Cash Balance", fontWeight = FontWeight.SemiBold)
+                        Text(CurrencyUtils.formatCurrency(balances.cash), fontWeight = FontWeight.Bold)
+                    }
+                }
+
+                Spacer(modifier = Modifier.height(10.dp))
+
+                KanriGlassCard(
+                    modifier = Modifier.fillMaxWidth(),
+                    shape = RoundedCornerShape(14.dp),
+                    level = GlassLevel.Flat,
+                    onClick = {
+                        showCorrectWalletPicker = false
+                        onCorrectBalanceClick("ONLINE", balances.online)
+                    }
+                ) {
+                    Row(
+                        modifier = Modifier
+                            .fillMaxWidth()
+                            .padding(14.dp),
+                        horizontalArrangement = Arrangement.SpaceBetween,
+                        verticalAlignment = Alignment.CenterVertically
+                    ) {
+                        Text("Online (Bank/UPI) Balance", fontWeight = FontWeight.SemiBold)
+                        Text(CurrencyUtils.formatCurrency(balances.online), fontWeight = FontWeight.Bold)
                     }
                 }
             }

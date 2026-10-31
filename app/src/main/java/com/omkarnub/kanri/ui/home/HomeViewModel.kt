@@ -1,4 +1,4 @@
-package com.omkarnub.kanri.ui.home
+﻿package com.omkarnub.kanri.ui.home
 
 import android.app.Application
 import android.content.BroadcastReceiver
@@ -21,6 +21,7 @@ import com.omkarnub.kanri.data.db.KanriDatabase
 import com.omkarnub.kanri.data.db.TransactionEntity
 import com.omkarnub.kanri.data.db.TransactionWithCategory
 import kotlinx.coroutines.ExperimentalCoroutinesApi
+import kotlinx.coroutines.Dispatchers
 import kotlinx.coroutines.channels.awaitClose
 import kotlinx.coroutines.flow.Flow
 import kotlinx.coroutines.flow.MutableStateFlow
@@ -30,6 +31,7 @@ import kotlinx.coroutines.flow.asStateFlow
 import kotlinx.coroutines.flow.callbackFlow
 import kotlinx.coroutines.flow.combine
 import kotlinx.coroutines.flow.flatMapLatest
+import kotlinx.coroutines.flow.flowOn
 import kotlinx.coroutines.flow.map
 import kotlinx.coroutines.flow.stateIn
 import kotlinx.coroutines.launch
@@ -181,7 +183,8 @@ class HomeViewModel(application: Application) : AndroidViewModel(application) {
     ) { txWithCatList, _ ->
         val txList = txWithCatList.map { it.transaction }
         StreakCalculator.calculateStreak(txList)
-    }.stateIn(
+    }.flowOn(Dispatchers.Default)
+    .stateIn(
         scope = viewModelScope,
         started = SharingStarted.WhileSubscribed(5000),
         initialValue = StreakState()
@@ -362,7 +365,8 @@ class HomeViewModel(application: Application) : AndroidViewModel(application) {
             ),
             walletBalances = balances
         )
-    }.stateIn(
+    }.flowOn(Dispatchers.Default)
+    .stateIn(
         scope = viewModelScope,
         started = SharingStarted.WhileSubscribed(5000),
         initialValue = HomeUiState(isLoading = true)

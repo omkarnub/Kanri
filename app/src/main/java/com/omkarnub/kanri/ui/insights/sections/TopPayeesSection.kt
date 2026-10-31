@@ -40,6 +40,8 @@ import androidx.compose.ui.text.font.FontWeight
 import androidx.compose.ui.text.style.TextOverflow
 import androidx.compose.ui.unit.dp
 import androidx.compose.ui.unit.sp
+import com.omkarnub.kanri.ui.common.GlassLevel
+import com.omkarnub.kanri.ui.common.KanriGlassCard
 import com.omkarnub.kanri.ui.home.formatCurrency
 import com.omkarnub.kanri.ui.insights.TopPayeeItem
 import com.omkarnub.kanri.ui.insights.TopPayeesData
@@ -53,14 +55,14 @@ fun TopPayeesSection(
     var isExpanded by remember { mutableStateOf(false) }
     val displayList = if (isExpanded) data.payees.take(15) else data.payees.take(5)
 
-    Surface(
+    KanriGlassCard(
         modifier = modifier
             .fillMaxWidth()
             .semantics {
                 contentDescription = "Top payees: ${data.payees.size} payees shown"
             },
         shape = RoundedCornerShape(20.dp),
-        color = MaterialTheme.colorScheme.surfaceVariant.copy(alpha = 0.18f)
+        level = GlassLevel.Blur
     ) {
         Column(
             modifier = Modifier

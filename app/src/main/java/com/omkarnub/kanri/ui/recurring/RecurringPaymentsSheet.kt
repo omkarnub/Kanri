@@ -29,7 +29,7 @@ import androidx.compose.material.icons.filled.CheckCircle
 import androidx.compose.material.icons.filled.Close
 import androidx.compose.material.icons.filled.Delete
 import androidx.compose.material.icons.filled.Repeat
-import androidx.compose.material3.AlertDialog
+import com.omkarnub.kanri.ui.common.KanriGlassAlertDialog as AlertDialog
 import androidx.compose.material3.Button
 import androidx.compose.material3.ButtonDefaults
 import androidx.compose.material3.Card
@@ -38,7 +38,9 @@ import androidx.compose.material3.ExperimentalMaterial3Api
 import androidx.compose.material3.Icon
 import androidx.compose.material3.IconButton
 import androidx.compose.material3.MaterialTheme
-import androidx.compose.material3.ModalBottomSheet
+import com.omkarnub.kanri.ui.common.GlassLevel
+import com.omkarnub.kanri.ui.common.KanriGlassCard
+import com.omkarnub.kanri.ui.common.KanriModalBottomSheet
 import androidx.compose.material3.OutlinedButton
 import androidx.compose.material3.OutlinedTextField
 import androidx.compose.material3.Surface
@@ -115,10 +117,9 @@ fun RecurringPaymentsSheet(
         candidates.filter { !existingTitles.contains(it.title.lowercase(Locale.ROOT).trim()) }
     }
 
-    ModalBottomSheet(
+    KanriModalBottomSheet(
         onDismissRequest = onDismiss,
         sheetState = sheetState,
-        containerColor = MaterialTheme.colorScheme.surface,
         dragHandle = null
     ) {
         Column(
@@ -191,11 +192,10 @@ fun RecurringPaymentsSheet(
             Spacer(modifier = Modifier.height(16.dp))
 
             // Monthly Commitments Overview Card
-            Card(
+            KanriGlassCard(
                 modifier = Modifier.fillMaxWidth(),
                 shape = RoundedCornerShape(16.dp),
-                colors = CardDefaults.cardColors(containerColor = MaterialTheme.colorScheme.surfaceVariant),
-                border = BorderStroke(1.dp, MaterialTheme.colorScheme.outlineVariant)
+                level = GlassLevel.Blur
             ) {
                 Row(
                     modifier = Modifier
@@ -253,10 +253,9 @@ fun RecurringPaymentsSheet(
                 Spacer(modifier = Modifier.height(8.dp))
                 LazyRow(horizontalArrangement = Arrangement.spacedBy(10.dp)) {
                     items(detectedCandidates) { candidate ->
-                        Card(
+                        KanriGlassCard(
                             shape = RoundedCornerShape(12.dp),
-                            colors = CardDefaults.cardColors(containerColor = Color(0xFF1C2230)),
-                            border = BorderStroke(1.dp, Color(0xFFFFD166).copy(alpha = 0.3f))
+                            level = GlassLevel.Flat
                         ) {
                             Column(modifier = Modifier.padding(10.dp)) {
                                 Text(
@@ -346,11 +345,10 @@ fun RecurringPaymentsSheet(
                         val daysRemaining = RecurringPaymentCalculator.calculateDaysRemaining(item.nextDueTimestamp)
                         val dueDateStr = dateFormat.format(Date(item.nextDueTimestamp))
 
-                        Card(
+                        KanriGlassCard(
                             modifier = Modifier.fillMaxWidth(),
                             shape = RoundedCornerShape(14.dp),
-                            colors = CardDefaults.cardColors(containerColor = MaterialTheme.colorScheme.surfaceVariant),
-                            border = BorderStroke(1.dp, MaterialTheme.colorScheme.outlineVariant)
+                            level = GlassLevel.Blur
                         ) {
                             Row(
                                 modifier = Modifier

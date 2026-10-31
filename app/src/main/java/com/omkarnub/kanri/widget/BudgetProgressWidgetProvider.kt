@@ -1,4 +1,4 @@
-package com.omkarnub.kanri.widget
+﻿package com.omkarnub.kanri.widget
 
 import android.appwidget.AppWidgetManager
 import android.appwidget.AppWidgetProvider
@@ -51,6 +51,12 @@ class BudgetProgressWidgetProvider : AppWidgetProvider() {
             appWidgetManager: AppWidgetManager,
             appWidgetIds: IntArray
         ) {
+            val validIds = appWidgetManager.getAppWidgetIds(
+                ComponentName(context, BudgetProgressWidgetProvider::class.java)
+            ).toSet()
+            val targetIds = appWidgetIds.filter { it in validIds }.toIntArray()
+            if (targetIds.isEmpty()) return
+
             CoroutineScope(Dispatchers.IO).launch {
                 val db = KanriDatabase.getDatabase(context)
 
@@ -85,7 +91,7 @@ class BudgetProgressWidgetProvider : AppWidgetProvider() {
                 }
                 val isOver = monthSpent > budgetLimit
 
-                for (widgetId in appWidgetIds) {
+                for (widgetId in targetIds) {
                     val views = RemoteViews(context.packageName, R.layout.widget_budget_progress)
 
                     // Check resize dimensions

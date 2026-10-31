@@ -22,6 +22,7 @@
             android:layout_height="wrap_content"
             android:layout_weight="1"
             android:fontFamily="@font/google_sans_bold"
+            android:textStyle="bold"
             android:letterSpacing="0.08"
             android:text="SAVINGS GOAL"
             android:textColor="#FFFFFF"

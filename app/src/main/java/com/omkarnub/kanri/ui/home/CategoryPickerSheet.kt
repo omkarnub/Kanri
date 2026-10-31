@@ -1,4 +1,4 @@
-package com.omkarnub.kanri.ui.home
+﻿package com.omkarnub.kanri.ui.home
 
 import androidx.activity.compose.BackHandler
 import androidx.compose.animation.AnimatedContent
@@ -42,11 +42,17 @@ import androidx.compose.material.icons.filled.Search
 import androidx.compose.material3.Button
 import androidx.compose.material3.ButtonDefaults
 import androidx.compose.material3.ExperimentalMaterial3Api
+import androidx.compose.material3.BottomSheetDefaults
 import androidx.compose.material3.Icon
 import androidx.compose.material3.IconButton
 import androidx.compose.material3.MaterialTheme
-import androidx.compose.material3.ModalBottomSheet
 import androidx.compose.material3.rememberModalBottomSheetState
+import com.omkarnub.kanri.ui.common.GlassLevel
+import com.omkarnub.kanri.ui.common.KanriGlassButton
+import com.omkarnub.kanri.ui.common.KanriGlassCard
+import com.omkarnub.kanri.ui.common.KanriModalBottomSheet
+import com.omkarnub.kanri.ui.common.kanriPrimaryButtonColors
+import com.omkarnub.kanri.ui.theme.LocalKanriGlass
 import androidx.compose.material3.OutlinedTextField
 import androidx.compose.material3.OutlinedTextFieldDefaults
 import androidx.compose.material3.Surface
@@ -244,12 +250,11 @@ fun CategoryPickerSheet(
     val isNoteValid = !isOthersSelected || noteText.trim().isNotBlank()
     val isConfirmEnabled = chosenCategoryId != null && isNoteValid
 
-    ModalBottomSheet(
+    val tokens = LocalKanriGlass.current
+
+    KanriModalBottomSheet(
         onDismissRequest = onDismiss,
         sheetState = sheetState,
-        containerColor = MaterialTheme.colorScheme.surface,
-        contentColor = MaterialTheme.colorScheme.onSurface,
-        shape = RoundedCornerShape(topStart = 28.dp, topEnd = 28.dp),
         dragHandle = {
             // Prominent, interactive top notch: click or drag to close the popup
             Box(
@@ -257,7 +262,7 @@ fun CategoryPickerSheet(
                     .padding(vertical = 12.dp)
                     .size(width = 44.dp, height = 5.dp)
                     .clip(CircleShape)
-                    .background(MaterialTheme.colorScheme.onSurfaceVariant.copy(alpha = 0.45f))
+                    .background(if (tokens != null) tokens.textTertiary else MaterialTheme.colorScheme.onSurfaceVariant.copy(alpha = 0.45f))
                     .clickable { onDismiss() }
             )
         }
@@ -439,21 +444,18 @@ fun CategoryPickerSheet(
                                 items(filteredCategories, key = { it.id }) { cat ->
                                     val isSelected = chosenCategoryId == cat.id
 
-                                    Surface(
+                                    KanriGlassCard(
                                         shape = RoundedCornerShape(14.dp),
-                                        color = if (isSelected) MaterialTheme.colorScheme.onSurface.copy(alpha = 0.12f) else MaterialTheme.colorScheme.surfaceVariant,
-                                        border = if (isSelected) BorderStroke(1.8.dp, MaterialTheme.colorScheme.onSurface) else BorderStroke(0.5.dp, MaterialTheme.colorScheme.outlineVariant),
-                                        modifier = Modifier
-                                            .fillMaxWidth()
-                                            .clip(RoundedCornerShape(14.dp))
-                                            .clickable {
-                                                haptics.click()
-                                                chosenCategoryId = cat.id
-                                                val isLendBorrow = cat.name.contains("lend", ignoreCase = true) || cat.name.contains("borrow", ignoreCase = true)
-                                                if (isLendBorrow && onOpenLendBorrow != null) {
-                                                    onOpenLendBorrow(targetTransaction)
-                                                }
+                                        level = if (isSelected) GlassLevel.Strong else GlassLevel.Flat,
+                                        modifier = Modifier.fillMaxWidth(),
+                                        onClick = {
+                                            haptics.click()
+                                            chosenCategoryId = cat.id
+                                            val isLendBorrow = cat.name.contains("lend", ignoreCase = true) || cat.name.contains("borrow", ignoreCase = true)
+                                            if (isLendBorrow && onOpenLendBorrow != null) {
+                                                onOpenLendBorrow(targetTransaction)
                                             }
+                                        }
                                     ) {
                                         Row(
                                             modifier = Modifier
@@ -465,13 +467,13 @@ fun CategoryPickerSheet(
                                                 modifier = Modifier
                                                     .size(32.dp)
                                                     .clip(CircleShape)
-                                                    .background(if (isSelected) MaterialTheme.colorScheme.onSurface else MaterialTheme.colorScheme.surface),
+                                                    .background(if (isSelected) MaterialTheme.colorScheme.inverseSurface else MaterialTheme.colorScheme.surfaceVariant.copy(alpha = 0.5f)),
                                                 contentAlignment = Alignment.Center
                                             ) {
                                                 CategoryIcon(
                                                     categoryName = cat.name,
                                                     iconName = cat.iconName,
-                                                    tint = if (isSelected) MaterialTheme.colorScheme.surface else MaterialTheme.colorScheme.onSurfaceVariant,
+                                                    tint = if (isSelected) MaterialTheme.colorScheme.inverseOnSurface else MaterialTheme.colorScheme.onSurfaceVariant,
                                                     modifier = Modifier.size(17.dp)
                                                 )
                                             }
@@ -519,13 +521,13 @@ fun CategoryPickerSheet(
                                         ) {
                                             Surface(
                                                 shape = CircleShape,
-                                                color = if (isAllocateToGoalEnabled) MaterialTheme.colorScheme.onSurface else MaterialTheme.colorScheme.surface,
+                                                color = if (isAllocateToGoalEnabled) MaterialTheme.colorScheme.inverseSurface else MaterialTheme.colorScheme.surfaceVariant.copy(alpha = 0.5f),
                                                 modifier = Modifier.size(32.dp)
                                             ) {
                                                 Box(contentAlignment = Alignment.Center) {
                                                     GoalIcon(
                                                         iconKey = "savings",
-                                                        tint = if (isAllocateToGoalEnabled) MaterialTheme.colorScheme.surface else MaterialTheme.colorScheme.onSurface,
+                                                        tint = if (isAllocateToGoalEnabled) MaterialTheme.colorScheme.inverseOnSurface else MaterialTheme.colorScheme.onSurface,
                                                         modifier = Modifier.size(17.dp)
                                                     )
                                                 }
@@ -549,8 +551,8 @@ fun CategoryPickerSheet(
                                             checked = isAllocateToGoalEnabled,
                                             onCheckedChange = { isAllocateToGoalEnabled = it },
                                             colors = SwitchDefaults.colors(
-                                                checkedThumbColor = MaterialTheme.colorScheme.surface,
-                                                checkedTrackColor = MaterialTheme.colorScheme.onSurface,
+                                                checkedThumbColor = MaterialTheme.colorScheme.inverseOnSurface,
+                                                checkedTrackColor = MaterialTheme.colorScheme.inverseSurface,
                                                 uncheckedThumbColor = MaterialTheme.colorScheme.outline,
                                                 uncheckedTrackColor = MaterialTheme.colorScheme.surfaceVariant
                                             )
@@ -581,10 +583,10 @@ fun CategoryPickerSheet(
                                                 val isGoalSelected = selectedGoalId == g.id
                                                 Surface(
                                                     shape = RoundedCornerShape(12.dp),
-                                                    color = if (isGoalSelected) MaterialTheme.colorScheme.onSurface else MaterialTheme.colorScheme.surface,
+                                                    color = if (isGoalSelected) MaterialTheme.colorScheme.inverseSurface else MaterialTheme.colorScheme.surfaceVariant.copy(alpha = 0.5f),
                                                     border = BorderStroke(
                                                         1.dp,
-                                                        if (isGoalSelected) MaterialTheme.colorScheme.onSurface else MaterialTheme.colorScheme.outlineVariant
+                                                        if (isGoalSelected) MaterialTheme.colorScheme.inverseSurface else MaterialTheme.colorScheme.outlineVariant
                                                     ),
                                                     modifier = Modifier
                                                         .clip(RoundedCornerShape(12.dp))
@@ -600,7 +602,7 @@ fun CategoryPickerSheet(
                                                     ) {
                                                         GoalIcon(
                                                             iconKey = g.emoji,
-                                                            tint = if (isGoalSelected) MaterialTheme.colorScheme.surface else MaterialTheme.colorScheme.onSurface,
+                                                            tint = if (isGoalSelected) MaterialTheme.colorScheme.inverseOnSurface else MaterialTheme.colorScheme.onSurface,
                                                             modifier = Modifier.size(16.dp)
                                                         )
                                                         Text(
@@ -608,7 +610,7 @@ fun CategoryPickerSheet(
                                                             fontFamily = GoogleSansFlex,
                                                             fontSize = 12.sp,
                                                             fontWeight = if (isGoalSelected) FontWeight.Bold else FontWeight.Medium,
-                                                            color = if (isGoalSelected) MaterialTheme.colorScheme.surface else MaterialTheme.colorScheme.onSurface
+                                                            color = if (isGoalSelected) MaterialTheme.colorScheme.inverseOnSurface else MaterialTheme.colorScheme.onSurface
                                                         )
                                                     }
                                                 }
@@ -631,8 +633,8 @@ fun CategoryPickerSheet(
                                                 singleLine = true,
                                                 shape = RoundedCornerShape(12.dp),
                                                 colors = OutlinedTextFieldDefaults.colors(
-                                                    focusedContainerColor = MaterialTheme.colorScheme.surface,
-                                                    unfocusedContainerColor = MaterialTheme.colorScheme.surface,
+                                                    focusedContainerColor = MaterialTheme.colorScheme.surfaceVariant.copy(alpha = 0.35f),
+                                                    unfocusedContainerColor = MaterialTheme.colorScheme.surfaceVariant.copy(alpha = 0.2f),
                                                     focusedBorderColor = MaterialTheme.colorScheme.onSurface,
                                                     unfocusedBorderColor = MaterialTheme.colorScheme.outlineVariant
                                                 ),
@@ -642,7 +644,7 @@ fun CategoryPickerSheet(
 
                                             Surface(
                                                 shape = RoundedCornerShape(10.dp),
-                                                color = MaterialTheme.colorScheme.surface,
+                                                color = MaterialTheme.colorScheme.surfaceVariant.copy(alpha = 0.4f),
                                                 border = BorderStroke(0.8.dp, MaterialTheme.colorScheme.outlineVariant),
                                                 modifier = Modifier
                                                     .clip(RoundedCornerShape(10.dp))
@@ -713,7 +715,8 @@ fun CategoryPickerSheet(
                         Spacer(modifier = Modifier.height(12.dp))
 
                         // Confirm Button
-                        Button(
+                        KanriGlassButton(
+                            text = "Confirm",
                             onClick = {
                                 haptics.success()
                                 chosenCategoryId?.let { catId ->
@@ -761,22 +764,8 @@ fun CategoryPickerSheet(
                                 .fillMaxWidth()
                                 .height(50.dp),
                             shape = RoundedCornerShape(14.dp),
-                            colors = ButtonDefaults.buttonColors(
-                                containerColor = MaterialTheme.colorScheme.onSurface,
-                                contentColor = MaterialTheme.colorScheme.surface,
-                                disabledContainerColor = MaterialTheme.colorScheme.onSurface.copy(alpha = 0.12f),
-                                disabledContentColor = MaterialTheme.colorScheme.onSurface.copy(alpha = 0.38f)
-                            )
-                        ) {
-                            Text(
-                                text = "Confirm",
-                                fontFamily = GoogleSansFlex,
-                                style = MaterialTheme.typography.titleMedium.copy(
-                                    fontWeight = FontWeight.SemiBold,
-                                    fontSize = 15.sp
-                                )
-                            )
-                        }
+                            level = GlassLevel.Strong
+                        )
                     }
                 }
             }
@@ -904,10 +893,7 @@ fun CreateCustomCategoryView(
                 .fillMaxWidth()
                 .height(48.dp),
             shape = RoundedCornerShape(14.dp),
-            colors = ButtonDefaults.buttonColors(
-                containerColor = MaterialTheme.colorScheme.onSurface,
-                contentColor = MaterialTheme.colorScheme.surface
-            )
+            colors = kanriPrimaryButtonColors()
         ) {
             Text("Save Category", fontWeight = FontWeight.SemiBold)
         }

@@ -33,7 +33,11 @@ import androidx.compose.material.icons.filled.Delete
 import androidx.compose.material.icons.filled.Edit
 import androidx.compose.material.icons.filled.History
 import androidx.compose.material.icons.filled.SwapVert
-import androidx.compose.material3.AlertDialog
+import com.omkarnub.kanri.ui.common.GlassLevel
+import com.omkarnub.kanri.ui.common.KanriGlassCard
+import com.omkarnub.kanri.ui.common.KanriModalBottomSheet
+import com.omkarnub.kanri.ui.common.KanriGlassAlertDialog as AlertDialog
+import com.omkarnub.kanri.ui.common.kanriPrimaryButtonColors
 import androidx.compose.material3.Button
 import androidx.compose.material3.ButtonDefaults
 import androidx.compose.material3.Card
@@ -247,10 +251,10 @@ fun AddEditSavingsGoalDialog(
                         val isSelected = selectedIconKey.equals(opt.key, ignoreCase = true)
                         Surface(
                             shape = RoundedCornerShape(12.dp),
-                            color = if (isSelected) MaterialTheme.colorScheme.onSurface else MaterialTheme.colorScheme.surfaceVariant.copy(alpha = 0.5f),
+                            color = if (isSelected) MaterialTheme.colorScheme.inverseSurface else MaterialTheme.colorScheme.surfaceVariant.copy(alpha = 0.5f),
                             border = BorderStroke(
                                 1.dp,
-                                if (isSelected) MaterialTheme.colorScheme.onSurface else MaterialTheme.colorScheme.outlineVariant
+                                if (isSelected) MaterialTheme.colorScheme.inverseSurface else MaterialTheme.colorScheme.outlineVariant
                             ),
                             modifier = Modifier
                                 .size(42.dp)
@@ -263,7 +267,7 @@ fun AddEditSavingsGoalDialog(
                             Box(contentAlignment = Alignment.Center) {
                                 GoalIcon(
                                     iconKey = opt.key,
-                                    tint = if (isSelected) MaterialTheme.colorScheme.surface else MaterialTheme.colorScheme.onSurface,
+                                    tint = if (isSelected) MaterialTheme.colorScheme.inverseOnSurface else MaterialTheme.colorScheme.onSurface,
                                     modifier = Modifier.size(20.dp)
                                 )
                             }
@@ -339,7 +343,7 @@ fun AddEditSavingsGoalDialog(
                     // Pick custom date button
                     Surface(
                         shape = RoundedCornerShape(10.dp),
-                        color = if (targetDateMillis != null) MaterialTheme.colorScheme.onSurface else MaterialTheme.colorScheme.surfaceVariant.copy(alpha = 0.5f),
+                        color = if (targetDateMillis != null) MaterialTheme.colorScheme.inverseSurface else MaterialTheme.colorScheme.surfaceVariant.copy(alpha = 0.5f),
                         border = BorderStroke(0.8.dp, MaterialTheme.colorScheme.outlineVariant),
                         modifier = Modifier
                             .clip(RoundedCornerShape(10.dp))
@@ -359,7 +363,9 @@ fun AddEditSavingsGoalDialog(
                                     cal.get(Calendar.YEAR),
                                     cal.get(Calendar.MONTH),
                                     cal.get(Calendar.DAY_OF_MONTH)
-                                ).show()
+                                ).apply {
+                                    window?.let { com.omkarnub.kanri.ui.common.applyWindowBlur(it) }
+                                }.show()
                             }
                     ) {
                         Row(
@@ -369,7 +375,7 @@ fun AddEditSavingsGoalDialog(
                             Icon(
                                 imageVector = Icons.Default.CalendarMonth,
                                 contentDescription = null,
-                                tint = if (targetDateMillis != null) MaterialTheme.colorScheme.surface else MaterialTheme.colorScheme.onSurface,
+                                tint = if (targetDateMillis != null) MaterialTheme.colorScheme.inverseOnSurface else MaterialTheme.colorScheme.onSurface,
                                 modifier = Modifier.size(13.dp)
                             )
                             Spacer(modifier = Modifier.width(4.dp))
@@ -378,7 +384,7 @@ fun AddEditSavingsGoalDialog(
                                 fontFamily = GoogleSansFlex,
                                 fontSize = 11.sp,
                                 fontWeight = FontWeight.SemiBold,
-                                color = if (targetDateMillis != null) MaterialTheme.colorScheme.surface else MaterialTheme.colorScheme.onSurface
+                                color = if (targetDateMillis != null) MaterialTheme.colorScheme.inverseOnSurface else MaterialTheme.colorScheme.onSurface
                             )
                         }
                     }
@@ -435,12 +441,7 @@ fun AddEditSavingsGoalDialog(
                 },
                 enabled = title.isNotBlank() && (targetAmountStr.toDoubleOrNull() ?: 0.0) > 0.0,
                 shape = RoundedCornerShape(12.dp),
-                colors = ButtonDefaults.buttonColors(
-                    containerColor = MaterialTheme.colorScheme.onSurface,
-                    contentColor = MaterialTheme.colorScheme.surface,
-                    disabledContainerColor = MaterialTheme.colorScheme.onSurface.copy(alpha = 0.12f),
-                    disabledContentColor = MaterialTheme.colorScheme.onSurface.copy(alpha = 0.38f)
-                )
+                colors = kanriPrimaryButtonColors()
             ) {
                 Text(
                     text = if (isEditMode) "Save Changes" else "Create Goal",
@@ -544,7 +545,7 @@ fun AdjustGoalFundsDialog(
                                     .weight(1f)
                                     .clip(RoundedCornerShape(8.dp))
                                     .background(
-                                        if (isSelected) MaterialTheme.colorScheme.surface
+                                        if (isSelected) MaterialTheme.colorScheme.inverseSurface
                                         else Color.Transparent
                                     )
                                     .clickable {
@@ -559,7 +560,7 @@ fun AdjustGoalFundsDialog(
                                     fontFamily = GoogleSansFlex,
                                     fontSize = 13.sp,
                                     fontWeight = if (isSelected) FontWeight.Bold else FontWeight.Normal,
-                                    color = if (isSelected) MaterialTheme.colorScheme.onSurface else MaterialTheme.colorScheme.onSurfaceVariant
+                                    color = if (isSelected) MaterialTheme.colorScheme.inverseOnSurface else MaterialTheme.colorScheme.onSurfaceVariant
                                 )
                             }
                         }
@@ -687,12 +688,7 @@ fun AdjustGoalFundsDialog(
                 },
                 enabled = amount > 0.0,
                 shape = RoundedCornerShape(12.dp),
-                colors = ButtonDefaults.buttonColors(
-                    containerColor = MaterialTheme.colorScheme.onSurface,
-                    contentColor = MaterialTheme.colorScheme.surface,
-                    disabledContainerColor = MaterialTheme.colorScheme.onSurface.copy(alpha = 0.12f),
-                    disabledContentColor = MaterialTheme.colorScheme.onSurface.copy(alpha = 0.38f)
-                )
+                colors = kanriPrimaryButtonColors()
             ) {
                 Text(
                     text = if (isDeposit) "Deposit ₹${amount.toInt()}" else "Withdraw ₹${amount.toInt()}",
@@ -753,12 +749,9 @@ fun GoalDetailsSheet(
     val dateFormatter = remember { SimpleDateFormat("dd MMM yyyy · hh:mm a", Locale.getDefault()) }
     val deadlineDateFormatter = remember { SimpleDateFormat("dd MMMM yyyy", Locale.getDefault()) }
 
-    ModalBottomSheet(
+    KanriModalBottomSheet(
         onDismissRequest = onDismiss,
         sheetState = sheetState,
-        containerColor = MaterialTheme.colorScheme.surface,
-        contentColor = MaterialTheme.colorScheme.onSurface,
-        shape = RoundedCornerShape(topStart = 28.dp, topEnd = 28.dp),
         dragHandle = {
             Box(
                 modifier = Modifier
@@ -851,11 +844,10 @@ fun GoalDetailsSheet(
             Spacer(modifier = Modifier.height(16.dp))
 
             // Gauge & Key Metrics Card
-            Card(
+            KanriGlassCard(
                 modifier = Modifier.fillMaxWidth(),
                 shape = RoundedCornerShape(18.dp),
-                colors = CardDefaults.cardColors(containerColor = MaterialTheme.colorScheme.surfaceVariant.copy(alpha = 0.35f)),
-                border = BorderStroke(1.dp, MaterialTheme.colorScheme.outlineVariant)
+                level = GlassLevel.Blur
             ) {
                 Row(
                     modifier = Modifier
@@ -911,11 +903,10 @@ fun GoalDetailsSheet(
             // Target Deadline & Pace Insights
             if (goal.targetDate != null || monthlyPace != null) {
                 Spacer(modifier = Modifier.height(12.dp))
-                Surface(
+                KanriGlassCard(
                     modifier = Modifier.fillMaxWidth(),
                     shape = RoundedCornerShape(14.dp),
-                    color = MaterialTheme.colorScheme.surfaceVariant.copy(alpha = 0.25f),
-                    border = BorderStroke(0.8.dp, MaterialTheme.colorScheme.outlineVariant)
+                    level = GlassLevel.Flat
                 ) {
                     Column(modifier = Modifier.padding(14.dp)) {
                         if (goal.targetDate != null) {
@@ -987,7 +978,7 @@ fun GoalDetailsSheet(
                                     color = MaterialTheme.colorScheme.onSurfaceVariant
                                 )
                                 Text(
-                                    text = "₹${monthlyPace.toInt()} / month",
+                                    text = "${com.omkarnub.kanri.util.CurrencyUtils.getCurrencySymbol()}${monthlyPace.toInt()} / month",
                                     fontFamily = GoogleSansFlex,
                                     fontSize = 12.5.sp,
                                     fontWeight = FontWeight.Bold,
@@ -1011,10 +1002,7 @@ fun GoalDetailsSheet(
                     .fillMaxWidth()
                     .height(48.dp),
                 shape = RoundedCornerShape(14.dp),
-                colors = ButtonDefaults.buttonColors(
-                    containerColor = MaterialTheme.colorScheme.onSurface,
-                    contentColor = MaterialTheme.colorScheme.surface
-                )
+                colors = kanriPrimaryButtonColors()
             ) {
                 Icon(
                     imageVector = Icons.Default.SwapVert,

@@ -27,7 +27,7 @@ import androidx.compose.material3.ExperimentalMaterial3Api
 import androidx.compose.material3.Icon
 import androidx.compose.material3.IconButton
 import androidx.compose.material3.MaterialTheme
-import androidx.compose.material3.ModalBottomSheet
+import com.omkarnub.kanri.ui.common.KanriModalBottomSheet
 import androidx.compose.material3.Surface
 import androidx.compose.material3.Text
 import androidx.compose.material3.rememberModalBottomSheetState
@@ -43,6 +43,7 @@ import androidx.compose.ui.unit.sp
 import com.omkarnub.kanri.R
 import com.omkarnub.kanri.ui.common.LocalHazeState
 import com.omkarnub.kanri.ui.common.frostedGlass
+import com.omkarnub.kanri.ui.common.kanriPrimaryButtonColors
 import com.omkarnub.kanri.ui.common.rememberKanriGlassTheme
 import com.omkarnub.kanri.ui.theme.GoogleSansFlex
 import com.omkarnub.kanri.ui.theme.Panchang
@@ -60,12 +61,9 @@ fun OnboardingPrivacySheet(
     val glassTheme = rememberKanriGlassTheme()
     val hazeState = LocalHazeState.current
 
-    ModalBottomSheet(
+    KanriModalBottomSheet(
         onDismissRequest = onDismiss,
         sheetState = sheetState,
-        containerColor = glassTheme.fallbackBackgroundColor,
-        contentColor = MaterialTheme.colorScheme.onSurface,
-        shape = RoundedCornerShape(topStart = 28.dp, topEnd = 28.dp),
         dragHandle = null,
         modifier = modifier
     ) {
@@ -141,10 +139,7 @@ fun OnboardingPrivacySheet(
                     .fillMaxWidth()
                     .height(52.dp),
                 shape = RoundedCornerShape(50),
-                colors = ButtonDefaults.buttonColors(
-                    containerColor = MaterialTheme.colorScheme.onSurface,
-                    contentColor = MaterialTheme.colorScheme.surface
-                )
+                colors = kanriPrimaryButtonColors()
             ) {
                 Text(
                     text = stringResource(R.string.onboarding_privacy_close),

@@ -1,4 +1,4 @@
-package com.omkarnub.kanri.ui.lending
+﻿package com.omkarnub.kanri.ui.lending
 
 import androidx.compose.animation.AnimatedContent
 import androidx.compose.animation.core.CubicBezierEasing

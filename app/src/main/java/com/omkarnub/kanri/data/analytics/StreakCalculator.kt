@@ -59,10 +59,14 @@ object StreakCalculator {
             it.type.equals("DEBIT", ignoreCase = true) && !it.isTransfer
         }
 
-        // Find earliest transaction timestamp (any type: establishes user start date)
+        // Find earliest transaction timestamp (clamped to at most 5 years ago to prevent unbounded loops)
         val earliestTxTime = transactions.minOf { it.timestamp }
-        val firstDayCal = getStartOfDayCalendar(earliestTxTime)
+        val rawFirstDayCal = getStartOfDayCalendar(earliestTxTime)
         val todayCal = getStartOfDayCalendar(nowCalendar.timeInMillis)
+        val fiveYearsAgoCal = (todayCal.clone() as Calendar).apply {
+            add(Calendar.YEAR, -5)
+        }
+        val firstDayCal = if (rawFirstDayCal.before(fiveYearsAgoCal)) fiveYearsAgoCal else rawFirstDayCal
 
         // If earliest transaction is in the future compared to nowCalendar
         if (firstDayCal.after(todayCal)) {
@@ -88,6 +92,8 @@ object StreakCalculator {
         val todayMillis = todayCal.timeInMillis
         val todayHasSpend = expenseDates.contains(todayMillis)
 
+        val maxDaysBound = 5 * 366 // At most ~1830 iterations
+
         // 1. Calculate current streak and last streak
         var currentStreak = 0
         var lastStreak = 0
@@ -95,7 +101,8 @@ object StreakCalculator {
         if (!todayHasSpend) {
             // Count backwards from today
             val checkCal = todayCal.clone() as Calendar
-            while (!checkCal.before(firstDayCal)) {
+            var iter = 0
+            while (!checkCal.before(firstDayCal) && iter++ < maxDaysBound) {
                 val dayMillis = checkCal.timeInMillis
                 if (!expenseDates.contains(dayMillis)) {
                     currentStreak++
@@ -110,7 +117,8 @@ object StreakCalculator {
             val checkCal = (todayCal.clone() as Calendar).apply {
                 add(Calendar.DAY_OF_MONTH, -1)
             }
-            while (!checkCal.before(firstDayCal)) {
+            var iter = 0
+            while (!checkCal.before(firstDayCal) && iter++ < maxDaysBound) {
                 val dayMillis = checkCal.timeInMillis
                 if (!expenseDates.contains(dayMillis)) {
                     lastStreak++
@@ -125,7 +133,8 @@ object StreakCalculator {
         var bestStreak = 0
         var runningStreak = 0
         val iterCal = firstDayCal.clone() as Calendar
-        while (!iterCal.after(todayCal)) {
+        var bestIter = 0
+        while (!iterCal.after(todayCal) && bestIter++ < maxDaysBound) {
             val dayMillis = iterCal.timeInMillis
             if (!expenseDates.contains(dayMillis)) {
                 runningStreak++

@@ -1,4 +1,4 @@
-package com.omkarnub.kanri.widget
+﻿package com.omkarnub.kanri.widget
 
 import android.content.Context
 import android.graphics.Bitmap
@@ -123,26 +123,29 @@ object WidgetCanvasRenderer {
             canvas.drawArc(arcRect, -90f, ratio * 360f, false, progressPaint)
         }
 
-        // 3. Center emoji and percentage (white)
+        // 3. Center percentage and label (pure white)
         val fontBold = ResourcesCompat.getFont(context, R.font.google_sans_bold)
+        val fontMedium = ResourcesCompat.getFont(context, R.font.google_sans_medium)
         val centerX = sizePx / 2f
         val centerY = sizePx / 2f
 
-        // Emoji
-        val emojiPaint = Paint(Paint.ANTI_ALIAS_FLAG).apply {
-            textSize = sizePx * 0.18f
+        // "Goal" label
+        val subPaint = Paint(Paint.ANTI_ALIAS_FLAG).apply {
+            typeface = fontMedium
+            color = 0xB3FFFFFF.toInt()
+            textSize = sizePx * 0.09f
             textAlign = Paint.Align.CENTER
         }
-        canvas.drawText(emoji.ifEmpty { "🎯" }, centerX, centerY - sizePx * 0.04f, emojiPaint)
+        canvas.drawText("Goal", centerX, centerY - sizePx * 0.06f, subPaint)
 
         // Percentage text (pure white)
         val percentPaint = Paint(Paint.ANTI_ALIAS_FLAG).apply {
             typeface = fontBold
             color = 0xFFFFFFFF.toInt()
-            textSize = sizePx * 0.14f
+            textSize = sizePx * 0.18f
             textAlign = Paint.Align.CENTER
         }
-        canvas.drawText("${progressPercent.toInt()}%", centerX, centerY + sizePx * 0.15f, percentPaint)
+        canvas.drawText("${progressPercent.toInt()}%", centerX, centerY + sizePx * 0.12f, percentPaint)
 
         return bitmap
     }

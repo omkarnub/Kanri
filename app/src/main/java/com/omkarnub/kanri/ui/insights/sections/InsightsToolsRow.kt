@@ -21,6 +21,8 @@ import androidx.compose.material3.Icon
 import androidx.compose.material3.MaterialTheme
 import androidx.compose.material3.Text
 import androidx.compose.runtime.Composable
+import com.omkarnub.kanri.ui.common.GlassLevel
+import com.omkarnub.kanri.ui.common.KanriGlassCard
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.draw.clip
@@ -93,19 +95,15 @@ private fun ToolButton(
     onClick: () -> Unit,
     modifier: Modifier = Modifier
 ) {
-    Card(
+    KanriGlassCard(
         modifier = modifier
-            .clip(RoundedCornerShape(16.dp))
-            .clickable(onClick = onClick)
             .semantics {
                 role = Role.Button
                 contentDescription = "$title, $subtitle"
             },
+        level = GlassLevel.Flat,
         shape = RoundedCornerShape(16.dp),
-        colors = CardDefaults.cardColors(
-            containerColor = MaterialTheme.colorScheme.surfaceVariant.copy(alpha = 0.35f)
-        ),
-        border = BorderStroke(1.dp, MaterialTheme.colorScheme.outlineVariant)
+        onClick = onClick
     ) {
         Column(
             modifier = Modifier

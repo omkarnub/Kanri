@@ -142,7 +142,10 @@ object NotificationDeduplicationHelper {
                         parsed.rawText.contains("deposited in cash", ignoreCase = true)
                 )
 
+        val isUntrustedSender = !parsed.isTrustedSender
+
         val (needsReview, reviewReason) = when {
+            isUntrustedSender -> true to "Unverified SMS sender: ${parsed.sender.take(30)}"
             isTransfer -> false to null
             isCashDepositCredit -> true to "Looks like a cash deposit"
             hasDifferentRefNo -> true to "Probable duplicate (same amount within 5m)"

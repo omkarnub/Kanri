@@ -1,4 +1,4 @@
-package com.omkarnub.kanri.ui.home
+﻿package com.omkarnub.kanri.ui.home
 
 import android.widget.Toast
 import androidx.activity.compose.BackHandler
@@ -49,13 +49,11 @@ import androidx.compose.material.icons.filled.Notes
 import androidx.compose.material.icons.filled.Schedule
 import androidx.compose.material.icons.filled.Sms
 import androidx.compose.material.icons.filled.Tune
-import androidx.compose.material3.AlertDialog
 import androidx.compose.material3.Button
 import androidx.compose.material3.ButtonDefaults
 import androidx.compose.material3.Card
 import androidx.compose.material3.CardDefaults
 import androidx.compose.material3.DatePicker
-import androidx.compose.material3.DatePickerDialog
 import androidx.compose.material3.ExperimentalMaterial3Api
 import androidx.compose.material3.FilterChip
 import androidx.compose.material3.FilterChipDefaults
@@ -101,6 +99,19 @@ import com.omkarnub.kanri.data.db.CategoryEntity
 import com.omkarnub.kanri.data.db.TransactionEntity
 import com.omkarnub.kanri.data.db.TransactionWithCategory
 import com.omkarnub.kanri.ui.common.CategoryIcon
+import com.omkarnub.kanri.ui.common.GlassLevel
+import com.omkarnub.kanri.ui.common.KanriDropdownMenu
+import com.omkarnub.kanri.ui.common.KanriDropdownMenuItem
+import com.omkarnub.kanri.ui.common.KanriGlassCard
+import com.omkarnub.kanri.ui.common.KanriGlassDatePickerDialog
+import com.omkarnub.kanri.ui.common.KanriGlassDialog
+import com.omkarnub.kanri.ui.common.KanriGlassPill
+import com.omkarnub.kanri.ui.common.KanriModalBottomSheet
+import com.omkarnub.kanri.ui.common.LocalHazeState
+import com.omkarnub.kanri.ui.common.kanriPrimaryButtonColors
+import androidx.compose.ui.graphics.Color
+import com.omkarnub.kanri.ui.theme.LocalKanriGlass
+import dev.chrisbanes.haze.hazeEffect
 import com.omkarnub.kanri.ui.theme.ExpenseRed
 import com.omkarnub.kanri.ui.theme.IncomeGreen
 import com.omkarnub.kanri.util.CurrencyUtils
@@ -142,9 +153,33 @@ fun TransactionDetailScreen(
     var showDeleteConfirmDialog by remember { mutableStateOf(false) }
     var showCategoryPickerSheet by remember { mutableStateOf(false) }
 
-    Surface(
-        modifier = modifier.fillMaxSize(),
-        color = MaterialTheme.colorScheme.background
+    val tokens = LocalKanriGlass.current
+    val effectiveHaze = LocalHazeState.current
+
+    val screenBgModifier = if (tokens != null) {
+        if (effectiveHaze != null) {
+            Modifier
+                .hazeEffect(
+                    state = effectiveHaze,
+                    style = dev.chrisbanes.haze.HazeStyle(
+                        backgroundColor = if (tokens.isDark) Color(0xFF0C0D12).copy(alpha = 0.92f) else Color(0xFFF7F5F0).copy(alpha = 0.94f),
+                        tint = dev.chrisbanes.haze.HazeTint(if (tokens.isDark) Color(0xFF000000).copy(alpha = 0.45f) else Color.White.copy(alpha = 0.40f)),
+                        blurRadius = 36.dp,
+                        noiseFactor = 0.04f
+                    )
+                )
+                .background(if (tokens.isDark) Color(0xFF0C0D12).copy(alpha = 0.94f) else Color(0xFFF7F5F0).copy(alpha = 0.95f))
+        } else {
+            Modifier.background(if (tokens.isDark) Color(0xFF0C0D12).copy(alpha = 0.98f) else Color(0xFFF7F5F0).copy(alpha = 0.98f))
+        }
+    } else {
+        Modifier.background(MaterialTheme.colorScheme.background)
+    }
+
+    Box(
+        modifier = modifier
+            .fillMaxSize()
+            .then(screenBgModifier)
     ) {
         if (item == null) {
             Box(
@@ -199,24 +234,26 @@ fun TransactionDetailScreen(
                     verticalAlignment = Alignment.CenterVertically
                 ) {
                     // Back Button
-                    Box(
-                        modifier = Modifier
-                            .size(42.dp)
-                            .clip(CircleShape)
-                            .background(MaterialTheme.colorScheme.surfaceVariant.copy(alpha = 0.5f))
-                            .border(0.5.dp, MaterialTheme.colorScheme.outlineVariant, CircleShape)
-                            .clickable {
-                                haptics.click()
-                                onBack()
-                            },
-                        contentAlignment = Alignment.Center
+                    KanriGlassCard(
+                        modifier = Modifier.size(42.dp),
+                        shape = CircleShape,
+                        level = GlassLevel.Flat,
+                        onClick = {
+                            haptics.click()
+                            onBack()
+                        }
                     ) {
-                        Icon(
-                            imageVector = Icons.AutoMirrored.Filled.ArrowBack,
-                            contentDescription = "Back",
-                            modifier = Modifier.size(19.dp),
-                            tint = MaterialTheme.colorScheme.onSurface
-                        )
+                        Box(
+                            modifier = Modifier.fillMaxSize(),
+                            contentAlignment = Alignment.Center
+                        ) {
+                            Icon(
+                                imageVector = Icons.AutoMirrored.Filled.ArrowBack,
+                                contentDescription = "Back",
+                                modifier = Modifier.size(19.dp),
+                                tint = MaterialTheme.colorScheme.onSurface
+                            )
+                        }
                     }
 
                     // Title
@@ -235,45 +272,49 @@ fun TransactionDetailScreen(
                         verticalAlignment = Alignment.CenterVertically
                     ) {
                         // Edit / Modify Button
-                        Box(
-                            modifier = Modifier
-                                .size(42.dp)
-                                .clip(CircleShape)
-                                .background(MaterialTheme.colorScheme.surfaceVariant.copy(alpha = 0.5f))
-                                .border(0.5.dp, MaterialTheme.colorScheme.outlineVariant, CircleShape)
-                                .clickable {
-                                    haptics.click()
-                                    showEditSheet = true
-                                },
-                            contentAlignment = Alignment.Center
+                        KanriGlassCard(
+                            modifier = Modifier.size(42.dp),
+                            shape = CircleShape,
+                            level = GlassLevel.Flat,
+                            onClick = {
+                                haptics.click()
+                                showEditSheet = true
+                            }
                         ) {
-                            Icon(
-                                imageVector = Icons.Default.Edit,
-                                contentDescription = "Modify transaction",
-                                modifier = Modifier.size(18.dp),
-                                tint = MaterialTheme.colorScheme.onSurface
-                            )
+                            Box(
+                                modifier = Modifier.fillMaxSize(),
+                                contentAlignment = Alignment.Center
+                            ) {
+                                Icon(
+                                    imageVector = Icons.Default.Edit,
+                                    contentDescription = "Modify transaction",
+                                    modifier = Modifier.size(18.dp),
+                                    tint = MaterialTheme.colorScheme.onSurface
+                                )
+                            }
                         }
 
                         // Delete Button
-                        Box(
-                            modifier = Modifier
-                                .size(42.dp)
-                                .clip(CircleShape)
-                                .background(MaterialTheme.colorScheme.surfaceVariant.copy(alpha = 0.5f))
-                                .border(0.5.dp, MaterialTheme.colorScheme.outlineVariant, CircleShape)
-                                .clickable {
-                                    haptics.warning()
-                                    showDeleteConfirmDialog = true
-                                },
-                            contentAlignment = Alignment.Center
+                        KanriGlassCard(
+                            modifier = Modifier.size(42.dp),
+                            shape = CircleShape,
+                            level = GlassLevel.Flat,
+                            onClick = {
+                                haptics.warning()
+                                showDeleteConfirmDialog = true
+                            }
                         ) {
-                            Icon(
-                                imageVector = Icons.Default.DeleteOutline,
-                                contentDescription = "Delete transaction",
-                                modifier = Modifier.size(19.dp),
-                                tint = MaterialTheme.colorScheme.error.copy(alpha = 0.85f)
-                            )
+                            Box(
+                                modifier = Modifier.fillMaxSize(),
+                                contentAlignment = Alignment.Center
+                            ) {
+                                Icon(
+                                    imageVector = Icons.Default.DeleteOutline,
+                                    contentDescription = "Delete transaction",
+                                    modifier = Modifier.size(19.dp),
+                                    tint = MaterialTheme.colorScheme.error.copy(alpha = 0.85f)
+                                )
+                            }
                         }
                     }
                 }
@@ -293,13 +334,10 @@ fun TransactionDetailScreen(
                     // =============================================================
                     // HERO CARD: Amount, Type, Merchant, Full Date
                     // =============================================================
-                    Card(
+                    KanriGlassCard(
                         modifier = Modifier.fillMaxWidth(),
                         shape = RoundedCornerShape(24.dp),
-                        colors = CardDefaults.cardColors(
-                            containerColor = MaterialTheme.colorScheme.surfaceContainer
-                        ),
-                        border = BorderStroke(0.5.dp, MaterialTheme.colorScheme.outlineVariant)
+                        level = GlassLevel.Blur
                     ) {
                         Column(
                             modifier = Modifier
@@ -308,14 +346,9 @@ fun TransactionDetailScreen(
                             horizontalAlignment = Alignment.CenterHorizontally,
                             verticalArrangement = Arrangement.Center
                         ) {
-                            // Type Tag (Monochrome Badge)
-                            Surface(
-                                shape = RoundedCornerShape(100.dp),
-                                color = MaterialTheme.colorScheme.surfaceVariant.copy(alpha = 0.6f),
-                                border = BorderStroke(
-                                    0.5.dp,
-                                    MaterialTheme.colorScheme.outlineVariant
-                                )
+                            // Type Tag (Glass Pill Badge)
+                            KanriGlassPill(
+                                level = GlassLevel.Flat
                             ) {
                                 Row(
                                     modifier = Modifier.padding(horizontal = 12.dp, vertical = 5.dp),
@@ -390,10 +423,8 @@ fun TransactionDetailScreen(
                             if (balanceAfter != null && homeUiState.walletBalances.isConfigured && tx.wallet != "NONE") {
                                 Spacer(modifier = Modifier.height(10.dp))
                                 val walletLabel = if (tx.wallet.equals("CASH", ignoreCase = true)) "Cash" else "Online"
-                                Surface(
-                                    shape = RoundedCornerShape(100.dp),
-                                    color = MaterialTheme.colorScheme.surfaceVariant.copy(alpha = 0.45f),
-                                    border = BorderStroke(0.5.dp, MaterialTheme.colorScheme.outlineVariant)
+                                KanriGlassPill(
+                                    level = GlassLevel.Flat
                                 ) {
                                     Text(
                                         text = "$walletLabel balance after this payment: ${CurrencyUtils.formatCurrency(balanceAfter!!)}",
@@ -418,17 +449,14 @@ fun TransactionDetailScreen(
                         horizontalArrangement = Arrangement.spacedBy(10.dp)
                     ) {
                         // Modify Transaction Button
-                        Surface(
-                            modifier = Modifier
-                                .weight(1f)
-                                .clip(RoundedCornerShape(14.dp))
-                                .clickable {
-                                    haptics.click()
-                                    showEditSheet = true
-                                },
+                        KanriGlassCard(
+                            modifier = Modifier.weight(1f),
                             shape = RoundedCornerShape(14.dp),
-                            color = MaterialTheme.colorScheme.surfaceContainer,
-                            border = BorderStroke(0.5.dp, MaterialTheme.colorScheme.outlineVariant)
+                            level = GlassLevel.Flat,
+                            onClick = {
+                                haptics.click()
+                                showEditSheet = true
+                            }
                         ) {
                             Row(
                                 modifier = Modifier
@@ -455,17 +483,14 @@ fun TransactionDetailScreen(
                         }
 
                         // Delete Transaction Button
-                        Surface(
-                            modifier = Modifier
-                                .weight(1f)
-                                .clip(RoundedCornerShape(14.dp))
-                                .clickable {
-                                    haptics.warning()
-                                    showDeleteConfirmDialog = true
-                                },
+                        KanriGlassCard(
+                            modifier = Modifier.weight(1f),
                             shape = RoundedCornerShape(14.dp),
-                            color = MaterialTheme.colorScheme.surfaceVariant.copy(alpha = 0.25f),
-                            border = BorderStroke(0.5.dp, MaterialTheme.colorScheme.outlineVariant)
+                            level = GlassLevel.Flat,
+                            onClick = {
+                                haptics.warning()
+                                showDeleteConfirmDialog = true
+                            }
                         ) {
                             Row(
                                 modifier = Modifier
@@ -496,11 +521,10 @@ fun TransactionDetailScreen(
                     // NEEDS REVIEW BANNER (if active)
                     // =============================================================
                     if (tx.needsReview) {
-                        Surface(
+                        KanriGlassCard(
                             modifier = Modifier.fillMaxWidth(),
-                            shape = RoundedCornerShape(16.dp),
-                            color = MaterialTheme.colorScheme.surfaceContainer,
-                            border = BorderStroke(1.dp, MaterialTheme.colorScheme.outline.copy(alpha = 0.4f))
+                            shape = RoundedCornerShape(18.dp),
+                            level = GlassLevel.Blur
                         ) {
                             Row(
                                 modifier = Modifier
@@ -536,10 +560,10 @@ fun TransactionDetailScreen(
                                     }
                                 }
 
-                                Surface(
-                                    shape = RoundedCornerShape(8.dp),
-                                    color = MaterialTheme.colorScheme.onSurface,
-                                    modifier = Modifier.clickable {
+                                KanriGlassCard(
+                                    shape = RoundedCornerShape(10.dp),
+                                    level = GlassLevel.Strong,
+                                    onClick = {
                                         haptics.click()
                                         viewModel.clearReviewFlag(tx.id)
                                         Toast.makeText(context, "Review flag cleared", Toast.LENGTH_SHORT).show()
@@ -550,8 +574,8 @@ fun TransactionDetailScreen(
                                         style = MaterialTheme.typography.labelSmall.copy(
                                             fontWeight = FontWeight.Bold
                                         ),
-                                        color = MaterialTheme.colorScheme.surface,
-                                        modifier = Modifier.padding(horizontal = 10.dp, vertical = 6.dp)
+                                        color = MaterialTheme.colorScheme.onSurface,
+                                        modifier = Modifier.padding(horizontal = 12.dp, vertical = 7.dp)
                                     )
                                 }
                             }
@@ -564,11 +588,10 @@ fun TransactionDetailScreen(
                     val isAtmWithdrawalCandidate = !isTransfer && tx.sourceType.equals("ATM", ignoreCase = true) && isDebit
 
                     if (isCashDepositCandidate) {
-                        Surface(
+                        KanriGlassCard(
                             modifier = Modifier.fillMaxWidth(),
-                            shape = RoundedCornerShape(16.dp),
-                            color = MaterialTheme.colorScheme.surfaceContainer,
-                            border = BorderStroke(1.dp, MaterialTheme.colorScheme.primary.copy(alpha = 0.5f))
+                            shape = RoundedCornerShape(18.dp),
+                            level = GlassLevel.Blur
                         ) {
                             Row(
                                 modifier = Modifier
@@ -590,28 +613,29 @@ fun TransactionDetailScreen(
                                     )
                                 }
                                 Spacer(modifier = Modifier.width(8.dp))
-                                Button(
+                                KanriGlassCard(
+                                    shape = RoundedCornerShape(10.dp),
+                                    level = GlassLevel.Strong,
                                     onClick = {
                                         haptics.click()
                                         viewModel.convertToTransfer(tx.id, "CASH", "ONLINE")
                                         Toast.makeText(context, "Converted to cash deposit transfer", Toast.LENGTH_SHORT).show()
-                                    },
-                                    shape = RoundedCornerShape(10.dp),
-                                    colors = ButtonDefaults.buttonColors(
-                                        containerColor = MaterialTheme.colorScheme.onSurface,
-                                        contentColor = MaterialTheme.colorScheme.surface
-                                    )
+                                    }
                                 ) {
-                                    Text("Convert", style = MaterialTheme.typography.labelSmall.copy(fontWeight = FontWeight.Bold))
+                                    Text(
+                                        "Convert",
+                                        style = MaterialTheme.typography.labelSmall.copy(fontWeight = FontWeight.Bold),
+                                        color = MaterialTheme.colorScheme.onSurface,
+                                        modifier = Modifier.padding(horizontal = 14.dp, vertical = 8.dp)
+                                    )
                                 }
                             }
                         }
                     } else if (isAtmWithdrawalCandidate) {
-                        Surface(
+                        KanriGlassCard(
                             modifier = Modifier.fillMaxWidth(),
-                            shape = RoundedCornerShape(16.dp),
-                            color = MaterialTheme.colorScheme.surfaceContainer,
-                            border = BorderStroke(1.dp, MaterialTheme.colorScheme.primary.copy(alpha = 0.5f))
+                            shape = RoundedCornerShape(18.dp),
+                            level = GlassLevel.Blur
                         ) {
                             Row(
                                 modifier = Modifier
@@ -633,19 +657,21 @@ fun TransactionDetailScreen(
                                     )
                                 }
                                 Spacer(modifier = Modifier.width(8.dp))
-                                Button(
+                                KanriGlassCard(
+                                    shape = RoundedCornerShape(10.dp),
+                                    level = GlassLevel.Strong,
                                     onClick = {
                                         haptics.click()
                                         viewModel.convertToTransfer(tx.id, "ONLINE", "CASH")
                                         Toast.makeText(context, "Converted to cash withdrawal transfer", Toast.LENGTH_SHORT).show()
-                                    },
-                                    shape = RoundedCornerShape(10.dp),
-                                    colors = ButtonDefaults.buttonColors(
-                                        containerColor = MaterialTheme.colorScheme.onSurface,
-                                        contentColor = MaterialTheme.colorScheme.surface
-                                    )
+                                    }
                                 ) {
-                                    Text("Convert", style = MaterialTheme.typography.labelSmall.copy(fontWeight = FontWeight.Bold))
+                                    Text(
+                                        "Convert",
+                                        style = MaterialTheme.typography.labelSmall.copy(fontWeight = FontWeight.Bold),
+                                        color = MaterialTheme.colorScheme.onSurface,
+                                        modifier = Modifier.padding(horizontal = 14.dp, vertical = 8.dp)
+                                    )
                                 }
                             }
                         }
@@ -654,13 +680,10 @@ fun TransactionDetailScreen(
                     // =============================================================
                     // STRUCTURED DETAILS BENTO (All Transaction Metadata)
                     // =============================================================
-                    Card(
+                    KanriGlassCard(
                         modifier = Modifier.fillMaxWidth(),
-                        shape = RoundedCornerShape(20.dp),
-                        colors = CardDefaults.cardColors(
-                            containerColor = MaterialTheme.colorScheme.surfaceContainer
-                        ),
-                        border = BorderStroke(0.5.dp, MaterialTheme.colorScheme.outlineVariant)
+                        shape = RoundedCornerShape(22.dp),
+                        level = GlassLevel.Blur
                     ) {
                         Column(modifier = Modifier.fillMaxWidth()) {
                             // 1. Wallet Row
@@ -684,11 +707,9 @@ fun TransactionDetailScreen(
                                     {
                                         var showWalletMenu by remember { mutableStateOf(false) }
                                         Box {
-                                            Surface(
-                                                shape = RoundedCornerShape(6.dp),
-                                                color = MaterialTheme.colorScheme.surfaceVariant.copy(alpha = 0.5f),
-                                                border = BorderStroke(0.5.dp, MaterialTheme.colorScheme.outlineVariant),
-                                                modifier = Modifier.clickable {
+                                            KanriGlassPill(
+                                                level = GlassLevel.Flat,
+                                                onClick = {
                                                     haptics.click()
                                                     showWalletMenu = true
                                                 }
@@ -704,11 +725,11 @@ fun TransactionDetailScreen(
                                                 )
                                             }
 
-                                            androidx.compose.material3.DropdownMenu(
+                                            KanriDropdownMenu(
                                                 expanded = showWalletMenu,
                                                 onDismissRequest = { showWalletMenu = false }
                                             ) {
-                                                androidx.compose.material3.DropdownMenuItem(
+                                                KanriDropdownMenuItem(
                                                     text = { Text("Cash") },
                                                     onClick = {
                                                         haptics.click()
@@ -716,7 +737,7 @@ fun TransactionDetailScreen(
                                                         viewModel.updateTransactionWallet(tx.id, "CASH")
                                                     }
                                                 )
-                                                androidx.compose.material3.DropdownMenuItem(
+                                                KanriDropdownMenuItem(
                                                     text = { Text("Online (Bank / UPI)") },
                                                     onClick = {
                                                         haptics.click()
@@ -724,7 +745,7 @@ fun TransactionDetailScreen(
                                                         viewModel.updateTransactionWallet(tx.id, "ONLINE")
                                                     }
                                                 )
-                                                androidx.compose.material3.DropdownMenuItem(
+                                                KanriDropdownMenuItem(
                                                     text = { Text("Not from balances") },
                                                     onClick = {
                                                         haptics.click()
@@ -766,11 +787,9 @@ fun TransactionDetailScreen(
                                 label = "Category",
                                 value = category?.name ?: "Uncategorized",
                                 trailingAction = {
-                                    Surface(
-                                        shape = RoundedCornerShape(6.dp),
-                                        color = MaterialTheme.colorScheme.surfaceVariant.copy(alpha = 0.5f),
-                                        border = BorderStroke(0.5.dp, MaterialTheme.colorScheme.outlineVariant),
-                                        modifier = Modifier.clickable {
+                                    KanriGlassPill(
+                                        level = GlassLevel.Flat,
+                                        onClick = {
                                             haptics.click()
                                             showCategoryPickerSheet = true
                                         }
@@ -899,13 +918,10 @@ fun TransactionDetailScreen(
                     // =============================================================
                     // USER NOTES SECTION
                     // =============================================================
-                    Card(
+                    KanriGlassCard(
                         modifier = Modifier.fillMaxWidth(),
-                        shape = RoundedCornerShape(20.dp),
-                        colors = CardDefaults.cardColors(
-                            containerColor = MaterialTheme.colorScheme.surfaceContainer
-                        ),
-                        border = BorderStroke(0.5.dp, MaterialTheme.colorScheme.outlineVariant)
+                        shape = RoundedCornerShape(22.dp),
+                        level = GlassLevel.Blur
                     ) {
                         Column(
                             modifier = Modifier
@@ -973,13 +989,10 @@ fun TransactionDetailScreen(
                     // ORIGINAL NOTIFICATION / SMS CARD (if parsed from SMS)
                     // =============================================================
                     if (tx.rawSms.isNotBlank() && !tx.isManualEntry) {
-                        Card(
+                        KanriGlassCard(
                             modifier = Modifier.fillMaxWidth(),
-                            shape = RoundedCornerShape(20.dp),
-                            colors = CardDefaults.cardColors(
-                                containerColor = MaterialTheme.colorScheme.surfaceContainer
-                            ),
-                            border = BorderStroke(0.5.dp, MaterialTheme.colorScheme.outlineVariant)
+                            shape = RoundedCornerShape(22.dp),
+                            level = GlassLevel.Blur
                         ) {
                             Column(
                                 modifier = Modifier
@@ -1029,10 +1042,9 @@ fun TransactionDetailScreen(
 
                                 Spacer(modifier = Modifier.height(10.dp))
 
-                                Surface(
+                                KanriGlassCard(
                                     shape = RoundedCornerShape(12.dp),
-                                    color = MaterialTheme.colorScheme.surfaceVariant.copy(alpha = 0.45f),
-                                    border = BorderStroke(0.5.dp, MaterialTheme.colorScheme.outlineVariant.copy(alpha = 0.6f)),
+                                    level = GlassLevel.Flat,
                                     modifier = Modifier.fillMaxWidth()
                                 ) {
                                     Text(
@@ -1116,9 +1128,11 @@ fun TransactionDetailScreen(
             // 5. DELETE CONFIRMATION DIALOG
             // =================================================================
             if (showDeleteConfirmDialog) {
-                AlertDialog(
+                KanriGlassDialog(
                     onDismissRequest = { showDeleteConfirmDialog = false },
-                    title = {
+                    shape = RoundedCornerShape(24.dp)
+                ) {
+                    Column(modifier = Modifier.padding(24.dp)) {
                         Text(
                             text = "Delete Transaction?",
                             style = MaterialTheme.typography.titleMedium.copy(
@@ -1126,47 +1140,51 @@ fun TransactionDetailScreen(
                             ),
                             color = MaterialTheme.colorScheme.onSurface
                         )
-                    },
-                    text = {
+                        Spacer(modifier = Modifier.height(10.dp))
                         Text(
                             text = "Are you sure you want to delete this $formattedAmount transaction for \"$merchantTitle\"? This action cannot be undone.",
                             style = MaterialTheme.typography.bodyMedium,
                             color = MaterialTheme.colorScheme.onSurfaceVariant
                         )
-                    },
-                    confirmButton = {
-                        TextButton(
-                            onClick = {
-                                haptics.warning()
-                                showDeleteConfirmDialog = false
-                                viewModel.deleteTransactionById(tx.id)
-                                Toast.makeText(context, "Transaction deleted", Toast.LENGTH_SHORT).show()
-                                onDeleted()
+                        Spacer(modifier = Modifier.height(20.dp))
+                        Row(
+                            modifier = Modifier.fillMaxWidth(),
+                            horizontalArrangement = Arrangement.End,
+                            verticalAlignment = Alignment.CenterVertically
+                        ) {
+                            TextButton(
+                                onClick = { showDeleteConfirmDialog = false }
+                            ) {
+                                Text(
+                                    text = "Cancel",
+                                    style = MaterialTheme.typography.labelLarge,
+                                    color = MaterialTheme.colorScheme.outline
+                                )
                             }
-                        ) {
-                            Text(
-                                text = "Delete",
-                                style = MaterialTheme.typography.labelLarge.copy(
-                                    fontWeight = FontWeight.Bold
-                                ),
-                                color = MaterialTheme.colorScheme.error
-                            )
+                            Spacer(modifier = Modifier.width(8.dp))
+                            KanriGlassCard(
+                                shape = RoundedCornerShape(12.dp),
+                                level = GlassLevel.Strong,
+                                onClick = {
+                                    haptics.warning()
+                                    showDeleteConfirmDialog = false
+                                    viewModel.deleteTransactionById(tx.id)
+                                    Toast.makeText(context, "Transaction deleted", Toast.LENGTH_SHORT).show()
+                                    onDeleted()
+                                }
+                            ) {
+                                Text(
+                                    text = "Delete",
+                                    style = MaterialTheme.typography.labelLarge.copy(
+                                        fontWeight = FontWeight.Bold
+                                    ),
+                                    color = MaterialTheme.colorScheme.error,
+                                    modifier = Modifier.padding(horizontal = 16.dp, vertical = 10.dp)
+                                )
+                            }
                         }
-                    },
-                    dismissButton = {
-                        TextButton(
-                            onClick = { showDeleteConfirmDialog = false }
-                        ) {
-                            Text(
-                                text = "Cancel",
-                                style = MaterialTheme.typography.labelLarge,
-                                color = MaterialTheme.colorScheme.outline
-                            )
-                        }
-                    },
-                    containerColor = MaterialTheme.colorScheme.surfaceContainer,
-                    shape = RoundedCornerShape(20.dp)
-                )
+                    }
+                }
             }
         }
     }
@@ -1195,15 +1213,17 @@ private fun DetailRowItem(
             verticalAlignment = Alignment.CenterVertically,
             horizontalArrangement = Arrangement.spacedBy(14.dp)
         ) {
-            Box(
-                modifier = Modifier
-                    .size(34.dp)
-                    .clip(CircleShape)
-                    .background(MaterialTheme.colorScheme.surfaceVariant.copy(alpha = 0.5f))
-                    .border(0.5.dp, MaterialTheme.colorScheme.outlineVariant, CircleShape),
-                contentAlignment = Alignment.Center
+            KanriGlassCard(
+                modifier = Modifier.size(34.dp),
+                shape = CircleShape,
+                level = GlassLevel.Flat
             ) {
-                icon()
+                Box(
+                    modifier = Modifier.fillMaxSize(),
+                    contentAlignment = Alignment.Center
+                ) {
+                    icon()
+                }
             }
 
             Column(modifier = Modifier.weight(1f)) {
@@ -1275,20 +1295,9 @@ private fun EditTransactionSheet(
     val isDebit = selectedType.equals("DEBIT", ignoreCase = true)
     val sourceOptions = listOf("UPI", "CARD", "ATM", "BANK_TRANSFER", "CASH", "OTHER")
 
-    ModalBottomSheet(
+    KanriModalBottomSheet(
         onDismissRequest = onDismiss,
-        sheetState = sheetState,
-        containerColor = MaterialTheme.colorScheme.surfaceContainer,
-        shape = RoundedCornerShape(topStart = 24.dp, topEnd = 24.dp),
-        dragHandle = {
-            Surface(
-                modifier = Modifier.padding(top = 10.dp, bottom = 6.dp),
-                color = MaterialTheme.colorScheme.outlineVariant,
-                shape = RoundedCornerShape(100.dp)
-            ) {
-                Box(modifier = Modifier.size(width = 36.dp, height = 4.dp))
-            }
-        }
+        sheetState = sheetState
     ) {
         Column(
             modifier = Modifier
@@ -1326,26 +1335,22 @@ private fun EditTransactionSheet(
             Row(
                 modifier = Modifier
                     .fillMaxWidth()
-                    .clip(RoundedCornerShape(12.dp))
-                    .background(MaterialTheme.colorScheme.surfaceVariant.copy(alpha = 0.5f))
-                    .padding(4.dp),
-                horizontalArrangement = Arrangement.spacedBy(6.dp)
+                    .clip(RoundedCornerShape(14.dp))
+                    .padding(2.dp),
+                horizontalArrangement = Arrangement.spacedBy(8.dp)
             ) {
-                Surface(
-                    modifier = Modifier
-                        .weight(1f)
-                        .clip(RoundedCornerShape(9.dp))
-                        .clickable {
-                            haptics.click()
-                            selectedType = "DEBIT"
-                        },
-                    shape = RoundedCornerShape(9.dp),
-                    color = if (isDebit) MaterialTheme.colorScheme.surfaceContainer else androidx.compose.ui.graphics.Color.Transparent,
-                    border = if (isDebit) BorderStroke(0.5.dp, MaterialTheme.colorScheme.outlineVariant) else null
+                KanriGlassCard(
+                    modifier = Modifier.weight(1f),
+                    shape = RoundedCornerShape(12.dp),
+                    level = if (isDebit) GlassLevel.Strong else GlassLevel.Flat,
+                    onClick = {
+                        haptics.click()
+                        selectedType = "DEBIT"
+                    }
                 ) {
                     Text(
                         text = "Expense (Debit)",
-                        modifier = Modifier.padding(vertical = 10.dp),
+                        modifier = Modifier.fillMaxWidth().padding(vertical = 11.dp),
                         textAlign = TextAlign.Center,
                         style = MaterialTheme.typography.labelMedium.copy(
                             fontWeight = if (isDebit) FontWeight.Bold else FontWeight.Medium
@@ -1354,21 +1359,18 @@ private fun EditTransactionSheet(
                     )
                 }
 
-                Surface(
-                    modifier = Modifier
-                        .weight(1f)
-                        .clip(RoundedCornerShape(9.dp))
-                        .clickable {
-                            haptics.click()
-                            selectedType = "CREDIT"
-                        },
-                    shape = RoundedCornerShape(9.dp),
-                    color = if (!isDebit) MaterialTheme.colorScheme.surfaceContainer else androidx.compose.ui.graphics.Color.Transparent,
-                    border = if (!isDebit) BorderStroke(0.5.dp, MaterialTheme.colorScheme.outlineVariant) else null
+                KanriGlassCard(
+                    modifier = Modifier.weight(1f),
+                    shape = RoundedCornerShape(12.dp),
+                    level = if (!isDebit) GlassLevel.Strong else GlassLevel.Flat,
+                    onClick = {
+                        haptics.click()
+                        selectedType = "CREDIT"
+                    }
                 ) {
                     Text(
                         text = "Income (Credit)",
-                        modifier = Modifier.padding(vertical = 10.dp),
+                        modifier = Modifier.fillMaxWidth().padding(vertical = 11.dp),
                         textAlign = TextAlign.Center,
                         style = MaterialTheme.typography.labelMedium.copy(
                             fontWeight = if (!isDebit) FontWeight.Bold else FontWeight.Medium
@@ -1437,8 +1439,8 @@ private fun EditTransactionSheet(
                         },
                         label = { Text("None") },
                         colors = FilterChipDefaults.filterChipColors(
-                            selectedContainerColor = MaterialTheme.colorScheme.onSurface,
-                            selectedLabelColor = MaterialTheme.colorScheme.surface
+                            selectedContainerColor = MaterialTheme.colorScheme.inverseSurface,
+                            selectedLabelColor = MaterialTheme.colorScheme.inverseOnSurface
                         ),
                         shape = RoundedCornerShape(10.dp)
                     )
@@ -1455,13 +1457,13 @@ private fun EditTransactionSheet(
                                 CategoryIcon(
                                     categoryName = cat.name,
                                     iconName = cat.iconName,
-                                    tint = if (selectedCategoryId == cat.id) MaterialTheme.colorScheme.surface else MaterialTheme.colorScheme.onSurface,
+                                    tint = if (selectedCategoryId == cat.id) MaterialTheme.colorScheme.inverseOnSurface else MaterialTheme.colorScheme.onSurface,
                                     modifier = Modifier.size(15.dp)
                                 )
                             },
                             colors = FilterChipDefaults.filterChipColors(
-                                selectedContainerColor = MaterialTheme.colorScheme.onSurface,
-                                selectedLabelColor = MaterialTheme.colorScheme.surface
+                                selectedContainerColor = MaterialTheme.colorScheme.inverseSurface,
+                                selectedLabelColor = MaterialTheme.colorScheme.inverseOnSurface
                             ),
                             shape = RoundedCornerShape(10.dp)
                         )
@@ -1494,8 +1496,8 @@ private fun EditTransactionSheet(
                             },
                             label = { Text(formatSourceType(source)) },
                             colors = FilterChipDefaults.filterChipColors(
-                                selectedContainerColor = MaterialTheme.colorScheme.onSurface,
-                                selectedLabelColor = MaterialTheme.colorScheme.surface
+                                selectedContainerColor = MaterialTheme.colorScheme.inverseSurface,
+                                selectedLabelColor = MaterialTheme.colorScheme.inverseOnSurface
                             ),
                             shape = RoundedCornerShape(10.dp)
                         )
@@ -1525,8 +1527,8 @@ private fun EditTransactionSheet(
                         },
                         label = { Text("Cash") },
                         colors = FilterChipDefaults.filterChipColors(
-                            selectedContainerColor = MaterialTheme.colorScheme.onSurface,
-                            selectedLabelColor = MaterialTheme.colorScheme.surface
+                            selectedContainerColor = MaterialTheme.colorScheme.inverseSurface,
+                            selectedLabelColor = MaterialTheme.colorScheme.inverseOnSurface
                         ),
                         shape = RoundedCornerShape(10.dp)
                     )
@@ -1539,8 +1541,8 @@ private fun EditTransactionSheet(
                         },
                         label = { Text("Online (Bank / UPI)") },
                         colors = FilterChipDefaults.filterChipColors(
-                            selectedContainerColor = MaterialTheme.colorScheme.onSurface,
-                            selectedLabelColor = MaterialTheme.colorScheme.surface
+                            selectedContainerColor = MaterialTheme.colorScheme.inverseSurface,
+                            selectedLabelColor = MaterialTheme.colorScheme.inverseOnSurface
                         ),
                         shape = RoundedCornerShape(10.dp)
                     )
@@ -1553,8 +1555,8 @@ private fun EditTransactionSheet(
                         },
                         label = { Text("Not from balances") },
                         colors = FilterChipDefaults.filterChipColors(
-                            selectedContainerColor = MaterialTheme.colorScheme.onSurface,
-                            selectedLabelColor = MaterialTheme.colorScheme.surface
+                            selectedContainerColor = MaterialTheme.colorScheme.inverseSurface,
+                            selectedLabelColor = MaterialTheme.colorScheme.inverseOnSurface
                         ),
                         shape = RoundedCornerShape(10.dp)
                     )
@@ -1594,14 +1596,11 @@ private fun EditTransactionSheet(
             }
 
             // 7. Date Selector
-            Surface(
-                modifier = Modifier
-                    .fillMaxWidth()
-                    .clip(RoundedCornerShape(14.dp))
-                    .clickable { showDatePicker = true },
+            KanriGlassCard(
+                modifier = Modifier.fillMaxWidth(),
                 shape = RoundedCornerShape(14.dp),
-                color = MaterialTheme.colorScheme.surfaceVariant.copy(alpha = 0.4f),
-                border = BorderStroke(0.5.dp, MaterialTheme.colorScheme.outlineVariant)
+                level = GlassLevel.Flat,
+                onClick = { showDatePicker = true }
             ) {
                 Row(
                     modifier = Modifier
@@ -1692,10 +1691,7 @@ private fun EditTransactionSheet(
                     .fillMaxWidth()
                     .height(52.dp),
                 shape = RoundedCornerShape(14.dp),
-                colors = ButtonDefaults.buttonColors(
-                    containerColor = MaterialTheme.colorScheme.onSurface,
-                    contentColor = MaterialTheme.colorScheme.surface
-                )
+                colors = kanriPrimaryButtonColors()
             ) {
                 Text(
                     text = "Save Changes",
@@ -1715,7 +1711,7 @@ private fun EditTransactionSheet(
         val datePickerState = rememberDatePickerState(
             initialSelectedDateMillis = timestampMillis
         )
-        DatePickerDialog(
+        KanriGlassDatePickerDialog(
             onDismissRequest = { showDatePicker = false },
             confirmButton = {
                 TextButton(

@@ -172,6 +172,16 @@ object BackupJsonParser {
                 null
             }
 
+            val rawTimestamp = obj.getLong("timestamp")
+            val nowMs = System.currentTimeMillis()
+            val minAllowedMs = 946684800000L // Jan 1, 2000
+            val maxAllowedMs = nowMs + 365L * 24 * 60 * 60 * 1000L // 1 year future
+            val validatedTimestamp = when {
+                rawTimestamp < minAllowedMs -> minAllowedMs
+                rawTimestamp > maxAllowedMs -> nowMs
+                else -> rawTimestamp
+            }
+
             txList.add(
                 TransactionEntity(
                     id = obj.optLong("id", 0),
@@ -182,9 +192,9 @@ object BackupJsonParser {
                     displayName = if (obj.isNull("displayName")) null else obj.getString("displayName"),
                     bank = if (obj.isNull("bank")) null else obj.getString("bank"),
                     refNo = if (obj.isNull("refNo")) null else obj.getString("refNo"),
-                    timestamp = obj.getLong("timestamp"),
+                    timestamp = validatedTimestamp,
                     categoryId = if (obj.isNull("categoryId")) null else obj.getLong("categoryId"),
-                    rawSms = obj.optString("rawSms", ""),
+                    rawSms = obj.optString("rawSms", "").take(2000),
                     isDuplicate = obj.optBoolean("isDuplicate", false),
                     isManualEntry = obj.optBoolean("isManualEntry", false),
                     notes = if (obj.isNull("notes")) null else obj.getString("notes"),

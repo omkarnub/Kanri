@@ -37,11 +37,13 @@ import androidx.compose.material3.ExperimentalMaterial3Api
 import androidx.compose.material3.Icon
 import androidx.compose.material3.IconButton
 import androidx.compose.material3.MaterialTheme
-import androidx.compose.material3.ModalBottomSheet
 import androidx.compose.material3.OutlinedButton
 import androidx.compose.material3.Surface
 import androidx.compose.material3.Text
 import androidx.compose.material3.rememberModalBottomSheetState
+import com.omkarnub.kanri.ui.common.GlassLevel
+import com.omkarnub.kanri.ui.common.KanriGlassCard
+import com.omkarnub.kanri.ui.common.KanriModalBottomSheet
 import androidx.compose.runtime.Composable
 import androidx.compose.runtime.LaunchedEffect
 import androidx.compose.runtime.getValue
@@ -94,10 +96,9 @@ fun InstantPopupSheet(
         }
     }
 
-    ModalBottomSheet(
+    KanriModalBottomSheet(
         onDismissRequest = onDismiss,
         sheetState = sheetState,
-        containerColor = MaterialTheme.colorScheme.surface,
         dragHandle = null,
         modifier = modifier
     ) {
@@ -155,15 +156,9 @@ fun InstantPopupSheet(
             Spacer(modifier = Modifier.height(18.dp))
 
             // 1. Overlay Permission Status Card
-            Card(
-                colors = CardDefaults.cardColors(
-                    containerColor = MaterialTheme.colorScheme.surfaceVariant
-                ),
+            KanriGlassCard(
                 shape = RoundedCornerShape(14.dp),
-                border = androidx.compose.foundation.BorderStroke(
-                    1.dp,
-                    if (hasOverlayPermission) Color(0xFF238636).copy(alpha = 0.5f) else Color(0xFFD29922).copy(alpha = 0.5f)
-                ),
+                level = GlassLevel.Blur,
                 modifier = Modifier.fillMaxWidth()
             ) {
                 Column(modifier = Modifier.padding(16.dp)) {
@@ -239,15 +234,9 @@ fun InstantPopupSheet(
             Spacer(modifier = Modifier.height(12.dp))
 
             // 2. UPI Notification Access Card (Receive-Side Detection)
-            Card(
-                colors = CardDefaults.cardColors(
-                    containerColor = MaterialTheme.colorScheme.surfaceVariant
-                ),
+            KanriGlassCard(
                 shape = RoundedCornerShape(14.dp),
-                border = androidx.compose.foundation.BorderStroke(
-                    1.dp,
-                    if (hasNotificationAccess) Color(0xFF238636).copy(alpha = 0.5f) else Color(0xFF58A6FF).copy(alpha = 0.5f)
-                ),
+                level = GlassLevel.Blur,
                 modifier = Modifier.fillMaxWidth()
             ) {
                 Column(modifier = Modifier.padding(16.dp)) {
@@ -412,12 +401,9 @@ fun InstantPopupSheet(
             Spacer(modifier = Modifier.height(18.dp))
 
             // How It Works Details
-            Card(
-                colors = CardDefaults.cardColors(
-                    containerColor = MaterialTheme.colorScheme.surfaceVariant
-                ),
+            KanriGlassCard(
                 shape = RoundedCornerShape(14.dp),
-                border = androidx.compose.foundation.BorderStroke(1.dp, MaterialTheme.colorScheme.outlineVariant),
+                level = GlassLevel.Flat,
                 modifier = Modifier.fillMaxWidth()
             ) {
                 Column(modifier = Modifier.padding(16.dp)) {

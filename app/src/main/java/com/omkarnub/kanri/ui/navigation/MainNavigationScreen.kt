@@ -32,6 +32,10 @@ import androidx.activity.compose.BackHandler
 import androidx.compose.animation.AnimatedVisibility
 import androidx.compose.animation.slideInHorizontally
 import androidx.compose.animation.slideOutHorizontally
+import androidx.compose.animation.slideInVertically
+import androidx.compose.animation.slideOutVertically
+import androidx.compose.animation.core.spring
+import androidx.compose.animation.core.Spring
 import com.omkarnub.kanri.ui.home.TransactionDetailScreen
 import com.omkarnub.kanri.ui.lending.AddLendingDialog
 import com.omkarnub.kanri.ui.lending.LendingScreen
@@ -42,14 +46,29 @@ import com.omkarnub.kanri.ui.profile.ProfileScreen
 import com.omkarnub.kanri.ui.savings.GoalsScreen
 import com.omkarnub.kanri.ui.search.SearchScreen
 import com.omkarnub.kanri.ui.settings.SettingsScreen
+import com.omkarnub.kanri.ui.theme.KanriMotion
 
 enum class KanriTab(
     val title: String
 ) {
     HOME("Home"),
     INSIGHTS("Insights"),
-    LEND_BORROW("Lend/Borrow"),
+    LEND_BORROW("Lend & Borrow"),
     GOALS("Goals")
+}
+
+private sealed interface MainNavDestination {
+    data object Tabs : MainNavDestination
+    data object History : MainNavDestination
+    data object Profile : MainNavDestination
+    data object Settings : MainNavDestination
+    data class TransactionDetail(val txId: Long) : MainNavDestination
+
+    val depth: Int get() = when (this) {
+        Tabs -> 0
+        History, Profile -> 1
+        Settings, is TransactionDetail -> 2
+    }
 }
 
 @OptIn(ExperimentalMaterial3Api::class)
@@ -64,6 +83,7 @@ fun MainNavigationScreen(
     var showSettingsScreen by remember { mutableStateOf(false) }
     var showHistoryScreen by remember { mutableStateOf(false) }
     var viewingTransactionId by remember { mutableStateOf<Long?>(null) }
+    var isInsightsSubScreenOpen by remember { mutableStateOf(false) }
 
     val homeViewModel: HomeViewModel = viewModel()
     val lendingViewModel: LendingViewModel = viewModel()
@@ -82,13 +102,41 @@ fun MainNavigationScreen(
     var showSplitSheet by remember { mutableStateOf(false) }
     var splitInitialAmount by remember { mutableStateOf<Double?>(null) }
     var splitInitialDescription by remember { mutableStateOf<String?>(null) }
+    var openWalletSheetFromWidget by remember { mutableStateOf(false) }
     var showSetBudgetDialog by remember { mutableStateOf(false) }
     val splitSheetState = rememberModalBottomSheetState(skipPartiallyExpanded = true)
 
-    val widgetAction by com.omkarnub.kanri.widget.KanriWidgetActions.pendingAction.collectAsState()
-    LaunchedEffect(widgetAction) {
-        when (widgetAction) {
+    val context = androidx.compose.ui.platform.LocalContext.current
+    val updateManager = remember { com.omkarnub.kanri.data.update.AppUpdateManager.getInstance(context) }
+    val updatePrefs = remember { com.omkarnub.kanri.data.update.AppUpdatePreferences.getInstance(context) }
+    val showUpdateTrigger by updateManager.showUpdatePopupTrigger.collectAsState()
+    val pendingUpdate by updatePrefs.pendingUpdateFlow.collectAsState()
+    var activeUpdateDialogInfo by remember { mutableStateOf<com.omkarnub.kanri.data.update.AppUpdateInfo?>(null) }
+
+    LaunchedEffect(showUpdateTrigger, pendingUpdate) {
+        if (showUpdateTrigger) {
+            updateManager.dismissUpdatePopupTrigger()
+            val info = pendingUpdate
+            if (info != null) {
+                activeUpdateDialogInfo = info
+            } else {
+                updateManager.checkForUpdate().onSuccess { freshInfo ->
+                    if (freshInfo != null) {
+                        activeUpdateDialogInfo = freshInfo
+                    }
+                }
+            }
+        }
+    }
+
+    val widgetActionEvent by com.omkarnub.kanri.widget.KanriWidgetActions.pendingActionEvent.collectAsState()
+    LaunchedEffect(widgetActionEvent) {
+        val event = widgetActionEvent ?: return@LaunchedEffect
+        when (event.action) {
             com.omkarnub.kanri.widget.KanriWidgetActions.ACTION_SPLIT_BILL -> {
+                showSettingsScreen = false
+                showProfileScreen = false
+                showHistoryScreen = false
                 val (amt, desc) = com.omkarnub.kanri.widget.KanriWidgetActions.consumeSplitPayload()
                 splitInitialAmount = amt
                 splitInitialDescription = desc
@@ -96,185 +144,220 @@ fun MainNavigationScreen(
                 com.omkarnub.kanri.widget.KanriWidgetActions.consumeAction()
             }
             com.omkarnub.kanri.widget.KanriWidgetActions.ACTION_ADD_EXPENSE -> {
+                showSettingsScreen = false
+                showProfileScreen = false
+                showHistoryScreen = false
                 addTransactionInitialType = "DEBIT"
                 showAddTransactionDialog = true
                 com.omkarnub.kanri.widget.KanriWidgetActions.consumeAction()
             }
             com.omkarnub.kanri.widget.KanriWidgetActions.ACTION_ADD_INCOME -> {
+                showSettingsScreen = false
+                showProfileScreen = false
+                showHistoryScreen = false
                 addTransactionInitialType = "CREDIT"
                 showAddTransactionDialog = true
                 com.omkarnub.kanri.widget.KanriWidgetActions.consumeAction()
             }
             com.omkarnub.kanri.widget.KanriWidgetActions.ACTION_OPEN_GOALS -> {
+                showSettingsScreen = false
+                showProfileScreen = false
+                showHistoryScreen = false
                 selectedTab = KanriTab.GOALS
                 com.omkarnub.kanri.widget.KanriWidgetActions.consumeAction()
             }
             com.omkarnub.kanri.widget.KanriWidgetActions.ACTION_OPEN_LENDING -> {
+                showSettingsScreen = false
+                showProfileScreen = false
+                showHistoryScreen = false
                 selectedTab = KanriTab.LEND_BORROW
                 com.omkarnub.kanri.widget.KanriWidgetActions.consumeAction()
             }
             com.omkarnub.kanri.widget.KanriWidgetActions.ACTION_OPEN_HOME -> {
+                showSettingsScreen = false
+                showProfileScreen = false
+                showHistoryScreen = false
                 selectedTab = KanriTab.HOME
+                com.omkarnub.kanri.widget.KanriWidgetActions.consumeAction()
+            }
+            com.omkarnub.kanri.widget.KanriWidgetActions.ACTION_OPEN_WALLET -> {
+                showSettingsScreen = false
+                showProfileScreen = false
+                showHistoryScreen = false
+                selectedTab = KanriTab.HOME
+                openWalletSheetFromWidget = true
                 com.omkarnub.kanri.widget.KanriWidgetActions.consumeAction()
             }
         }
     }
 
-    if (showSettingsScreen) {
-        SettingsScreen(
-            onBack = { showSettingsScreen = false },
-            onReplayOnboarding = {
-                showSettingsScreen = false
-                onReplayOnboarding()
-            },
-            onTestLockScreen = onTestLockScreen,
-            modifier = modifier
-        )
-        return
-    }
-
-    if (showProfileScreen) {
-        ProfileScreen(
-            onClose = { showProfileScreen = false },
-            onOpenSettings = {
-                showProfileScreen = false
-                showSettingsScreen = true
-            },
-            modifier = modifier
-        )
-        return
+    val currentDestination: MainNavDestination = when {
+        viewingTransactionId != null -> MainNavDestination.TransactionDetail(viewingTransactionId!!)
+        showSettingsScreen -> MainNavDestination.Settings
+        showProfileScreen -> MainNavDestination.Profile
+        showHistoryScreen -> MainNavDestination.History
+        else -> MainNavDestination.Tabs
     }
 
     BackHandler(enabled = viewingTransactionId != null) {
         viewingTransactionId = null
     }
 
-    BackHandler(enabled = showHistoryScreen && viewingTransactionId == null) {
+    BackHandler(enabled = showSettingsScreen && viewingTransactionId == null) {
+        showSettingsScreen = false
+    }
+
+    BackHandler(enabled = showProfileScreen && !showSettingsScreen && viewingTransactionId == null) {
+        showProfileScreen = false
+    }
+
+    BackHandler(enabled = showHistoryScreen && viewingTransactionId == null && !showSettingsScreen && !showProfileScreen) {
         showHistoryScreen = false
     }
 
-    val hazeState = remember { dev.chrisbanes.haze.HazeState() }
+    val parentHazeState = LocalHazeState.current
+    val localHazeState = remember { dev.chrisbanes.haze.HazeState() }
+    val effectiveHazeState = parentHazeState ?: localHazeState
 
-    CompositionLocalProvider(LocalHazeState provides hazeState) {
-        // Smooth slide & fade transition between Main App Tabs and History (SearchScreen)
+    CompositionLocalProvider(LocalHazeState provides effectiveHazeState) {
+        // Apple HIG horizontal push & pop transitions between Main App Tabs, History, Profile, Settings, and TransactionDetail
         AnimatedContent(
-            targetState = showHistoryScreen,
+            targetState = currentDestination,
             transitionSpec = {
-                if (targetState) {
-                    // Transition to History: smooth slide in from right + fade in
-                    (slideInHorizontally(
-                        initialOffsetX = { it / 3 },
-                        animationSpec = tween(durationMillis = 320, easing = FastOutSlowInEasing)
-                    ) + fadeIn(
-                        animationSpec = tween(durationMillis = 280, easing = FastOutSlowInEasing)
-                    )).togetherWith(
-                        slideOutHorizontally(
-                            targetOffsetX = { -it / 5 },
-                            animationSpec = tween(durationMillis = 280, easing = FastOutSlowInEasing)
-                        ) + fadeOut(
-                            animationSpec = tween(durationMillis = 200, easing = FastOutSlowInEasing)
-                        )
-                    )
+                val isPush = targetState.depth > initialState.depth ||
+                    (targetState.depth == initialState.depth && targetState != initialState && targetState != MainNavDestination.Tabs)
+                if (isPush) {
+                    KanriMotion.screenPushEnter().togetherWith(KanriMotion.screenPushExit())
                 } else {
-                    // Transition back to Home: smooth slide in from left + fade in
-                    (slideInHorizontally(
-                        initialOffsetX = { -it / 5 },
-                        animationSpec = tween(durationMillis = 300, easing = FastOutSlowInEasing)
-                    ) + fadeIn(
-                        animationSpec = tween(durationMillis = 260, easing = FastOutSlowInEasing)
-                    )).togetherWith(
-                        slideOutHorizontally(
-                            targetOffsetX = { it / 3 },
-                            animationSpec = tween(durationMillis = 260, easing = FastOutSlowInEasing)
-                        ) + fadeOut(
-                            animationSpec = tween(durationMillis = 180, easing = FastOutSlowInEasing)
-                        )
-                    )
+                    KanriMotion.screenPopEnter().togetherWith(KanriMotion.screenPopExit())
                 }
             },
-            label = "historyTransition",
+            label = "mainNavDestinationTransition",
             modifier = modifier.fillMaxSize()
-        ) { isHistory ->
-            if (isHistory) {
-                SearchScreen(
-                    onBack = { showHistoryScreen = false },
-                    autoFocus = false,
-                    onTransactionClick = { item -> viewingTransactionId = item.transaction.id },
-                    modifier = Modifier.fillMaxSize()
-                )
-            } else {
-                Box(
-                    modifier = Modifier.fillMaxSize()
-                ) {
-                    // Screen Content (scrolls underneath the translucent frosted glass dock)
-                    // Fluid fade + subtle scale transition when switching menus
-                    AnimatedContent(
-                        targetState = selectedTab,
-                        transitionSpec = {
-                            (fadeIn(
-                                animationSpec = tween(durationMillis = 240, easing = FastOutSlowInEasing)
-                            ) + androidx.compose.animation.scaleIn(
-                                initialScale = 0.985f,
-                                animationSpec = tween(durationMillis = 240, easing = FastOutSlowInEasing)
-                            )).togetherWith(
-                                fadeOut(
-                                    animationSpec = tween(durationMillis = 180, easing = FastOutSlowInEasing)
+        ) { destination ->
+            when (destination) {
+                MainNavDestination.Tabs -> {
+                    Box(
+                        modifier = Modifier.fillMaxSize()
+                    ) {
+                        // Screen Content (scrolls underneath the translucent frosted glass dock)
+                        // Directional tab slide transition with fluid momentum
+                        AnimatedContent(
+                            targetState = selectedTab,
+                            transitionSpec = {
+                                val isForward = targetState.ordinal >= initialState.ordinal
+                                KanriMotion.tabTransition(isForward)
+                            },
+                            label = "tabTransition",
+                            modifier = Modifier
+                                .fillMaxSize()
+                                .then(
+                                    if (parentHazeState == null) {
+                                        Modifier.haze(effectiveHazeState)
+                                    } else {
+                                        Modifier
+                                    }
                                 )
-                            )
-                        },
-                        label = "tabTransition",
-                        modifier = Modifier
-                            .fillMaxSize()
-                            .haze(hazeState)
-                    ) { targetTab ->
-                        when (targetTab) {
-                            KanriTab.HOME -> HomeScreen(
-                                onOpenProfile = { showProfileScreen = true },
-                                onOpenSettings = { showSettingsScreen = true },
-                                onNavigateToHistory = { showHistoryScreen = true },
-                                onNavigateToLending = { selectedTab = KanriTab.LEND_BORROW },
-                                onNavigateToInsights = { selectedTab = KanriTab.INSIGHTS },
-                                onTransactionClick = { item -> viewingTransactionId = item.transaction.id },
-                                viewModel = homeViewModel,
-                                modifier = Modifier.fillMaxSize()
-                            )
-                            KanriTab.INSIGHTS -> MonthViewScreen(
-                                onOpenSettings = { showProfileScreen = true },
-                                modifier = Modifier.fillMaxSize()
-                            )
-                            KanriTab.LEND_BORROW -> LendingScreen(
-                                viewModel = lendingViewModel,
-                                modifier = Modifier.fillMaxSize()
-                            )
-                            KanriTab.GOALS -> GoalsScreen(
-                                modifier = Modifier.fillMaxSize()
+                        ) { targetTab ->
+                            when (targetTab) {
+                                KanriTab.HOME -> HomeScreen(
+                                    onOpenProfile = { showProfileScreen = true },
+                                    onOpenSettings = { showSettingsScreen = true },
+                                    onNavigateToHistory = { showHistoryScreen = true },
+                                    onNavigateToLending = { selectedTab = KanriTab.LEND_BORROW },
+                                    onNavigateToInsights = { selectedTab = KanriTab.INSIGHTS },
+                                    onTransactionClick = { item -> viewingTransactionId = item.transaction.id },
+                                    openWalletSheet = openWalletSheetFromWidget,
+                                    onWalletSheetOpened = { openWalletSheetFromWidget = false },
+                                    viewModel = homeViewModel,
+                                    modifier = Modifier.fillMaxSize()
+                                )
+                                KanriTab.INSIGHTS -> MonthViewScreen(
+                                    onOpenSettings = { showProfileScreen = true },
+                                    onSubScreenStateChanged = { isInsightsSubScreenOpen = it },
+                                    modifier = Modifier.fillMaxSize()
+                                )
+                                KanriTab.LEND_BORROW -> LendingScreen(
+                                    viewModel = lendingViewModel,
+                                    modifier = Modifier.fillMaxSize()
+                                )
+                                KanriTab.GOALS -> GoalsScreen(
+                                    modifier = Modifier.fillMaxSize()
+                                )
+                            }
+                        }
+
+                        // Floating Frosted Glass Menu Popup for '+' button
+                        AddExpenseIncomePopup(
+                            isOpen = showAddExpenseIncomeSheet,
+                            onDismiss = { showAddExpenseIncomeSheet = false },
+                            onAddExpense = {
+                                addTransactionInitialType = "DEBIT"
+                                showAddTransactionDialog = true
+                            },
+                            onAddIncome = {
+                                addTransactionInitialType = "CREDIT"
+                                showAddTransactionDialog = true
+                            },
+                            hazeState = effectiveHazeState
+                        )
+
+                        // Floating Translucent Glass Dock Overlay (slides down when detail sub-screen is active)
+                        androidx.compose.animation.AnimatedVisibility(
+                            visible = !isInsightsSubScreenOpen,
+                            enter = slideInVertically(
+                                initialOffsetY = { it },
+                                animationSpec = spring(dampingRatio = 0.82f, stiffness = Spring.StiffnessMediumLow)
+                            ) + fadeIn(tween(180)),
+                            exit = slideOutVertically(
+                                targetOffsetY = { it },
+                                animationSpec = tween(200, easing = KanriMotion.EaseOut)
+                            ) + fadeOut(tween(140)),
+                            modifier = Modifier.align(Alignment.BottomCenter)
+                        ) {
+                            KanriFloatingDock(
+                                selectedTab = selectedTab,
+                                onTabSelected = { selectedTab = it },
+                                onAddClick = { showAddExpenseIncomeSheet = !showAddExpenseIncomeSheet },
+                                isAddMenuOpen = showAddExpenseIncomeSheet,
+                                hazeState = effectiveHazeState
                             )
                         }
                     }
-
-                    // Floating Frosted Glass Menu Popup for '+' button
-                    AddExpenseIncomePopup(
-                        isOpen = showAddExpenseIncomeSheet,
-                        onDismiss = { showAddExpenseIncomeSheet = false },
-                        onAddExpense = {
-                            addTransactionInitialType = "DEBIT"
-                            showAddTransactionDialog = true
-                        },
-                        onAddIncome = {
-                            addTransactionInitialType = "CREDIT"
-                            showAddTransactionDialog = true
-                        },
-                        hazeState = hazeState
+                }
+                MainNavDestination.History -> {
+                    SearchScreen(
+                        onBack = { showHistoryScreen = false },
+                        autoFocus = false,
+                        onTransactionClick = { item -> viewingTransactionId = item.transaction.id },
+                        modifier = Modifier.fillMaxSize()
                     )
-
-                    // Floating Translucent Glass Dock Overlay
-                    KanriFloatingDock(
-                        selectedTab = selectedTab,
-                        onTabSelected = { selectedTab = it },
-                        onAddClick = { showAddExpenseIncomeSheet = !showAddExpenseIncomeSheet },
-                        isAddMenuOpen = showAddExpenseIncomeSheet,
-                        hazeState = hazeState,
-                        modifier = Modifier.align(Alignment.BottomCenter)
+                }
+                MainNavDestination.Profile -> {
+                    ProfileScreen(
+                        onClose = { showProfileScreen = false },
+                        onOpenSettings = {
+                            showProfileScreen = false
+                            showSettingsScreen = true
+                        },
+                        modifier = Modifier.fillMaxSize()
+                    )
+                }
+                MainNavDestination.Settings -> {
+                    SettingsScreen(
+                        onBack = { showSettingsScreen = false },
+                        onReplayOnboarding = onReplayOnboarding,
+                        onTestLockScreen = onTestLockScreen,
+                        modifier = Modifier.fillMaxSize()
+                    )
+                }
+                is MainNavDestination.TransactionDetail -> {
+                    TransactionDetailScreen(
+                        transactionId = destination.txId,
+                        onBack = { viewingTransactionId = null },
+                        onDeleted = { viewingTransactionId = null },
+                        viewModel = homeViewModel,
+                        modifier = Modifier.fillMaxSize()
                     )
                 }
             }
@@ -298,7 +381,7 @@ fun MainNavigationScreen(
                     addLendingInitialNotes = note
                     showAddLendingDialog = true
                 },
-                hazeState = hazeState
+                hazeState = effectiveHazeState
             )
         }
 
@@ -313,21 +396,22 @@ fun MainNavigationScreen(
                 initialType = addLendingInitialType,
                 initialPersonName = addLendingInitialPerson,
                 initialAmount = addLendingInitialAmount,
-                initialNotes = addLendingInitialNotes
+                initialNotes = addLendingInitialNotes,
+                hazeState = effectiveHazeState
             )
         }
 
-        // Split Bill Full Screen Overlay
+        // Split Bill Full Screen Overlay with Apple Drawer curve
         androidx.compose.animation.AnimatedVisibility(
             visible = showSplitSheet,
             enter = androidx.compose.animation.slideInVertically(
                 initialOffsetY = { it },
-                animationSpec = androidx.compose.animation.core.tween(380, easing = androidx.compose.animation.core.FastOutSlowInEasing)
-            ) + androidx.compose.animation.fadeIn(androidx.compose.animation.core.tween(280)),
+                animationSpec = tween(340, easing = KanriMotion.EaseDrawer)
+            ) + androidx.compose.animation.fadeIn(tween(240, easing = KanriMotion.EaseOut)),
             exit = androidx.compose.animation.slideOutVertically(
                 targetOffsetY = { it },
-                animationSpec = androidx.compose.animation.core.tween(320, easing = androidx.compose.animation.core.FastOutSlowInEasing)
-            ) + androidx.compose.animation.fadeOut(androidx.compose.animation.core.tween(220))
+                animationSpec = tween(280, easing = KanriMotion.EaseDrawer)
+            ) + androidx.compose.animation.fadeOut(tween(180, easing = KanriMotion.EaseOut))
         ) {
             val existingPeople = remember(lendingState.records) {
                 lendingState.records.map { it.personName.trim() }.distinct().filter { it.isNotBlank() }
@@ -370,75 +454,11 @@ fun MainNavigationScreen(
             )
         }
 
-        // Full Window Transaction Details Screen
-        AnimatedVisibility(
-            visible = viewingTransactionId != null,
-            enter = slideInHorizontally(
-                initialOffsetX = { it },
-                animationSpec = tween(durationMillis = 300, easing = FastOutSlowInEasing)
-            ) + fadeIn(
-                animationSpec = tween(durationMillis = 260, easing = FastOutSlowInEasing)
-            ),
-            exit = slideOutHorizontally(
-                targetOffsetX = { it },
-                animationSpec = tween(durationMillis = 260, easing = FastOutSlowInEasing)
-            ) + fadeOut(
-                animationSpec = tween(durationMillis = 200, easing = FastOutSlowInEasing)
-            ),
-            modifier = Modifier.fillMaxSize()
-        ) {
-            viewingTransactionId?.let { txId ->
-                TransactionDetailScreen(
-                    transactionId = txId,
-                    onBack = { viewingTransactionId = null },
-                    onDeleted = { viewingTransactionId = null },
-                    viewModel = homeViewModel,
-                    modifier = Modifier.fillMaxSize()
-                )
-            }
-        }
-
-        // Full Window Profile Screen
-        AnimatedVisibility(
-            visible = showProfileScreen,
-            enter = slideInHorizontally(
-                initialOffsetX = { it },
-                animationSpec = tween(durationMillis = 300, easing = FastOutSlowInEasing)
-            ) + fadeIn(animationSpec = tween(durationMillis = 260, easing = FastOutSlowInEasing)),
-            exit = slideOutHorizontally(
-                targetOffsetX = { it },
-                animationSpec = tween(durationMillis = 260, easing = FastOutSlowInEasing)
-            ) + fadeOut(animationSpec = tween(durationMillis = 200, easing = FastOutSlowInEasing)),
-            modifier = Modifier.fillMaxSize()
-        ) {
-            ProfileScreen(
-                onClose = { showProfileScreen = false },
-                onOpenSettings = {
-                    showProfileScreen = false
-                    showSettingsScreen = true
-                },
-                modifier = Modifier.fillMaxSize()
-            )
-        }
-
-        // Full Window Settings Screen
-        AnimatedVisibility(
-            visible = showSettingsScreen,
-            enter = slideInHorizontally(
-                initialOffsetX = { it },
-                animationSpec = tween(durationMillis = 300, easing = FastOutSlowInEasing)
-            ) + fadeIn(animationSpec = tween(durationMillis = 260, easing = FastOutSlowInEasing)),
-            exit = slideOutHorizontally(
-                targetOffsetX = { it },
-                animationSpec = tween(durationMillis = 260, easing = FastOutSlowInEasing)
-            ) + fadeOut(animationSpec = tween(durationMillis = 200, easing = FastOutSlowInEasing)),
-            modifier = Modifier.fillMaxSize()
-        ) {
-            SettingsScreen(
-                onBack = { showSettingsScreen = false },
-                onReplayOnboarding = onReplayOnboarding,
-                onTestLockScreen = onTestLockScreen,
-                modifier = Modifier.fillMaxSize()
+        // App Update Popup Dialog
+        if (activeUpdateDialogInfo != null) {
+            com.omkarnub.kanri.ui.update.AppUpdateDialog(
+                updateInfo = activeUpdateDialogInfo!!,
+                onDismiss = { activeUpdateDialogInfo = null }
             )
         }
     }

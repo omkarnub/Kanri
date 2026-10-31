@@ -11,7 +11,7 @@
     android:updatePeriodMillis="1800000"
     android:initialLayout="@layout/widget_quick_add"
     android:previewLayout="@layout/widget_quick_add"
-    android:previewImage="@mipmap/ic_launcher"
+    android:previewImage="@drawable/preview_widget_quick_add"
     android:widgetCategory="home_screen"
     android:description="@string/widget_quick_add_name"
     android:resizeMode="horizontal|vertical" />

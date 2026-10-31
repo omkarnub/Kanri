@@ -1,4 +1,4 @@
-package com.omkarnub.kanri.ui.savings
+﻿package com.omkarnub.kanri.ui.savings
 
 import androidx.compose.animation.core.animateFloatAsState
 import androidx.compose.animation.core.tween
@@ -44,7 +44,10 @@ fun CircularGoalProgressGauge(
         label = "GoalProgressAnimation"
     )
 
-    val trackColor = MaterialTheme.colorScheme.surfaceVariant.copy(alpha = 0.6f)
+    val tokens = com.omkarnub.kanri.ui.theme.LocalKanriGlass.current
+    val trackColor = tokens?.track ?: MaterialTheme.colorScheme.surfaceVariant.copy(alpha = 0.6f)
+    val effectivePrimary = tokens?.accent ?: primaryColor
+    val effectiveSecondary = tokens?.accent?.copy(alpha = 0.8f) ?: secondaryColor
     val effectiveKey = if (!iconKey.isNullOrBlank()) iconKey else emoji
 
     Box(
@@ -70,7 +73,7 @@ fun CircularGoalProgressGauge(
                 val sweepAngle = animatedProgress * 360f
                 drawArc(
                     brush = Brush.sweepGradient(
-                        colors = listOf(primaryColor, secondaryColor, primaryColor)
+                        colors = listOf(effectivePrimary, effectiveSecondary, effectivePrimary)
                     ),
                     startAngle = -90f,
                     sweepAngle = sweepAngle,
@@ -89,9 +92,10 @@ fun CircularGoalProgressGauge(
             horizontalAlignment = Alignment.CenterHorizontally
         ) {
             val iconSize = if (size > 80.dp) 22.dp else 18.dp
+            val contentColor = tokens?.textPrimary ?: MaterialTheme.colorScheme.onSurface
             GoalIcon(
                 iconKey = effectiveKey,
-                tint = MaterialTheme.colorScheme.onSurface,
+                tint = contentColor,
                 modifier = Modifier.size(iconSize)
             )
             Spacer(modifier = Modifier.height(2.dp))
@@ -100,7 +104,7 @@ fun CircularGoalProgressGauge(
                 fontSize = if (size > 80.dp) 11.sp else 9.5.sp,
                 fontWeight = FontWeight.Bold,
                 fontFamily = GoogleSansFlex,
-                color = MaterialTheme.colorScheme.onSurface
+                color = contentColor
             )
         }
     }

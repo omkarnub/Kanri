@@ -11,6 +11,10 @@ import androidx.compose.foundation.BorderStroke
 import androidx.compose.foundation.background
 import androidx.compose.foundation.border
 import androidx.compose.foundation.clickable
+import com.omkarnub.kanri.ui.common.GlassLevel
+import com.omkarnub.kanri.ui.common.KanriGlassCard
+import com.omkarnub.kanri.ui.theme.LocalKanriGlass
+import com.omkarnub.kanri.util.CurrencyUtils
 import androidx.compose.foundation.layout.Arrangement
 import androidx.compose.foundation.layout.Box
 import androidx.compose.foundation.layout.Column
@@ -110,8 +114,11 @@ fun MonthlyRecapScreen(
         pendingSaveBitmap = null
     }
 
+    val tokens = LocalKanriGlass.current
+
     Scaffold(
         modifier = modifier.fillMaxSize(),
+        containerColor = if (tokens != null) Color.Transparent else MaterialTheme.colorScheme.background,
         topBar = {
             TopAppBar(
                 title = {
@@ -134,7 +141,7 @@ fun MonthlyRecapScreen(
                     }
                 },
                 colors = TopAppBarDefaults.topAppBarColors(
-                    containerColor = MaterialTheme.colorScheme.surface
+                    containerColor = if (tokens != null) Color.Transparent else MaterialTheme.colorScheme.surface
                 )
             )
         }
@@ -163,13 +170,10 @@ fun MonthlyRecapScreen(
         ) {
             // Options: Dark / Cream style + Hide Amounts toggle
             item {
-                Card(
+                KanriGlassCard(
                     modifier = Modifier.fillMaxWidth(),
                     shape = RoundedCornerShape(18.dp),
-                    colors = CardDefaults.cardColors(
-                        containerColor = MaterialTheme.colorScheme.surfaceVariant.copy(alpha = 0.35f)
-                    ),
-                    border = BorderStroke(1.dp, MaterialTheme.colorScheme.outlineVariant)
+                    level = GlassLevel.Blur
                 ) {
                     Row(
                         modifier = Modifier
@@ -188,7 +192,7 @@ fun MonthlyRecapScreen(
                             Box(
                                 modifier = Modifier
                                     .clip(RoundedCornerShape(8.dp))
-                                    .background(if (isDarkStyle) MaterialTheme.colorScheme.onSurface else Color.Transparent)
+                                    .background(if (isDarkStyle) MaterialTheme.colorScheme.inverseSurface else Color.Transparent)
                                     .clickable {
                                         haptics.tick()
                                         isDarkStyle = true
@@ -199,13 +203,13 @@ fun MonthlyRecapScreen(
                                     text = "Dark",
                                     fontSize = 11.sp,
                                     fontWeight = FontWeight.Bold,
-                                    color = if (isDarkStyle) MaterialTheme.colorScheme.surface else MaterialTheme.colorScheme.onSurfaceVariant
+                                    color = if (isDarkStyle) MaterialTheme.colorScheme.inverseOnSurface else MaterialTheme.colorScheme.onSurfaceVariant
                                 )
                             }
                             Box(
                                 modifier = Modifier
                                     .clip(RoundedCornerShape(8.dp))
-                                    .background(if (!isDarkStyle) MaterialTheme.colorScheme.onSurface else Color.Transparent)
+                                    .background(if (!isDarkStyle) MaterialTheme.colorScheme.inverseSurface else Color.Transparent)
                                     .clickable {
                                         haptics.tick()
                                         isDarkStyle = false
@@ -216,7 +220,7 @@ fun MonthlyRecapScreen(
                                     text = "Cream",
                                     fontSize = 11.sp,
                                     fontWeight = FontWeight.Bold,
-                                    color = if (!isDarkStyle) MaterialTheme.colorScheme.surface else MaterialTheme.colorScheme.onSurfaceVariant
+                                    color = if (!isDarkStyle) MaterialTheme.colorScheme.inverseOnSurface else MaterialTheme.colorScheme.onSurfaceVariant
                                 )
                             }
                         }
@@ -227,7 +231,7 @@ fun MonthlyRecapScreen(
                             horizontalArrangement = Arrangement.spacedBy(8.dp)
                         ) {
                             Text(
-                                text = "Hide ₹",
+                                text = "Hide ${CurrencyUtils.getCurrencySymbol()}",
                                 style = MaterialTheme.typography.bodySmall.copy(
                                     color = MaterialTheme.colorScheme.onSurfaceVariant,
                                     fontWeight = FontWeight.Medium

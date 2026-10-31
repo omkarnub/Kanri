@@ -1,4 +1,4 @@
-package com.omkarnub.kanri.ui.insights.sections
+﻿package com.omkarnub.kanri.ui.insights.sections
 
 import androidx.compose.animation.animateColorAsState
 import androidx.compose.foundation.background
@@ -18,8 +18,8 @@ import androidx.compose.foundation.shape.RoundedCornerShape
 import androidx.compose.material.icons.Icons
 import androidx.compose.material.icons.filled.CalendarToday
 import androidx.compose.material3.DatePickerDefaults
-import androidx.compose.material3.DatePickerDialog
 import androidx.compose.material3.DateRangePicker
+import com.omkarnub.kanri.ui.common.KanriGlassDatePickerDialog
 import androidx.compose.material3.ExperimentalMaterial3Api
 import androidx.compose.material3.Icon
 import androidx.compose.material3.MaterialTheme
@@ -51,6 +51,10 @@ import java.time.Instant
 import java.time.LocalDate
 import java.time.ZoneId
 
+import com.omkarnub.kanri.ui.common.GlassLevel
+import com.omkarnub.kanri.ui.common.KanriGlassCard
+import com.omkarnub.kanri.ui.theme.LocalKanriGlass
+
 private val ExpenseRed = Color(0xFFE54D2E)
 private val IncomeSage = Color(0xFF30A46C)
 
@@ -66,13 +70,11 @@ fun InsightsRangeBar(
 ) {
     var showCustomDatePicker by remember { mutableStateOf(false) }
     val haptics = rememberKanriHaptics()
+    val tokens = LocalKanriGlass.current
 
-    Surface(
-        modifier = modifier
-            .fillMaxWidth()
-            .clip(RoundedCornerShape(20.dp))
-            .border(1.dp, MaterialTheme.colorScheme.outlineVariant, RoundedCornerShape(20.dp)),
-        color = MaterialTheme.colorScheme.surfaceVariant.copy(alpha = 0.35f),
+    KanriGlassCard(
+        modifier = modifier.fillMaxWidth(),
+        level = GlassLevel.Flat,
         shape = RoundedCornerShape(20.dp)
     ) {
         Column(
@@ -86,7 +88,7 @@ fun InsightsRangeBar(
                 modifier = Modifier
                     .fillMaxWidth()
                     .background(
-                        color = MaterialTheme.colorScheme.surface.copy(alpha = 0.5f),
+                        color = tokens?.tintFlat?.copy(alpha = 0.5f) ?: MaterialTheme.colorScheme.surface.copy(alpha = 0.5f),
                         shape = RoundedCornerShape(14.dp)
                     )
                     .padding(3.dp),
@@ -102,12 +104,15 @@ fun InsightsRangeBar(
                 )
 
                 ranges.forEach { (label, isSelected) ->
+                    val selectedBg = tokens?.accent?.copy(alpha = 0.16f) ?: MaterialTheme.colorScheme.onSurface
                     val bgColor by animateColorAsState(
-                        targetValue = if (isSelected) MaterialTheme.colorScheme.onSurface else Color.Transparent,
+                        targetValue = if (isSelected) selectedBg else Color.Transparent,
                         label = "rangeBg"
                     )
+                    val selectedText = tokens?.accent ?: MaterialTheme.colorScheme.surface
+                    val unselectedText = tokens?.textSecondary ?: MaterialTheme.colorScheme.onSurfaceVariant
                     val textColor by animateColorAsState(
-                        targetValue = if (isSelected) MaterialTheme.colorScheme.surface else MaterialTheme.colorScheme.onSurfaceVariant,
+                        targetValue = if (isSelected) selectedText else unselectedText,
                         label = "rangeText"
                     )
 
@@ -148,7 +153,7 @@ fun InsightsRangeBar(
                 modifier = Modifier
                     .fillMaxWidth()
                     .background(
-                        color = MaterialTheme.colorScheme.surface.copy(alpha = 0.5f),
+                        color = tokens?.tintFlat?.copy(alpha = 0.5f) ?: MaterialTheme.colorScheme.surface.copy(alpha = 0.5f),
                         shape = RoundedCornerShape(14.dp)
                     )
                     .padding(3.dp),
@@ -157,11 +162,12 @@ fun InsightsRangeBar(
             ) {
                 // Expense option
                 val isExpense = currentMode == InsightsMode.EXPENSE
+                val debitColor = tokens?.debit ?: ExpenseRed
                 val expenseBg by animateColorAsState(
-                    targetValue = if (isExpense) ExpenseRed.copy(alpha = 0.15f) else Color.Transparent,
+                    targetValue = if (isExpense) debitColor.copy(alpha = 0.15f) else Color.Transparent,
                     label = "expBg"
                 )
-                val expenseText = if (isExpense) ExpenseRed else MaterialTheme.colorScheme.onSurfaceVariant
+                val expenseText = if (isExpense) debitColor else (tokens?.textSecondary ?: MaterialTheme.colorScheme.onSurfaceVariant)
 
                 Box(
                     modifier = Modifier
@@ -189,11 +195,12 @@ fun InsightsRangeBar(
 
                 // Income option
                 val isIncome = currentMode == InsightsMode.INCOME
+                val creditColor = tokens?.credit ?: IncomeSage
                 val incomeBg by animateColorAsState(
-                    targetValue = if (isIncome) IncomeSage.copy(alpha = 0.15f) else Color.Transparent,
+                    targetValue = if (isIncome) creditColor.copy(alpha = 0.15f) else Color.Transparent,
                     label = "incBg"
                 )
-                val incomeText = if (isIncome) IncomeSage else MaterialTheme.colorScheme.onSurfaceVariant
+                val incomeText = if (isIncome) creditColor else (tokens?.textSecondary ?: MaterialTheme.colorScheme.onSurfaceVariant)
 
                 Box(
                     modifier = Modifier
@@ -241,7 +248,7 @@ fun InsightsRangeBar(
             }
         )
 
-        DatePickerDialog(
+        KanriGlassDatePickerDialog(
             onDismissRequest = { showCustomDatePicker = false },
             confirmButton = {
                 TextButton(
@@ -265,10 +272,7 @@ fun InsightsRangeBar(
                 TextButton(onClick = { showCustomDatePicker = false }) {
                     Text("Cancel")
                 }
-            },
-            colors = DatePickerDefaults.colors(
-                containerColor = MaterialTheme.colorScheme.surface
-            )
+            }
         ) {
             DateRangePicker(
                 state = dateRangePickerState,

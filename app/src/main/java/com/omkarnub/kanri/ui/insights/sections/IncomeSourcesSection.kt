@@ -35,6 +35,8 @@ import com.omkarnub.kanri.ui.insights.IncomeRegularityTag
 import com.omkarnub.kanri.ui.insights.IncomeSourceItem
 import com.omkarnub.kanri.ui.insights.IncomeSourcesData
 import java.time.format.DateTimeFormatter
+import com.omkarnub.kanri.ui.common.GlassLevel
+import com.omkarnub.kanri.ui.common.KanriGlassCard
 
 private val IncomeSage = Color(0xFF30A46C)
 
@@ -46,17 +48,14 @@ fun IncomeSourcesSection(
 ) {
     val totalIncome = data.regularTotal + data.irregularTotal
 
-    Card(
+    KanriGlassCard(
         modifier = modifier
             .fillMaxWidth()
             .semantics {
                 contentDescription = "Income sources: total ${formatCurrency(totalIncome)}, ${data.sources.size} sources"
             },
         shape = RoundedCornerShape(20.dp),
-        colors = CardDefaults.cardColors(
-            containerColor = MaterialTheme.colorScheme.surfaceVariant.copy(alpha = 0.35f)
-        ),
-        border = BorderStroke(1.dp, MaterialTheme.colorScheme.outlineVariant)
+        level = GlassLevel.Blur
     ) {
         Column(
             modifier = Modifier

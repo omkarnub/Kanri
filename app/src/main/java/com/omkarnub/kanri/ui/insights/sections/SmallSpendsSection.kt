@@ -25,6 +25,8 @@ import androidx.compose.ui.text.font.FontWeight
 import androidx.compose.ui.unit.dp
 import androidx.compose.ui.unit.sp
 import com.omkarnub.kanri.ui.common.AnimatedNumberText
+import com.omkarnub.kanri.ui.common.GlassLevel
+import com.omkarnub.kanri.ui.common.KanriGlassCard
 import com.omkarnub.kanri.ui.home.formatCurrency
 import com.omkarnub.kanri.ui.insights.SmallSpendPayee
 import com.omkarnub.kanri.ui.insights.SmallSpendsData
@@ -37,16 +39,15 @@ fun SmallSpendsSection(
     onPayeeClick: (String) -> Unit,
     modifier: Modifier = Modifier
 ) {
-    Surface(
+    KanriGlassCard(
         modifier = modifier
             .fillMaxWidth()
-            .clip(RoundedCornerShape(20.dp))
-            .clickable(onClick = onCardClick)
             .semantics {
                 contentDescription = "Small spends: total ${formatCurrency(data.totalAmount)}, ${data.count} payments under threshold"
             },
+        level = GlassLevel.Blur,
         shape = RoundedCornerShape(20.dp),
-        color = MaterialTheme.colorScheme.surfaceVariant.copy(alpha = 0.18f)
+        onClick = onCardClick
     ) {
         Column(
             modifier = Modifier
@@ -72,19 +73,17 @@ fun SmallSpendsSection(
                 Row(horizontalArrangement = Arrangement.spacedBy(4.dp)) {
                     listOf(50.0, 100.0, 200.0).forEach { th ->
                         val isSelected = data.threshold == th
-                        Surface(
+                        KanriGlassCard(
                             shape = RoundedCornerShape(8.dp),
-                            color = if (isSelected) MaterialTheme.colorScheme.onSurface else MaterialTheme.colorScheme.surfaceVariant,
-                            modifier = Modifier
-                                .clip(RoundedCornerShape(8.dp))
-                                .clickable { onThresholdSelected(th) }
+                            level = if (isSelected) GlassLevel.Strong else GlassLevel.Flat,
+                            onClick = { onThresholdSelected(th) }
                         ) {
                             Text(
                                 text = "₹${th.toInt()}",
-                                color = if (isSelected) MaterialTheme.colorScheme.surface else MaterialTheme.colorScheme.onSurfaceVariant,
+                                color = if (isSelected) MaterialTheme.colorScheme.onSurface else MaterialTheme.colorScheme.onSurfaceVariant,
                                 fontSize = 10.sp,
                                 fontWeight = if (isSelected) FontWeight.Bold else FontWeight.Medium,
-                                modifier = Modifier.padding(horizontal = 6.dp, vertical = 3.dp)
+                                modifier = Modifier.padding(horizontal = 8.dp, vertical = 4.dp)
                             )
                         }
                     }

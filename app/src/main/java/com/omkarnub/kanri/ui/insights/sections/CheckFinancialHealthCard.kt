@@ -1,4 +1,4 @@
-package com.omkarnub.kanri.ui.insights.sections
+﻿package com.omkarnub.kanri.ui.insights.sections
 
 import androidx.compose.foundation.BorderStroke
 import androidx.compose.foundation.background
@@ -30,21 +30,19 @@ import androidx.compose.ui.text.font.FontWeight
 import androidx.compose.ui.unit.dp
 import androidx.compose.ui.unit.sp
 
+import com.omkarnub.kanri.ui.common.GlassLevel
+import com.omkarnub.kanri.ui.common.KanriGlassCard
+
 @Composable
 fun CheckFinancialHealthCard(
     onClick: () -> Unit,
     modifier: Modifier = Modifier
 ) {
-    Card(
-        modifier = modifier
-            .fillMaxWidth()
-            .clip(RoundedCornerShape(18.dp))
-            .clickable(onClick = onClick),
+    KanriGlassCard(
+        modifier = modifier.fillMaxWidth(),
         shape = RoundedCornerShape(18.dp),
-        colors = CardDefaults.cardColors(
-            containerColor = MaterialTheme.colorScheme.surfaceVariant.copy(alpha = 0.35f)
-        ),
-        border = BorderStroke(1.dp, MaterialTheme.colorScheme.outlineVariant)
+        level = GlassLevel.Blur,
+        onClick = onClick
     ) {
         Row(
             modifier = Modifier

@@ -1,4 +1,4 @@
-package com.omkarnub.kanri.ui.lending
+﻿package com.omkarnub.kanri.ui.lending
 
 import androidx.activity.compose.BackHandler
 import androidx.compose.foundation.BorderStroke
@@ -27,10 +27,16 @@ import androidx.compose.runtime.remember
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.draw.clip
+import androidx.compose.ui.draw.shadow
 import androidx.compose.ui.graphics.Color
 import androidx.compose.ui.text.font.FontWeight
 import androidx.compose.ui.unit.dp
 import androidx.compose.ui.unit.sp
+import androidx.compose.ui.window.DialogProperties
+import com.omkarnub.kanri.ui.common.GlassLevel
+import com.omkarnub.kanri.ui.common.KanriGlassButton
+import com.omkarnub.kanri.ui.common.KanriGlassCard
+import com.omkarnub.kanri.ui.common.KanriGlassDialog
 import com.omkarnub.kanri.ui.common.LocalHazeState
 import com.omkarnub.kanri.ui.common.rememberKanriGlassTheme
 import com.omkarnub.kanri.util.CurrencyUtils
@@ -49,98 +55,63 @@ fun LendingSettleAllDialog(
     val hazeState = LocalHazeState.current
     val glassTheme = rememberKanriGlassTheme()
 
-    Box(
-        modifier = Modifier.fillMaxSize(),
-        contentAlignment = Alignment.Center
+    KanriGlassDialog(
+        onDismissRequest = onDismiss,
+        properties = DialogProperties(usePlatformDefaultWidth = false)
     ) {
-        Box(
+        KanriGlassCard(
             modifier = Modifier
-                .fillMaxSize()
-                .background(Color.Black.copy(alpha = 0.65f))
-                .clickable(
-                    interactionSource = remember { MutableInteractionSource() },
-                    indication = null,
-                    onClick = onDismiss
-                )
-        )
-
-        Box(
-            modifier = Modifier
-                .fillMaxSize()
-                .padding(horizontal = 24.dp),
-            contentAlignment = Alignment.Center
+                .fillMaxWidth(0.92f)
+                .padding(vertical = 24.dp),
+            shape = RoundedCornerShape(24.dp),
+            level = GlassLevel.Strong,
+            hazeState = hazeState
         ) {
-            Surface(
+            Column(
                 modifier = Modifier
                     .fillMaxWidth()
-                    .clip(RoundedCornerShape(24.dp))
-                    .then(
-                        if (hazeState != null) {
-                            Modifier.hazeChild(
-                                state = hazeState,
-                                style = glassTheme.popupHazeStyle
-                            ) {
-                                canDrawArea = { true }
-                            }
-                        } else {
-                            Modifier
-                        }
-                    )
-                    .border(glassTheme.glassBorder, shape = RoundedCornerShape(24.dp)),
-                shape = RoundedCornerShape(24.dp),
-                color = if (hazeState != null) Color.Transparent else glassTheme.fallbackBackgroundColor
+                    .padding(22.dp),
+                verticalArrangement = Arrangement.spacedBy(14.dp)
             ) {
-                Column(
-                    modifier = Modifier
-                        .fillMaxWidth()
-                        .padding(22.dp),
-                    verticalArrangement = Arrangement.spacedBy(14.dp)
-                ) {
-                    Text(
-                        text = "Settle All with ${person.displayName}?",
-                        style = MaterialTheme.typography.titleLarge.copy(
-                            fontWeight = FontWeight.Bold,
-                            color = MaterialTheme.colorScheme.onSurface
-                        )
+                Text(
+                    text = "Settle All with ${person.displayName}?",
+                    style = MaterialTheme.typography.titleLarge.copy(
+                        fontWeight = FontWeight.Bold,
+                        color = MaterialTheme.colorScheme.onSurface
                     )
+                )
 
-                    Column(verticalArrangement = Arrangement.spacedBy(6.dp)) {
-                        if (person.toReceive > 0) {
-                            Text(
-                                text = "• ${CurrencyUtils.formatCurrency(person.toReceive)} to collect will be marked as settled.",
-                                style = MaterialTheme.typography.bodyMedium,
-                                color = MaterialTheme.colorScheme.onSurfaceVariant
-                            )
-                        }
-                        if (person.toPay > 0) {
-                            Text(
-                                text = "• ${CurrencyUtils.formatCurrency(person.toPay)} you owe will be marked as settled.",
-                                style = MaterialTheme.typography.bodyMedium,
-                                color = MaterialTheme.colorScheme.onSurfaceVariant
-                            )
-                        }
+                Column(verticalArrangement = Arrangement.spacedBy(6.dp)) {
+                    if (person.toReceive > 0) {
+                        Text(
+                            text = "• ${CurrencyUtils.formatCurrency(person.toReceive)} to collect will be marked as settled.",
+                            style = MaterialTheme.typography.bodyMedium,
+                            color = MaterialTheme.colorScheme.onSurfaceVariant
+                        )
                     }
+                    if (person.toPay > 0) {
+                        Text(
+                            text = "• ${CurrencyUtils.formatCurrency(person.toPay)} you owe will be marked as settled.",
+                            style = MaterialTheme.typography.bodyMedium,
+                            color = MaterialTheme.colorScheme.onSurfaceVariant
+                        )
+                    }
+                }
 
-                    Row(
-                        modifier = Modifier.fillMaxWidth(),
-                        horizontalArrangement = Arrangement.End,
-                        verticalAlignment = Alignment.CenterVertically
-                    ) {
-                        TextButton(onClick = onDismiss) {
-                            Text("Cancel", color = MaterialTheme.colorScheme.onSurfaceVariant)
-                        }
-                        Spacer(modifier = Modifier.width(8.dp))
-                        Button(
-                            onClick = onConfirm,
-                            shape = RoundedCornerShape(12.dp),
-                            colors = ButtonDefaults.buttonColors(
-                                containerColor = MaterialTheme.colorScheme.onSurface,
-                                contentColor = MaterialTheme.colorScheme.surface
-                            )
-                        ) {
-                            Text("Settle All", fontWeight = FontWeight.Bold)
-                        }
+                Row(
+                    modifier = Modifier.fillMaxWidth(),
+                    horizontalArrangement = Arrangement.End,
+                    verticalAlignment = Alignment.CenterVertically
+                ) {
+                    TextButton(onClick = onDismiss) {
+                        Text("Cancel", color = MaterialTheme.colorScheme.onSurfaceVariant)
                     }
+                    Spacer(modifier = Modifier.width(8.dp))
+                    KanriGlassButton(
+                        text = "Settle All",
+                        onClick = onConfirm,
+                        level = GlassLevel.Strong
+                    )
                 }
             }
         }

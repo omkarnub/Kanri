@@ -16,6 +16,13 @@ val Panchang = FontFamily(
 )
 
 /**
+ * Lastoria - Signature calligraphy font used for developer signature.
+ */
+val Lastoria = FontFamily(
+    Font(R.font.lastoria_bold_regular, FontWeight.Normal)
+)
+
+/**
  * Google Sans Flex - The primary app font family for all UI elements.
  */
 val GoogleSansFlex = FontFamily(

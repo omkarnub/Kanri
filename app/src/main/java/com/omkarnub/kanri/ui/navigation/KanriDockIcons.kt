@@ -2,6 +2,8 @@ package com.omkarnub.kanri.ui.navigation
 
 import androidx.compose.animation.core.Animatable
 import androidx.compose.animation.core.FastOutSlowInEasing
+import androidx.compose.animation.core.Spring
+import androidx.compose.animation.core.spring
 import androidx.compose.animation.core.tween
 import androidx.compose.foundation.Canvas
 import androidx.compose.foundation.layout.size
@@ -17,6 +19,7 @@ import androidx.compose.ui.graphics.Color
 import androidx.compose.ui.graphics.Path
 import androidx.compose.ui.graphics.StrokeCap
 import androidx.compose.ui.graphics.StrokeJoin
+import androidx.compose.ui.graphics.drawscope.Fill
 import androidx.compose.ui.graphics.drawscope.Stroke
 import androidx.compose.ui.graphics.graphicsLayer
 import androidx.compose.ui.unit.Dp
@@ -75,7 +78,7 @@ fun HomeDockIcon(
                 scaleY = animScale.value
             }
     ) {
-        val strokeWidth = 1.8.dp.toPx()
+        val strokeWidth = (if (isSelected) 2.4.dp else 1.8.dp).toPx()
         val totalW = size.toPx()
         val totalH = size.toPx()
 
@@ -121,11 +124,12 @@ fun HomeDockIcon(
                 forceMoveTo = false
             )
             lineTo(totalW * 0.59f, totalH * 0.84f)
+            if (isSelected) close()
         }
         drawPath(
             path = doorPath,
             color = tint,
-            style = Stroke(width = strokeWidth, cap = StrokeCap.Round, join = StrokeJoin.Round)
+            style = if (isSelected) Fill else Stroke(width = strokeWidth, cap = StrokeCap.Round, join = StrokeJoin.Round)
         )
     }
 }
@@ -180,7 +184,7 @@ fun HistoryDockIcon(
                 scaleY = animScale.value
             }
     ) {
-        val strokeWidth = 1.8.dp.toPx()
+        val strokeWidth = (if (isSelected) 2.4.dp else 1.8.dp).toPx()
         val totalW = size.toPx()
         val s = totalW / 24f // Normalized 24x24 coordinate scale
 
@@ -305,13 +309,14 @@ fun AnalyticsDockIcon(
                 scaleY = animScale.value
             }
     ) {
-        val strokeWidth = 1.8.dp.toPx()
+        val strokeWidth = (if (isSelected) 2.4.dp else 1.8.dp).toPx()
         val totalW = size.toPx()
         val totalH = size.toPx()
-        val barWidth = 3.2.dp.toPx()
+        val barWidth = (if (isSelected) 3.6.dp else 3.2.dp).toPx()
         val corner = 1.6.dp.toPx()
 
         val baseY = totalH * 0.84f
+        val barStyle = if (isSelected) Fill else Stroke(width = strokeWidth)
 
         // Bar 1 (Short)
         val bar1H = (totalH * 0.30f) * bar1Progress.value
@@ -320,7 +325,7 @@ fun AnalyticsDockIcon(
             topLeft = Offset(totalW * 0.22f, baseY - bar1H),
             size = Size(barWidth, bar1H),
             cornerRadius = CornerRadius(corner, corner),
-            style = Stroke(width = strokeWidth)
+            style = barStyle
         )
 
         // Bar 2 (Medium)
@@ -330,7 +335,7 @@ fun AnalyticsDockIcon(
             topLeft = Offset(totalW * 0.46f, baseY - bar2H),
             size = Size(barWidth, bar2H),
             cornerRadius = CornerRadius(corner, corner),
-            style = Stroke(width = strokeWidth)
+            style = barStyle
         )
 
         // Bar 3 (Tall)
@@ -340,7 +345,7 @@ fun AnalyticsDockIcon(
             topLeft = Offset(totalW * 0.70f, baseY - bar3H),
             size = Size(barWidth, bar3H),
             cornerRadius = CornerRadius(corner, corner),
-            style = Stroke(width = strokeWidth)
+            style = barStyle
         )
 
         // Baseline
@@ -348,7 +353,7 @@ fun AnalyticsDockIcon(
             color = tint,
             start = Offset(totalW * 0.14f, baseY + 1.dp.toPx()),
             end = Offset(totalW * 0.86f, baseY + 1.dp.toPx()),
-            strokeWidth = 1.4.dp.toPx(),
+            strokeWidth = strokeWidth,
             cap = StrokeCap.Round
         )
     }
@@ -378,20 +383,36 @@ fun LendBorrowDockIcon(
                 )
             }
             launch {
-                topArrowShift.animateTo(2.5f, tween(160, easing = FastOutSlowInEasing))
-                topArrowShift.animateTo(0f, tween(180, easing = FastOutSlowInEasing))
+                topArrowShift.animateTo(
+                    targetValue = 2.0f,
+                    animationSpec = spring(dampingRatio = Spring.DampingRatioMediumBouncy, stiffness = Spring.StiffnessLow)
+                )
             }
             launch {
-                bottomArrowShift.animateTo(-2.5f, tween(160, easing = FastOutSlowInEasing))
-                bottomArrowShift.animateTo(0f, tween(180, easing = FastOutSlowInEasing))
+                bottomArrowShift.animateTo(
+                    targetValue = -2.0f,
+                    animationSpec = spring(dampingRatio = Spring.DampingRatioMediumBouncy, stiffness = Spring.StiffnessLow)
+                )
             }
         } else {
-            animScale.animateTo(
-                targetValue = 1f,
-                animationSpec = tween(durationMillis = 220, easing = FastOutSlowInEasing)
-            )
-            topArrowShift.animateTo(0f, tween(150))
-            bottomArrowShift.animateTo(0f, tween(150))
+            launch {
+                animScale.animateTo(
+                    targetValue = 1f,
+                    animationSpec = tween(durationMillis = 220, easing = FastOutSlowInEasing)
+                )
+            }
+            launch {
+                topArrowShift.animateTo(
+                    targetValue = 0f,
+                    animationSpec = tween(durationMillis = 200, easing = FastOutSlowInEasing)
+                )
+            }
+            launch {
+                bottomArrowShift.animateTo(
+                    targetValue = 0f,
+                    animationSpec = tween(durationMillis = 200, easing = FastOutSlowInEasing)
+                )
+            }
         }
     }
 
@@ -403,7 +424,7 @@ fun LendBorrowDockIcon(
                 scaleY = animScale.value
             }
     ) {
-        val strokeWidth = 1.8.dp.toPx()
+        val strokeWidth = (if (isSelected) 2.4.dp else 1.8.dp).toPx()
         val totalW = size.toPx()
         val totalH = size.toPx()
 
@@ -423,11 +444,12 @@ fun LendBorrowDockIcon(
             moveTo(totalW * 0.62f + topShiftPx, topY - 3.5.dp.toPx())
             lineTo(totalW * 0.78f + topShiftPx, topY)
             lineTo(totalW * 0.62f + topShiftPx, topY + 3.5.dp.toPx())
+            if (isSelected) close()
         }
         drawPath(
             path = topArrowHead,
             color = tint,
-            style = Stroke(width = strokeWidth, cap = StrokeCap.Round, join = StrokeJoin.Round)
+            style = if (isSelected) Fill else Stroke(width = strokeWidth, cap = StrokeCap.Round, join = StrokeJoin.Round)
         )
 
         // Bottom Arrow: pointing left (Borrowed)
@@ -443,11 +465,12 @@ fun LendBorrowDockIcon(
             moveTo(totalW * 0.38f + bottomShiftPx, bottomY - 3.5.dp.toPx())
             lineTo(totalW * 0.22f + bottomShiftPx, bottomY)
             lineTo(totalW * 0.38f + bottomShiftPx, bottomY + 3.5.dp.toPx())
+            if (isSelected) close()
         }
         drawPath(
             path = bottomArrowHead,
             color = tint,
-            style = Stroke(width = strokeWidth, cap = StrokeCap.Round, join = StrokeJoin.Round)
+            style = if (isSelected) Fill else Stroke(width = strokeWidth, cap = StrokeCap.Round, join = StrokeJoin.Round)
         )
     }
 }
@@ -540,13 +563,13 @@ fun GoalsDockIcon(
                 scaleY = animScale.value
             }
     ) {
-        val strokeWidth = 1.8.dp.toPx()
+        val strokeWidth = (if (isSelected) 2.4.dp else 1.8.dp).toPx()
         val totalW = size.toPx()
         val totalH = size.toPx()
         val center = Offset(totalW * 0.5f, totalH * 0.5f)
         val outerRadius = totalW * 0.42f
         val innerRadius = totalW * 0.24f
-        val centerRadius = totalW * 0.10f * pulseProgress.value
+        val centerRadius = totalW * (if (isSelected) 0.13f else 0.10f) * pulseProgress.value
 
         // Outer target ring
         drawCircle(
@@ -558,10 +581,10 @@ fun GoalsDockIcon(
 
         // Middle ring
         drawCircle(
-            color = tint.copy(alpha = 0.65f),
+            color = if (isSelected) tint.copy(alpha = 0.85f) else tint.copy(alpha = 0.65f),
             radius = innerRadius,
             center = center,
-            style = Stroke(width = strokeWidth * 0.9f)
+            style = Stroke(width = if (isSelected) strokeWidth else strokeWidth * 0.9f)
         )
 
         // Center bullseye dot

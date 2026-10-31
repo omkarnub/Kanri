@@ -33,6 +33,8 @@ import com.omkarnub.kanri.ui.home.formatCurrency
 import com.omkarnub.kanri.ui.insights.InsightsMode
 import com.omkarnub.kanri.ui.insights.SummaryStripData
 import kotlin.math.abs
+import com.omkarnub.kanri.ui.common.GlassLevel
+import com.omkarnub.kanri.ui.common.KanriGlassCard
 
 private val ExpenseRed = Color(0xFFE54D2E)
 private val IncomeSage = Color(0xFF30A46C)
@@ -51,17 +53,14 @@ fun MonthSummaryStripSection(
     onIncomeClick: () -> Unit,
     modifier: Modifier = Modifier
 ) {
-    Card(
+    KanriGlassCard(
         modifier = modifier
             .fillMaxWidth()
             .semantics {
                 contentDescription = "Summary: Spent ${formatCurrency(data.spent)}, Income ${formatCurrency(data.income)}, Net ${formatCurrency(data.net)}"
             },
         shape = RoundedCornerShape(20.dp),
-        colors = CardDefaults.cardColors(
-            containerColor = MaterialTheme.colorScheme.surfaceVariant.copy(alpha = 0.35f)
-        ),
-        border = BorderStroke(1.dp, MaterialTheme.colorScheme.outlineVariant)
+        level = GlassLevel.Blur
     ) {
         Column(
             modifier = Modifier

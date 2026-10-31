@@ -47,7 +47,11 @@ import androidx.compose.ui.text.font.FontWeight
 import androidx.compose.ui.text.rememberTextMeasurer
 import androidx.compose.ui.unit.dp
 import androidx.compose.ui.unit.sp
+import androidx.compose.ui.platform.LocalContext
+import com.omkarnub.kanri.ui.common.GlassLevel
+import com.omkarnub.kanri.ui.common.KanriGlassCard
 import com.omkarnub.kanri.ui.home.formatCurrency
+import com.omkarnub.kanri.util.CurrencyUtils
 
 @Composable
 fun CategoryTrendLineChart(
@@ -55,6 +59,8 @@ fun CategoryTrendLineChart(
     lineColor: Color,
     modifier: Modifier = Modifier
 ) {
+    val context = LocalContext.current
+    val currencySymbol = remember(context) { CurrencyUtils.getCurrencySymbol(context) }
     var selectedIndex by remember(trendPoints) {
         mutableStateOf(if (trendPoints.isNotEmpty()) trendPoints.size - 1 else -1)
     }
@@ -72,11 +78,10 @@ fun CategoryTrendLineChart(
     val onSurfaceColor = MaterialTheme.colorScheme.onSurface
     val onSurfaceVariantColor = MaterialTheme.colorScheme.onSurfaceVariant
 
-    Card(
+    KanriGlassCard(
         modifier = modifier.fillMaxWidth(),
         shape = RoundedCornerShape(24.dp),
-        colors = CardDefaults.cardColors(containerColor = MaterialTheme.colorScheme.surface),
-        border = androidx.compose.foundation.BorderStroke(1.dp, MaterialTheme.colorScheme.outlineVariant)
+        level = GlassLevel.Blur
     ) {
         Column(
             modifier = Modifier
@@ -110,9 +115,9 @@ fun CategoryTrendLineChart(
                 // Interactive selection badge
                 val activePoint = trendPoints.getOrNull(selectedIndex)
                 if (activePoint != null) {
-                    Card(
+                    KanriGlassCard(
                         shape = RoundedCornerShape(10.dp),
-                        colors = CardDefaults.cardColors(containerColor = MaterialTheme.colorScheme.surfaceVariant)
+                        level = GlassLevel.Flat
                     ) {
                         Column(
                             modifier = Modifier.padding(horizontal = 10.dp, vertical = 6.dp),
@@ -195,7 +200,7 @@ fun CategoryTrendLineChart(
 
                         // Draw Grid Label on Left
                         val gridValue = if (allZero) 0.0 else maxSpend * (1.0 - (i.toDouble() / gridSteps))
-                        val labelText = if (gridValue >= 1000) "₹${(gridValue / 1000).toInt()}k" else "₹${gridValue.toInt()}"
+                        val labelText = if (gridValue >= 1000) "$currencySymbol${(gridValue / 1000).toInt()}k" else "$currencySymbol${gridValue.toInt()}"
                         drawText(
                             textMeasurer = textMeasurer,
                             text = labelText,
@@ -335,7 +340,7 @@ fun CategoryTrendLineChart(
                 Text(
                     text = "Tap on any month node to inspect exact spend",
                     fontSize = 11.sp,
-                    color = Color(0xFF6E7681)
+                    color = MaterialTheme.colorScheme.onSurfaceVariant.copy(alpha = 0.7f)
                 )
             }
         }

@@ -1,4 +1,4 @@
-package com.omkarnub.kanri.ui.home
+﻿package com.omkarnub.kanri.ui.home
 
 import android.content.Intent
 import android.net.Uri
@@ -76,6 +76,7 @@ import androidx.compose.material3.TopAppBarDefaults
 import androidx.compose.runtime.Composable
 import androidx.compose.runtime.LaunchedEffect
 import androidx.compose.runtime.collectAsState
+import androidx.compose.runtime.derivedStateOf
 import androidx.compose.runtime.getValue
 import androidx.compose.runtime.mutableStateOf
 import androidx.compose.runtime.remember
@@ -108,6 +109,10 @@ import androidx.compose.material.icons.filled.Savings
 import androidx.compose.ui.platform.LocalContext
 import com.omkarnub.kanri.ui.common.CategoryIcon
 import com.omkarnub.kanri.ui.common.FlipFadeText
+import com.omkarnub.kanri.ui.common.GlassLevel
+import com.omkarnub.kanri.ui.common.KanriGlassCard
+import com.omkarnub.kanri.ui.common.SignatureAnimationText
+import com.omkarnub.kanri.ui.theme.LocalKanriGlass
 import com.omkarnub.kanri.ui.greeting.GreetingHeader
 import com.omkarnub.kanri.ui.health.DiagnosticsSheet
 import com.omkarnub.kanri.ui.health.HealthCheckBanner
@@ -138,6 +143,8 @@ fun HomeScreen(
     onNavigateToLending: () -> Unit = {},
     onNavigateToInsights: () -> Unit = {},
     onTransactionClick: (TransactionWithCategory) -> Unit = {},
+    openWalletSheet: Boolean = false,
+    onWalletSheetOpened: () -> Unit = {},
     modifier: Modifier = Modifier,
     viewModel: HomeViewModel = viewModel()
 ) {
@@ -161,6 +168,13 @@ fun HomeScreen(
     var isEditingBaselines by remember { mutableStateOf(false) }
     var showMoveMoneyDialog by remember { mutableStateOf(false) }
     var correctingWallet by remember { mutableStateOf<Pair<String, Double>?>(null) }
+
+    LaunchedEffect(openWalletSheet) {
+        if (openWalletSheet) {
+            showWalletSheet = true
+            onWalletSheetOpened()
+        }
+    }
 
     if (!state.isLoading && !state.hasBudget && !hasDismissedBudgetPrompt) {
         SetBudgetDialog(
@@ -387,10 +401,12 @@ fun HomeScreen(
         )
     }
 
+    val tokens = com.omkarnub.kanri.ui.theme.LocalKanriGlass.current
+
     if (state.isLoading) {
         Surface(
             modifier = modifier.fillMaxSize(),
-            color = MaterialTheme.colorScheme.background
+            color = if (tokens != null) Color.Transparent else MaterialTheme.colorScheme.background
         ) {
             Box(
                 modifier = Modifier.fillMaxSize(),
@@ -402,15 +418,22 @@ fun HomeScreen(
             }
         }
     } else {
+        val homeScrollState = rememberScrollState()
+        val isSignatureInView by remember {
+            derivedStateOf {
+                !homeScrollState.canScrollForward || (homeScrollState.maxValue > 0 && homeScrollState.value >= homeScrollState.maxValue - 450)
+            }
+        }
+
         Surface(
             modifier = modifier.fillMaxSize(),
-            color = MaterialTheme.colorScheme.background
+            color = if (tokens != null) Color.Transparent else MaterialTheme.colorScheme.background
         ) {
             Column(
                 modifier = Modifier
                     .fillMaxSize()
                     .statusBarsPadding()
-                    .verticalScroll(rememberScrollState())
+                    .verticalScroll(homeScrollState)
                     .padding(horizontal = 20.dp),
                 verticalArrangement = Arrangement.spacedBy(14.dp)
             ) {
@@ -539,7 +562,7 @@ fun HomeScreen(
                 }
 
                 // =========================================================================
-                // 4.05. "MANAGE MONEY BALANCE" (WALLET BALANCES: CASH + ONLINE)
+                // 4.05. "WALLETS" (WALLET BALANCES: CASH + ONLINE)
                 // =========================================================================
                 Box(
                     modifier = Modifier.graphicsLayer {
@@ -627,6 +650,24 @@ fun HomeScreen(
                 )
 
                 // =========================================================================
+                // 6.8. DEVELOPER SIGNATURE ANIMATION (@Omkarnub)
+                // =========================================================================
+                SignatureAnimationText(
+                    text = "@Omkarnub",
+                    fontSize = 38.sp,
+                    strokeWidth = 1.8.dp,
+                    label = "This app was built by",
+                    isVisible = isSignatureInView,
+                    modifier = Modifier
+                        .fillMaxWidth()
+                        .padding(top = 18.dp, bottom = 4.dp)
+                        .graphicsLayer {
+                            alpha = footerEntrance.value
+                            translationY = (1f - footerEntrance.value) * 16.dp.toPx()
+                        }
+                )
+
+                // =========================================================================
                 // 7. FOOTER: SUPPORT / CONTACT US HYPERLINK WITH SUBTLE ANIMATION
                 // =========================================================================
                 SupportContactFooter(
@@ -701,15 +742,38 @@ private fun RecentTransactionsSection(
         if (transactions.isEmpty()) {
             EmptyTransactionsCard(onSeeMoreClick = onSeeMoreClick)
         } else {
-            Column(
-                modifier = Modifier.fillMaxWidth()
-            ) {
-                transactions.forEachIndexed { index, item ->
-                    TransactionListItem(
-                        item = item,
-                        onClick = { onTransactionClick(item) },
-                        showDivider = index < transactions.size - 1
-                    )
+            val tokens = LocalKanriGlass.current
+            if (tokens != null) {
+                KanriGlassCard(
+                    modifier = Modifier.fillMaxWidth(),
+                    level = GlassLevel.Blur,
+                    shape = RoundedCornerShape(tokens.cornerRadius)
+                ) {
+                    Column(
+                        modifier = Modifier
+                            .fillMaxWidth()
+                            .padding(horizontal = 14.dp, vertical = 4.dp)
+                    ) {
+                        transactions.forEachIndexed { index, item ->
+                            TransactionListItem(
+                                item = item,
+                                onClick = { onTransactionClick(item) },
+                                showDivider = index < transactions.size - 1
+                            )
+                        }
+                    }
+                }
+            } else {
+                Column(
+                    modifier = Modifier.fillMaxWidth()
+                ) {
+                    transactions.forEachIndexed { index, item ->
+                        TransactionListItem(
+                            item = item,
+                            onClick = { onTransactionClick(item) },
+                            showDivider = index < transactions.size - 1
+                        )
+                    }
                 }
             }
         }
@@ -718,13 +782,11 @@ private fun RecentTransactionsSection(
 
 @Composable
 private fun EmptyTransactionsCard(onSeeMoreClick: () -> Unit) {
-    Card(
+    val tokens = LocalKanriGlass.current
+    KanriGlassCard(
         modifier = Modifier.fillMaxWidth(),
-        shape = RoundedCornerShape(16.dp),
-        colors = CardDefaults.cardColors(
-            containerColor = MaterialTheme.colorScheme.surfaceVariant.copy(alpha = 0.35f)
-        ),
-        border = BorderStroke(1.dp, MaterialTheme.colorScheme.outlineVariant)
+        level = GlassLevel.Blur,
+        shape = RoundedCornerShape(tokens?.cornerRadius ?: 20.dp)
     ) {
         Column(
             modifier = Modifier
@@ -757,8 +819,8 @@ private fun EmptyTransactionsCard(onSeeMoreClick: () -> Unit) {
             Surface(
                 modifier = Modifier.clickable(onClick = onSeeMoreClick),
                 shape = RoundedCornerShape(16.dp),
-                color = MaterialTheme.colorScheme.surfaceContainer,
-                border = BorderStroke(1.dp, MaterialTheme.colorScheme.outlineVariant)
+                color = tokens?.tintFlat ?: MaterialTheme.colorScheme.surfaceContainer,
+                border = BorderStroke(tokens?.borderWidth ?: 1.dp, tokens?.borderEnd ?: MaterialTheme.colorScheme.outlineVariant)
             ) {
                 Text(
                     text = "Open History →",
@@ -779,15 +841,23 @@ fun TransactionListItem(
     showDivider: Boolean = false,
     modifier: Modifier = Modifier
 ) {
+    val tokens = LocalKanriGlass.current
     val transaction = item.transaction
     val category = item.category
     val isTransfer = transaction.isTransfer
     val isDebit = transaction.type.equals("DEBIT", ignoreCase = true)
-    val amountColor = if (isTransfer) MaterialTheme.colorScheme.onSurface else if (isDebit) ExpenseRed else IncomeGreen
+    val amountColor = if (isTransfer) {
+        tokens?.textPrimary ?: MaterialTheme.colorScheme.onSurface
+    } else if (isDebit) {
+        tokens?.expenseColor ?: ExpenseRed
+    } else {
+        tokens?.incomeColor ?: IncomeGreen
+    }
     val amountPrefix = if (isTransfer) "⇄ " else if (isDebit) "- " else "+ "
 
     val context = androidx.compose.ui.platform.LocalContext.current
     val isWalletSetup = remember { com.omkarnub.kanri.data.wallet.WalletPreferences.getInstance(context).isWalletSetupCompleted }
+    val tagCornerRadius = (tokens?.cornerRadius?.times(0.35f))?.coerceIn(4.dp, 8.dp) ?: 6.dp
 
     Column(
         modifier = modifier
@@ -806,28 +876,35 @@ fun TransactionListItem(
                 modifier = Modifier
                     .size(40.dp)
                     .clip(CircleShape)
-                    .background(MaterialTheme.colorScheme.surfaceVariant.copy(alpha = 0.65f)),
+                    .background(tokens?.tintFlat ?: MaterialTheme.colorScheme.surfaceVariant.copy(alpha = 0.65f))
+                    .then(
+                        if (tokens != null) Modifier.border(
+                            tokens.borderWidth,
+                            tokens.borderStart.copy(alpha = tokens.borderStart.alpha * 0.4f),
+                            CircleShape
+                        ) else Modifier
+                    ),
                 contentAlignment = Alignment.Center
             ) {
                 if (isTransfer) {
                     Icon(
                         imageVector = Icons.Default.SwapHoriz,
                         contentDescription = "Transfer",
-                        tint = MaterialTheme.colorScheme.primary,
+                        tint = tokens?.accent ?: MaterialTheme.colorScheme.primary,
                         modifier = Modifier.size(20.dp)
                     )
                 } else if (category != null) {
                     CategoryIcon(
                         categoryName = category.name,
                         iconName = category.iconName,
-                        tint = MaterialTheme.colorScheme.onSurface,
+                        tint = tokens?.textPrimary ?: MaterialTheme.colorScheme.onSurface,
                         modifier = Modifier.size(18.dp)
                     )
                 } else {
                     Icon(
                         imageVector = getSourceIcon(transaction.sourceType),
                         contentDescription = transaction.sourceType,
-                        tint = MaterialTheme.colorScheme.onSurfaceVariant,
+                        tint = tokens?.textSecondary ?: MaterialTheme.colorScheme.onSurfaceVariant,
                         modifier = Modifier.size(18.dp)
                     )
                 }
@@ -851,7 +928,7 @@ fun TransactionListItem(
                         fontWeight = FontWeight.SemiBold,
                         fontSize = 14.5.sp
                     ),
-                    color = MaterialTheme.colorScheme.onSurface,
+                    color = tokens?.textPrimary ?: MaterialTheme.colorScheme.onSurface,
                     maxLines = 1,
                     overflow = TextOverflow.Ellipsis
                 )
@@ -867,7 +944,7 @@ fun TransactionListItem(
                     Text(
                         text = sourceText,
                         style = MaterialTheme.typography.labelSmall,
-                        color = MaterialTheme.colorScheme.onSurfaceVariant.copy(alpha = 0.7f),
+                        color = (tokens?.textSecondary ?: MaterialTheme.colorScheme.onSurfaceVariant).copy(alpha = 0.85f),
                         fontWeight = FontWeight.Medium
                     )
 
@@ -875,12 +952,12 @@ fun TransactionListItem(
                         Text(
                             text = "•",
                             style = MaterialTheme.typography.labelSmall,
-                            color = MaterialTheme.colorScheme.outline.copy(alpha = 0.5f)
+                            color = (tokens?.textTertiary ?: MaterialTheme.colorScheme.onSurfaceVariant).copy(alpha = 0.6f)
                         )
                         Text(
                             text = transaction.bank,
                             style = MaterialTheme.typography.labelSmall,
-                            color = MaterialTheme.colorScheme.onSurfaceVariant.copy(alpha = 0.7f),
+                            color = (tokens?.textSecondary ?: MaterialTheme.colorScheme.onSurfaceVariant).copy(alpha = 0.85f),
                             maxLines = 1,
                             overflow = TextOverflow.Ellipsis
                         )
@@ -889,12 +966,14 @@ fun TransactionListItem(
                     Text(
                         text = "•",
                         style = MaterialTheme.typography.labelSmall,
-                        color = MaterialTheme.colorScheme.outline.copy(alpha = 0.5f)
+                        color = (tokens?.textTertiary ?: MaterialTheme.colorScheme.onSurfaceVariant).copy(alpha = 0.6f)
                     )
                     Text(
                         text = formatTimestamp(transaction.timestamp),
-                        style = MaterialTheme.typography.labelSmall,
-                        color = MaterialTheme.colorScheme.outline.copy(alpha = 0.7f)
+                        style = MaterialTheme.typography.labelSmall.copy(
+                            fontWeight = FontWeight.Medium
+                        ),
+                        color = (tokens?.textPrimary ?: MaterialTheme.colorScheme.onSurfaceVariant).copy(alpha = 0.95f)
                     )
                 }
 
@@ -907,9 +986,9 @@ fun TransactionListItem(
                 ) {
                     if (isTransfer) {
                         Surface(
-                            shape = RoundedCornerShape(6.dp),
-                            color = MaterialTheme.colorScheme.surfaceVariant,
-                            border = BorderStroke(0.5.dp, MaterialTheme.colorScheme.outlineVariant)
+                            shape = RoundedCornerShape(tagCornerRadius),
+                            color = tokens?.tintFlat ?: MaterialTheme.colorScheme.surfaceVariant,
+                            border = BorderStroke(tokens?.borderWidth ?: 0.5.dp, tokens?.borderEnd ?: MaterialTheme.colorScheme.outlineVariant)
                         ) {
                             Text(
                                 text = "Transfer",
@@ -917,16 +996,16 @@ fun TransactionListItem(
                                     fontSize = 10.5.sp,
                                     fontWeight = FontWeight.Bold
                                 ),
-                                color = MaterialTheme.colorScheme.primary,
+                                color = tokens?.accent ?: MaterialTheme.colorScheme.primary,
                                 modifier = Modifier.padding(horizontal = 6.dp, vertical = 2.dp)
                             )
                         }
                     } else {
                         if (category != null) {
                             Surface(
-                                shape = RoundedCornerShape(6.dp),
-                                color = MaterialTheme.colorScheme.surfaceVariant.copy(alpha = 0.5f),
-                                border = BorderStroke(0.5.dp, MaterialTheme.colorScheme.outlineVariant.copy(alpha = 0.6f))
+                                shape = RoundedCornerShape(tagCornerRadius),
+                                color = tokens?.tintFlat ?: MaterialTheme.colorScheme.surfaceVariant.copy(alpha = 0.5f),
+                                border = BorderStroke(tokens?.borderWidth ?: 0.5.dp, tokens?.borderEnd ?: MaterialTheme.colorScheme.outlineVariant.copy(alpha = 0.6f))
                             ) {
                                 Text(
                                     text = category.name,
@@ -934,15 +1013,15 @@ fun TransactionListItem(
                                         fontSize = 10.5.sp,
                                         fontWeight = FontWeight.Medium
                                     ),
-                                    color = MaterialTheme.colorScheme.onSurfaceVariant,
+                                    color = tokens?.textSecondary ?: MaterialTheme.colorScheme.onSurfaceVariant,
                                     modifier = Modifier.padding(horizontal = 6.dp, vertical = 2.dp)
                                 )
                             }
                         } else {
                             Surface(
-                                shape = RoundedCornerShape(6.dp),
-                                color = MaterialTheme.colorScheme.surfaceVariant.copy(alpha = 0.35f),
-                                border = BorderStroke(0.5.dp, MaterialTheme.colorScheme.outline.copy(alpha = 0.3f))
+                                shape = RoundedCornerShape(tagCornerRadius),
+                                color = tokens?.tintFlat ?: MaterialTheme.colorScheme.surfaceVariant.copy(alpha = 0.35f),
+                                border = BorderStroke(tokens?.borderWidth ?: 0.5.dp, tokens?.borderEnd ?: MaterialTheme.colorScheme.outline.copy(alpha = 0.3f))
                             ) {
                                 Text(
                                     text = "+ Categorize",
@@ -950,7 +1029,7 @@ fun TransactionListItem(
                                         fontSize = 10.5.sp,
                                         fontWeight = FontWeight.Normal
                                     ),
-                                    color = MaterialTheme.colorScheme.onSurfaceVariant,
+                                    color = tokens?.textSecondary ?: MaterialTheme.colorScheme.onSurfaceVariant,
                                     modifier = Modifier.padding(horizontal = 6.dp, vertical = 2.dp)
                                 )
                             }
@@ -959,9 +1038,9 @@ fun TransactionListItem(
                         // Wallet Pill (Only visible when wallet setup is completed)
                         if (isWalletSetup) {
                             Surface(
-                                shape = RoundedCornerShape(6.dp),
-                                color = MaterialTheme.colorScheme.surfaceVariant.copy(alpha = 0.4f),
-                                border = BorderStroke(0.5.dp, MaterialTheme.colorScheme.outlineVariant.copy(alpha = 0.4f))
+                                shape = RoundedCornerShape(tagCornerRadius),
+                                color = tokens?.tintFlat ?: MaterialTheme.colorScheme.surfaceVariant.copy(alpha = 0.4f),
+                                border = BorderStroke(tokens?.borderWidth ?: 0.5.dp, tokens?.borderEnd ?: MaterialTheme.colorScheme.outlineVariant.copy(alpha = 0.4f))
                             ) {
                                 Text(
                                     text = when (transaction.wallet) {
@@ -973,7 +1052,7 @@ fun TransactionListItem(
                                         fontSize = 10.sp,
                                         fontWeight = FontWeight.Medium
                                     ),
-                                    color = MaterialTheme.colorScheme.onSurfaceVariant.copy(alpha = 0.8f),
+                                    color = (tokens?.textSecondary ?: MaterialTheme.colorScheme.onSurfaceVariant).copy(alpha = 0.8f),
                                     modifier = Modifier.padding(horizontal = 5.dp, vertical = 2.dp)
                                 )
                             }
@@ -1033,13 +1112,10 @@ private fun DailySafeToSpendCard(
     val isOverBudget = remainingBudget <= 0.0
     val budgetRatio = if (totalBudget > 0.0) ((totalBudget - remainingBudget) / totalBudget).coerceIn(0.0, 1.0) else 0.0
 
-    Card(
+    KanriGlassCard(
         modifier = modifier.fillMaxWidth(),
-        shape = RoundedCornerShape(20.dp),
-        colors = CardDefaults.cardColors(
-            containerColor = MaterialTheme.colorScheme.surfaceVariant.copy(alpha = 0.35f)
-        ),
-        border = BorderStroke(1.dp, MaterialTheme.colorScheme.outlineVariant)
+        level = GlassLevel.Blur,
+        shape = RoundedCornerShape(24.dp)
     ) {
         Column(
             modifier = Modifier
@@ -1225,11 +1301,7 @@ fun getSourceIcon(sourceType: String): ImageVector {
 }
 
 fun formatCurrency(amount: Double): String {
-    val formatter = NumberFormat.getNumberInstance(Locale.forLanguageTag("en-IN")).apply {
-        minimumFractionDigits = 2
-        maximumFractionDigits = 2
-    }
-    return "₹${formatter.format(amount)}"
+    return CurrencyUtils.formatCurrency(amount)
 }
 
 fun formatTimestamp(timestamp: Long): String {

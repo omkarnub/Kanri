@@ -87,4 +87,8 @@ object ExportScheduler {
             }
         }
     }
+
+    fun cancelScheduledExport(context: Context) {
+        setSchedule(context, ExportSchedule.OFF)
+    }
 }

@@ -17,6 +17,9 @@ import androidx.compose.foundation.layout.padding
 import androidx.compose.foundation.layout.size
 import androidx.compose.foundation.shape.CircleShape
 import androidx.compose.foundation.shape.RoundedCornerShape
+import com.omkarnub.kanri.ui.common.GlassLevel
+import com.omkarnub.kanri.ui.common.KanriGlassCard
+import com.omkarnub.kanri.ui.theme.LocalKanriGlass
 import androidx.compose.material.icons.Icons
 import androidx.compose.material.icons.filled.LocalFireDepartment
 import androidx.compose.material3.Card
@@ -88,20 +91,19 @@ fun NoSpendStreakCard(
         "No spend streak: ${streakState.currentStreak} days. Best streak: ${streakState.bestStreak} days. ${streakState.noSpendDaysThisMonth} no-spend days in ${streakState.currentMonthName}."
     }
 
-    Card(
+    val tokens = LocalKanriGlass.current
+
+    KanriGlassCard(
         modifier = modifier
             .fillMaxWidth()
             .semantics { contentDescription = accessibilityDesc },
-        shape = RoundedCornerShape(24.dp),
-        colors = CardDefaults.cardColors(
-            containerColor = MaterialTheme.colorScheme.surfaceVariant.copy(alpha = 0.35f)
-        ),
-        border = null
+        level = GlassLevel.Blur,
+        shape = RoundedCornerShape(24.dp)
     ) {
         Column(
             modifier = Modifier
                 .fillMaxWidth()
-                .padding(horizontal = 16.dp, vertical = 18.dp)
+                .padding(horizontal = 18.dp, vertical = 18.dp)
         ) {
             // 1. Label Row
             Row(
@@ -241,21 +243,42 @@ private fun WeekStripRow(
     days: List<DayStreakStatus>,
     modifier: Modifier = Modifier
 ) {
-    Surface(
-        shape = RoundedCornerShape(14.dp),
-        color = MaterialTheme.colorScheme.surfaceVariant.copy(alpha = 0.45f),
-        border = BorderStroke(0.5.dp, MaterialTheme.colorScheme.outlineVariant.copy(alpha = 0.5f)),
-        modifier = modifier
-    ) {
-        Row(
-            modifier = Modifier
-                .fillMaxWidth()
-                .padding(horizontal = 14.dp, vertical = 10.dp),
-            horizontalArrangement = Arrangement.SpaceBetween,
-            verticalAlignment = Alignment.CenterVertically
+    val tokens = LocalKanriGlass.current
+    if (tokens != null) {
+        KanriGlassCard(
+            level = GlassLevel.Flat,
+            shape = RoundedCornerShape(14.dp),
+            modifier = modifier
         ) {
-            days.forEach { dayStatus ->
-                DayDotItem(dayStatus = dayStatus)
+            Row(
+                modifier = Modifier
+                    .fillMaxWidth()
+                    .padding(horizontal = 14.dp, vertical = 10.dp),
+                horizontalArrangement = Arrangement.SpaceBetween,
+                verticalAlignment = Alignment.CenterVertically
+            ) {
+                days.forEach { dayStatus ->
+                    DayDotItem(dayStatus = dayStatus)
+                }
+            }
+        }
+    } else {
+        Surface(
+            shape = RoundedCornerShape(14.dp),
+            color = MaterialTheme.colorScheme.surfaceVariant.copy(alpha = 0.45f),
+            border = BorderStroke(0.5.dp, MaterialTheme.colorScheme.outlineVariant.copy(alpha = 0.5f)),
+            modifier = modifier
+        ) {
+            Row(
+                modifier = Modifier
+                    .fillMaxWidth()
+                    .padding(horizontal = 14.dp, vertical = 10.dp),
+                horizontalArrangement = Arrangement.SpaceBetween,
+                verticalAlignment = Alignment.CenterVertically
+            ) {
+                days.forEach { dayStatus ->
+                    DayDotItem(dayStatus = dayStatus)
+                }
             }
         }
     }

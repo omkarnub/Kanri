@@ -1,4 +1,4 @@
-package com.omkarnub.kanri.ui.lending
+﻿package com.omkarnub.kanri.ui.lending
 
 import android.content.Context
 import android.os.Build
@@ -95,6 +95,11 @@ import androidx.compose.ui.unit.dp
 import androidx.compose.ui.unit.sp
 import com.omkarnub.kanri.ui.theme.GoogleSansFlex
 import com.omkarnub.kanri.util.CurrencyUtils
+import com.omkarnub.kanri.ui.common.GlassLevel
+import com.omkarnub.kanri.ui.common.KanriGlassButton
+import com.omkarnub.kanri.ui.common.KanriGlassCard
+import com.omkarnub.kanri.ui.common.KanriGlassPill
+import com.omkarnub.kanri.ui.theme.LocalKanriGlass
 import kotlinx.coroutines.launch
 
 /**
@@ -193,7 +198,7 @@ fun SplitExpenseScreen(
 
     Scaffold(
         modifier = modifier.fillMaxSize(),
-        containerColor = MaterialTheme.colorScheme.background,
+        containerColor = if (LocalKanriGlass.current != null) Color.Transparent else MaterialTheme.colorScheme.background,
         topBar = {
             TopAppBar(
                 title = {
@@ -206,16 +211,29 @@ fun SplitExpenseScreen(
                     )
                 },
                 navigationIcon = {
-                    IconButton(onClick = onDismiss) {
-                        Icon(
-                            imageVector = Icons.AutoMirrored.Filled.ArrowBack,
-                            contentDescription = "Back",
-                            tint = MaterialTheme.colorScheme.onBackground
-                        )
+                    KanriGlassCard(
+                        modifier = Modifier
+                            .padding(start = 12.dp)
+                            .size(38.dp),
+                        shape = CircleShape,
+                        level = GlassLevel.Flat,
+                        onClick = onDismiss
+                    ) {
+                        Box(
+                            modifier = Modifier.fillMaxSize(),
+                            contentAlignment = Alignment.Center
+                        ) {
+                            Icon(
+                                imageVector = Icons.AutoMirrored.Filled.ArrowBack,
+                                contentDescription = "Back",
+                                modifier = Modifier.size(18.dp),
+                                tint = MaterialTheme.colorScheme.onBackground
+                            )
+                        }
                     }
                 },
                 colors = TopAppBarDefaults.topAppBarColors(
-                    containerColor = MaterialTheme.colorScheme.background
+                    containerColor = Color.Transparent
                 )
             )
         }
@@ -272,24 +290,16 @@ fun SplitExpenseScreen(
 
                     Spacer(modifier = Modifier.height(8.dp))
 
-                    Card(
-                        modifier = Modifier
-                            .fillMaxWidth()
-                            .clip(RoundedCornerShape(20.dp))
-                            .clickable { focusRequester.requestFocus() },
-                        shape = RoundedCornerShape(20.dp),
-                        colors = CardDefaults.cardColors(
-                            containerColor = MaterialTheme.colorScheme.surfaceContainerHigh.copy(alpha = 0.5f)
-                        ),
-                        border = androidx.compose.foundation.BorderStroke(
-                            1.dp,
-                            MaterialTheme.colorScheme.outlineVariant.copy(alpha = 0.4f)
-                        )
+                    KanriGlassCard(
+                        modifier = Modifier.fillMaxWidth(),
+                        shape = RoundedCornerShape(22.dp),
+                        level = GlassLevel.Blur,
+                        onClick = { focusRequester.requestFocus() }
                     ) {
                         Row(
                             modifier = Modifier
                                 .fillMaxWidth()
-                                .padding(vertical = 14.dp, horizontal = 16.dp),
+                                .padding(vertical = 16.dp, horizontal = 16.dp),
                             horizontalArrangement = Arrangement.Center,
                             verticalAlignment = Alignment.CenterVertically
                         ) {
@@ -365,21 +375,15 @@ fun SplitExpenseScreen(
                 // ==========================================
                 // PROPER ANIMATED DIGIT COUNTER FOR PEOPLE
                 // ==========================================
-                Card(
+                KanriGlassCard(
                     modifier = Modifier.fillMaxWidth(),
-                    shape = RoundedCornerShape(20.dp),
-                    colors = CardDefaults.cardColors(
-                        containerColor = MaterialTheme.colorScheme.surfaceContainerHigh.copy(alpha = 0.45f)
-                    ),
-                    border = androidx.compose.foundation.BorderStroke(
-                        0.8.dp,
-                        MaterialTheme.colorScheme.outlineVariant.copy(alpha = 0.4f)
-                    )
+                    shape = RoundedCornerShape(22.dp),
+                    level = GlassLevel.Blur
                 ) {
                     Column(
                         modifier = Modifier
                             .fillMaxWidth()
-                            .padding(vertical = 14.dp, horizontal = 18.dp),
+                            .padding(vertical = 16.dp, horizontal = 18.dp),
                         horizontalAlignment = Alignment.CenterHorizontally
                     ) {
                         Text(
@@ -398,29 +402,29 @@ fun SplitExpenseScreen(
                             horizontalArrangement = Arrangement.SpaceBetween,
                             verticalAlignment = Alignment.CenterVertically
                         ) {
-                            // Decrease [-] Button with smooth tactile feedback
-                            IconButton(
-                                onClick = {
-                                    if (peopleCount > 2) {
+                            // Decrease [-] Button with tactile feedback
+                            KanriGlassCard(
+                                modifier = Modifier.size(46.dp),
+                                shape = CircleShape,
+                                level = GlassLevel.Flat,
+                                onClick = if (peopleCount > 2) {
+                                    {
                                         peopleCount--
                                         syncFriendNames(peopleCount)
                                         hapticFeedback.performHapticFeedback(HapticFeedbackType.TextHandleMove)
                                     }
-                                },
-                                enabled = peopleCount > 2,
-                                modifier = Modifier
-                                    .size(46.dp)
-                                    .clip(CircleShape)
-                                    .background(
-                                        if (peopleCount > 2) MaterialTheme.colorScheme.surfaceContainerHighest
-                                        else MaterialTheme.colorScheme.surfaceVariant.copy(alpha = 0.25f)
-                                    )
+                                } else null
                             ) {
-                                Icon(
-                                    imageVector = Icons.Default.Remove,
-                                    contentDescription = "Decrease",
-                                    tint = if (peopleCount > 2) MaterialTheme.colorScheme.onSurface else MaterialTheme.colorScheme.outline
-                                )
+                                Box(
+                                    modifier = Modifier.fillMaxSize(),
+                                    contentAlignment = Alignment.Center
+                                ) {
+                                    Icon(
+                                        imageVector = Icons.Default.Remove,
+                                        contentDescription = "Decrease",
+                                        tint = if (peopleCount > 2) MaterialTheme.colorScheme.onSurface else MaterialTheme.colorScheme.outline
+                                    )
+                                }
                             }
 
                             // Proper Animated Number Counter
@@ -456,29 +460,29 @@ fun SplitExpenseScreen(
                                 )
                             }
 
-                            // Increase [+] Button with smooth tactile feedback
-                            IconButton(
-                                onClick = {
-                                    if (peopleCount < 20) {
+                            // Increase [+] Button with tactile feedback
+                            KanriGlassCard(
+                                modifier = Modifier.size(46.dp),
+                                shape = CircleShape,
+                                level = GlassLevel.Flat,
+                                onClick = if (peopleCount < 20) {
+                                    {
                                         peopleCount++
                                         syncFriendNames(peopleCount)
                                         hapticFeedback.performHapticFeedback(HapticFeedbackType.TextHandleMove)
                                     }
-                                },
-                                enabled = peopleCount < 20,
-                                modifier = Modifier
-                                    .size(46.dp)
-                                    .clip(CircleShape)
-                                    .background(
-                                        if (peopleCount < 20) MaterialTheme.colorScheme.surfaceContainerHighest
-                                        else MaterialTheme.colorScheme.surfaceVariant.copy(alpha = 0.25f)
-                                    )
+                                } else null
                             ) {
-                                Icon(
-                                    imageVector = Icons.Default.Add,
-                                    contentDescription = "Increase",
-                                    tint = if (peopleCount < 20) MaterialTheme.colorScheme.onSurface else MaterialTheme.colorScheme.outline
-                                )
+                                Box(
+                                    modifier = Modifier.fillMaxSize(),
+                                    contentAlignment = Alignment.Center
+                                ) {
+                                    Icon(
+                                        imageVector = Icons.Default.Add,
+                                        contentDescription = "Increase",
+                                        tint = if (peopleCount < 20) MaterialTheme.colorScheme.onSurface else MaterialTheme.colorScheme.outline
+                                    )
+                                }
                             }
                         }
                     }
@@ -486,12 +490,14 @@ fun SplitExpenseScreen(
 
                 Spacer(modifier = Modifier.height(24.dp))
 
-                // Clean, Professional "Split Now" Button (Strictly NO Emojis)
-                Button(
+                // Clean, Tactile Glass "Split Now" Button
+                KanriGlassButton(
+                    text = "Split Now",
+                    level = GlassLevel.Strong,
                     onClick = {
                         if (totalAmount <= 0.0) {
                             errorMessage = "Please enter a valid bill amount"
-                            return@Button
+                            return@KanriGlassButton
                         }
                         triggerSplitHaptic(context, hapticFeedback)
                         coroutineScope.launch {
@@ -511,19 +517,8 @@ fun SplitExpenseScreen(
                     modifier = Modifier
                         .fillMaxWidth()
                         .height(54.dp),
-                    shape = RoundedCornerShape(27.dp),
-                    colors = ButtonDefaults.buttonColors(
-                        containerColor = MaterialTheme.colorScheme.primary,
-                        contentColor = MaterialTheme.colorScheme.onPrimary
-                    )
-                ) {
-                    Text(
-                        text = "Split Now",
-                        fontFamily = GoogleSansFlex,
-                        fontWeight = FontWeight.Bold,
-                        fontSize = 16.sp
-                    )
-                }
+                    shape = RoundedCornerShape(27.dp)
+                )
 
                 Spacer(modifier = Modifier.height(24.dp))
             }
@@ -570,23 +565,11 @@ fun SplitExpenseScreen(
                             horizontalArrangement = Arrangement.spacedBy(10.dp)
                         ) {
                             // Option 1: I Paid Full Bill (Money I Lent)
-                            Card(
-                                modifier = Modifier
-                                    .weight(1f)
-                                    .clip(RoundedCornerShape(14.dp))
-                                    .border(
-                                        1.2.dp,
-                                        if (selectedRole == SplitRole.I_PAID) MaterialTheme.colorScheme.primary else MaterialTheme.colorScheme.outlineVariant,
-                                        RoundedCornerShape(14.dp)
-                                    )
-                                    .clickable { selectedRole = SplitRole.I_PAID },
-                                colors = CardDefaults.cardColors(
-                                    containerColor = if (selectedRole == SplitRole.I_PAID) {
-                                        MaterialTheme.colorScheme.surfaceContainerHigh
-                                    } else {
-                                        MaterialTheme.colorScheme.surfaceContainer.copy(alpha = 0.5f)
-                                    }
-                                )
+                            KanriGlassCard(
+                                modifier = Modifier.weight(1f),
+                                shape = RoundedCornerShape(14.dp),
+                                level = if (selectedRole == SplitRole.I_PAID) GlassLevel.Strong else GlassLevel.Flat,
+                                onClick = { selectedRole = SplitRole.I_PAID }
                             ) {
                                 Column(modifier = Modifier.padding(14.dp)) {
                                     Row(
@@ -621,23 +604,11 @@ fun SplitExpenseScreen(
                             }
 
                             // Option 2: Someone Else Paid (Money I Borrowed)
-                            Card(
-                                modifier = Modifier
-                                    .weight(1f)
-                                    .clip(RoundedCornerShape(14.dp))
-                                    .border(
-                                        1.2.dp,
-                                        if (selectedRole == SplitRole.SOMEONE_ELSE) MaterialTheme.colorScheme.primary else MaterialTheme.colorScheme.outlineVariant,
-                                        RoundedCornerShape(14.dp)
-                                    )
-                                    .clickable { selectedRole = SplitRole.SOMEONE_ELSE },
-                                colors = CardDefaults.cardColors(
-                                    containerColor = if (selectedRole == SplitRole.SOMEONE_ELSE) {
-                                        MaterialTheme.colorScheme.surfaceContainerHigh
-                                    } else {
-                                        MaterialTheme.colorScheme.surfaceContainer.copy(alpha = 0.5f)
-                                    }
-                                )
+                            KanriGlassCard(
+                                modifier = Modifier.weight(1f),
+                                shape = RoundedCornerShape(14.dp),
+                                level = if (selectedRole == SplitRole.SOMEONE_ELSE) GlassLevel.Strong else GlassLevel.Flat,
+                                onClick = { selectedRole = SplitRole.SOMEONE_ELSE }
                             ) {
                                 Column(modifier = Modifier.padding(14.dp)) {
                                     Row(
@@ -764,7 +735,12 @@ fun SplitExpenseScreen(
                         Spacer(modifier = Modifier.height(20.dp))
 
                         // Primary Action: Save to Lend & Borrow
-                        Button(
+                        KanriGlassButton(
+                            text = if (selectedRole == SplitRole.I_PAID) {
+                                "Save to Lend & Borrow (+${CurrencyUtils.formatCurrency(othersTotal)})"
+                            } else {
+                                "Save to Lend & Borrow (-${CurrencyUtils.formatCurrency(perPersonShare)})"
+                            },
                             onClick = {
                                 if (selectedRole == SplitRole.I_PAID) {
                                     val blankIndices = friendNames.mapIndexedNotNull { idx, name ->
@@ -772,14 +748,14 @@ fun SplitExpenseScreen(
                                     }
                                     if (blankIndices.isNotEmpty()) {
                                         errorMessage = "Please enter or select a name for Person ${blankIndices.first()}"
-                                        return@Button
+                                        return@KanriGlassButton
                                     }
                                     onSaveLenderSplit(friendNames.toList(), perPersonShare, eventDescription)
                                     onDismiss()
                                 } else {
                                     if (payerName.trim().isBlank()) {
                                         errorMessage = "Please enter or select who paid the bill"
-                                        return@Button
+                                        return@KanriGlassButton
                                     }
                                     onSaveBorrowerSplit(payerName.trim(), perPersonShare, eventDescription)
                                     onDismiss()
@@ -788,23 +764,9 @@ fun SplitExpenseScreen(
                             modifier = Modifier
                                 .fillMaxWidth()
                                 .height(52.dp),
-                            shape = RoundedCornerShape(14.dp),
-                            colors = ButtonDefaults.buttonColors(
-                                containerColor = MaterialTheme.colorScheme.primary,
-                                contentColor = MaterialTheme.colorScheme.onPrimary
-                            )
-                        ) {
-                            Text(
-                                text = if (selectedRole == SplitRole.I_PAID) {
-                                    "Save to Lend & Borrow (+${CurrencyUtils.formatCurrency(othersTotal)})"
-                                } else {
-                                    "Save to Lend & Borrow (-${CurrencyUtils.formatCurrency(perPersonShare)})"
-                                },
-                                fontFamily = GoogleSansFlex,
-                                fontWeight = FontWeight.Bold,
-                                fontSize = 14.sp
-                            )
-                        }
+                            shape = RoundedCornerShape(16.dp),
+                            level = GlassLevel.Strong
+                        )
 
                         Spacer(modifier = Modifier.height(12.dp))
 
@@ -866,16 +828,10 @@ private fun FriendSlotProfileCard(
     val isExistingProfile = matchedExisting != null
     val isNewProfile = !isExistingProfile && trimmed.isNotBlank() && !trimmed.startsWith("Friend ")
 
-    Card(
+    KanriGlassCard(
         modifier = modifier.fillMaxWidth(),
         shape = RoundedCornerShape(16.dp),
-        colors = CardDefaults.cardColors(
-            containerColor = MaterialTheme.colorScheme.surfaceContainerHigh.copy(alpha = 0.5f)
-        ),
-        border = androidx.compose.foundation.BorderStroke(
-            0.9.dp,
-            MaterialTheme.colorScheme.outlineVariant.copy(alpha = 0.6f)
-        )
+        level = GlassLevel.Flat
     ) {
         Column(modifier = Modifier.padding(14.dp)) {
             // Header: Slot number and Share
@@ -1083,16 +1039,10 @@ private fun PayerProfileCard(
     val isExistingProfile = matchedExisting != null
     val isNewProfile = !isExistingProfile && trimmed.isNotBlank()
 
-    Card(
+    KanriGlassCard(
         modifier = modifier.fillMaxWidth(),
         shape = RoundedCornerShape(16.dp),
-        colors = CardDefaults.cardColors(
-            containerColor = MaterialTheme.colorScheme.surfaceContainerHigh.copy(alpha = 0.5f)
-        ),
-        border = androidx.compose.foundation.BorderStroke(
-            0.9.dp,
-            MaterialTheme.colorScheme.outlineVariant.copy(alpha = 0.6f)
-        )
+        level = GlassLevel.Flat
     ) {
         Column(modifier = Modifier.padding(14.dp)) {
             Row(

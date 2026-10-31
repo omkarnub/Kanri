@@ -24,11 +24,13 @@ import androidx.compose.foundation.shape.CircleShape
 import androidx.compose.foundation.shape.RoundedCornerShape
 import androidx.compose.material.icons.Icons
 import androidx.compose.material.icons.automirrored.filled.KeyboardArrowRight
+import androidx.compose.material.icons.filled.Close
 import androidx.compose.material.icons.filled.PieChart
 import androidx.compose.material3.Card
 import androidx.compose.material3.CardDefaults
 import androidx.compose.material3.ExperimentalMaterial3Api
 import androidx.compose.material3.Icon
+import androidx.compose.material3.IconButton
 import androidx.compose.material3.MaterialTheme
 import androidx.compose.material3.ModalBottomSheet
 import androidx.compose.material3.Surface
@@ -53,9 +55,14 @@ import androidx.compose.ui.text.font.FontWeight
 import androidx.compose.ui.unit.dp
 import androidx.compose.ui.unit.sp
 import com.omkarnub.kanri.ui.common.CategoryIcon
+import com.omkarnub.kanri.ui.common.GlassLevel
+import com.omkarnub.kanri.ui.common.KanriGlassCard
+import com.omkarnub.kanri.ui.common.KanriGlassPill
+import com.omkarnub.kanri.ui.common.KanriModalBottomSheet
 import com.omkarnub.kanri.ui.common.LocalHazeState
 import com.omkarnub.kanri.ui.common.frostedGlass
 import com.omkarnub.kanri.ui.common.rememberKanriGlassTheme
+import com.omkarnub.kanri.ui.theme.LocalKanriGlass
 import com.omkarnub.kanri.ui.home.formatCurrency
 import java.util.Locale
 
@@ -106,11 +113,10 @@ fun CategoryDonutChart(
     val trackColor = MaterialTheme.colorScheme.surfaceVariant
     val top3Spends = remember(categorySpends) { categorySpends.take(3) }
 
-    Card(
+    KanriGlassCard(
         modifier = modifier.fillMaxWidth(),
-        shape = RoundedCornerShape(24.dp),
-        colors = CardDefaults.cardColors(containerColor = MaterialTheme.colorScheme.surface),
-        border = BorderStroke(1.dp, MaterialTheme.colorScheme.outlineVariant)
+        level = GlassLevel.Blur,
+        shape = RoundedCornerShape(24.dp)
     ) {
         Column(
             modifier = Modifier
@@ -270,17 +276,16 @@ fun CategoryDonutChart(
 
                 // See More button to open full distribution popup
                 Spacer(modifier = Modifier.height(14.dp))
-                Surface(
+                KanriGlassCard(
+                    level = GlassLevel.Flat,
+                    shape = RoundedCornerShape(14.dp),
                     onClick = { showDistributionSheet = true },
-                    shape = RoundedCornerShape(12.dp),
-                    color = MaterialTheme.colorScheme.surfaceVariant.copy(alpha = 0.5f),
-                    border = BorderStroke(0.5.dp, MaterialTheme.colorScheme.outlineVariant.copy(alpha = 0.6f)),
                     modifier = Modifier.fillMaxWidth()
                 ) {
                     Row(
                         modifier = Modifier
                             .fillMaxWidth()
-                            .padding(vertical = 10.dp, horizontal = 14.dp),
+                            .padding(vertical = 12.dp, horizontal = 16.dp),
                         horizontalArrangement = Arrangement.SpaceBetween,
                         verticalAlignment = Alignment.CenterVertically
                     ) {
@@ -448,27 +453,15 @@ fun CategoryDistributionSheet(
     onCategoryClick: ((CategorySpendItem) -> Unit)? = null
 ) {
     val sheetState = rememberModalBottomSheetState(skipPartiallyExpanded = true)
+    val tokens = LocalKanriGlass.current
 
-    ModalBottomSheet(
+    KanriModalBottomSheet(
         onDismissRequest = onDismiss,
-        sheetState = sheetState,
-        containerColor = MaterialTheme.colorScheme.surface,
-        contentColor = MaterialTheme.colorScheme.onSurface,
-        shape = RoundedCornerShape(topStart = 28.dp, topEnd = 28.dp),
-        dragHandle = {
-            Box(
-                modifier = Modifier
-                    .padding(vertical = 12.dp)
-                    .size(width = 36.dp, height = 4.dp)
-                    .clip(CircleShape)
-                    .background(MaterialTheme.colorScheme.onSurfaceVariant.copy(alpha = 0.3f))
-            )
-        }
+        sheetState = sheetState
     ) {
         Column(
             modifier = Modifier
                 .fillMaxWidth()
-                .navigationBarsPadding()
                 .padding(horizontal = 20.dp, vertical = 8.dp)
                 .padding(bottom = 24.dp)
         ) {
@@ -494,18 +487,30 @@ fun CategoryDistributionSheet(
                         )
                     )
                 }
+
+                IconButton(
+                    onClick = onDismiss,
+                    modifier = Modifier.size(36.dp)
+                ) {
+                    Icon(
+                        imageVector = Icons.Default.Close,
+                        contentDescription = "Close",
+                        tint = MaterialTheme.colorScheme.onSurfaceVariant
+                    )
+                }
             }
 
             Spacer(modifier = Modifier.height(16.dp))
 
             // Stacked distribution bar visualizer
             if (categorySpends.isNotEmpty()) {
+                val trackBg = if (tokens != null) tokens.track else MaterialTheme.colorScheme.surfaceVariant
                 Row(
                     modifier = Modifier
                         .fillMaxWidth()
                         .height(10.dp)
                         .clip(RoundedCornerShape(5.dp))
-                        .background(MaterialTheme.colorScheme.surfaceVariant)
+                        .background(trackBg)
                 ) {
                     categorySpends.forEachIndexed { index, item ->
                         val weight = (item.percentage / 100f).coerceAtLeast(0.005f)
@@ -525,31 +530,23 @@ fun CategoryDistributionSheet(
                 Spacer(modifier = Modifier.height(16.dp))
             }
 
-            // Full list of categories with proper distribution (percentages, amounts, progress bars)
+            // Full list of categories with proper glass distribution cards
             LazyColumn(
                 modifier = Modifier.fillMaxWidth(),
-                verticalArrangement = Arrangement.spacedBy(12.dp)
+                verticalArrangement = Arrangement.spacedBy(10.dp)
             ) {
                 itemsIndexed(categorySpends, key = { _, it -> it.categoryId ?: it.name }) { index, item ->
                     val grad = getCategoryGradient(index)
-                    Surface(
-                        shape = RoundedCornerShape(14.dp),
-                        color = MaterialTheme.colorScheme.surfaceVariant.copy(alpha = 0.35f),
-                        border = BorderStroke(0.5.dp, MaterialTheme.colorScheme.outlineVariant.copy(alpha = 0.5f)),
-                        modifier = Modifier
-                            .fillMaxWidth()
-                            .then(
-                                if (onCategoryClick != null) {
-                                    Modifier.clickable { onCategoryClick(item) }
-                                } else {
-                                    Modifier
-                                }
-                            )
+                    KanriGlassCard(
+                        level = GlassLevel.Flat,
+                        shape = RoundedCornerShape(16.dp),
+                        onClick = if (onCategoryClick != null) { { onCategoryClick(item) } } else null,
+                        modifier = Modifier.fillMaxWidth()
                     ) {
                         Column(
                             modifier = Modifier
                                 .fillMaxWidth()
-                                .padding(12.dp)
+                                .padding(14.dp)
                         ) {
                             Row(
                                 modifier = Modifier.fillMaxWidth(),
@@ -562,15 +559,15 @@ fun CategoryDistributionSheet(
                                 ) {
                                     Box(
                                         modifier = Modifier
-                                            .size(32.dp)
+                                            .size(34.dp)
                                             .clip(CircleShape)
-                                            .background(grad.first.copy(alpha = 0.14f)),
+                                            .background(grad.first.copy(alpha = 0.16f)),
                                         contentAlignment = Alignment.Center
                                     ) {
                                         CategoryIcon(
                                             categoryName = item.name,
                                             tint = grad.first,
-                                            modifier = Modifier.size(16.dp)
+                                            modifier = Modifier.size(17.dp)
                                         )
                                     }
                                     Spacer(modifier = Modifier.width(10.dp))
@@ -586,17 +583,16 @@ fun CategoryDistributionSheet(
                                 Row(
                                     verticalAlignment = Alignment.CenterVertically
                                 ) {
-                                    Surface(
-                                        shape = RoundedCornerShape(6.dp),
-                                        color = grad.first.copy(alpha = 0.14f),
+                                    KanriGlassPill(
+                                        level = GlassLevel.Flat,
                                         modifier = Modifier.padding(end = 8.dp)
                                     ) {
                                         Text(
                                             text = String.format(Locale.US, "%.1f%%", item.percentage),
                                             color = grad.first,
-                                            fontSize = 12.sp,
+                                            fontSize = 11.5.sp,
                                             fontWeight = FontWeight.Bold,
-                                            modifier = Modifier.padding(horizontal = 6.dp, vertical = 2.dp)
+                                            modifier = Modifier.padding(horizontal = 8.dp, vertical = 3.dp)
                                         )
                                     }
                                     Text(
@@ -618,14 +614,15 @@ fun CategoryDistributionSheet(
                                 }
                             }
 
-                            Spacer(modifier = Modifier.height(8.dp))
+                            Spacer(modifier = Modifier.height(10.dp))
 
+                            val innerTrackBg = if (tokens != null) tokens.track else MaterialTheme.colorScheme.surfaceVariant
                             Box(
                                 modifier = Modifier
                                     .fillMaxWidth()
                                     .height(6.dp)
                                     .clip(RoundedCornerShape(3.dp))
-                                    .background(MaterialTheme.colorScheme.surfaceVariant)
+                                    .background(innerTrackBg)
                             ) {
                                 Box(
                                     modifier = Modifier

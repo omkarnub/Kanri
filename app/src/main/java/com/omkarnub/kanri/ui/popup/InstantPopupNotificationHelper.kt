@@ -90,13 +90,13 @@ object InstantPopupNotificationHelper {
         }
 
         val details = if (isAtmTransfer) {
-            "₹${formatCurrency(amount)} withdrawn → added to Cash"
+            "${com.omkarnub.kanri.util.CurrencyUtils.formatCurrency(amount)} withdrawn → added to Cash"
         } else {
             "${brandTag.title} — Tap a category below:"
         }
 
         val builder = NotificationCompat.Builder(context, CHANNEL_ID)
-            .setSmallIcon(R.mipmap.ic_launcher)
+            .setSmallIcon(R.drawable.ic_notification)
             .setContentTitle(title)
             .setContentText(details)
             .setPriority(NotificationCompat.PRIORITY_HIGH)

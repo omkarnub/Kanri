@@ -1,4 +1,4 @@
-package com.omkarnub.kanri.ui.lending
+﻿package com.omkarnub.kanri.ui.lending
 
 import android.content.Intent
 import androidx.activity.compose.BackHandler
@@ -60,7 +60,12 @@ import androidx.compose.ui.platform.LocalContext
 import androidx.compose.ui.text.font.FontWeight
 import androidx.compose.ui.unit.dp
 import androidx.compose.ui.unit.sp
+import androidx.compose.ui.window.DialogProperties
 import com.omkarnub.kanri.data.db.LendingWithRepayments
+import com.omkarnub.kanri.ui.common.GlassLevel
+import com.omkarnub.kanri.ui.common.KanriGlassButton
+import com.omkarnub.kanri.ui.common.KanriGlassCard
+import com.omkarnub.kanri.ui.common.KanriGlassDialog
 import com.omkarnub.kanri.ui.common.LocalHazeState
 import com.omkarnub.kanri.ui.common.rememberKanriGlassTheme
 import com.omkarnub.kanri.util.CurrencyUtils
@@ -107,67 +112,26 @@ fun LendingTransactionDetailDialog(
     val totalRepaid = entryWithRepayments.totalRepaid
     val repayments = entryWithRepayments.repayments
 
-    Box(
-        modifier = Modifier.fillMaxSize(),
-        contentAlignment = Alignment.Center
+    KanriGlassDialog(
+        onDismissRequest = onDismiss,
+        properties = DialogProperties(usePlatformDefaultWidth = false)
     ) {
-        // Backdrop Scrim
-        Box(
+        KanriGlassCard(
             modifier = Modifier
-                .fillMaxSize()
-                .background(Color.Black.copy(alpha = 0.60f))
-                .clickable(
-                    interactionSource = remember { MutableInteractionSource() },
-                    indication = null,
-                    onClick = onDismiss
-                )
-        )
-
-        // Frosted Card Window
-        Box(
-            modifier = Modifier
-                .fillMaxSize()
-                .imePadding()
-                .padding(horizontal = 16.dp, vertical = 24.dp),
-            contentAlignment = Alignment.Center
+                .fillMaxWidth(0.92f)
+                .padding(vertical = 24.dp),
+            shape = RoundedCornerShape(28.dp),
+            level = GlassLevel.Strong,
+            hazeState = hazeState
         ) {
-            Surface(
+            Column(
                 modifier = Modifier
                     .fillMaxWidth()
-                    .shadow(
-                        elevation = glassTheme.shadowElevation + 8.dp,
-                        shape = RoundedCornerShape(28.dp),
-                        spotColor = glassTheme.shadowColor,
-                        ambientColor = glassTheme.shadowColor.copy(alpha = 0.6f)
-                    )
-                    .clip(RoundedCornerShape(28.dp))
-                    .then(
-                        if (hazeState != null) {
-                            Modifier.hazeChild(
-                                state = hazeState,
-                                style = glassTheme.popupHazeStyle
-                            ) {
-                                canDrawArea = { true }
-                            }
-                        } else {
-                            Modifier
-                        }
-                    )
-                    .border(
-                        glassTheme.glassBorder,
-                        shape = RoundedCornerShape(28.dp)
-                    ),
-                shape = RoundedCornerShape(28.dp),
-                color = if (hazeState != null) Color.Transparent else glassTheme.fallbackBackgroundColor
+                    .verticalScroll(rememberScrollState())
+                    .padding(horizontal = 22.dp, vertical = 20.dp),
+                horizontalAlignment = Alignment.CenterHorizontally,
+                verticalArrangement = Arrangement.spacedBy(16.dp)
             ) {
-                Column(
-                    modifier = Modifier
-                        .fillMaxWidth()
-                        .verticalScroll(rememberScrollState())
-                        .padding(horizontal = 22.dp, vertical = 20.dp),
-                    horizontalAlignment = Alignment.CenterHorizontally,
-                    verticalArrangement = Arrangement.spacedBy(16.dp)
-                ) {
                     // Top Bar: Title & Close Button
                     Row(
                         modifier = Modifier.fillMaxWidth(),
@@ -182,23 +146,30 @@ fun LendingTransactionDetailDialog(
                             ),
                             color = MaterialTheme.colorScheme.onSurface
                         )
-                        IconButton(
-                            onClick = onDismiss,
-                            modifier = Modifier.size(32.dp)
+                        KanriGlassCard(
+                            modifier = Modifier.size(32.dp),
+                            shape = CircleShape,
+                            level = GlassLevel.Flat,
+                            onClick = onDismiss
                         ) {
-                            Icon(
-                                imageVector = Icons.Default.Close,
-                                contentDescription = "Close",
-                                tint = MaterialTheme.colorScheme.onSurfaceVariant
-                            )
+                            Box(
+                                modifier = Modifier.fillMaxSize(),
+                                contentAlignment = Alignment.Center
+                            ) {
+                                Icon(
+                                    imageVector = Icons.Default.Close,
+                                    contentDescription = "Close",
+                                    tint = MaterialTheme.colorScheme.onSurfaceVariant,
+                                    modifier = Modifier.size(16.dp)
+                                )
+                            }
                         }
                     }
 
                     // Direction Banner & Avatar
-                    Surface(
+                    KanriGlassCard(
                         shape = RoundedCornerShape(20.dp),
-                        color = if (isLent) SageGreen.copy(alpha = 0.10f) else ExpenseRed.copy(alpha = 0.10f),
-                        border = BorderStroke(1.dp, if (isLent) SageGreen.copy(alpha = 0.25f) else ExpenseRed.copy(alpha = 0.25f)),
+                        level = GlassLevel.Flat,
                         modifier = Modifier.fillMaxWidth()
                     ) {
                         Row(
@@ -395,15 +366,17 @@ fun LendingTransactionDetailDialog(
                                 )
                             }
 
-                            Column(
-                                modifier = Modifier
-                                    .fillMaxWidth()
-                                    .clip(RoundedCornerShape(14.dp))
-                                    .background(MaterialTheme.colorScheme.surfaceVariant.copy(alpha = 0.35f))
-                                    .border(1.dp, MaterialTheme.colorScheme.outlineVariant, RoundedCornerShape(14.dp))
-                                    .padding(12.dp),
-                                verticalArrangement = Arrangement.spacedBy(8.dp)
+                            KanriGlassCard(
+                                modifier = Modifier.fillMaxWidth(),
+                                shape = RoundedCornerShape(14.dp),
+                                level = GlassLevel.Flat
                             ) {
+                                Column(
+                                    modifier = Modifier
+                                        .fillMaxWidth()
+                                        .padding(12.dp),
+                                    verticalArrangement = Arrangement.spacedBy(8.dp)
+                                ) {
                                 repayments.forEachIndexed { index, rep ->
                                     Row(
                                         modifier = Modifier.fillMaxWidth(),
@@ -478,50 +451,62 @@ fun LendingTransactionDetailDialog(
                     ) {
                         if (!entry.isSettled) {
                             // Record Repayment Primary CTA
-                            Button(
+                            KanriGlassButton(
+                                text = "Record Repayment",
                                 onClick = onRecordRepayment,
-                                shape = RoundedCornerShape(14.dp),
-                                colors = ButtonDefaults.buttonColors(
-                                    containerColor = SageGreen,
-                                    contentColor = Color.White
-                                ),
-                                modifier = Modifier.fillMaxWidth()
-                            ) {
-                                Icon(
-                                    imageVector = Icons.Default.Payments,
-                                    contentDescription = null,
-                                    modifier = Modifier.size(18.dp)
-                                )
-                                Spacer(modifier = Modifier.width(8.dp))
-                                Text(
-                                    text = "Record Repayment",
-                                    fontWeight = FontWeight.Bold,
-                                    fontSize = 14.sp
-                                )
-                            }
+                                level = GlassLevel.Strong,
+                                modifier = Modifier.fillMaxWidth(),
+                                icon = {
+                                    Icon(
+                                        imageVector = Icons.Default.Payments,
+                                        contentDescription = null,
+                                        modifier = Modifier.size(18.dp)
+                                    )
+                                }
+                            )
 
                             Row(
                                 modifier = Modifier.fillMaxWidth(),
                                 horizontalArrangement = Arrangement.spacedBy(8.dp)
                             ) {
                                 // Settle in Full CTA
-                                OutlinedButton(
-                                    onClick = onSettleInFull,
+                                KanriGlassCard(
+                                    modifier = Modifier
+                                        .weight(1f)
+                                        .height(44.dp),
                                     shape = RoundedCornerShape(14.dp),
-                                    modifier = Modifier.weight(1f)
+                                    level = GlassLevel.Flat,
+                                    onClick = onSettleInFull
                                 ) {
-                                    Icon(
-                                        imageVector = Icons.Default.Check,
-                                        contentDescription = null,
-                                        modifier = Modifier.size(16.dp)
-                                    )
-                                    Spacer(modifier = Modifier.width(6.dp))
-                                    Text("Settle in Full", fontSize = 12.5.sp)
+                                    Row(
+                                        modifier = Modifier.fillMaxSize(),
+                                        verticalAlignment = Alignment.CenterVertically,
+                                        horizontalArrangement = Arrangement.Center
+                                    ) {
+                                        Icon(
+                                            imageVector = Icons.Default.Check,
+                                            contentDescription = null,
+                                            modifier = Modifier.size(16.dp),
+                                            tint = MaterialTheme.colorScheme.onSurface
+                                        )
+                                        Spacer(modifier = Modifier.width(6.dp))
+                                        Text(
+                                            text = "Settle in Full",
+                                            fontSize = 12.5.sp,
+                                            fontWeight = FontWeight.Medium,
+                                            color = MaterialTheme.colorScheme.onSurface
+                                        )
+                                    }
                                 }
 
                                 // Send Reminder (if Lent) or Pay via UPI (if Borrowed)
                                 if (isLent) {
-                                    OutlinedButton(
+                                    KanriGlassCard(
+                                        modifier = Modifier
+                                            .weight(1f)
+                                            .height(44.dp),
+                                        shape = RoundedCornerShape(14.dp),
+                                        level = GlassLevel.Flat,
                                         onClick = {
                                             val msg = LendingReminderUtils.buildReminderMessage(
                                                 personName = entry.personName,
@@ -535,81 +520,104 @@ fun LendingTransactionDetailDialog(
                                                 type = "text/plain"
                                             }
                                             context.startActivity(Intent.createChooser(sendIntent, "Send Reminder"))
-                                        },
-                                        shape = RoundedCornerShape(14.dp),
-                                        modifier = Modifier.weight(1f)
+                                        }
                                     ) {
-                                        Icon(
-                                            imageVector = Icons.Default.Notifications,
-                                            contentDescription = null,
-                                            modifier = Modifier.size(16.dp)
-                                        )
-                                        Spacer(modifier = Modifier.width(6.dp))
-                                        Text("Remind", fontSize = 12.5.sp)
+                                        Row(
+                                            modifier = Modifier.fillMaxSize(),
+                                            verticalAlignment = Alignment.CenterVertically,
+                                            horizontalArrangement = Arrangement.Center
+                                        ) {
+                                            Icon(
+                                                imageVector = Icons.Default.Notifications,
+                                                contentDescription = null,
+                                                modifier = Modifier.size(16.dp),
+                                                tint = MaterialTheme.colorScheme.onSurface
+                                            )
+                                            Spacer(modifier = Modifier.width(6.dp))
+                                            Text(
+                                                text = "Remind",
+                                                fontSize = 12.5.sp,
+                                                fontWeight = FontWeight.Medium,
+                                                color = MaterialTheme.colorScheme.onSurface
+                                            )
+                                        }
                                     }
                                 } else {
-                                    OutlinedButton(
+                                    KanriGlassCard(
+                                        modifier = Modifier
+                                            .weight(1f)
+                                            .height(44.dp),
+                                        shape = RoundedCornerShape(14.dp),
+                                        level = GlassLevel.Flat,
                                         onClick = {
                                             LendingUpiHelper.launchUpiPayment(
                                                 context = context,
                                                 personName = entry.personName,
                                                 amount = outstanding
                                             )
-                                        },
-                                        shape = RoundedCornerShape(14.dp),
-                                        modifier = Modifier.weight(1f)
+                                        }
                                     ) {
-                                        Icon(
-                                            imageVector = Icons.Default.Payments,
-                                            contentDescription = null,
-                                            modifier = Modifier.size(16.dp)
-                                        )
-                                        Spacer(modifier = Modifier.width(6.dp))
-                                        Text("Pay via UPI", fontSize = 12.5.sp)
+                                        Row(
+                                            modifier = Modifier.fillMaxSize(),
+                                            verticalAlignment = Alignment.CenterVertically,
+                                            horizontalArrangement = Arrangement.Center
+                                        ) {
+                                            Icon(
+                                                imageVector = Icons.Default.Payments,
+                                                contentDescription = null,
+                                                modifier = Modifier.size(16.dp),
+                                                tint = MaterialTheme.colorScheme.onSurface
+                                            )
+                                            Spacer(modifier = Modifier.width(6.dp))
+                                            Text(
+                                                text = "Pay via UPI",
+                                                fontSize = 12.5.sp,
+                                                fontWeight = FontWeight.Medium,
+                                                color = MaterialTheme.colorScheme.onSurface
+                                            )
+                                        }
                                     }
                                 }
                             }
 
                             // Forgive Debt CTA (for uncollected lent money)
                             if (isLent) {
-                                OutlinedButton(
-                                    onClick = { showForgiveConfirmDialog = true },
+                                KanriGlassCard(
+                                    modifier = Modifier
+                                        .fillMaxWidth()
+                                        .height(42.dp),
                                     shape = RoundedCornerShape(14.dp),
-                                    colors = androidx.compose.material3.ButtonDefaults.outlinedButtonColors(
-                                        contentColor = MaterialTheme.colorScheme.onSurfaceVariant
-                                    ),
-                                    modifier = Modifier.fillMaxWidth()
+                                    level = GlassLevel.Flat,
+                                    onClick = { showForgiveConfirmDialog = true }
                                 ) {
-                                    Text(
-                                        text = "Forgive Debt / Write-Off",
-                                        fontSize = 12.5.sp,
-                                        fontWeight = FontWeight.Medium
-                                    )
+                                    Box(
+                                        modifier = Modifier.fillMaxSize(),
+                                        contentAlignment = Alignment.Center
+                                    ) {
+                                        Text(
+                                            text = "Forgive Debt / Write-Off",
+                                            fontSize = 12.5.sp,
+                                            fontWeight = FontWeight.Medium,
+                                            color = MaterialTheme.colorScheme.onSurfaceVariant
+                                        )
+                                    }
                                 }
                             }
                         } else {
                             // Reopen Button for settled entries
-                            Button(
+                            KanriGlassButton(
+                                text = "Reopen Transaction",
                                 onClick = onReopen,
-                                shape = RoundedCornerShape(14.dp),
-                                colors = ButtonDefaults.buttonColors(
-                                    containerColor = MaterialTheme.colorScheme.onSurface,
-                                    contentColor = MaterialTheme.colorScheme.surface
-                                ),
-                                modifier = Modifier.fillMaxWidth()
-                            ) {
-                                Icon(
-                                    imageVector = Icons.Default.Refresh,
-                                    contentDescription = null,
-                                    modifier = Modifier.size(18.dp)
-                                )
-                                Spacer(modifier = Modifier.width(8.dp))
-                                Text(
-                                    text = "Reopen Transaction",
-                                    fontWeight = FontWeight.Bold,
-                                    fontSize = 14.sp
-                                )
-                            }
+                                level = GlassLevel.Strong,
+                                modifier = Modifier.fillMaxWidth(),
+                                icon = {
+                                    Icon(
+                                        imageVector = Icons.Default.Refresh,
+                                        contentDescription = null,
+                                        modifier = Modifier.size(18.dp)
+                                    )
+                                }
+                            )
                         }
 
                         // Secondary actions: Edit & Delete
@@ -617,35 +625,62 @@ fun LendingTransactionDetailDialog(
                             modifier = Modifier.fillMaxWidth(),
                             horizontalArrangement = Arrangement.spacedBy(8.dp)
                         ) {
-                            OutlinedButton(
-                                onClick = onEdit,
+                            KanriGlassCard(
+                                modifier = Modifier
+                                    .weight(1f)
+                                    .height(42.dp),
                                 shape = RoundedCornerShape(14.dp),
-                                modifier = Modifier.weight(1f)
+                                level = GlassLevel.Flat,
+                                onClick = onEdit
                             ) {
-                                Icon(
-                                    imageVector = Icons.Default.Edit,
-                                    contentDescription = null,
-                                    modifier = Modifier.size(16.dp)
-                                )
-                                Spacer(modifier = Modifier.width(6.dp))
-                                Text("Edit Entry", fontSize = 12.5.sp)
+                                Row(
+                                    modifier = Modifier.fillMaxSize(),
+                                    verticalAlignment = Alignment.CenterVertically,
+                                    horizontalArrangement = Arrangement.Center
+                                ) {
+                                    Icon(
+                                        imageVector = Icons.Default.Edit,
+                                        contentDescription = null,
+                                        modifier = Modifier.size(16.dp),
+                                        tint = MaterialTheme.colorScheme.onSurface
+                                    )
+                                    Spacer(modifier = Modifier.width(6.dp))
+                                    Text(
+                                        text = "Edit Entry",
+                                        fontSize = 12.5.sp,
+                                        fontWeight = FontWeight.Medium,
+                                        color = MaterialTheme.colorScheme.onSurface
+                                    )
+                                }
                             }
 
-                            OutlinedButton(
-                                onClick = onDelete,
+                            KanriGlassCard(
+                                modifier = Modifier
+                                    .weight(1f)
+                                    .height(42.dp),
                                 shape = RoundedCornerShape(14.dp),
-                                colors = ButtonDefaults.outlinedButtonColors(contentColor = ExpenseRed),
-                                border = BorderStroke(1.dp, ExpenseRed.copy(alpha = 0.5f)),
-                                modifier = Modifier.weight(1f)
+                                level = GlassLevel.Flat,
+                                onClick = onDelete
                             ) {
-                                Icon(
-                                    imageVector = Icons.Default.Delete,
-                                    contentDescription = null,
-                                    tint = ExpenseRed,
-                                    modifier = Modifier.size(16.dp)
-                                )
-                                Spacer(modifier = Modifier.width(6.dp))
-                                Text("Delete", fontSize = 12.5.sp)
+                                Row(
+                                    modifier = Modifier.fillMaxSize(),
+                                    verticalAlignment = Alignment.CenterVertically,
+                                    horizontalArrangement = Arrangement.Center
+                                ) {
+                                    Icon(
+                                        imageVector = Icons.Default.Delete,
+                                        contentDescription = null,
+                                        tint = ExpenseRed,
+                                        modifier = Modifier.size(16.dp)
+                                    )
+                                    Spacer(modifier = Modifier.width(6.dp))
+                                    Text(
+                                        text = "Delete",
+                                        fontSize = 12.5.sp,
+                                        fontWeight = FontWeight.Medium,
+                                        color = ExpenseRed
+                                    )
+                                }
                             }
                         }
                     }
@@ -655,40 +690,53 @@ fun LendingTransactionDetailDialog(
     }
 
     if (showForgiveConfirmDialog) {
-        androidx.compose.material3.AlertDialog(
-            onDismissRequest = { showForgiveConfirmDialog = false },
-            title = {
-                Text(
-                    text = "Forgive Debt?",
-                    fontWeight = FontWeight.Bold
-                )
-            },
-            text = {
-                Text(
-                    text = "Forgive ${com.omkarnub.kanri.util.CurrencyUtils.formatCurrency(outstanding)} owed by ${entry.personName}? This will settle the balance without adding false income to your cash flow ledger."
-                )
-            },
-            confirmButton = {
-                Button(
-                    onClick = {
-                        showForgiveConfirmDialog = false
-                        onForgiveDebt()
-                        onDismiss()
-                    },
-                    colors = ButtonDefaults.buttonColors(
-                        containerColor = MaterialTheme.colorScheme.onSurface,
-                        contentColor = MaterialTheme.colorScheme.surface
-                    )
+        KanriGlassDialog(
+            onDismissRequest = { showForgiveConfirmDialog = false }
+        ) {
+            KanriGlassCard(
+                modifier = Modifier
+                    .fillMaxWidth(0.9f)
+                    .padding(16.dp),
+                shape = RoundedCornerShape(24.dp),
+                level = GlassLevel.Strong
+            ) {
+                Column(
+                    modifier = Modifier.padding(20.dp),
+                    verticalArrangement = Arrangement.spacedBy(14.dp)
                 ) {
-                    Text("Forgive Debt")
-                }
-            },
-            dismissButton = {
-                androidx.compose.material3.TextButton(onClick = { showForgiveConfirmDialog = false }) {
-                    Text("Cancel")
+                    Text(
+                        text = "Forgive Debt?",
+                        style = MaterialTheme.typography.titleMedium,
+                        fontWeight = FontWeight.Bold,
+                        color = MaterialTheme.colorScheme.onSurface
+                    )
+                    Text(
+                        text = "Forgive ${CurrencyUtils.formatCurrency(outstanding)} owed by ${entry.personName}? This will settle the balance without adding false income to your cash flow ledger.",
+                        style = MaterialTheme.typography.bodyMedium,
+                        color = MaterialTheme.colorScheme.onSurfaceVariant
+                    )
+                    Row(
+                        modifier = Modifier.fillMaxWidth(),
+                        horizontalArrangement = Arrangement.End,
+                        verticalAlignment = Alignment.CenterVertically
+                    ) {
+                        androidx.compose.material3.TextButton(onClick = { showForgiveConfirmDialog = false }) {
+                            Text("Cancel")
+                        }
+                        Spacer(modifier = Modifier.width(8.dp))
+                        KanriGlassButton(
+                            text = "Forgive Debt",
+                            onClick = {
+                                showForgiveConfirmDialog = false
+                                onForgiveDebt()
+                                onDismiss()
+                            },
+                            level = GlassLevel.Strong
+                        )
+                    }
                 }
             }
-        )
+        }
     }
 }
 

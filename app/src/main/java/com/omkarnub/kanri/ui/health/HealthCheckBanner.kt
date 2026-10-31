@@ -27,6 +27,11 @@ import androidx.compose.runtime.Composable
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.graphics.Color
+import androidx.compose.foundation.background
+import androidx.compose.foundation.layout.Box
+import com.omkarnub.kanri.ui.common.GlassLevel
+import com.omkarnub.kanri.ui.common.KanriGlassCard
+import com.omkarnub.kanri.ui.theme.LocalKanriGlass
 import androidx.compose.ui.text.font.FontWeight
 import androidx.compose.ui.unit.dp
 import androidx.compose.ui.unit.sp
@@ -46,14 +51,9 @@ fun HealthCheckBanner(
     val bgColor = if (isLight) (if (isCritical) Color(0xFFFBEBEB) else Color(0xFFFDF6E2)) else (if (isCritical) Color(0xFF261216) else Color(0xFF262012))
     val borderColor = if (isLight) (if (isCritical) Color(0xFFF5C6CB) else Color(0xFFE8DBB8)) else primaryColor.copy(alpha = 0.5f)
 
-    Card(
-        modifier = modifier
-            .fillMaxWidth()
-            .clickable(onClick = onOpenDiagnostics),
-        shape = RoundedCornerShape(14.dp),
-        colors = CardDefaults.cardColors(containerColor = bgColor),
-        border = BorderStroke(1.dp, borderColor)
-    ) {
+    val tokens = LocalKanriGlass.current
+
+    val bannerContent = @Composable {
         Row(
             modifier = Modifier
                 .fillMaxWidth()
@@ -79,7 +79,7 @@ fun HealthCheckBanner(
                 Text(
                     text = healthStatus.warningSummary,
                     fontSize = 11.sp,
-                    color = if (isLight) androidx.compose.material3.MaterialTheme.colorScheme.onSurfaceVariant else Color(0xFFDCDFE4),
+                    color = if (tokens != null) tokens.textSecondary else if (isLight) MaterialTheme.colorScheme.onSurfaceVariant else Color(0xFFDCDFE4),
                     lineHeight = 15.sp
                 )
             }
@@ -116,10 +116,39 @@ fun HealthCheckBanner(
                 Icon(
                     imageVector = Icons.Default.Close,
                     contentDescription = "Dismiss",
-                    tint = if (isLight) androidx.compose.material3.MaterialTheme.colorScheme.onSurfaceVariant else Color(0xFF8B949E),
+                    tint = if (tokens != null) tokens.textTertiary else if (isLight) MaterialTheme.colorScheme.onSurfaceVariant else Color(0xFF8B949E),
                     modifier = Modifier.size(14.dp)
                 )
             }
+        }
+    }
+
+    if (tokens != null) {
+        val bannerTint = if (isCritical) Color(0x28D62828) else Color(0x22FFD166)
+        KanriGlassCard(
+            modifier = modifier.fillMaxWidth(),
+            shape = RoundedCornerShape(14.dp),
+            level = GlassLevel.Blur,
+            onClick = onOpenDiagnostics
+        ) {
+            Box(
+                modifier = Modifier
+                    .fillMaxWidth()
+                    .background(bannerTint)
+            ) {
+                bannerContent()
+            }
+        }
+    } else {
+        Card(
+            modifier = modifier
+                .fillMaxWidth()
+                .clickable(onClick = onOpenDiagnostics),
+            shape = RoundedCornerShape(14.dp),
+            colors = CardDefaults.cardColors(containerColor = bgColor),
+            border = BorderStroke(1.dp, borderColor)
+        ) {
+            bannerContent()
         }
     }
 }

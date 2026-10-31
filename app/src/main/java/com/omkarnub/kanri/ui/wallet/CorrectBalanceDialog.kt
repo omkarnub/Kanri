@@ -39,7 +39,10 @@ import androidx.compose.ui.text.font.FontWeight
 import androidx.compose.ui.text.input.KeyboardType
 import androidx.compose.ui.unit.dp
 import androidx.compose.ui.unit.sp
-import androidx.compose.ui.window.Dialog
+import com.omkarnub.kanri.ui.common.GlassLevel
+import com.omkarnub.kanri.ui.common.KanriGlassCard
+import com.omkarnub.kanri.ui.common.KanriGlassDialog
+import com.omkarnub.kanri.ui.common.kanriPrimaryButtonColors
 import com.omkarnub.kanri.data.wallet.WalletBalanceCalculator
 import com.omkarnub.kanri.ui.home.formatCurrency
 import com.omkarnub.kanri.ui.theme.ExpenseRed
@@ -69,19 +72,17 @@ fun CorrectBalanceDialog(
     val parsedAmount = inputAmountStr.toDoubleOrNull()
     val difference = if (parsedAmount != null) WalletBalanceCalculator.roundTo2Decimals(parsedAmount - currentBalance) else null
 
-    Dialog(onDismissRequest = onDismiss) {
-        Surface(
-            shape = RoundedCornerShape(24.dp),
-            color = MaterialTheme.colorScheme.surface,
-            border = BorderStroke(1.dp, MaterialTheme.colorScheme.outlineVariant),
-            modifier = Modifier.fillMaxWidth()
+    KanriGlassDialog(
+        onDismissRequest = onDismiss,
+        modifier = Modifier.fillMaxWidth(0.92f),
+        shape = RoundedCornerShape(24.dp)
+    ) {
+        Column(
+            modifier = Modifier
+                .fillMaxWidth()
+                .padding(24.dp)
         ) {
-            Column(
-                modifier = Modifier
-                    .fillMaxWidth()
-                    .padding(24.dp)
-            ) {
-                // Header
+            // Header
                 Row(
                     modifier = Modifier.fillMaxWidth(),
                     horizontalArrangement = Arrangement.SpaceBetween,
@@ -231,15 +232,11 @@ fun CorrectBalanceDialog(
                         },
                         enabled = parsedAmount != null && !isSubmitting,
                         shape = RoundedCornerShape(12.dp),
-                        colors = ButtonDefaults.buttonColors(
-                            containerColor = MaterialTheme.colorScheme.onSurface,
-                            contentColor = MaterialTheme.colorScheme.surface
-                        )
+                        colors = kanriPrimaryButtonColors()
                     ) {
                         Text("Save Correction", fontWeight = FontWeight.SemiBold)
                     }
                 }
             }
         }
-    }
 }

@@ -66,9 +66,11 @@ import androidx.compose.ui.draw.shadow
 import androidx.compose.ui.focus.FocusRequester
 import androidx.compose.ui.focus.focusRequester
 import androidx.compose.ui.graphics.Color
+import androidx.compose.ui.text.TextRange
 import androidx.compose.ui.text.font.FontWeight
 import androidx.compose.ui.text.input.ImeAction
 import androidx.compose.ui.text.input.KeyboardType
+import androidx.compose.ui.text.input.TextFieldValue
 import androidx.compose.ui.text.style.TextAlign
 import androidx.compose.ui.text.style.TextOverflow
 import androidx.compose.ui.unit.dp
@@ -76,7 +78,10 @@ import androidx.compose.ui.unit.sp
 import com.omkarnub.kanri.data.db.CategoryEntity
 import com.omkarnub.kanri.ui.common.AnimatedNumberText
 import com.omkarnub.kanri.ui.common.CategoryIcon
+import com.omkarnub.kanri.ui.common.GlassLevel
+import com.omkarnub.kanri.ui.common.KanriGlassCard
 import com.omkarnub.kanri.ui.common.LocalHazeState
+import com.omkarnub.kanri.ui.common.kanriPrimaryButtonColors
 import com.omkarnub.kanri.ui.common.rememberKanriGlassTheme
 import com.omkarnub.kanri.util.CurrencyUtils
 import dev.chrisbanes.haze.HazeState
@@ -129,7 +134,11 @@ fun AddTransactionDialog(
 
     var amount by remember { mutableDoubleStateOf(100.0) }
     var isManualInput by remember { mutableStateOf(false) }
-    var manualText by remember { mutableStateOf(amount.toLong().toString()) }
+    val initialAmountStr = remember(amount) { amount.toLong().toString() }
+    var manualText by remember { mutableStateOf(initialAmountStr) }
+    var manualTextFieldValue by remember {
+        mutableStateOf(TextFieldValue(text = initialAmountStr, selection = TextRange(initialAmountStr.length)))
+    }
     var payeeText by remember { mutableStateOf("") }
     var selectedSource by remember { mutableStateOf("UPI") }
     var selectedWallet by remember {
@@ -181,7 +190,20 @@ fun AddTransactionDialog(
         Box(
             modifier = Modifier
                 .fillMaxSize()
-                .background(Color.Black.copy(alpha = 0.45f))
+                .then(
+                    if (hazeState != null) {
+                        Modifier.hazeChild(
+                            state = hazeState,
+                            style = dev.chrisbanes.haze.HazeStyle(
+                                backgroundColor = Color.Black.copy(alpha = 0.52f),
+                                tint = dev.chrisbanes.haze.HazeTint(Color.Black.copy(alpha = 0.52f)),
+                                blurRadius = 24.dp
+                            )
+                        )
+                    } else {
+                        Modifier.background(Color.Black.copy(alpha = 0.52f))
+                    }
+                )
                 .clickable(
                     interactionSource = remember { MutableInteractionSource() },
                     indication = null,
@@ -189,7 +211,7 @@ fun AddTransactionDialog(
                 )
         )
 
-        // 2. Centered Frosted Glass Card
+        // 2. Centered Plain Themed Popup Card with Strong Frosted Blur
         Box(
             modifier = Modifier
                 .fillMaxSize()
@@ -197,32 +219,11 @@ fun AddTransactionDialog(
                 .padding(horizontal = 18.dp),
             contentAlignment = Alignment.Center
         ) {
-            Surface(
-                modifier = Modifier
-                    .fillMaxWidth()
-                    .shadow(
-                        elevation = glassTheme.shadowElevation + 8.dp,
-                        shape = RoundedCornerShape(28.dp),
-                        spotColor = glassTheme.shadowColor,
-                        ambientColor = glassTheme.shadowColor.copy(alpha = 0.6f)
-                    )
-                    .clip(RoundedCornerShape(28.dp))
-                    .then(
-                        if (hazeState != null) {
-                            Modifier.hazeChild(
-                                state = hazeState,
-                                style = glassTheme.popupHazeStyle
-                            )
-                        } else {
-                            Modifier
-                        }
-                    )
-                    .border(
-                        glassTheme.glassBorder,
-                        shape = RoundedCornerShape(28.dp)
-                    ),
+            KanriGlassCard(
+                modifier = Modifier.fillMaxWidth(),
                 shape = RoundedCornerShape(28.dp),
-                color = if (hazeState != null) Color.Transparent else glassTheme.fallbackBackgroundColor
+                level = GlassLevel.Strong,
+                hazeState = hazeState
             ) {
                 Column(
                     modifier = Modifier
@@ -302,9 +303,11 @@ fun AddTransactionDialog(
                             ) {
                                 if (isManualInput) {
                                     OutlinedTextField(
-                                        value = manualText,
-                                        onValueChange = {
-                                            val filtered = it.filter { ch -> ch.isDigit() }
+                                        value = manualTextFieldValue,
+                                        onValueChange = { newValue ->
+                                            val filtered = newValue.text.filter { ch -> ch.isDigit() }
+                                            val newSelection = TextRange(filtered.length)
+                                            manualTextFieldValue = TextFieldValue(text = filtered, selection = newSelection)
                                             manualText = filtered
                                             val parsed = filtered.toDoubleOrNull()
                                             if (parsed != null) {
@@ -312,7 +315,7 @@ fun AddTransactionDialog(
                                                 errorMessage = null
                                             }
                                         },
-                                        prefix = { Text("₹ ", fontWeight = FontWeight.Bold, color = MaterialTheme.colorScheme.onSurface) },
+                                        prefix = { Text("${CurrencyUtils.getCurrencySymbol()} ", fontWeight = FontWeight.Bold, color = MaterialTheme.colorScheme.onSurface) },
                                         singleLine = true,
                                         keyboardOptions = KeyboardOptions(
                                             keyboardType = KeyboardType.Number,
@@ -342,7 +345,9 @@ fun AddTransactionDialog(
                                         modifier = Modifier
                                             .clip(RoundedCornerShape(12.dp))
                                             .clickable {
-                                                manualText = amount.toLong().toString()
+                                                val str = amount.toLong().toString()
+                                                manualTextFieldValue = TextFieldValue(text = str, selection = TextRange(str.length))
+                                                manualText = str
                                                 isManualInput = true
                                             }
                                             .padding(horizontal = 4.dp, vertical = 2.dp),
@@ -754,10 +759,10 @@ fun AddTransactionDialog(
                                             val isGoalSelected = selectedGoalId == g.id
                                             Surface(
                                                 shape = RoundedCornerShape(10.dp),
-                                                color = if (isGoalSelected) MaterialTheme.colorScheme.onSurface else MaterialTheme.colorScheme.surface,
+                                                color = if (isGoalSelected) MaterialTheme.colorScheme.inverseSurface else MaterialTheme.colorScheme.surfaceVariant.copy(alpha = 0.35f),
                                                 border = BorderStroke(
                                                     1.dp,
-                                                    if (isGoalSelected) MaterialTheme.colorScheme.onSurface else MaterialTheme.colorScheme.outlineVariant
+                                                    if (isGoalSelected) MaterialTheme.colorScheme.inverseSurface else MaterialTheme.colorScheme.outlineVariant
                                                 ),
                                                 modifier = Modifier
                                                     .clip(RoundedCornerShape(10.dp))
@@ -770,7 +775,7 @@ fun AddTransactionDialog(
                                                 ) {
                                                     GoalIcon(
                                                         iconKey = g.emoji,
-                                                        tint = if (isGoalSelected) MaterialTheme.colorScheme.surface else MaterialTheme.colorScheme.onSurface,
+                                                        tint = if (isGoalSelected) MaterialTheme.colorScheme.inverseOnSurface else MaterialTheme.colorScheme.onSurface,
                                                         modifier = Modifier.size(15.dp)
                                                     )
                                                     Text(
@@ -778,7 +783,7 @@ fun AddTransactionDialog(
                                                         fontFamily = GoogleSansFlex,
                                                         fontSize = 11.5.sp,
                                                         fontWeight = if (isGoalSelected) FontWeight.Bold else FontWeight.Medium,
-                                                        color = if (isGoalSelected) MaterialTheme.colorScheme.surface else MaterialTheme.colorScheme.onSurface
+                                                        color = if (isGoalSelected) MaterialTheme.colorScheme.inverseOnSurface else MaterialTheme.colorScheme.onSurface
                                                     )
                                                 }
                                             }
@@ -868,10 +873,7 @@ fun AddTransactionDialog(
                                 haptics.success()
                                 onConfirm(amount, initialType, resolvedPayee, selectedSource, selectedCategoryId, selectedWallet)
                             },
-                            colors = ButtonDefaults.buttonColors(
-                                containerColor = MaterialTheme.colorScheme.onSurface,
-                                contentColor = MaterialTheme.colorScheme.surface
-                            ),
+                            colors = kanriPrimaryButtonColors(),
                             shape = RoundedCornerShape(12.dp)
                         ) {
                             Text(

@@ -70,6 +70,16 @@ import java.text.SimpleDateFormat
 import java.util.Date
 import java.util.Locale
 
+import androidx.compose.animation.animateColorAsState
+import androidx.compose.animation.core.animateFloatAsState
+import androidx.compose.animation.core.spring
+import androidx.compose.animation.core.tween
+import com.omkarnub.kanri.ui.theme.KanriMotion
+import com.omkarnub.kanri.ui.theme.kanriPressFeedback
+import com.omkarnub.kanri.ui.common.GlassLevel
+import com.omkarnub.kanri.ui.common.KanriGlassCard
+import com.omkarnub.kanri.ui.theme.LocalKanriGlass
+
 enum class GoalSortOption(val label: String) {
     RECENT("Recently Added"),
     PROGRESS_DESC("Highest Progress"),
@@ -81,6 +91,7 @@ enum class GoalSortOption(val label: String) {
 fun GoalsScreen(
     modifier: Modifier = Modifier
 ) {
+    val tokens = LocalKanriGlass.current
     val context = LocalContext.current
     val haptics = rememberKanriHaptics()
     val scope = rememberCoroutineScope()
@@ -135,7 +146,7 @@ fun GoalsScreen(
 
     Surface(
         modifier = modifier.fillMaxSize(),
-        color = MaterialTheme.colorScheme.background
+        color = if (tokens != null) Color.Transparent else MaterialTheme.colorScheme.background
     ) {
         Column(
             modifier = Modifier
@@ -209,13 +220,10 @@ fun GoalsScreen(
             Spacer(modifier = Modifier.height(16.dp))
 
             // Overall Summary Card
-            Card(
+            KanriGlassCard(
                 modifier = Modifier.fillMaxWidth(),
-                shape = RoundedCornerShape(20.dp),
-                colors = CardDefaults.cardColors(
-                    containerColor = MaterialTheme.colorScheme.surfaceVariant.copy(alpha = 0.35f)
-                ),
-                border = BorderStroke(1.dp, MaterialTheme.colorScheme.outlineVariant)
+                level = GlassLevel.Blur,
+                shape = RoundedCornerShape(20.dp)
             ) {
                 Column(modifier = Modifier.padding(18.dp)) {
                     Row(
@@ -267,8 +275,17 @@ fun GoalsScreen(
 
                     Spacer(modifier = Modifier.height(14.dp))
 
+                    val animatedOverallProgress by animateFloatAsState(
+                        targetValue = (stats.overallPercentage / 100f).coerceIn(0f, 1f),
+                        animationSpec = spring(
+                            dampingRatio = 0.82f,
+                            stiffness = androidx.compose.animation.core.Spring.StiffnessMediumLow
+                        ),
+                        label = "overallProgress"
+                    )
+
                     LinearProgressIndicator(
-                        progress = { (stats.overallPercentage / 100f).coerceIn(0f, 1f) },
+                        progress = { animatedOverallProgress },
                         modifier = Modifier
                             .fillMaxWidth()
                             .height(6.dp)
@@ -330,20 +347,29 @@ fun GoalsScreen(
                             "All (${goals.size})" to 2
                         ).forEach { (label, index) ->
                             val isSelected = selectedTabIndex == index
+                            val tabBgColor by animateColorAsState(
+                                targetValue = if (isSelected) MaterialTheme.colorScheme.inverseSurface else Color.Transparent,
+                                animationSpec = tween(durationMillis = 180, easing = KanriMotion.EaseOut),
+                                label = "tabBgColor"
+                            )
+                            val tabTextColor by animateColorAsState(
+                                targetValue = if (isSelected) MaterialTheme.colorScheme.inverseOnSurface else MaterialTheme.colorScheme.onSurfaceVariant,
+                                animationSpec = tween(durationMillis = 180, easing = KanriMotion.EaseOut),
+                                label = "tabTextColor"
+                            )
                             Box(
                                 modifier = Modifier
                                     .weight(1f)
                                     .clip(RoundedCornerShape(10.dp))
-                                    .background(
-                                        if (isSelected) MaterialTheme.colorScheme.surface
-                                        else Color.Transparent
-                                    )
-                                    .clickable {
-                                        if (selectedTabIndex != index) {
-                                            haptics.tick()
-                                            selectedTabIndex = index
+                                    .background(tabBgColor)
+                                    .kanriPressFeedback(
+                                        pressedScale = 0.95f,
+                                        onClick = {
+                                            if (selectedTabIndex != index) {
+                                                selectedTabIndex = index
+                                            }
                                         }
-                                    }
+                                    )
                                     .padding(vertical = 7.dp),
                                 contentAlignment = Alignment.Center
                             ) {
@@ -352,7 +378,7 @@ fun GoalsScreen(
                                     fontFamily = GoogleSansFlex,
                                     fontSize = 11.5.sp,
                                     fontWeight = if (isSelected) FontWeight.Bold else FontWeight.Medium,
-                                    color = if (isSelected) MaterialTheme.colorScheme.onSurface else MaterialTheme.colorScheme.onSurfaceVariant
+                                    color = tabTextColor
                                 )
                             }
                         }
@@ -367,10 +393,10 @@ fun GoalsScreen(
                         border = BorderStroke(1.dp, MaterialTheme.colorScheme.outlineVariant),
                         modifier = Modifier
                             .clip(RoundedCornerShape(14.dp))
-                            .clickable {
-                                haptics.tick()
-                                isSortMenuOpen = true
-                            }
+                            .kanriPressFeedback(
+                                pressedScale = 0.95f,
+                                onClick = { isSortMenuOpen = true }
+                            )
                     ) {
                         Box(
                             modifier = Modifier.padding(horizontal = 10.dp, vertical = 7.dp),
@@ -465,8 +491,8 @@ fun GoalsScreen(
                                     .clip(RoundedCornerShape(14.dp))
                                     .clickable { showAddGoalDialog = true },
                                 shape = RoundedCornerShape(14.dp),
-                                color = MaterialTheme.colorScheme.onSurface,
-                                contentColor = MaterialTheme.colorScheme.surface
+                                color = MaterialTheme.colorScheme.inverseSurface,
+                                contentColor = MaterialTheme.colorScheme.inverseOnSurface
                             ) {
                                 Text(
                                     text = "+ Create Goal",
@@ -475,7 +501,7 @@ fun GoalsScreen(
                                     style = MaterialTheme.typography.labelMedium.copy(
                                         fontWeight = FontWeight.Bold
                                     ),
-                                    color = MaterialTheme.colorScheme.surface
+                                    color = MaterialTheme.colorScheme.inverseOnSurface
                                 )
                             }
                         }
@@ -496,23 +522,14 @@ fun GoalsScreen(
                         val daysRemaining = remember(goal.targetDate) { SavingsGoalCalculator.calculateDaysRemaining(goal.targetDate) }
                         val monthlyPace = remember(goal) { SavingsGoalCalculator.calculateRequiredMonthlySavings(goal.currentAmount, goal.targetAmount, goal.targetDate) }
 
-                        Card(
-                            modifier = Modifier
-                                .fillMaxWidth()
-                                .clip(RoundedCornerShape(18.dp))
-                                .clickable {
-                                    haptics.click()
-                                    detailGoal = goal
-                                },
+                        KanriGlassCard(
+                            modifier = Modifier.fillMaxWidth(),
+                            level = GlassLevel.Blur,
                             shape = RoundedCornerShape(18.dp),
-                            colors = CardDefaults.cardColors(
-                                containerColor = MaterialTheme.colorScheme.surface
-                            ),
-                            border = BorderStroke(
-                                1.dp,
-                                if (isFinished) MaterialTheme.colorScheme.outline.copy(alpha = 0.45f) else MaterialTheme.colorScheme.outlineVariant
-                            ),
-                            elevation = CardDefaults.cardElevation(defaultElevation = 1.dp)
+                            onClick = {
+                                haptics.click()
+                                detailGoal = goal
+                            }
                         ) {
                             Row(
                                 modifier = Modifier

@@ -13,6 +13,10 @@ import androidx.compose.foundation.Image
 import androidx.compose.foundation.background
 import androidx.compose.foundation.border
 import androidx.compose.foundation.clickable
+import com.omkarnub.kanri.ui.common.KanriGlassAlertDialog
+import com.omkarnub.kanri.ui.common.KanriGlassDatePickerDialog
+import com.omkarnub.kanri.ui.common.kanriPrimaryButtonColors
+import com.omkarnub.kanri.ui.theme.LocalKanriGlass
 import androidx.compose.foundation.layout.Arrangement
 import androidx.compose.foundation.layout.Box
 import androidx.compose.foundation.layout.Column
@@ -43,13 +47,13 @@ import androidx.compose.material.icons.filled.EventRepeat
 import androidx.compose.material.icons.filled.Person
 import androidx.compose.material.icons.filled.PictureAsPdf
 import androidx.compose.material.icons.filled.Settings
-import androidx.compose.material3.AlertDialog
 import androidx.compose.material3.Button
 import androidx.compose.material3.ButtonDefaults
+import com.omkarnub.kanri.ui.common.GlassLevel
+import com.omkarnub.kanri.ui.common.KanriGlassCard
 import androidx.compose.material3.Card
 import androidx.compose.material3.CardDefaults
 import androidx.compose.material3.DatePicker
-import androidx.compose.material3.DatePickerDialog
 import androidx.compose.material3.ExperimentalMaterial3Api
 import androidx.compose.material3.HorizontalDivider
 import androidx.compose.material3.Icon
@@ -144,16 +148,26 @@ fun ProfileScreen(
         }
     }
 
+    var pendingExportPassphrase by remember { mutableStateOf<String?>(null) }
+    var showExportDialog by remember { mutableStateOf(false) }
+    var exportPassphraseInput by remember { mutableStateOf("") }
+
+    var isPendingRestoreEncrypted by remember { mutableStateOf(false) }
+    var restorePassphraseInput by remember { mutableStateOf("") }
+    var restoreReplaceExisting by remember { mutableStateOf(false) }
+
     // Direct Export Launcher
     val exportDataLauncher = rememberLauncherForActivityResult(
         contract = ActivityResultContracts.CreateDocument("application/json")
     ) { uri ->
         if (uri != null) {
             scope.launch {
-                val result = backupRepository.exportBackupToUri(uri)
+                val pass = pendingExportPassphrase
+                val result = backupRepository.exportBackupToUri(uri, pass)
                 result.onSuccess {
                     haptics.success()
-                    Toast.makeText(context, "Data exported successfully", Toast.LENGTH_SHORT).show()
+                    val msg = if (pass != null) "Encrypted backup exported successfully" else "Data exported successfully"
+                    Toast.makeText(context, msg, Toast.LENGTH_SHORT).show()
                 }.onFailure {
                     haptics.warning()
                     Toast.makeText(context, "Export failed: ${it.localizedMessage}", Toast.LENGTH_SHORT).show()
@@ -168,13 +182,71 @@ fun ProfileScreen(
     ) { uri ->
         if (uri != null) {
             pendingRestoreUri = uri
+            scope.launch {
+                isPendingRestoreEncrypted = backupRepository.isBackupFileEncrypted(uri)
+                restorePassphraseInput = ""
+                restoreReplaceExisting = false
+            }
         }
+    }
+
+    // Export Passphrase Dialog
+    if (showExportDialog) {
+        KanriGlassAlertDialog(
+            onDismissRequest = { showExportDialog = false },
+            icon = {
+                Icon(
+                    imageVector = Icons.Default.CloudUpload,
+                    contentDescription = null,
+                    tint = MaterialTheme.colorScheme.primary,
+                    modifier = Modifier.size(32.dp)
+                )
+            },
+            title = {
+                Text("Export Backup", fontWeight = FontWeight.Bold)
+            },
+            text = {
+                Column {
+                    Text(
+                        "Set a passphrase to encrypt your backup file with AES-GCM (recommended). Leave blank to export as plain JSON.",
+                        fontSize = 13.sp,
+                        color = MaterialTheme.colorScheme.onSurfaceVariant
+                    )
+                    Spacer(modifier = Modifier.height(12.dp))
+                    OutlinedTextField(
+                        value = exportPassphraseInput,
+                        onValueChange = { exportPassphraseInput = it },
+                        label = { Text("Backup Passphrase (optional)") },
+                        singleLine = true,
+                        modifier = Modifier.fillMaxWidth()
+                    )
+                }
+            },
+            confirmButton = {
+                Button(
+                    onClick = {
+                        showExportDialog = false
+                        pendingExportPassphrase = exportPassphraseInput.trim().ifEmpty { null }
+                        val timestamp = SimpleDateFormat("yyyyMMdd_HHmm", Locale.getDefault()).format(Date())
+                        exportDataLauncher.launch("kanri_backup_$timestamp.json")
+                    },
+                    colors = kanriPrimaryButtonColors()
+                ) {
+                    Text("Export")
+                }
+            },
+            dismissButton = {
+                TextButton(onClick = { showExportDialog = false }) {
+                    Text("Cancel")
+                }
+            }
+        )
     }
 
     // Restore confirmation dialog
     if (pendingRestoreUri != null) {
         val targetUri = pendingRestoreUri!!
-        AlertDialog(
+        KanriGlassAlertDialog(
             onDismissRequest = { pendingRestoreUri = null },
             icon = {
                 Icon(
@@ -185,21 +257,60 @@ fun ProfileScreen(
                 )
             },
             title = {
-                Text("Restore Data Backup?", fontWeight = FontWeight.Bold)
+                Text(
+                    if (isPendingRestoreEncrypted) "Restore Encrypted Backup" else "Restore Data Backup?",
+                    fontWeight = FontWeight.Bold
+                )
             },
             text = {
-                Text(
-                    "Restoring will import all transactions and categories from this backup file. Existing records will be merged or updated safely.",
-                    fontSize = 13.sp,
-                    color = MaterialTheme.colorScheme.onSurfaceVariant
-                )
+                Column {
+                    Text(
+                        if (isPendingRestoreEncrypted)
+                            "This backup is protected with AES-GCM encryption. Enter the passphrase to decrypt and restore."
+                        else
+                            "Restoring will import all transactions and categories. Existing local records will be merged safely without deletion.",
+                        fontSize = 13.sp,
+                        color = MaterialTheme.colorScheme.onSurfaceVariant
+                    )
+                    if (isPendingRestoreEncrypted) {
+                        Spacer(modifier = Modifier.height(12.dp))
+                        OutlinedTextField(
+                            value = restorePassphraseInput,
+                            onValueChange = { restorePassphraseInput = it },
+                            label = { Text("Enter Passphrase") },
+                            singleLine = true,
+                            modifier = Modifier.fillMaxWidth()
+                        )
+                    }
+                    Spacer(modifier = Modifier.height(12.dp))
+                    Row(
+                        verticalAlignment = androidx.compose.ui.Alignment.CenterVertically,
+                        modifier = Modifier.clickable { restoreReplaceExisting = !restoreReplaceExisting }
+                    ) {
+                        androidx.compose.material3.Checkbox(
+                            checked = restoreReplaceExisting,
+                            onCheckedChange = { restoreReplaceExisting = it }
+                        )
+                        Spacer(modifier = Modifier.width(6.dp))
+                        Text(
+                            "Replace all existing local data",
+                            fontSize = 12.sp,
+                            color = if (restoreReplaceExisting) MaterialTheme.colorScheme.error else MaterialTheme.colorScheme.onSurfaceVariant
+                        )
+                    }
+                }
             },
             confirmButton = {
                 Button(
                     onClick = {
                         pendingRestoreUri = null
                         scope.launch {
-                            val result = backupRepository.restoreBackupFromUri(targetUri)
+                            val pass = restorePassphraseInput.trim().ifEmpty { null }
+                            val result = backupRepository.restoreBackupFromUri(
+                                uri = targetUri,
+                                passphrase = pass,
+                                clearExisting = restoreReplaceExisting
+                            )
                             result.onSuccess { stats ->
                                 haptics.success()
                                 Toast.makeText(
@@ -212,7 +323,8 @@ fun ProfileScreen(
                                 Toast.makeText(context, "Restore failed: ${err.localizedMessage}", Toast.LENGTH_SHORT).show()
                             }
                         }
-                    }
+                    },
+                    colors = kanriPrimaryButtonColors()
                 ) {
                     Text("Restore")
                 }
@@ -236,7 +348,7 @@ fun ProfileScreen(
 
     // Photo Options Dialog (Change / Remove)
     if (showPhotoOptionsDialog) {
-        AlertDialog(
+        KanriGlassAlertDialog(
             onDismissRequest = { showPhotoOptionsDialog = false },
             title = { Text("Profile Picture", fontWeight = FontWeight.Bold) },
             text = {
@@ -253,7 +365,8 @@ fun ProfileScreen(
                     onClick = {
                         showPhotoOptionsDialog = false
                         photoPickerLauncher.launch("image/*")
-                    }
+                    },
+                    colors = kanriPrimaryButtonColors()
                 ) {
                     Text(if (profilePhotoPath != null) "Choose New Photo" else "Select Photo")
                 }
@@ -295,8 +408,11 @@ fun ProfileScreen(
         )
     }
 
+    val tokens = LocalKanriGlass.current
+
     Scaffold(
         modifier = modifier.fillMaxSize(),
+        containerColor = if (tokens != null) Color.Transparent else MaterialTheme.colorScheme.background,
         topBar = {
             TopAppBar(
                 title = {
@@ -344,7 +460,7 @@ fun ProfileScreen(
                     }
                 },
                 colors = TopAppBarDefaults.topAppBarColors(
-                    containerColor = MaterialTheme.colorScheme.surface,
+                    containerColor = if (tokens != null) Color.Transparent else MaterialTheme.colorScheme.surface,
                     titleContentColor = MaterialTheme.colorScheme.onSurface,
                     navigationIconContentColor = MaterialTheme.colorScheme.onSurface,
                     actionIconContentColor = MaterialTheme.colorScheme.onSurface
@@ -363,11 +479,10 @@ fun ProfileScreen(
             // =========================================================================
             // 1. USER DETAILS HERO CARD (Avatar, Name, DOB)
             // =========================================================================
-            Card(
+            KanriGlassCard(
                 modifier = Modifier.fillMaxWidth(),
                 shape = RoundedCornerShape(20.dp),
-                colors = CardDefaults.cardColors(containerColor = MaterialTheme.colorScheme.surface),
-                border = BorderStroke(1.dp, MaterialTheme.colorScheme.outlineVariant)
+                level = GlassLevel.Blur
             ) {
                 Column(
                     modifier = Modifier
@@ -519,11 +634,10 @@ fun ProfileScreen(
             // 2. STATEMENTS & REPORTS SECTION
             // =========================================================================
             ProfileSectionHeader(title = "STATEMENTS & REPORTS")
-            Card(
+            KanriGlassCard(
                 modifier = Modifier.fillMaxWidth(),
                 shape = RoundedCornerShape(18.dp),
-                colors = CardDefaults.cardColors(containerColor = MaterialTheme.colorScheme.surface),
-                border = BorderStroke(1.dp, MaterialTheme.colorScheme.outlineVariant)
+                level = GlassLevel.Blur
             ) {
                 Column(modifier = Modifier.padding(16.dp)) {
                     // Generate Statement
@@ -612,11 +726,10 @@ fun ProfileScreen(
             // 3. DATA MANAGEMENT (Export & Import)
             // =========================================================================
             ProfileSectionHeader(title = "DATA MANAGEMENT")
-            Card(
+            KanriGlassCard(
                 modifier = Modifier.fillMaxWidth(),
                 shape = RoundedCornerShape(18.dp),
-                colors = CardDefaults.cardColors(containerColor = MaterialTheme.colorScheme.surface),
-                border = BorderStroke(1.dp, MaterialTheme.colorScheme.outlineVariant)
+                level = GlassLevel.Blur
             ) {
                 Column(modifier = Modifier.padding(16.dp)) {
                     // Export Data
@@ -626,8 +739,8 @@ fun ProfileScreen(
                         subtitle = "Create encrypted offline JSON backup file of all records",
                         onClick = {
                             haptics.click()
-                            val timestamp = SimpleDateFormat("yyyyMMdd_HHmm", Locale.getDefault()).format(Date())
-                            exportDataLauncher.launch("kanri_backup_$timestamp.json")
+                            exportPassphraseInput = ""
+                            showExportDialog = true
                         }
                     )
 
@@ -737,7 +850,7 @@ private fun EditProfileDialog(
 
     if (showDatePicker) {
         val datePickerState = rememberDatePickerState()
-        DatePickerDialog(
+        KanriGlassDatePickerDialog(
             onDismissRequest = { showDatePicker = false },
             confirmButton = {
                 TextButton(
@@ -750,7 +863,7 @@ private fun EditProfileDialog(
                         showDatePicker = false
                     }
                 ) {
-                    Text("OK")
+                    Text("OK", fontWeight = FontWeight.Bold)
                 }
             },
             dismissButton = {
@@ -763,7 +876,7 @@ private fun EditProfileDialog(
         }
     }
 
-    AlertDialog(
+    KanriGlassAlertDialog(
         onDismissRequest = onDismiss,
         title = {
             Text("Edit Profile Details", fontWeight = FontWeight.Bold)
@@ -809,7 +922,8 @@ private fun EditProfileDialog(
                 onClick = {
                     onSave(name.trim(), dob.trim())
                 },
-                enabled = name.trim().isNotBlank()
+                enabled = name.trim().isNotBlank(),
+                colors = kanriPrimaryButtonColors()
             ) {
                 Text("Save")
             }

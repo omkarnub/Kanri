@@ -1,5 +1,6 @@
 package com.omkarnub.kanri.ui.navigation
 
+import androidx.compose.animation.AnimatedContent
 import androidx.compose.animation.animateColorAsState
 import androidx.compose.animation.core.Animatable
 import androidx.compose.animation.core.FastOutSlowInEasing
@@ -7,7 +8,13 @@ import androidx.compose.animation.core.animateFloatAsState
 import androidx.compose.animation.core.tween
 import androidx.compose.animation.core.Spring
 import androidx.compose.animation.core.spring
+import androidx.compose.animation.fadeIn
+import androidx.compose.animation.fadeOut
+import androidx.compose.animation.slideInVertically
+import androidx.compose.animation.slideOutVertically
+import androidx.compose.animation.togetherWith
 import androidx.compose.foundation.BorderStroke
+import androidx.compose.foundation.background
 import androidx.compose.foundation.border
 import androidx.compose.foundation.clickable
 import androidx.compose.foundation.interaction.MutableInteractionSource
@@ -51,8 +58,12 @@ import androidx.compose.ui.unit.sp
 import com.omkarnub.kanri.ui.theme.LightBackground
 import com.omkarnub.kanri.ui.theme.ThemeMode
 import com.omkarnub.kanri.ui.theme.ThemePreferences
+import com.omkarnub.kanri.ui.common.GlassLevel
 import com.omkarnub.kanri.ui.common.KanriGlassTheme
+import com.omkarnub.kanri.ui.common.kanriGlass
 import com.omkarnub.kanri.ui.common.rememberKanriGlassTheme
+import com.omkarnub.kanri.ui.theme.LocalKanriGlass
+import com.omkarnub.kanri.ui.theme.KanriMotion
 import dev.chrisbanes.haze.HazeState
 import dev.chrisbanes.haze.hazeChild
 
@@ -74,6 +85,7 @@ fun KanriFloatingDock(
     themeMode: ThemeMode? = null
 ) {
     val dockTheme = rememberKanriGlassTheme(themeMode)
+    val tokens = LocalKanriGlass.current
 
     // Launch entrance animation: fluid slide-up, scale, and fade when the app opens
     val dockEntrance = remember { Animatable(0f) }
@@ -83,28 +95,43 @@ fun KanriFloatingDock(
         launch {
             dockEntrance.animateTo(
                 targetValue = 1f,
-                animationSpec = tween(durationMillis = 550, delayMillis = 180, easing = FastOutSlowInEasing)
+                animationSpec = spring(dampingRatio = 0.80f, stiffness = Spring.StiffnessMediumLow)
             )
         }
         launch {
             addButtonEntrance.animateTo(
                 targetValue = 1f,
-                animationSpec = tween(durationMillis = 550, delayMillis = 260, easing = FastOutSlowInEasing)
+                animationSpec = spring(dampingRatio = 0.76f, stiffness = Spring.StiffnessMediumLow)
             )
         }
     }
 
     Row(
         modifier = modifier
-            .padding(horizontal = 14.dp)
+            .padding(horizontal = 10.dp)
             .padding(bottom = 8.dp)
             .navigationBarsPadding(),
         verticalAlignment = Alignment.CenterVertically,
         horizontalArrangement = Arrangement.Center
     ) {
         // Main Navigation Glass Pill (Capsule enclosing the 4 tabs)
-        Surface(
-            modifier = Modifier
+        val pillModifier = if (tokens != null) {
+            Modifier
+                .weight(1f)
+                .height(64.dp)
+                .graphicsLayer {
+                    translationY = (1f - dockEntrance.value) * 60.dp.toPx()
+                    alpha = dockEntrance.value
+                    scaleX = 0.94f + 0.06f * dockEntrance.value
+                    scaleY = 0.94f + 0.06f * dockEntrance.value
+                }
+                .kanriGlass(
+                    level = GlassLevel.Blur,
+                    shape = RoundedCornerShape(32.dp),
+                    hazeState = hazeState
+                )
+        } else {
+            Modifier
                 .weight(1f)
                 .height(64.dp)
                 .graphicsLayer {
@@ -133,14 +160,16 @@ fun KanriFloatingDock(
                 .border(
                     dockTheme.glassBorder,
                     shape = RoundedCornerShape(32.dp)
-                ),
-            shape = RoundedCornerShape(32.dp),
-            color = if (hazeState != null) Color.Transparent else dockTheme.fallbackBackgroundColor
+                )
+        }
+
+        Box(
+            modifier = pillModifier
         ) {
             Row(
                 modifier = Modifier
-                    .fillMaxHeight()
-                    .padding(horizontal = 6.dp, vertical = 5.dp),
+                    .fillMaxSize()
+                    .padding(horizontal = 4.dp, vertical = 4.dp),
                 verticalAlignment = Alignment.CenterVertically,
                 horizontalArrangement = Arrangement.SpaceEvenly
             ) {
@@ -156,7 +185,7 @@ fun KanriFloatingDock(
             }
         }
 
-        Spacer(modifier = Modifier.width(10.dp))
+        Spacer(modifier = Modifier.width(8.dp))
 
         // Circular Action Glass Button (+)
         DockAddButton(
@@ -184,27 +213,44 @@ private fun DockTabItem(
     dockTheme: KanriGlassTheme,
     modifier: Modifier = Modifier
 ) {
+    val tokens = LocalKanriGlass.current
     val haptics = rememberKanriHaptics()
     val interactionSource = remember { MutableInteractionSource() }
     val isPressed by interactionSource.collectIsPressedAsState()
 
     val scale by animateFloatAsState(
-        targetValue = if (isPressed) 0.93f else 1.0f,
-        animationSpec = tween(durationMillis = 150, easing = FastOutSlowInEasing),
+        targetValue = if (isPressed) 0.94f else 1.0f,
+        animationSpec = KanriMotion.PressSpring,
         label = "tabScale"
     )
 
     val iconScale by animateFloatAsState(
         targetValue = if (isSelected) 1.08f else 1.0f,
         animationSpec = spring(
-            dampingRatio = Spring.DampingRatioMediumBouncy,
+            dampingRatio = 0.72f,
             stiffness = Spring.StiffnessMedium
         ),
         label = "tabIconScale"
     )
 
+    val dotScale by animateFloatAsState(
+        targetValue = if (isSelected) 1f else 0f,
+        animationSpec = spring(
+            dampingRatio = 0.70f,
+            stiffness = Spring.StiffnessMedium
+        ),
+        label = "tabDotScale"
+    )
+
+    val targetAlpha = if (isSelected) 1.0f else 0.50f
+    val baseColor = if (tokens != null) {
+        tokens.textPrimary
+    } else {
+        dockTheme.activeContentColor
+    }
+
     val contentColor by animateColorAsState(
-        targetValue = if (isSelected) dockTheme.activeContentColor else dockTheme.inactiveContentColor,
+        targetValue = baseColor.copy(alpha = targetAlpha),
         animationSpec = tween(durationMillis = 200, easing = FastOutSlowInEasing),
         label = "tabColor"
     )
@@ -213,7 +259,7 @@ private fun DockTabItem(
         modifier = modifier
             .fillMaxHeight()
             .scale(scale)
-            .clip(RoundedCornerShape(22.dp))
+            .padding(horizontal = 2.dp, vertical = 2.dp)
             .clickable(
                 interactionSource = interactionSource,
                 indication = null,
@@ -224,7 +270,7 @@ private fun DockTabItem(
                     onClick()
                 }
             )
-            .padding(vertical = 4.dp),
+            .padding(horizontal = 2.dp, vertical = 2.dp),
         contentAlignment = Alignment.Center
     ) {
         Column(
@@ -242,16 +288,51 @@ private fun DockTabItem(
                 KanriTab.GOALS -> GoalsDockIcon(tint = contentColor, isSelected = isSelected, size = 22.dp)
             }
 
-            Spacer(modifier = Modifier.height(3.dp))
+            Spacer(modifier = Modifier.height(2.dp))
 
-            Text(
-                text = tab.title,
-                color = contentColor,
-                fontSize = 10.5.sp,
-                fontWeight = if (isSelected) FontWeight.SemiBold else FontWeight.Normal,
-                maxLines = 1,
-                overflow = TextOverflow.Ellipsis,
-                letterSpacing = (-0.2).sp
+            val isLendBorrow = tab == KanriTab.LEND_BORROW
+            AnimatedContent(
+                targetState = tab.title,
+                transitionSpec = {
+                    (slideInVertically(
+                        initialOffsetY = { it / 4 },
+                        animationSpec = tween(durationMillis = 200, easing = FastOutSlowInEasing)
+                    ) + fadeIn(animationSpec = tween(200))).togetherWith(
+                        slideOutVertically(
+                            targetOffsetY = { -it / 4 },
+                            animationSpec = tween(durationMillis = 150, easing = FastOutSlowInEasing)
+                        ) + fadeOut(animationSpec = tween(150))
+                    )
+                },
+                label = "tabTextMotion"
+            ) { titleText ->
+                Text(
+                    text = titleText,
+                    color = contentColor,
+                    fontSize = if (isLendBorrow) 8.5.sp else 9.5.sp,
+                    fontWeight = if (isSelected) FontWeight.Bold else FontWeight.Medium,
+                    maxLines = 1,
+                    overflow = TextOverflow.Ellipsis,
+                    softWrap = false,
+                    letterSpacing = if (isLendBorrow) (-0.5).sp else (-0.2).sp
+                )
+            }
+
+            Spacer(modifier = Modifier.height(2.dp))
+
+            // Small 4dp dot under selected tab with spring animation
+            Box(
+                modifier = Modifier
+                    .size(4.dp)
+                    .graphicsLayer {
+                        scaleX = dotScale
+                        scaleY = dotScale
+                        alpha = dotScale
+                    }
+                    .background(
+                        color = baseColor,
+                        shape = CircleShape
+                    )
             )
         }
     }
@@ -265,13 +346,14 @@ private fun DockAddButton(
     hazeState: HazeState?,
     modifier: Modifier = Modifier
 ) {
+    val tokens = LocalKanriGlass.current
     val haptics = rememberKanriHaptics()
     val interactionSource = remember { MutableInteractionSource() }
     val isPressed by interactionSource.collectIsPressedAsState()
 
     val scale by animateFloatAsState(
         targetValue = if (isPressed) 0.92f else 1.0f,
-        animationSpec = tween(durationMillis = 150, easing = FastOutSlowInEasing),
+        animationSpec = KanriMotion.PressSpring,
         label = "addButtonScale"
     )
 
@@ -279,12 +361,31 @@ private fun DockAddButton(
 
     val rotation by animateFloatAsState(
         targetValue = targetRotation,
-        animationSpec = tween(durationMillis = 240, easing = FastOutSlowInEasing),
+        animationSpec = spring(
+            dampingRatio = 0.72f,
+            stiffness = Spring.StiffnessMedium
+        ),
         label = "addButtonRotation"
     )
 
-    Surface(
-        modifier = modifier
+    val buttonModifier = if (tokens != null) {
+        modifier
+            .scale(scale)
+            .kanriGlass(
+                level = GlassLevel.Blur,
+                shape = CircleShape,
+                hazeState = hazeState
+            )
+            .clickable(
+                interactionSource = interactionSource,
+                indication = null,
+                onClick = {
+                    haptics.click()
+                    onClick()
+                }
+            )
+    } else {
+        modifier
             .scale(scale)
             .shadow(
                 elevation = dockTheme.shadowElevation,
@@ -314,20 +415,19 @@ private fun DockAddButton(
                     haptics.click()
                     onClick()
                 }
-            ),
-        shape = CircleShape,
-        color = if (hazeState != null) Color.Transparent else dockTheme.fallbackBackgroundColor
-    ) {
-        Box(
-            modifier = Modifier.fillMaxSize(),
-            contentAlignment = Alignment.Center
-        ) {
-            AddDockIcon(
-                tint = dockTheme.addButtonIconColor,
-                size = 28.dp,
-                strokeWidth = 2.2.dp,
-                modifier = Modifier.graphicsLayer { rotationZ = rotation }
             )
-        }
+            .background(if (hazeState != null) Color.Transparent else dockTheme.fallbackBackgroundColor)
+    }
+
+    Box(
+        modifier = buttonModifier,
+        contentAlignment = Alignment.Center
+    ) {
+        AddDockIcon(
+            tint = if (tokens != null) tokens.accent else dockTheme.addButtonIconColor,
+            size = 28.dp,
+            strokeWidth = 2.2.dp,
+            modifier = Modifier.graphicsLayer { rotationZ = rotation }
+        )
     }
 }

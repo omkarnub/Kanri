@@ -1,4 +1,4 @@
-package com.omkarnub.kanri.data.security
+﻿package com.omkarnub.kanri.data.security
 
 import android.content.BroadcastReceiver
 import android.content.Context
@@ -48,7 +48,9 @@ object SecurityManager {
     }
 
     fun onAppBackgrounded() {
-        // Do NOT lock immediately on app switch/background
+        if (!isTemporarilyExempt) {
+            isUnlockedInCurrentSession = false
+        }
     }
 
     var isTemporarilyExempt: Boolean = false
@@ -65,7 +67,7 @@ object SecurityManager {
             return
         }
 
-        // Only lock if device screen was locked/turned off or initial app launch
+        // Require authentication when app returns from background
         if (!isUnlockedInCurrentSession) {
             _isAppLocked.value = true
         }

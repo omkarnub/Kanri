@@ -1,4 +1,4 @@
-package com.omkarnub.kanri.widget
+﻿package com.omkarnub.kanri.widget
 
 import android.appwidget.AppWidgetManager
 import android.appwidget.AppWidgetProvider
@@ -48,6 +48,12 @@ class GoalsRingWidgetProvider : AppWidgetProvider() {
             appWidgetManager: AppWidgetManager,
             appWidgetIds: IntArray
         ) {
+            val validIds = appWidgetManager.getAppWidgetIds(
+                ComponentName(context, GoalsRingWidgetProvider::class.java)
+            ).toSet()
+            val targetIds = appWidgetIds.filter { it in validIds }.toIntArray()
+            if (targetIds.isEmpty()) return
+
             CoroutineScope(Dispatchers.IO).launch {
                 val db = KanriDatabase.getDatabase(context)
                 val activeGoals = db.savingsGoalDao().getActiveGoalsSync()
@@ -67,7 +73,7 @@ class GoalsRingWidgetProvider : AppWidgetProvider() {
                     sizePx = 480
                 )
 
-                for (widgetId in appWidgetIds) {
+                for (widgetId in targetIds) {
                     val views = RemoteViews(context.packageName, R.layout.widget_goals_ring)
 
                     // Check resize dimensions

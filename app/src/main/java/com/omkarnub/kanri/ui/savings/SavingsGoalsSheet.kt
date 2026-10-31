@@ -30,7 +30,9 @@ import androidx.compose.material3.Icon
 import androidx.compose.material3.IconButton
 import androidx.compose.material3.LinearProgressIndicator
 import androidx.compose.material3.MaterialTheme
-import androidx.compose.material3.ModalBottomSheet
+import com.omkarnub.kanri.ui.common.GlassLevel
+import com.omkarnub.kanri.ui.common.KanriGlassCard
+import com.omkarnub.kanri.ui.common.KanriModalBottomSheet
 import androidx.compose.material3.Surface
 import androidx.compose.material3.Text
 import androidx.compose.material3.rememberModalBottomSheetState
@@ -88,12 +90,9 @@ fun SavingsGoalsSheet(
         SavingsGoalCalculator.calculateOverallStats(goals)
     }
 
-    ModalBottomSheet(
+    KanriModalBottomSheet(
         onDismissRequest = onDismiss,
         sheetState = sheetState,
-        containerColor = MaterialTheme.colorScheme.surface,
-        contentColor = MaterialTheme.colorScheme.onSurface,
-        shape = RoundedCornerShape(topStart = 28.dp, topEnd = 28.dp),
         dragHandle = {
             Box(
                 modifier = Modifier
@@ -170,11 +169,10 @@ fun SavingsGoalsSheet(
             Spacer(modifier = Modifier.height(16.dp))
 
             // Overall Summary Card
-            Card(
+            KanriGlassCard(
                 modifier = Modifier.fillMaxWidth(),
                 shape = RoundedCornerShape(18.dp),
-                colors = CardDefaults.cardColors(containerColor = MaterialTheme.colorScheme.surfaceVariant.copy(alpha = 0.35f)),
-                border = BorderStroke(1.dp, MaterialTheme.colorScheme.outlineVariant)
+                level = GlassLevel.Blur
             ) {
                 Column(modifier = Modifier.padding(16.dp)) {
                     Row(
@@ -300,8 +298,8 @@ fun SavingsGoalsSheet(
                                 .clip(RoundedCornerShape(12.dp))
                                 .clickable { showAddGoalDialog = true },
                             shape = RoundedCornerShape(12.dp),
-                            color = MaterialTheme.colorScheme.onSurface,
-                            contentColor = MaterialTheme.colorScheme.surface
+                            color = MaterialTheme.colorScheme.inverseSurface,
+                            contentColor = MaterialTheme.colorScheme.inverseOnSurface
                         ) {
                             Row(
                                 modifier = Modifier.padding(horizontal = 14.dp, vertical = 7.dp),
@@ -330,17 +328,11 @@ fun SavingsGoalsSheet(
                         val remaining = SavingsGoalCalculator.calculateRemainingAmount(goal.currentAmount, goal.targetAmount)
                         val isFinished = goal.isCompleted || (goal.targetAmount > 0 && goal.currentAmount >= goal.targetAmount)
 
-                        Card(
-                            modifier = Modifier
-                                .fillMaxWidth()
-                                .clip(RoundedCornerShape(16.dp))
-                                .clickable { detailGoal = goal },
+                        KanriGlassCard(
+                            modifier = Modifier.fillMaxWidth(),
                             shape = RoundedCornerShape(16.dp),
-                            colors = CardDefaults.cardColors(containerColor = MaterialTheme.colorScheme.surface),
-                            border = BorderStroke(
-                                1.dp,
-                                if (isFinished) MaterialTheme.colorScheme.outline.copy(alpha = 0.45f) else MaterialTheme.colorScheme.outlineVariant
-                            )
+                            level = GlassLevel.Blur,
+                            onClick = { detailGoal = goal }
                         ) {
                             Row(
                                 modifier = Modifier

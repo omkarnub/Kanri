@@ -38,7 +38,10 @@ import androidx.compose.ui.text.font.FontWeight
 import androidx.compose.ui.text.input.KeyboardType
 import androidx.compose.ui.unit.dp
 import androidx.compose.ui.unit.sp
-import androidx.compose.ui.window.Dialog
+import com.omkarnub.kanri.ui.common.GlassLevel
+import com.omkarnub.kanri.ui.common.KanriGlassButton
+import com.omkarnub.kanri.ui.common.KanriGlassCard
+import com.omkarnub.kanri.ui.common.KanriGlassDialog
 import java.util.Calendar
 
 @OptIn(ExperimentalLayoutApi::class)
@@ -61,11 +64,10 @@ fun AddLendingDialog(
         Pair("In 30 Days", 30)
     )
 
-    Dialog(onDismissRequest = onDismiss) {
-        Card(
+    KanriGlassDialog(onDismissRequest = onDismiss) {
+        KanriGlassCard(
             shape = RoundedCornerShape(24.dp),
-            colors = CardDefaults.cardColors(containerColor = MaterialTheme.colorScheme.surface),
-            border = androidx.compose.foundation.BorderStroke(1.dp, MaterialTheme.colorScheme.outlineVariant),
+            level = GlassLevel.Strong,
             modifier = Modifier.fillMaxWidth()
         ) {
             Column(
@@ -94,53 +96,47 @@ fun AddLendingDialog(
                     horizontalArrangement = Arrangement.spacedBy(8.dp)
                 ) {
                     // I Lent
-                    Box(
-                        modifier = Modifier
-                            .weight(1f)
-                            .clip(RoundedCornerShape(12.dp))
-                            .background(
-                                if (type == "LENT") MaterialTheme.colorScheme.primary else MaterialTheme.colorScheme.surfaceVariant
-                            )
-                            .then(
-                                if (type != "LENT")
-                                    Modifier.border(1.dp, MaterialTheme.colorScheme.outlineVariant, RoundedCornerShape(12.dp))
-                                else Modifier
-                            )
-                            .clickable { type = "LENT" }
-                            .padding(vertical = 12.dp),
-                        contentAlignment = Alignment.Center
+                    KanriGlassCard(
+                        modifier = Modifier.weight(1f),
+                        shape = RoundedCornerShape(12.dp),
+                        level = if (type == "LENT") GlassLevel.Strong else GlassLevel.Flat,
+                        onClick = { type = "LENT" }
                     ) {
-                        Text(
-                            text = "🤝 I Lent Money",
-                            fontWeight = FontWeight.Bold,
-                            color = if (type == "LENT") MaterialTheme.colorScheme.onPrimary else MaterialTheme.colorScheme.onSurfaceVariant,
-                            fontSize = 13.sp
-                        )
+                        Box(
+                            modifier = Modifier
+                                .fillMaxWidth()
+                                .padding(vertical = 12.dp),
+                            contentAlignment = Alignment.Center
+                        ) {
+                            Text(
+                                text = "🤝 I Lent Money",
+                                fontWeight = FontWeight.Bold,
+                                color = MaterialTheme.colorScheme.onSurface,
+                                fontSize = 13.sp
+                            )
+                        }
                     }
 
                     // I Borrowed
-                    Box(
-                        modifier = Modifier
-                            .weight(1f)
-                            .clip(RoundedCornerShape(12.dp))
-                            .background(
-                                if (type == "BORROWED") MaterialTheme.colorScheme.primary else MaterialTheme.colorScheme.surfaceVariant
-                            )
-                            .then(
-                                if (type != "BORROWED")
-                                    Modifier.border(1.dp, MaterialTheme.colorScheme.outlineVariant, RoundedCornerShape(12.dp))
-                                else Modifier
-                            )
-                            .clickable { type = "BORROWED" }
-                            .padding(vertical = 12.dp),
-                        contentAlignment = Alignment.Center
+                    KanriGlassCard(
+                        modifier = Modifier.weight(1f),
+                        shape = RoundedCornerShape(12.dp),
+                        level = if (type == "BORROWED") GlassLevel.Strong else GlassLevel.Flat,
+                        onClick = { type = "BORROWED" }
                     ) {
-                        Text(
-                            text = "📥 I Borrowed",
-                            fontWeight = FontWeight.Bold,
-                            color = if (type == "BORROWED") MaterialTheme.colorScheme.onPrimary else MaterialTheme.colorScheme.onSurfaceVariant,
-                            fontSize = 13.sp
-                        )
+                        Box(
+                            modifier = Modifier
+                                .fillMaxWidth()
+                                .padding(vertical = 12.dp),
+                            contentAlignment = Alignment.Center
+                        ) {
+                            Text(
+                                text = "📥 I Borrowed",
+                                fontWeight = FontWeight.Bold,
+                                color = MaterialTheme.colorScheme.onSurface,
+                                fontSize = 13.sp
+                            )
+                        }
                     }
                 }
 
@@ -208,23 +204,17 @@ fun AddLendingDialog(
                 ) {
                     duePresets.forEach { (label, days) ->
                         val isSelected = dueDaysOption == days
-                        Box(
-                            modifier = Modifier
-                                .clip(RoundedCornerShape(8.dp))
-                                .background(if (isSelected) MaterialTheme.colorScheme.primary else MaterialTheme.colorScheme.surfaceVariant)
-                                .then(
-                                    if (!isSelected)
-                                        Modifier.border(1.dp, MaterialTheme.colorScheme.outlineVariant, RoundedCornerShape(8.dp))
-                                    else Modifier
-                                )
-                                .clickable { dueDaysOption = days }
-                                .padding(horizontal = 10.dp, vertical = 6.dp)
+                        KanriGlassCard(
+                            shape = RoundedCornerShape(8.dp),
+                            level = if (isSelected) GlassLevel.Strong else GlassLevel.Flat,
+                            onClick = { dueDaysOption = days }
                         ) {
                             Text(
                                 text = label,
-                                color = if (isSelected) MaterialTheme.colorScheme.onPrimary else MaterialTheme.colorScheme.onSurfaceVariant,
+                                color = if (isSelected) MaterialTheme.colorScheme.onSurface else MaterialTheme.colorScheme.onSurfaceVariant,
                                 fontSize = 11.sp,
-                                fontWeight = FontWeight.Medium
+                                fontWeight = FontWeight.Medium,
+                                modifier = Modifier.padding(horizontal = 10.dp, vertical = 6.dp)
                             )
                         }
                     }
@@ -260,7 +250,10 @@ fun AddLendingDialog(
                         Text("Cancel", color = MaterialTheme.colorScheme.onSurfaceVariant)
                     }
                     Spacer(modifier = Modifier.width(8.dp))
-                    Button(
+                    KanriGlassButton(
+                        text = if (type == "LENT") "Save Lent Record" else "Save Borrowed Record",
+                        level = GlassLevel.Strong,
+                        shape = RoundedCornerShape(12.dp),
                         onClick = {
                             val amount = amountText.toDoubleOrNull()
                             if (personName.isNotBlank() && amount != null && amount > 0) {
@@ -274,19 +267,8 @@ fun AddLendingDialog(
                             } else {
                                 isError = true
                             }
-                        },
-                        colors = ButtonDefaults.buttonColors(
-                            containerColor = MaterialTheme.colorScheme.primary,
-                            contentColor = MaterialTheme.colorScheme.onPrimary
-                        ),
-                        shape = RoundedCornerShape(12.dp)
-                    ) {
-                        Text(
-                            text = if (type == "LENT") "Save Lent Record" else "Save Borrowed Record",
-                            color = MaterialTheme.colorScheme.onPrimary,
-                            fontWeight = FontWeight.SemiBold
-                        )
-                    }
+                        }
+                    )
                 }
             }
         }

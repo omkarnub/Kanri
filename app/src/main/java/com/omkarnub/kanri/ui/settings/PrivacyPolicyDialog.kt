@@ -28,7 +28,10 @@ import androidx.compose.material.icons.filled.OpenInBrowser
 import androidx.compose.material.icons.filled.Security
 import androidx.compose.material.icons.filled.Shield
 import androidx.compose.material.icons.filled.VisibilityOff
-import androidx.compose.material3.AlertDialog
+import com.omkarnub.kanri.ui.common.GlassLevel
+import com.omkarnub.kanri.ui.common.KanriGlassCard
+import com.omkarnub.kanri.ui.common.KanriGlassAlertDialog as AlertDialog
+import com.omkarnub.kanri.ui.common.kanriPrimaryButtonColors
 import androidx.compose.material3.Button
 import androidx.compose.material3.Card
 import androidx.compose.material3.CardDefaults
@@ -205,7 +208,8 @@ fun PrivacyPolicyDialog(
         confirmButton = {
             Button(
                 onClick = onDismiss,
-                shape = RoundedCornerShape(10.dp)
+                shape = RoundedCornerShape(10.dp),
+                colors = kanriPrimaryButtonColors()
             ) {
                 Text("Got It")
             }
@@ -288,11 +292,10 @@ private fun PermissionCard(
     purpose: String,
     detail: String
 ) {
-    Card(
+    KanriGlassCard(
         modifier = Modifier.fillMaxWidth(),
         shape = RoundedCornerShape(10.dp),
-        colors = CardDefaults.cardColors(containerColor = MaterialTheme.colorScheme.surfaceVariant.copy(alpha = 0.45f)),
-        border = BorderStroke(0.8.dp, MaterialTheme.colorScheme.outlineVariant)
+        level = GlassLevel.Flat
     ) {
         Column(modifier = Modifier.padding(10.dp)) {
             Row(

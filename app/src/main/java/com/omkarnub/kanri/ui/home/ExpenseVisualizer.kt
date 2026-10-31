@@ -1,19 +1,49 @@
 package com.omkarnub.kanri.ui.home
 
+import android.provider.Settings
 import androidx.compose.animation.AnimatedContent
 import androidx.compose.animation.animateColorAsState
 import androidx.compose.animation.core.FastOutSlowInEasing
+import androidx.compose.animation.core.LinearEasing
+import androidx.compose.animation.core.RepeatMode
+import androidx.compose.animation.core.Spring
+import androidx.compose.animation.core.animateFloat
 import androidx.compose.animation.core.animateFloatAsState
+import androidx.compose.animation.core.infiniteRepeatable
+import androidx.compose.animation.core.rememberInfiniteTransition
+import androidx.compose.animation.core.spring
 import androidx.compose.animation.core.tween
 import androidx.compose.animation.fadeIn
 import androidx.compose.animation.fadeOut
 import androidx.compose.animation.togetherWith
+import androidx.compose.runtime.DisposableEffect
+import androidx.compose.runtime.mutableFloatStateOf
+import androidx.compose.ui.geometry.Rect
+import androidx.compose.ui.graphics.Outline
+import androidx.compose.ui.graphics.Path
+import androidx.compose.ui.graphics.Shadow
+import androidx.compose.ui.graphics.Shape
+import androidx.compose.ui.graphics.luminance
+import androidx.compose.ui.platform.LocalContext
+import androidx.compose.ui.platform.LocalDensity
+import androidx.compose.ui.semantics.contentDescription
+import androidx.compose.ui.semantics.semantics
+import com.omkarnub.kanri.ui.theme.LocalKanriGlass
+import androidx.compose.ui.unit.Density
+import androidx.compose.ui.unit.LayoutDirection
+import androidx.lifecycle.Lifecycle
+import androidx.lifecycle.LifecycleEventObserver
+import androidx.lifecycle.compose.LocalLifecycleOwner
+import kotlin.math.sin
+import kotlin.math.sqrt
 import androidx.compose.foundation.BorderStroke
 import androidx.compose.foundation.Canvas
 import androidx.compose.foundation.background
 import androidx.compose.foundation.clickable
 import androidx.compose.foundation.layout.Arrangement
+import androidx.compose.foundation.layout.aspectRatio
 import androidx.compose.foundation.layout.Box
+import androidx.compose.ui.graphics.Brush
 import androidx.compose.foundation.layout.Column
 import androidx.compose.foundation.layout.Row
 import androidx.compose.foundation.layout.Spacer
@@ -33,6 +63,7 @@ import androidx.compose.material.icons.automirrored.filled.KeyboardArrowRight
 import androidx.compose.material.icons.filled.AccountBalance
 import androidx.compose.material.icons.filled.BarChart
 import androidx.compose.material.icons.filled.Check
+import androidx.compose.material.icons.filled.Close
 import androidx.compose.material.icons.filled.DonutLarge
 import androidx.compose.material.icons.filled.Edit
 import androidx.compose.material.icons.filled.KeyboardArrowDown
@@ -40,7 +71,6 @@ import androidx.compose.material.icons.filled.Payments
 import androidx.compose.material.icons.filled.PieChart
 import androidx.compose.material.icons.filled.Tune
 import com.omkarnub.kanri.ui.theme.ExpenseRed
-import androidx.compose.material3.AlertDialog
 import androidx.compose.material3.Button
 import androidx.compose.material3.ButtonDefaults
 import androidx.compose.material3.Card
@@ -49,6 +79,7 @@ import androidx.compose.material3.DropdownMenu
 import androidx.compose.material3.DropdownMenuItem
 import androidx.compose.material3.ExperimentalMaterial3Api
 import androidx.compose.material3.Icon
+import androidx.compose.material3.IconButton
 import androidx.compose.material3.MaterialTheme
 import androidx.compose.material3.ModalBottomSheet
 import androidx.compose.material3.OutlinedTextField
@@ -57,6 +88,10 @@ import androidx.compose.material3.Surface
 import androidx.compose.material3.Text
 import androidx.compose.material3.TextButton
 import androidx.compose.material3.rememberModalBottomSheetState
+import com.omkarnub.kanri.ui.common.GlassLevel
+import com.omkarnub.kanri.ui.common.KanriGlassCard
+import com.omkarnub.kanri.ui.common.KanriModalBottomSheet
+import com.omkarnub.kanri.ui.theme.LocalKanriGlass
 import com.omkarnub.kanri.ui.common.AnimatedNumber
 import com.omkarnub.kanri.ui.common.AnimatedNumberText
 import com.omkarnub.kanri.ui.common.KanriDropdownMenu
@@ -204,6 +239,10 @@ fun ExpenseVisualizer(
     var selectedMonth by remember { mutableStateOf(months.first()) }
     var monthMenuExpanded by remember { mutableStateOf(false) }
 
+    val tokens = LocalKanriGlass.current
+    val actionContrastColor = tokens?.textPrimary?.copy(alpha = 0.85f)
+        ?: MaterialTheme.colorScheme.onSurface.copy(alpha = 0.85f)
+
     LaunchedEffect(selectedMonth) {
         val parts = selectedMonth.key.split("-")
         if (parts.size == 2) {
@@ -277,13 +316,10 @@ fun ExpenseVisualizer(
         label = "alertColor"
     )
 
-    Card(
+    KanriGlassCard(
         modifier = modifier.fillMaxWidth(),
-        shape = RoundedCornerShape(24.dp),
-        colors = CardDefaults.cardColors(
-            containerColor = MaterialTheme.colorScheme.surfaceVariant.copy(alpha = 0.35f)
-        ),
-        border = null
+        level = GlassLevel.Blur,
+        shape = RoundedCornerShape(24.dp)
     ) {
         Column(
             modifier = Modifier
@@ -457,7 +493,7 @@ fun ExpenseVisualizer(
                     Icon(
                         imageVector = Icons.Default.Edit,
                         contentDescription = "Edit",
-                        tint = MaterialTheme.colorScheme.onSurfaceVariant,
+                        tint = actionContrastColor,
                         modifier = Modifier.size(17.dp)
                     )
                     Text(
@@ -466,11 +502,11 @@ fun ExpenseVisualizer(
                             fontWeight = FontWeight.SemiBold,
                             fontSize = 13.sp
                         ),
-                        color = MaterialTheme.colorScheme.onSurfaceVariant
+                        color = actionContrastColor
                     )
                 }
 
-                // Button 2: Data Type
+                // Button 2: View by
                 Row(
                     modifier = Modifier
                         .clip(RoundedCornerShape(8.dp))
@@ -481,17 +517,17 @@ fun ExpenseVisualizer(
                 ) {
                     Icon(
                         imageVector = visualType.icon,
-                        contentDescription = "Data Type",
-                        tint = alertColor,
+                        contentDescription = "View by",
+                        tint = if (alertColor != MaterialTheme.colorScheme.onSurface) alertColor else actionContrastColor,
                         modifier = Modifier.size(17.dp)
                     )
                     Text(
-                        text = "Data Type",
+                        text = "View by",
                         style = MaterialTheme.typography.labelMedium.copy(
                             fontWeight = FontWeight.SemiBold,
                             fontSize = 13.sp
                         ),
-                        color = MaterialTheme.colorScheme.onSurfaceVariant
+                        color = actionContrastColor
                     )
                 }
             }
@@ -585,7 +621,8 @@ private fun RingVisualizer(
             modifier = Modifier.size(320.dp),
             contentAlignment = Alignment.Center
         ) {
-            val trackColor = MaterialTheme.colorScheme.surfaceVariant.copy(alpha = 0.6f)
+            val tokens = LocalKanriGlass.current
+            val trackColor = tokens?.track ?: MaterialTheme.colorScheme.surfaceVariant.copy(alpha = 0.6f)
 
             Canvas(modifier = Modifier.size(305.dp)) {
                 val strokeWidth = 30.dp.toPx()
@@ -606,8 +643,13 @@ private fun RingVisualizer(
                 // Progress Arc (only drawn when there is active spending)
                 if (animatedSweep > 0f && monthSpent > 0.0) {
                     val sweep = animatedSweep * 360f
+                    val arcColor = if (tokens != null) {
+                        if (budgetRatio > 1.0f) tokens.debit else tokens.accent
+                    } else {
+                        alertColor
+                    }
                     drawArc(
-                        color = alertColor,
+                        color = arcColor,
                         startAngle = -90f,
                         sweepAngle = sweep,
                         useCenter = false,
@@ -1361,8 +1403,523 @@ private fun PieChartVisualizer(
 }
 
 // =============================================================================
-// 5. DIGITAL EXPENSE / BUDGET VISUALIZER (Days Remaining, No Boxes, Huge Typography)
+// 5. DIGITAL EXPENSE / BUDGET VISUALIZER (Liquid Fill Blob)
 // =============================================================================
+
+/**
+ * Custom wave shape outlining the liquid area beneath a sine-wave surface.
+ * Clipped by parent's CircleShape to form a circular liquid-fill blob.
+ */
+private class LiquidWaveShape(
+    private val level: Float,
+    private val phase: Float,
+    private val amplitudePx: Float,
+    private val wavelengthFactor: Float
+) : Shape {
+    override fun createOutline(
+        size: Size,
+        layoutDirection: LayoutDirection,
+        density: Density
+    ): Outline {
+        val path = Path()
+        if (level <= 0f) {
+            return Outline.Generic(path)
+        }
+        if (level >= 1f) {
+            path.addRect(Rect(0f, 0f, size.width, size.height))
+            return Outline.Generic(path)
+        }
+        val width = size.width
+        val height = size.height
+        val waterY = height * (1f - level)
+        val wavelength = width * wavelengthFactor
+
+        path.moveTo(0f, height)
+        val startY = (waterY + amplitudePx * sin(phase.toDouble())).toFloat().coerceIn(0f, height)
+        path.lineTo(0f, startY)
+
+        val step = 4f
+        var x = 0f
+        while (x <= width) {
+            val y = (waterY + amplitudePx * sin(2.0 * Math.PI * (x / wavelength) + phase)).toFloat().coerceIn(0f, height)
+            path.lineTo(x, y)
+            x += step
+        }
+        path.lineTo(width, height)
+        path.close()
+
+        return Outline.Generic(path)
+    }
+}
+
+/**
+ * Liquid-fill blob visualizer:
+ * - 224dp circle, centered, with subtle outline and base shade.
+ * - Inside, darker tinted liquid rising with budget spent (level = spent / budget clamped to 0..1).
+ * - Liquid surface: two sine-wave layers with different speeds, amplitudes, and opacities.
+ * - When spent changes, animates level with spring (slight settle).
+ * - Minimum visible level at low spend (e.g. 2%) so it never looks empty or broken.
+ * - Total spent text sits in center, dual-drawn and clipped for crisp legibility across both empty and liquid regions.
+ * - State colors: on pace = neutral/green tint, above pace = amber, near/over budget = red.
+ * - Over 100%: circle stays full, wave turns red and moves faster, with subtle overflow ripple.
+ * - Faint dashed line across circle marking where spending should be by today (budget * day of month / days in month).
+ * - Lifecycle-aware: pauses animations in background.
+ * - Respects system "reduce motion" setting.
+ */
+@Composable
+private fun LiquidBlobVisualizer(
+    monthSpent: Double,
+    monthlyBudget: Double,
+    budgetRatio: Float,
+    alertColor: Color,
+    modifier: Modifier = Modifier
+) {
+    val density = LocalDensity.current
+    val context = LocalContext.current
+    val lifecycleOwner = LocalLifecycleOwner.current
+
+    // 1. Pause animation when screen is not visible or app in background
+    var isAppForeground by remember { mutableStateOf(true) }
+    DisposableEffect(lifecycleOwner) {
+        val observer = LifecycleEventObserver { _, event ->
+            isAppForeground = event.targetState.isAtLeast(Lifecycle.State.RESUMED)
+        }
+        lifecycleOwner.lifecycle.addObserver(observer)
+        onDispose {
+            lifecycleOwner.lifecycle.removeObserver(observer)
+        }
+    }
+
+    // 2. Respect system "reduce motion" setting
+    val reduceMotion = remember(context) {
+        try {
+            val durationScale = Settings.Global.getFloat(
+                context.contentResolver,
+                Settings.Global.ANIMATOR_DURATION_SCALE,
+                1.0f
+            )
+            val transitionScale = Settings.Global.getFloat(
+                context.contentResolver,
+                Settings.Global.TRANSITION_ANIMATION_SCALE,
+                1.0f
+            )
+            durationScale == 0f || transitionScale == 0f
+        } catch (_: Exception) {
+            false
+        }
+    }
+
+    // 3. Today's pace calculation
+    val calendar = remember { Calendar.getInstance() }
+    val dayOfMonth = remember { calendar.get(Calendar.DAY_OF_MONTH) }
+    val daysInMonth = remember { calendar.getActualMaximum(Calendar.DAY_OF_MONTH) }
+    val monthProgress = remember(dayOfMonth, daysInMonth) {
+        (dayOfMonth.toFloat() / daysInMonth.toFloat()).coerceIn(0f, 1f)
+    }
+
+    val isOverBudget = budgetRatio > 1.0f
+
+    // 4. Fill target level with spring animation
+    var animationTriggered by remember { mutableStateOf(false) }
+    LaunchedEffect(Unit) { animationTriggered = true }
+
+    val targetLevel = when {
+        monthlyBudget <= 0.0 || monthSpent <= 0.0 -> 0f
+        isOverBudget -> 1.0f
+        else -> (0.18f + budgetRatio.coerceIn(0f, 1f) * 0.72f)
+    }
+
+    val animatedLevel by animateFloatAsState(
+        targetValue = if (animationTriggered) targetLevel else 0f,
+        animationSpec = spring(
+            dampingRatio = Spring.DampingRatioLowBouncy,
+            stiffness = Spring.StiffnessLow
+        ),
+        label = "blobFillLevel"
+    )
+
+    // 5. Phase animations for the two sine wave layers & organic reshape movements
+    val infiniteTransition = rememberInfiniteTransition(label = "blobWaveTransition")
+    val waveSpeedMultiplier = if (isOverBudget) 0.5f else 1.0f
+    val canAnimate = isAppForeground && !reduceMotion && monthSpent > 0.0
+
+    val reshapeScaleX by if (canAnimate) {
+        infiniteTransition.animateFloat(
+            initialValue = 0.975f,
+            targetValue = 1.025f,
+            animationSpec = infiniteRepeatable(
+                animation = tween(durationMillis = 4400, easing = FastOutSlowInEasing),
+                repeatMode = RepeatMode.Reverse
+            ),
+            label = "reshapeScaleX"
+        )
+    } else {
+        remember { mutableFloatStateOf(1f) }
+    }
+
+    val reshapeScaleY by if (canAnimate) {
+        infiniteTransition.animateFloat(
+            initialValue = 1.025f,
+            targetValue = 0.975f,
+            animationSpec = infiniteRepeatable(
+                animation = tween(durationMillis = 4400, easing = FastOutSlowInEasing),
+                repeatMode = RepeatMode.Reverse
+            ),
+            label = "reshapeScaleY"
+        )
+    } else {
+        remember { mutableFloatStateOf(1f) }
+    }
+
+    val reshapeRotation by if (canAnimate) {
+        infiniteTransition.animateFloat(
+            initialValue = -1.8f,
+            targetValue = 1.8f,
+            animationSpec = infiniteRepeatable(
+                animation = tween(durationMillis = 5800, easing = FastOutSlowInEasing),
+                repeatMode = RepeatMode.Reverse
+            ),
+            label = "reshapeRotation"
+        )
+    } else {
+        remember { mutableFloatStateOf(0f) }
+    }
+
+    val wavePhase1 by if (canAnimate) {
+        infiniteTransition.animateFloat(
+            initialValue = 0f,
+            targetValue = (2.0 * Math.PI).toFloat(),
+            animationSpec = infiniteRepeatable(
+                animation = tween(durationMillis = (3200 * waveSpeedMultiplier).toInt(), easing = LinearEasing),
+                repeatMode = RepeatMode.Restart
+            ),
+            label = "wavePhase1"
+        )
+    } else {
+        remember { mutableFloatStateOf(0f) }
+    }
+
+    val wavePhase2 by if (canAnimate) {
+        infiniteTransition.animateFloat(
+            initialValue = 0f,
+            targetValue = (2.0 * Math.PI).toFloat(),
+            animationSpec = infiniteRepeatable(
+                animation = tween(durationMillis = (2200 * waveSpeedMultiplier).toInt(), easing = LinearEasing),
+                repeatMode = RepeatMode.Restart
+            ),
+            label = "wavePhase2"
+        )
+    } else {
+        remember { mutableFloatStateOf(0f) }
+    }
+
+    // 6. Overflow ripple animation when budget is exceeded (> 100%)
+    val rippleRadiusOffset by if (isOverBudget && canAnimate) {
+        infiniteTransition.animateFloat(
+            initialValue = 0f,
+            targetValue = 9.dp.value,
+            animationSpec = infiniteRepeatable(
+                animation = tween(durationMillis = 1300, easing = FastOutSlowInEasing),
+                repeatMode = RepeatMode.Restart
+            ),
+            label = "overflowRippleRadius"
+        )
+    } else {
+        remember { mutableFloatStateOf(0f) }
+    }
+
+    val rippleAlpha by if (isOverBudget && canAnimate) {
+        infiniteTransition.animateFloat(
+            initialValue = 0.55f,
+            targetValue = 0f,
+            animationSpec = infiniteRepeatable(
+                animation = tween(durationMillis = 1300, easing = FastOutSlowInEasing),
+                repeatMode = RepeatMode.Restart
+            ),
+            label = "overflowRippleAlpha"
+        )
+    } else {
+        remember { mutableFloatStateOf(0f) }
+    }
+
+    // 7. State colors: on pace = neutral/green tint, above pace = amber, near or over budget = red
+    val isDark = MaterialTheme.colorScheme.surface.luminance() < 0.5f
+
+    val (targetFrontColor, targetBackColor, targetCrestColor) = when {
+        isOverBudget -> {
+            if (isDark) {
+                Triple(Color(0xFF5C1C20), Color(0xFF3F1316), Color(0xFFEF4444).copy(alpha = 0.85f))
+            } else {
+                Triple(Color(0xFFF9B4B7), Color(0xFFF28B90), Color(0xFFE5484D))
+            }
+        }
+        budgetRatio >= 0.85f -> {
+            // Near budget: Red tint
+            if (isDark) {
+                Triple(Color(0xFF45171A), Color(0xFF2E0F11), Color(0xFFEF4444).copy(alpha = 0.65f))
+            } else {
+                Triple(Color(0xFFFCD0D2), Color(0xFFF8ACB0), Color(0xFFE5484D).copy(alpha = 0.8f))
+            }
+        }
+        budgetRatio > monthProgress -> {
+            // Above pace: Amber tint
+            if (isDark) {
+                Triple(Color(0xFF3E2D13), Color(0xFF2A1E0C), Color(0xFFF59E0B).copy(alpha = 0.65f))
+            } else {
+                Triple(Color(0xFFFDE8C5), Color(0xFFF8D497), Color(0xFFD97706))
+            }
+        }
+        else -> {
+            // On pace: Neutral / Green tint
+            if (isDark) {
+                Triple(Color(0xFF1E3D2A), Color(0xFF13281B), Color(0xFF34C759).copy(alpha = 0.75f))
+            } else {
+                Triple(Color(0xFFD6EBD9), Color(0xFFBCE0C1), Color(0xFF2E7D4E))
+            }
+        }
+    }
+
+    val frontLiquidColor by animateColorAsState(targetFrontColor, tween(600), label = "frontLiquidColor")
+    val backLiquidColor by animateColorAsState(targetBackColor, tween(600), label = "backLiquidColor")
+    val crestColor by animateColorAsState(targetCrestColor, tween(600), label = "crestColor")
+
+    val baseShade = if (isDark) {
+        Color(0xFF16161A)
+    } else {
+        MaterialTheme.colorScheme.surfaceVariant.copy(alpha = 0.55f)
+    }
+    val outlineColor = MaterialTheme.colorScheme.outlineVariant.copy(alpha = 0.55f)
+    val paceLineColor = MaterialTheme.colorScheme.onSurfaceVariant.copy(alpha = 0.28f)
+
+    val baseTextColor = MaterialTheme.colorScheme.onSurface
+    val liquidTextColor = if (isDark) Color(0xFFFFFFFF) else Color(0xFF121212)
+
+    val pctUsed = if (monthlyBudget > 0) (budgetRatio * 100).toInt() else 0
+    val accessibilityText = if (monthlyBudget > 0) {
+        "${CurrencyUtils.formatCurrency(monthSpent)} spent of ${CurrencyUtils.formatCurrency(monthlyBudget)} budget, $pctUsed percent used"
+    } else {
+        "${CurrencyUtils.formatCurrency(monthSpent)} spent, no budget set"
+    }
+
+    val blobDiameter = 224.dp
+
+    // Spent Amount Typography (same font and style as before)
+    val amountStr = CurrencyUtils.formatCurrency(monthSpent)
+    val amountFontSize = when {
+        amountStr.length > 15 -> 20.sp
+        amountStr.length > 12 -> 24.sp
+        amountStr.length > 9 -> 28.sp
+        else -> 34.sp
+    }
+    val textShadow = Shadow(
+        color = if (isDark) Color.Black.copy(alpha = 0.45f) else Color.White.copy(alpha = 0.45f),
+        blurRadius = 6f
+    )
+    val baseStyle = MaterialTheme.typography.displaySmall.copy(
+        fontWeight = FontWeight.Black,
+        letterSpacing = (-0.5).sp,
+        shadow = textShadow
+    )
+    val liquidStyle = MaterialTheme.typography.displaySmall.copy(
+        fontWeight = FontWeight.Black,
+        letterSpacing = (-0.5).sp,
+        shadow = textShadow
+    )
+
+    Box(
+        modifier = modifier
+            .size(blobDiameter + 16.dp)
+            .aspectRatio(1f)
+            .semantics { contentDescription = accessibilityText },
+        contentAlignment = Alignment.Center
+    ) {
+        // Subtle overflow ripple pulse when budget is exceeded
+        if (isOverBudget && canAnimate) {
+            Canvas(modifier = Modifier.size(blobDiameter + 16.dp).aspectRatio(1f)) {
+                val radius = (blobDiameter.toPx() / 2f) + rippleRadiusOffset.dp.toPx()
+                drawCircle(
+                    color = Color(0xFFEF4444).copy(alpha = rippleAlpha),
+                    radius = radius,
+                    style = Stroke(width = 2.dp.toPx())
+                )
+            }
+        }
+
+        // Circular blob container with gentle organic movement
+        Box(
+            modifier = Modifier
+                .size(blobDiameter)
+                .aspectRatio(1f)
+                .graphicsLayer {
+                    if (canAnimate) {
+                        scaleX = reshapeScaleX
+                        scaleY = reshapeScaleY
+                        rotationZ = reshapeRotation
+                    }
+                }
+                .clip(CircleShape)
+                .background(
+                    Brush.radialGradient(
+                        colors = listOf(
+                            baseShade,
+                            if (isDark) Color(0xFF0D0D10) else Color(0xFFE5E3DC)
+                        ),
+                        radius = with(density) { (blobDiameter / 2f).toPx() }
+                    )
+                ),
+            contentAlignment = Alignment.Center
+        ) {
+            // Specular top highlight / inner orb reflection
+            Canvas(modifier = Modifier.fillMaxSize()) {
+                drawCircle(
+                    brush = Brush.radialGradient(
+                        colors = listOf(
+                            Color.White.copy(alpha = if (isDark) 0.07f else 0.2f),
+                            Color.Transparent
+                        ),
+                        center = Offset(size.width * 0.5f, size.height * 0.22f),
+                        radius = size.width * 0.48f
+                    )
+                )
+            }
+
+            // Layer 1: Today's pace line & Back wave layer
+            Canvas(modifier = Modifier.fillMaxSize()) {
+                val width = size.width
+                val height = size.height
+
+                // Faint dashed line marking "where you should be by today"
+                if (monthlyBudget > 0.0) {
+                    val paceY = height * (1f - monthProgress)
+                    val radius = width / 2f
+                    val dy = abs(paceY - radius)
+                    if (dy < radius) {
+                        val dx = sqrt(radius * radius - dy * dy)
+                        drawLine(
+                            color = paceLineColor,
+                            start = Offset(radius - dx, paceY),
+                            end = Offset(radius + dx, paceY),
+                            strokeWidth = 1.dp.toPx(),
+                            pathEffect = PathEffect.dashPathEffect(floatArrayOf(8f, 8f), 0f)
+                        )
+                    }
+                }
+
+                // Back wave layer with different speed, amplitude, and opacity
+                if (animatedLevel > 0f) {
+                    val backPath = Path()
+                    val waterY = height * (1f - animatedLevel)
+                    val amp2 = 4.dp.toPx()
+                    val wl2 = width * 0.85f
+
+                    backPath.moveTo(0f, height)
+                    val startY = (waterY + amp2 * sin(wavePhase2.toDouble())).toFloat().coerceIn(0f, height)
+                    backPath.lineTo(0f, startY)
+
+                    val step = 4f
+                    var x = 0f
+                    while (x <= width) {
+                        val y = (waterY + amp2 * sin(2.0 * Math.PI * (x / wl2) + wavePhase2)).toFloat().coerceIn(0f, height)
+                        backPath.lineTo(x, y)
+                        x += step
+                    }
+                    backPath.lineTo(width, height)
+                    backPath.close()
+
+                    drawPath(backPath, color = backLiquidColor)
+                }
+            }
+
+            // Layer 2: Base copy of spent text (visible in the unfilled region above the wave)
+            Box(
+                modifier = Modifier.fillMaxSize(),
+                contentAlignment = Alignment.Center
+            ) {
+                AnimatedNumberText(
+                    text = amountStr,
+                    style = baseStyle,
+                    color = baseTextColor,
+                    fontSize = amountFontSize,
+                    animateFromZero = true
+                )
+            }
+
+            // Layer 3: Front liquid wave layer + foreground copy of spent text
+            if (animatedLevel > 0f) {
+                val waveShape = remember(animatedLevel, wavePhase1, density) {
+                    LiquidWaveShape(
+                        level = animatedLevel,
+                        phase = wavePhase1,
+                        amplitudePx = with(density) { 5.5.dp.toPx() },
+                        wavelengthFactor = 1.15f
+                    )
+                }
+
+                Box(
+                    modifier = Modifier
+                        .fillMaxSize()
+                        .clip(waveShape)
+                        .background(
+                            Brush.verticalGradient(
+                                colors = listOf(
+                                    frontLiquidColor.copy(alpha = 0.88f),
+                                    frontLiquidColor
+                                )
+                            )
+                        ),
+                    contentAlignment = Alignment.Center
+                ) {
+                    // Foreground copy of spent text (visible where liquid is present)
+                    AnimatedNumberText(
+                        text = amountStr,
+                        style = liquidStyle,
+                        color = liquidTextColor,
+                        fontSize = amountFontSize,
+                        animateFromZero = true
+                    )
+                }
+
+                // Wave surface crest highlight
+                Canvas(modifier = Modifier.fillMaxSize()) {
+                    val width = size.width
+                    val height = size.height
+                    val waterY = height * (1f - animatedLevel)
+                    val amp1 = 5.5.dp.toPx()
+                    val wl1 = width * 1.15f
+
+                    val crestPath = Path()
+                    var started = false
+                    val step = 3f
+                    var x = 0f
+                    while (x <= width) {
+                        val y = (waterY + amp1 * sin(2.0 * Math.PI * (x / wl1) + wavePhase1)).toFloat().coerceIn(0f, height)
+                        if (!started) {
+                            crestPath.moveTo(x, y)
+                            started = true
+                        } else {
+                            crestPath.lineTo(x, y)
+                        }
+                        x += step
+                    }
+                    drawPath(
+                        path = crestPath,
+                        color = crestColor,
+                        style = Stroke(width = 1.8.dp.toPx(), cap = StrokeCap.Round)
+                    )
+                }
+            }
+
+            // Layer 4: Light outline stroke
+            Canvas(modifier = Modifier.fillMaxSize()) {
+                drawCircle(
+                    color = outlineColor,
+                    style = Stroke(width = 1.2.dp.toPx())
+                )
+            }
+        }
+    }
+}
+
 @Composable
 private fun DigitalVisualizer(
     monthSpent: Double,
@@ -1371,25 +1928,6 @@ private fun DigitalVisualizer(
     budgetRatio: Float,
     monthDelta: Delta = Delta.NoData
 ) {
-    var animationTriggered by remember { mutableStateOf(false) }
-    LaunchedEffect(Unit) { animationTriggered = true }
-
-    val animatedProgress by animateFloatAsState(
-        targetValue = if (animationTriggered) budgetRatio.coerceAtMost(1.0f) else 0f,
-        animationSpec = tween(durationMillis = 900, delayMillis = 80, easing = FastOutSlowInEasing),
-        label = "digitalProgress"
-    )
-    val contentAlpha by animateFloatAsState(
-        targetValue = if (animationTriggered) 1f else 0f,
-        animationSpec = tween(durationMillis = 600, delayMillis = 100, easing = FastOutSlowInEasing),
-        label = "digitalContentAlpha"
-    )
-    val contentScale by animateFloatAsState(
-        targetValue = if (animationTriggered) 1f else 0.95f,
-        animationSpec = tween(durationMillis = 600, delayMillis = 100, easing = FastOutSlowInEasing),
-        label = "digitalContentScale"
-    )
-
     val remaining = monthlyBudget - monthSpent
     val isExceeded = remaining < 0
     val daysLeft = remember { BudgetCalculator.getDaysRemainingInMonth() }
@@ -1397,96 +1935,53 @@ private fun DigitalVisualizer(
     Column(
         modifier = Modifier
             .fillMaxWidth()
-            .padding(vertical = 12.dp, horizontal = 4.dp)
-            .graphicsLayer {
-                scaleX = contentScale
-                scaleY = contentScale
-            },
+            .padding(vertical = 8.dp, horizontal = 4.dp),
         horizontalAlignment = Alignment.CenterHorizontally
     ) {
-        Text(
-            text = "TOTAL MONEY SPENT",
-            style = MaterialTheme.typography.labelSmall.copy(
-                fontWeight = FontWeight.Bold,
-                letterSpacing = 1.4.sp
-            ),
-            color = MaterialTheme.colorScheme.onSurfaceVariant.copy(alpha = 0.7f),
-            fontSize = 11.sp
-        )
-        Spacer(modifier = Modifier.height(4.dp))
-
-        val amountStr = CurrencyUtils.formatCurrency(monthSpent)
-        val amountFontSize = when {
-            amountStr.length > 15 -> 28.sp
-            amountStr.length > 11 -> 36.sp
-            else -> 44.sp
-        }
-        AnimatedNumberText(
-            text = amountStr,
-            style = MaterialTheme.typography.displaySmall.copy(
-                fontWeight = FontWeight.Black,
-                letterSpacing = (-0.5).sp
-            ),
-            color = MaterialTheme.colorScheme.onSurface,
-            fontSize = amountFontSize,
-            animateFromZero = true
-        )
-
-        Spacer(modifier = Modifier.height(6.dp))
-        MonthDeltaChip(delta = monthDelta)
-
-        Spacer(modifier = Modifier.height(18.dp))
-
-        // Progress Bar with Budget and Expense Labels
-        Column(modifier = Modifier.fillMaxWidth()) {
-            Row(
-                modifier = Modifier.fillMaxWidth(),
-                horizontalArrangement = Arrangement.SpaceBetween,
-                verticalAlignment = Alignment.CenterVertically
-            ) {
-                Text(
-                    text = "${(budgetRatio * 100).toInt()}% Used",
-                    style = MaterialTheme.typography.labelMedium.copy(
-                        fontWeight = FontWeight.Bold
-                    ),
-                    color = alertColor,
-                    fontSize = 13.sp
-                )
-                Text(
-                    text = "Budget: ${CurrencyUtils.formatCurrency(monthlyBudget)}",
-                    style = MaterialTheme.typography.labelMedium.copy(
-                        fontWeight = FontWeight.Medium
-                    ),
-                    color = MaterialTheme.colorScheme.onSurfaceVariant,
-                    fontSize = 13.sp
-                )
-            }
-
-            Spacer(modifier = Modifier.height(8.dp))
-
-            // Sleek Large Progress Track (16dp height)
-            Box(
-                modifier = Modifier
-                    .fillMaxWidth()
-                    .height(16.dp)
-                    .clip(RoundedCornerShape(8.dp))
-                    .background(MaterialTheme.colorScheme.surfaceContainer)
-            ) {
-                if (monthSpent > 0.0 && animatedProgress > 0f) {
-                    Box(
-                        modifier = Modifier
-                            .fillMaxWidth(animatedProgress)
-                            .fillMaxHeight()
-                            .clip(RoundedCornerShape(8.dp))
-                            .background(alertColor)
-                    )
-                }
-            }
+        // Top row: % Used & Budget amount
+        Row(
+            modifier = Modifier.fillMaxWidth(),
+            horizontalArrangement = Arrangement.SpaceBetween,
+            verticalAlignment = Alignment.CenterVertically
+        ) {
+            Text(
+                text = if (monthlyBudget > 0) "${(budgetRatio * 100).toInt()}% Used" else "0% Used",
+                style = MaterialTheme.typography.labelMedium.copy(
+                    fontWeight = FontWeight.Bold
+                ),
+                color = alertColor,
+                fontSize = 13.sp
+            )
+            Text(
+                text = if (monthlyBudget > 0) "Budget: ${CurrencyUtils.formatCurrency(monthlyBudget)}" else "No budget set",
+                style = MaterialTheme.typography.labelMedium.copy(
+                    fontWeight = FontWeight.Medium
+                ),
+                color = MaterialTheme.colorScheme.onSurfaceVariant,
+                fontSize = 13.sp
+            )
         }
 
-        Spacer(modifier = Modifier.height(20.dp))
+        Spacer(modifier = Modifier.height(14.dp))
 
-        // Clean Typography Below the Bar
+        // Center visual: Liquid Fill Blob
+        LiquidBlobVisualizer(
+            monthSpent = monthSpent,
+            monthlyBudget = monthlyBudget,
+            budgetRatio = budgetRatio,
+            alertColor = alertColor
+        )
+
+        // Month Delta Chip (if comparison data exists)
+        if (monthDelta !is Delta.NoData) {
+            Spacer(modifier = Modifier.height(10.dp))
+            MonthDeltaChip(delta = monthDelta)
+            Spacer(modifier = Modifier.height(4.dp))
+        } else {
+            Spacer(modifier = Modifier.height(14.dp))
+        }
+
+        // Bottom row: Budget Remaining / Money Spent Above Budget (left) & Days Remaining (right)
         Row(
             modifier = Modifier.fillMaxWidth(),
             horizontalArrangement = Arrangement.SpaceBetween,
@@ -1548,22 +2043,11 @@ private fun VisualTypePickerSheet(
     onDismiss: () -> Unit
 ) {
     val sheetState = rememberModalBottomSheetState(skipPartiallyExpanded = true)
+    val tokens = LocalKanriGlass.current
 
-    ModalBottomSheet(
+    KanriModalBottomSheet(
         onDismissRequest = onDismiss,
-        sheetState = sheetState,
-        containerColor = MaterialTheme.colorScheme.surface,
-        contentColor = MaterialTheme.colorScheme.onSurface,
-        shape = RoundedCornerShape(topStart = 28.dp, topEnd = 28.dp),
-        dragHandle = {
-            Box(
-                modifier = Modifier
-                    .padding(vertical = 12.dp)
-                    .size(width = 36.dp, height = 4.dp)
-                    .clip(CircleShape)
-                    .background(MaterialTheme.colorScheme.onSurfaceVariant.copy(alpha = 0.3f))
-            )
-        }
+        sheetState = sheetState
     ) {
         Column(
             modifier = Modifier
@@ -1572,47 +2056,76 @@ private fun VisualTypePickerSheet(
                 .padding(bottom = 36.dp),
             verticalArrangement = Arrangement.spacedBy(10.dp)
         ) {
-            Text(
-                text = "Visualization Style",
-                style = MaterialTheme.typography.titleMedium.copy(
-                    fontWeight = FontWeight.Bold
-                ),
-                color = MaterialTheme.colorScheme.onSurface
-            )
-            Text(
-                text = "Choose your preferred data visualizer for expense tracking",
-                style = MaterialTheme.typography.bodySmall,
-                color = MaterialTheme.colorScheme.onSurfaceVariant
-            )
+            Row(
+                modifier = Modifier.fillMaxWidth(),
+                horizontalArrangement = Arrangement.SpaceBetween,
+                verticalAlignment = Alignment.CenterVertically
+            ) {
+                Column {
+                    Text(
+                        text = "Visualization Style",
+                        style = MaterialTheme.typography.titleMedium.copy(
+                            fontWeight = FontWeight.Bold,
+                            fontSize = 19.sp
+                        ),
+                        color = MaterialTheme.colorScheme.onSurface
+                    )
+                    Text(
+                        text = "Choose your preferred data visualizer for expense tracking",
+                        style = MaterialTheme.typography.bodySmall,
+                        color = MaterialTheme.colorScheme.onSurfaceVariant
+                    )
+                }
+
+                IconButton(
+                    onClick = onDismiss,
+                    modifier = Modifier.size(36.dp)
+                ) {
+                    Icon(
+                        imageVector = Icons.Default.Close,
+                        contentDescription = "Close",
+                        tint = MaterialTheme.colorScheme.onSurfaceVariant
+                    )
+                }
+            }
 
             Spacer(modifier = Modifier.height(6.dp))
 
             DataVisualType.entries.forEach { type ->
                 val isSelected = type == currentType
-                Surface(
-                    shape = RoundedCornerShape(14.dp),
-                    color = if (isSelected) MaterialTheme.colorScheme.surfaceVariant else MaterialTheme.colorScheme.surfaceContainer.copy(alpha = 0.5f),
-                    border = if (isSelected) BorderStroke(1.dp, MaterialTheme.colorScheme.outline) else BorderStroke(0.5.dp, MaterialTheme.colorScheme.outlineVariant.copy(alpha = 0.4f)),
-                    modifier = Modifier
-                        .fillMaxWidth()
-                        .clickable { onSelectType(type) }
+                KanriGlassCard(
+                    level = if (isSelected) GlassLevel.Blur else GlassLevel.Flat,
+                    shape = RoundedCornerShape(16.dp),
+                    onClick = { onSelectType(type) },
+                    modifier = Modifier.fillMaxWidth()
                 ) {
                     Row(
                         modifier = Modifier.padding(14.dp),
                         verticalAlignment = Alignment.CenterVertically,
                         horizontalArrangement = Arrangement.spacedBy(14.dp)
                     ) {
+                        val iconBg = if (isSelected) {
+                            tokens?.accent?.copy(alpha = 0.20f) ?: MaterialTheme.colorScheme.primary.copy(alpha = 0.20f)
+                        } else {
+                            tokens?.tintFlat ?: MaterialTheme.colorScheme.surfaceContainerHigh
+                        }
+                        val iconTint = if (isSelected) {
+                            tokens?.accent ?: MaterialTheme.colorScheme.primary
+                        } else {
+                            MaterialTheme.colorScheme.onSurfaceVariant
+                        }
+
                         Box(
                             modifier = Modifier
-                                .size(40.dp)
-                                .clip(RoundedCornerShape(10.dp))
-                                .background(if (isSelected) MaterialTheme.colorScheme.onSurface else MaterialTheme.colorScheme.surfaceContainerHigh),
+                                .size(42.dp)
+                                .clip(RoundedCornerShape(12.dp))
+                                .background(iconBg),
                             contentAlignment = Alignment.Center
                         ) {
                             Icon(
                                 imageVector = type.icon,
                                 contentDescription = type.title,
-                                tint = if (isSelected) MaterialTheme.colorScheme.surface else MaterialTheme.colorScheme.onSurfaceVariant,
+                                tint = iconTint,
                                 modifier = Modifier.size(22.dp)
                             )
                         }
@@ -1633,12 +2146,20 @@ private fun VisualTypePickerSheet(
                         }
 
                         if (isSelected) {
-                            Icon(
-                                imageVector = Icons.Default.Check,
-                                contentDescription = "Selected",
-                                tint = MaterialTheme.colorScheme.onSurface,
-                                modifier = Modifier.size(20.dp)
-                            )
+                            Box(
+                                modifier = Modifier
+                                    .size(24.dp)
+                                    .clip(CircleShape)
+                                    .background(tokens?.accent?.copy(alpha = 0.20f) ?: MaterialTheme.colorScheme.primary.copy(alpha = 0.20f)),
+                                contentAlignment = Alignment.Center
+                            ) {
+                                Icon(
+                                    imageVector = Icons.Default.Check,
+                                    contentDescription = "Selected",
+                                    tint = tokens?.accent ?: MaterialTheme.colorScheme.primary,
+                                    modifier = Modifier.size(16.dp)
+                                )
+                            }
                         }
                     }
                 }
@@ -1653,10 +2174,5 @@ private fun VisualTypePickerSheet(
 // Short Currency Formatter
 // -----------------------------------------------------------------------------
 private fun formatShortCurrency(amount: Double): String {
-    return when {
-        amount >= 10000000 -> String.format(Locale.getDefault(), "₹%.1fCr", amount / 10000000)
-        amount >= 100000 -> String.format(Locale.getDefault(), "₹%.1fL", amount / 100000)
-        amount >= 1000 -> String.format(Locale.getDefault(), "₹%.1fk", amount / 1000)
-        else -> String.format(Locale.getDefault(), "₹%.0f", amount)
-    }
+    return CurrencyUtils.formatCompactCurrency(amount)
 }
