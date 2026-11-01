@@ -4,8 +4,6 @@ import androidx.compose.animation.AnimatedContent
 import androidx.compose.animation.AnimatedVisibility
 import androidx.compose.animation.core.Animatable
 import androidx.compose.animation.core.CubicBezierEasing
-import androidx.compose.animation.core.KeyframesSpec
-import androidx.compose.animation.core.Spring
 import androidx.compose.animation.core.animateFloatAsState
 import androidx.compose.animation.core.keyframes
 import androidx.compose.animation.core.spring
@@ -37,11 +35,14 @@ import androidx.compose.foundation.shape.RoundedCornerShape
 import androidx.compose.material.icons.Icons
 import androidx.compose.material.icons.automirrored.filled.Backspace
 import androidx.compose.material.icons.filled.ArrowUpward
+import androidx.compose.material.icons.filled.Close
 import androidx.compose.material3.Icon
+import androidx.compose.material3.IconButton
 import androidx.compose.material3.Text
 import androidx.compose.runtime.Composable
 import androidx.compose.runtime.LaunchedEffect
 import androidx.compose.runtime.getValue
+import androidx.compose.runtime.key
 import androidx.compose.runtime.mutableFloatStateOf
 import androidx.compose.runtime.mutableIntStateOf
 import androidx.compose.runtime.mutableStateListOf
@@ -60,18 +61,18 @@ import androidx.compose.ui.semantics.Role
 import androidx.compose.ui.semantics.contentDescription
 import androidx.compose.ui.semantics.role
 import androidx.compose.ui.semantics.semantics
-import androidx.compose.ui.text.font.FontFamily
 import androidx.compose.ui.text.font.FontWeight
 import androidx.compose.ui.text.style.TextAlign
 import androidx.compose.ui.text.style.TextOverflow
-import androidx.compose.ui.unit.IntSize
 import androidx.compose.ui.unit.dp
 import androidx.compose.ui.unit.sp
 import com.omkarnub.kanri.ui.common.GlassLevel
 import com.omkarnub.kanri.ui.common.KanriGlassCard
+import com.omkarnub.kanri.ui.theme.GoogleSansFlex
 import com.omkarnub.kanri.ui.theme.LocalKanriGlass
 import com.omkarnub.kanri.util.CurrencyUtils
 import com.omkarnub.kanri.util.rememberKanriHaptics
+import dev.chrisbanes.haze.HazeState
 import kotlinx.coroutines.delay
 import kotlinx.coroutines.launch
 import java.text.DecimalFormat
@@ -82,15 +83,15 @@ import kotlin.math.min
 /**
  * 1:1 Port of Kokonut UI Amount Pad (A2. amount-pad.tsx)
  *
- * Exact constants:
+ * Exact constants & physics:
  * MAX_WHOLE_DIGITS = 7, KEYPAD 3x4 (height 56, rounded 16, 24sp),
- * AMOUNT FONT: 56sp semibold, tracking -0.025em, tabular
+ * AMOUNT FONT: 56sp semibold, letter-spacing -0.025em, tabular
  * SPRINGS:
- * - digitIn: stiffness 650f, dampingRatio 0.7355f
+ * - digitIn: stiffness 520f, dampingRatio 0.7355f (mass 0.8, damping 30)
  * - slide: stiffness 500f, dampingRatio 0.894f
  * - fit: stiffness 380f, dampingRatio 0.872f
  * SHAKE: 0, -10, 9, -6, 4, 0 over 360ms ease-out
- * PRESETS: 100, 500, 1000
+ * PRESETS: 100, 500, 1000, 2000
  */
 
 const val AMOUNT_PAD_MAX_WHOLE_DIGITS = 7
@@ -116,7 +117,7 @@ fun amountPadToNumber(chars: List<AmountChar>): Double {
     return s.toDoubleOrNull() ?: 0.0
 }
 
-fun amountPadMoney(value: Double, currency: String = "₹"): String {
+fun amountPadMoney(value: Double, currency: String = CurrencyUtils.getCurrencySymbol()): String {
     val df = DecimalFormat(if (value % 1.0 == 0.0) "#,##0" else "#,##0.00", DecimalFormatSymbols(Locale.US))
     return "$currency${df.format(value)}"
 }
@@ -158,7 +159,7 @@ fun amountPadLayout(chars: List<AmountChar>): List<AmountGlyph> {
 
     if (point != -1) {
         val cents = chars.subList(point + 1, chars.size)
-        glyphs.add(AmountGlyph(key = "d-${chars[point].id}", char = ".", kind = AmountGlyphKind.SEP))
+        glyphs.add(AmountGlyph(key = "dot", char = ".", kind = AmountGlyphKind.SEP))
         for (c in cents) {
             glyphs.add(AmountGlyph(key = "d-${c.id}", char = c.char, kind = AmountGlyphKind.DIGIT))
         }
@@ -170,6 +171,48 @@ fun amountPadLayout(chars: List<AmountChar>): List<AmountGlyph> {
 }
 
 @Composable
+private fun AnimatedAmountGlyph(
+    glyph: AmountGlyph,
+    glyphColor: Color,
+    modifier: Modifier = Modifier
+) {
+    val density = LocalDensity.current
+    val animOffsetY = remember { Animatable(-24f) }
+    val animAlpha = remember { Animatable(0f) }
+
+    LaunchedEffect(glyph.key) {
+        launch {
+            animOffsetY.animateTo(
+                targetValue = 0f,
+                animationSpec = spring(
+                    stiffness = 520f,
+                    dampingRatio = 0.7355f
+                )
+            )
+        }
+        launch {
+            animAlpha.animateTo(
+                targetValue = 1f,
+                animationSpec = tween(durationMillis = 160)
+            )
+        }
+    }
+
+    Text(
+        text = glyph.char,
+        fontSize = 58.sp,
+        fontFamily = GoogleSansFlex,
+        fontWeight = FontWeight.Bold,
+        color = glyphColor,
+        letterSpacing = (-0.025).sp,
+        modifier = modifier.graphicsLayer {
+            translationY = animOffsetY.value * density.density
+            alpha = animAlpha.value
+        }
+    )
+}
+
+@Composable
 fun KokonutAmountPad(
     label: String = "Expense",
     recipientName: String = "Expense",
@@ -177,9 +220,14 @@ fun KokonutAmountPad(
     initialAmount: Double = 0.0,
     maxAmount: Double = 250000.0,
     balance: Double? = null,
-    presets: List<Int> = listOf(100, 500, 1000),
+    presets: List<Int> = listOf(100, 500, 1000, 2000),
+    currency: String = CurrencyUtils.getCurrencySymbol(),
+    showHandle: Boolean = true,
+    accentColor: Color? = null,
+    onClose: (() -> Unit)? = null,
     onContinue: (Double) -> Unit,
-    modifier: Modifier = Modifier
+    modifier: Modifier = Modifier,
+    hazeState: HazeState? = null
 ) {
     val dark = isSystemInDarkTheme()
     val tokens = LocalKanriGlass.current
@@ -277,73 +325,64 @@ fun KokonutAmountPad(
         }
     }
 
-    // Card styling matching Section 4.2: max width 320dp, rounded 24dp, 1dp border zinc-200/800, bg white/zinc-950, padding 20
+    val effectiveAccent = accentColor ?: when {
+        label.contains("Income", ignoreCase = true) -> Color(0xFF30A46C)
+        label.contains("Lend", ignoreCase = true) -> Color(0xFF3B82F6)
+        label.contains("Borrow", ignoreCase = true) -> Color(0xFFF59E0B)
+        else -> Color(0xFFE54D2E)
+    }
+
     KanriGlassCard(
         modifier = modifier.fillMaxWidth(),
-        level = GlassLevel.Blur,
-        shape = RoundedCornerShape(24.dp)
+        level = GlassLevel.Strong,
+        shape = RoundedCornerShape(topStart = 24.dp, topEnd = 24.dp, bottomStart = 0.dp, bottomEnd = 0.dp),
+        hazeState = hazeState
     ) {
         Column(
             modifier = Modifier
                 .fillMaxWidth()
-                .padding(20.dp)
+                .padding(horizontal = 20.dp, vertical = 12.dp)
         ) {
-            // Header Row: 36dp circle chip + label + name
+            // Top Bar: Centered drag handle pill + optional close icon on top right (no badge)
             Row(
-                verticalAlignment = Alignment.CenterVertically,
-                horizontalArrangement = Arrangement.spacedBy(12.dp)
+                modifier = Modifier
+                    .fillMaxWidth()
+                    .padding(top = 4.dp, bottom = 4.dp),
+                verticalAlignment = Alignment.CenterVertically
             ) {
-                // 36dp circle chip: bg orange-100 / dark orange-500 @ 15%, text orange-700 / dark orange-300, 12sp medium
+                Spacer(modifier = Modifier.size(36.dp))
                 Box(
-                    modifier = Modifier
-                        .size(36.dp)
-                        .clip(CircleShape)
-                        .background(if (dark) Color(0x26F97316) else Color(0xFFFFEDD5)),
+                    modifier = Modifier.weight(1f),
                     contentAlignment = Alignment.Center
                 ) {
-                    Text(
-                        text = initials,
-                        fontSize = 12.sp,
-                        fontWeight = FontWeight.Medium,
-                        color = if (dark) Color(0xFFFDBA74) else Color(0xFFC2410C)
-                    )
-                }
-
-                Column(
-                    modifier = Modifier.weight(1f),
-                    verticalArrangement = Arrangement.spacedBy(2.dp)
-                ) {
-                    Text(
-                        text = label,
-                        fontSize = 12.sp,
-                        color = if (dark) Zinc400 else Zinc500
-                    )
-                    Row(
-                        verticalAlignment = Alignment.CenterVertically
-                    ) {
-                        Text(
-                            text = recipientName,
-                            fontSize = 14.sp,
-                            fontWeight = FontWeight.Medium,
-                            color = if (dark) Zinc100 else Zinc900,
-                            maxLines = 1,
-                            overflow = TextOverflow.Ellipsis
+                    if (showHandle) {
+                        Box(
+                            modifier = Modifier
+                                .size(width = 36.dp, height = 4.dp)
+                                .clip(CircleShape)
+                                .background(if (dark) Zinc700 else Zinc300)
                         )
-                        if (!recipientHandle.isNullOrEmpty()) {
-                            Spacer(modifier = Modifier.width(6.dp))
-                            Text(
-                                text = recipientHandle,
-                                fontSize = 14.sp,
-                                color = if (dark) Zinc500 else Zinc400,
-                                maxLines = 1
-                            )
-                        }
                     }
+                }
+                if (onClose != null) {
+                    IconButton(
+                        onClick = onClose,
+                        modifier = Modifier.size(36.dp)
+                    ) {
+                        Icon(
+                            imageVector = Icons.Default.Close,
+                            contentDescription = "Close",
+                            tint = tokens?.textSecondary ?: if (dark) Zinc400 else Zinc500,
+                            modifier = Modifier.size(18.dp)
+                        )
+                    }
+                } else {
+                    Spacer(modifier = Modifier.size(36.dp))
                 }
             }
 
-            // Amount Area: mt 24, height 80dp, centered
-            Spacer(modifier = Modifier.height(24.dp))
+            // Amount Area: height 80dp, centered with per-glyph animation & scale-fit
+            Spacer(modifier = Modifier.height(18.dp))
 
             BoxWithConstraints(
                 modifier = Modifier
@@ -372,41 +411,42 @@ fun KokonutAmountPad(
                     verticalAlignment = Alignment.Bottom,
                     horizontalArrangement = Arrangement.Center
                 ) {
-                    // Currency symbol: ₹ with mr 2dp
+                    // Currency symbol with mr 2dp
                     Text(
-                        text = "₹",
-                        fontSize = 56.sp,
-                        fontWeight = FontWeight.SemiBold,
+                        text = currency,
+                        fontSize = 58.sp,
+                        fontFamily = GoogleSansFlex,
+                        fontWeight = FontWeight.Bold,
                         color = if (isEmpty) (if (dark) Zinc700 else Zinc300) else (if (dark) Zinc500 else Zinc400),
                         letterSpacing = (-0.025).sp,
-                        modifier = Modifier.padding(end = 2.dp)
+                        modifier = Modifier.padding(end = 4.dp)
                     )
 
                     if (isEmpty) {
-                        // Empty state: faint "0"
+                        // Empty state: faint placeholder "0"
                         Text(
                             text = "0",
-                            fontSize = 56.sp,
-                            fontWeight = FontWeight.SemiBold,
+                            fontSize = 58.sp,
+                            fontFamily = GoogleSansFlex,
+                            fontWeight = FontWeight.Bold,
                             color = if (dark) Zinc700 else Zinc300,
                             letterSpacing = (-0.025).sp
                         )
                     } else {
-                        // Layout glyphs with per-character animation
+                        // Layout glyphs with #A2 per-character drop-in spring animation
                         Row(verticalAlignment = Alignment.Bottom) {
                             glyphs.forEach { glyph ->
-                                val glyphColor = when (glyph.kind) {
-                                    AmountGlyphKind.DIGIT -> if (dark) Zinc50 else Zinc900
-                                    AmountGlyphKind.SEP -> if (dark) Zinc500 else Zinc400
-                                    AmountGlyphKind.GHOST -> if (dark) Zinc700 else Zinc300
+                                key(glyph.key) {
+                                    val glyphColor = when (glyph.kind) {
+                                        AmountGlyphKind.DIGIT -> tokens?.textPrimary ?: if (dark) Zinc50 else Zinc900
+                                        AmountGlyphKind.SEP -> tokens?.textSecondary ?: if (dark) Zinc500 else Zinc400
+                                        AmountGlyphKind.GHOST -> if (dark) Zinc700 else Zinc300
+                                    }
+                                    AnimatedAmountGlyph(
+                                        glyph = glyph,
+                                        glyphColor = glyphColor
+                                    )
                                 }
-                                Text(
-                                    text = glyph.char,
-                                    fontSize = 56.sp,
-                                    fontWeight = FontWeight.SemiBold,
-                                    color = glyphColor,
-                                    letterSpacing = (-0.025).sp
-                                )
                             }
                         }
                     }
@@ -438,29 +478,30 @@ fun KokonutAmountPad(
                 ) { capped ->
                     if (capped) {
                         Text(
-                            text = "Up to ${amountPadMoney(maxAmount)} per entry",
+                            text = "Up to ${amountPadMoney(maxAmount, currency)} per entry",
                             fontSize = 12.sp,
+                            fontWeight = FontWeight.Medium,
                             color = if (dark) Color(0xFFF87171) else Color(0xFFDC2626),
                             textAlign = TextAlign.Center
                         )
                     } else {
                         val subText = if (balance != null) {
-                            "Balance ${amountPadMoney(balance)}"
+                            "Balance ${amountPadMoney(balance, currency)}"
                         } else {
-                            label
+                            "Tap keypad to set amount"
                         }
                         Text(
                             text = subText,
                             fontSize = 12.sp,
-                            color = if (dark) Zinc400 else Zinc500,
+                            color = tokens?.textSecondary ?: if (dark) Zinc400 else Zinc500,
                             textAlign = TextAlign.Center
                         )
                     }
                 }
             }
 
-            // Presets: mt 16dp, row centered gap 8dp, height 32, px 12
-            Spacer(modifier = Modifier.height(16.dp))
+            // Presets: row centered gap 8dp, height 32, px 12
+            Spacer(modifier = Modifier.height(14.dp))
             Row(
                 modifier = Modifier.fillMaxWidth(),
                 horizontalArrangement = Arrangement.spacedBy(8.dp, Alignment.CenterHorizontally)
@@ -472,25 +513,29 @@ fun KokonutAmountPad(
                             .clip(RoundedCornerShape(16.dp))
                             .border(
                                 1.dp,
-                                if (tokens != null) tokens.borderStart.copy(alpha = 0.3f) else if (dark) Zinc800 else Zinc200,
+                                if (tokens != null) tokens.borderStart.copy(alpha = 0.35f) else if (dark) Zinc800 else Zinc200,
                                 RoundedCornerShape(16.dp)
                             )
+                            .background(
+                                if (tokens != null) tokens.tintFlat else if (dark) Zinc900.copy(alpha = 0.5f) else Zinc100.copy(alpha = 0.6f)
+                            )
                             .clickable { applyPreset(preset) }
-                            .padding(horizontal = 12.dp),
+                            .padding(horizontal = 14.dp),
                         contentAlignment = Alignment.Center
                     ) {
                         Text(
-                            text = amountPadMoney(preset.toDouble()),
+                            text = amountPadMoney(preset.toDouble(), currency),
                             fontSize = 12.sp,
-                            fontWeight = FontWeight.Medium,
-                            color = if (dark) Zinc300 else Zinc700
+                            fontFamily = GoogleSansFlex,
+                            fontWeight = FontWeight.SemiBold,
+                            color = tokens?.textPrimary ?: if (dark) Zinc200 else Zinc800
                         )
                     }
                 }
             }
 
-            // Keypad: mt 16dp, 3-column grid gap 4dp, height 56dp per key
-            Spacer(modifier = Modifier.height(16.dp))
+            // Keypad: 3-column grid gap 4dp, height 56dp per key
+            Spacer(modifier = Modifier.height(14.dp))
             val keypadRows = AmountPadKeys.chunked(3)
             Column(
                 modifier = Modifier.fillMaxWidth(),
@@ -505,7 +550,7 @@ fun KokonutAmountPad(
                             val interactionSource = remember { MutableInteractionSource() }
                             val isPressed by interactionSource.collectIsPressedAsState()
                             val keyBg = if (isPressed) {
-                                if (dark) Zinc800 else Zinc100
+                                if (tokens != null) tokens.tintStrong else if (dark) Zinc800 else Zinc100
                             } else {
                                 Color.Transparent
                             }
@@ -513,7 +558,7 @@ fun KokonutAmountPad(
                             Box(
                                 modifier = Modifier
                                     .weight(1f)
-                                    .height(56.dp)
+                                    .height(54.dp)
                                     .clip(RoundedCornerShape(16.dp))
                                     .background(keyBg)
                                     .clickable(
@@ -526,15 +571,16 @@ fun KokonutAmountPad(
                                     Icon(
                                         imageVector = Icons.AutoMirrored.Filled.Backspace,
                                         contentDescription = "Delete",
-                                        tint = Zinc500,
+                                        tint = tokens?.textSecondary ?: Zinc500,
                                         modifier = Modifier.size(24.dp)
                                     )
                                 } else {
                                     Text(
                                         text = key,
                                         fontSize = 24.sp,
-                                        fontWeight = FontWeight.Medium,
-                                        color = if (dark) Zinc100 else Zinc900
+                                        fontFamily = GoogleSansFlex,
+                                        fontWeight = FontWeight.SemiBold,
+                                        color = tokens?.textPrimary ?: if (dark) Zinc100 else Zinc900
                                     )
                                 }
                             }
@@ -543,7 +589,7 @@ fun KokonutAmountPad(
                 }
             }
 
-            // Action Button: mt 12dp, height 48dp, rounded 16dp, 14sp medium
+            // Action Button: height 48dp, rounded 16dp
             Spacer(modifier = Modifier.height(12.dp))
             val btnBg = if (isEmpty) {
                 if (tokens != null) tokens.tintFlat else if (dark) Zinc900 else Zinc100
@@ -599,9 +645,10 @@ fun KokonutAmountPad(
                             modifier = Modifier.size(16.dp)
                         )
                         Text(
-                            text = if (empty) "Enter an amount" else "Continue ${amountPadMoney(value)}",
+                            text = if (empty) "Enter an amount" else "Continue ${amountPadMoney(value, currency)}",
                             fontSize = 14.sp,
-                            fontWeight = FontWeight.Medium,
+                            fontFamily = GoogleSansFlex,
+                            fontWeight = FontWeight.SemiBold,
                             color = btnTextColor
                         )
                     }

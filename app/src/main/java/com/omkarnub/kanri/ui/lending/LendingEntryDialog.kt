@@ -1,10 +1,28 @@
-﻿package com.omkarnub.kanri.ui.lending
+package com.omkarnub.kanri.ui.lending
+
+import androidx.compose.animation.AnimatedVisibility
+import androidx.compose.animation.slideInVertically
+import androidx.compose.animation.slideOutVertically
+import androidx.compose.animation.core.animateFloatAsState
+import kotlinx.coroutines.delay
+import kotlinx.coroutines.launch
+import androidx.compose.runtime.rememberCoroutineScope
 
 import android.app.TimePickerDialog
 import android.net.Uri
 import android.provider.ContactsContract
 import android.text.format.DateFormat
 import androidx.activity.compose.BackHandler
+import androidx.compose.animation.AnimatedContent
+import androidx.compose.animation.fadeIn
+import androidx.compose.animation.fadeOut
+import androidx.compose.animation.slideInHorizontally
+import androidx.compose.animation.slideOutHorizontally
+import androidx.compose.animation.togetherWith
+import androidx.compose.animation.core.tween
+import androidx.compose.animation.core.FastOutSlowInEasing
+import androidx.compose.animation.core.spring
+import androidx.compose.animation.core.Spring
 import kotlin.math.abs
 import androidx.activity.compose.rememberLauncherForActivityResult
 import androidx.activity.result.contract.ActivityResultContracts
@@ -157,6 +175,27 @@ fun LendingEntryDialog(
         mutableStateOf(if (isEditing) LendingEntryStep.FILL_DETAILS else LendingEntryStep.AMOUNT_PAD)
     }
 
+    val scope = rememberCoroutineScope()
+    var isVisible by remember { mutableStateOf(false) }
+    LaunchedEffect(Unit) {
+        isVisible = true
+    }
+
+    val scrimAlpha by animateFloatAsState(
+        targetValue = if (isVisible) 0.55f else 0f,
+        animationSpec = tween(durationMillis = 260, easing = FastOutSlowInEasing),
+        label = "lendingScrimAlpha"
+    )
+
+    fun performDismiss() {
+        if (!isVisible) return
+        scope.launch {
+            isVisible = false
+            delay(220)
+            onDismiss()
+        }
+    }
+
     var type by remember { mutableStateOf(existingEntry?.lending?.type ?: initialType) }
     var personName by remember { mutableStateOf(existingEntry?.lending?.personName ?: initialPersonName) }
     var amount by remember { mutableDoubleStateOf(existingEntry?.lending?.amount ?: initialAmount) }
@@ -237,64 +276,16 @@ fun LendingEntryDialog(
         }
     )
 
-    when (currentStep) {
-        LendingEntryStep.AMOUNT_PAD -> {
-            BackHandler(onBack = onDismiss)
-            Box(
-                modifier = Modifier.fillMaxSize(),
-                contentAlignment = Alignment.BottomCenter
-            ) {
-                Box(
-                    modifier = Modifier
-                        .fillMaxSize()
-                        .then(
-                            if (hazeState != null) {
-                                Modifier.hazeChild(
-                                    state = hazeState,
-                                    style = dev.chrisbanes.haze.HazeStyle(
-                                        backgroundColor = Color.Black.copy(alpha = 0.52f),
-                                        tint = dev.chrisbanes.haze.HazeTint(Color.Black.copy(alpha = 0.52f)),
-                                        blurRadius = 24.dp
-                                    )
-                                )
-                            } else {
-                                Modifier.background(Color.Black.copy(alpha = 0.52f))
-                            }
-                        )
-                        .clickable(
-                            interactionSource = remember { MutableInteractionSource() },
-                            indication = null,
-                            onClick = onDismiss
-                        )
-                )
-
-                KokonutAmountPad(
-                    label = if (type == "LENT") "Lending to" else "Borrowing from",
-                    recipientName = if (personName.isNotBlank()) personName else (if (type == "LENT") "Lent" else "Borrowed"),
-                    initialAmount = amount,
-                    onContinue = { entered ->
-                        amount = entered
-                        manualText = if (entered % 1.0 == 0.0) entered.toLong().toString() else entered.toString()
-                        manualTextFieldValue = TextFieldValue(text = manualText, selection = TextRange(manualText.length))
-                        currentStep = LendingEntryStep.FILL_DETAILS
-                    },
-                    modifier = Modifier
-                        .fillMaxWidth()
-                        .navigationBarsPadding()
-                        .imePadding()
-                )
-            }
+    BackHandler(onBack = {
+        when (currentStep) {
+            LendingEntryStep.AMOUNT_PAD -> performDismiss()
+            LendingEntryStep.FILL_DETAILS -> if (!isEditing) currentStep = LendingEntryStep.AMOUNT_PAD else performDismiss()
+            LendingEntryStep.SUMMARY_DRAWER -> currentStep = LendingEntryStep.FILL_DETAILS
         }
-        LendingEntryStep.FILL_DETAILS -> {
-            BackHandler(onBack = {
-                if (!isEditing) {
-                    currentStep = LendingEntryStep.AMOUNT_PAD
-                } else {
-                    onDismiss()
-                }
-            })
+    })
+
     Dialog(
-        onDismissRequest = onDismiss,
+        onDismissRequest = { performDismiss() },
         properties = DialogProperties(
             usePlatformDefaultWidth = false,
             decorFitsSystemWindows = false
@@ -312,10 +303,120 @@ fun LendingEntryDialog(
         }
 
         Box(
-            modifier = Modifier
-                .fillMaxSize()
-                .background(pageBgColor)
+            modifier = Modifier.fillMaxSize(),
+            contentAlignment = Alignment.BottomCenter
         ) {
+            // Scrim backdrop
+            Box(
+                modifier = Modifier
+                    .fillMaxSize()
+                    .background(Color.Black.copy(alpha = scrimAlpha))
+                    .clickable(
+                        interactionSource = remember { MutableInteractionSource() },
+                        indication = null,
+                        onClick = {
+                            if (currentStep == LendingEntryStep.SUMMARY_DRAWER) {
+                                currentStep = LendingEntryStep.FILL_DETAILS
+                            } else if (currentStep == LendingEntryStep.AMOUNT_PAD) {
+                                performDismiss()
+                            }
+                        }
+                    )
+            )
+
+            AnimatedVisibility(
+                visible = isVisible,
+                enter = slideInVertically(
+                    initialOffsetY = { it },
+                    animationSpec = spring(dampingRatio = 0.8f, stiffness = Spring.StiffnessMediumLow)
+                ) + fadeIn(tween(180)),
+                exit = slideOutVertically(
+                    targetOffsetY = { it },
+                    animationSpec = tween(220, easing = FastOutSlowInEasing)
+                ) + fadeOut(tween(150)),
+                modifier = Modifier.fillMaxSize()
+            ) {
+                AnimatedContent(
+                    targetState = currentStep,
+                    transitionSpec = {
+                        if (targetState == LendingEntryStep.SUMMARY_DRAWER) {
+                            (slideInVertically(
+                                initialOffsetY = { it },
+                                animationSpec = spring(stiffness = Spring.StiffnessMediumLow, dampingRatio = 0.82f)
+                            ) + fadeIn(tween(180))).togetherWith(
+                                slideOutVertically(
+                                    targetOffsetY = { it / 4 },
+                                    animationSpec = tween(180)
+                                ) + fadeOut(tween(140))
+                            )
+                        } else if (initialState == LendingEntryStep.SUMMARY_DRAWER) {
+                            (slideInVertically(
+                                initialOffsetY = { it / 4 },
+                                animationSpec = tween(180)
+                            ) + fadeIn(tween(180))).togetherWith(
+                                slideOutVertically(
+                                    targetOffsetY = { it },
+                                    animationSpec = tween(220, easing = FastOutSlowInEasing)
+                                ) + fadeOut(tween(160))
+                            )
+                        } else if (targetState.ordinal > initialState.ordinal) {
+                            (slideInHorizontally(
+                                initialOffsetX = { it },
+                                animationSpec = spring(stiffness = Spring.StiffnessMediumLow, dampingRatio = 0.85f)
+                            ) + fadeIn(tween(200))).togetherWith(
+                                slideOutHorizontally(
+                                    targetOffsetX = { -it / 3 },
+                                    animationSpec = tween(200, easing = FastOutSlowInEasing)
+                                ) + fadeOut(tween(150))
+                            )
+                        } else {
+                            (slideInHorizontally(
+                                initialOffsetX = { -it / 3 },
+                                animationSpec = spring(stiffness = Spring.StiffnessMediumLow, dampingRatio = 0.85f)
+                            ) + fadeIn(tween(200))).togetherWith(
+                                slideOutHorizontally(
+                                    targetOffsetX = { it },
+                                    animationSpec = tween(200, easing = FastOutSlowInEasing)
+                                ) + fadeOut(tween(150))
+                            )
+                        }
+                    },
+                    label = "lendingEntryStepTransition",
+                    modifier = Modifier.fillMaxSize()
+                ) { step ->
+                when (step) {
+                    LendingEntryStep.AMOUNT_PAD -> {
+                        Box(
+                            modifier = Modifier.fillMaxSize(),
+                            contentAlignment = Alignment.BottomCenter
+                        ) {
+                            KokonutAmountPad(
+                                label = if (type == "LENT") "Lending to" else "Borrowing from",
+                                recipientName = if (personName.isNotBlank()) personName else (if (type == "LENT") "Lent" else "Borrowed"),
+                                initialAmount = amount,
+                                currency = CurrencyUtils.getCurrencySymbol(),
+                                showHandle = true,
+                                onClose = { performDismiss() },
+                                hazeState = hazeState,
+                                onContinue = { entered ->
+                                    amount = entered
+                                    manualText = if (entered % 1.0 == 0.0) entered.toLong().toString() else entered.toString()
+                                    manualTextFieldValue = TextFieldValue(text = manualText, selection = TextRange(manualText.length))
+                                    currentStep = LendingEntryStep.FILL_DETAILS
+                                },
+                                modifier = Modifier
+                                    .fillMaxWidth()
+                                    .navigationBarsPadding()
+                                    .imePadding()
+                            )
+                        }
+                    }
+                    LendingEntryStep.FILL_DETAILS -> {
+                        Box(
+                            modifier = Modifier
+                                .fillMaxSize()
+                                .background(pageBgColor)
+                        ) {
             if (tokens != null) {
                 GlassBackdrop(
                     modifier = Modifier.fillMaxSize(),
@@ -339,7 +440,13 @@ fun LendingEntryDialog(
                             )
                         },
                         navigationIcon = {
-                            IconButton(onClick = onDismiss) {
+                            IconButton(onClick = {
+                                if (!isEditing) {
+                                    currentStep = LendingEntryStep.AMOUNT_PAD
+                                } else {
+                                    onDismiss()
+                                }
+                            }) {
                                 Icon(
                                     imageVector = Icons.AutoMirrored.Filled.ArrowBack,
                                     contentDescription = "Back",
@@ -388,7 +495,7 @@ fun LendingEntryDialog(
                                     .height(52.dp)
                             ) {
                                 Text(
-                                    text = if (isEditing) "Review Changes" else "Review Summary",
+                                    text = if (isEditing) "Proceed to Update" else "Proceed",
                                     style = MaterialTheme.typography.titleMedium.copy(fontWeight = FontWeight.Bold)
                                 )
                             }
@@ -1457,35 +1564,34 @@ fun LendingEntryDialog(
                 }
             }
         }
-    }
-}
-
-
-        }
-        LendingEntryStep.SUMMARY_DRAWER -> {
-            BackHandler(onBack = { currentStep = LendingEntryStep.FILL_DETAILS })
-            val detailRows = listOfNotNull(
-                DrawerDetailRow(title = "Type", value = if (type == "LENT") "Lent" else "Borrowed"),
-                DrawerDetailRow(title = if (type == "LENT") "To" else "From", value = personName.trim()),
-                if (dueDate != null) DrawerDetailRow(title = "Expected Return", value = SimpleDateFormat("dd MMM yyyy", Locale.getDefault()).format(Date(dueDate!!))) else null,
-                if (notes.isNotBlank()) DrawerDetailRow(title = "Note", value = notes.trim()) else null,
-                DrawerDetailRow(title = "Account", value = if (selectedWallet == "ONLINE") "Online" else if (selectedWallet == "CASH") "Cash" else "Unlinked")
-            )
-
-            KokonutSmoothDrawer(
-                title = if (type == "LENT") "Review loan" else "Review borrowing",
-                description = "${personName.trim()} • ${SimpleDateFormat("dd MMM, hh:mm a", Locale.getDefault()).format(Date(entryDate))}",
-                totalAmount = amount,
-                slideLabel = if (type == "LENT") "Slide to lend ₹${amount.toInt()}" else "Slide to record borrowing",
-                detailRows = detailRows,
-                accountType = if (selectedWallet == "ONLINE") "Online" else "Cash",
-                onConfirm = {
-                    onSave(personName.trim(), amount, type, entryDate, dueDate, notes.ifBlank { null }, selectedWallet)
-                },
-                onDismiss = {
-                    currentStep = LendingEntryStep.FILL_DETAILS
+                    }
                 }
-            )
+                LendingEntryStep.SUMMARY_DRAWER -> {
+                    val detailRows = listOfNotNull(
+                        DrawerDetailRow(title = "Type", value = if (type == "LENT") "Lent" else "Borrowed"),
+                        DrawerDetailRow(title = if (type == "LENT") "To" else "From", value = personName.trim()),
+                        if (dueDate != null) DrawerDetailRow(title = "Expected Return", value = SimpleDateFormat("dd MMM yyyy", Locale.getDefault()).format(Date(dueDate!!))) else null,
+                        if (notes.isNotBlank()) DrawerDetailRow(title = "Note", value = notes.trim()) else null,
+                        DrawerDetailRow(title = "Account", value = if (selectedWallet == "ONLINE") "Online" else if (selectedWallet == "CASH") "Cash" else "Unlinked")
+                    )
+
+                    KokonutSmoothDrawer(
+                        title = if (type == "LENT") "Review loan" else "Review borrowing",
+                        description = "${personName.trim()} • ${SimpleDateFormat("dd MMM, hh:mm a", Locale.getDefault()).format(Date(entryDate))}",
+                        totalAmount = amount,
+                        slideLabel = if (type == "LENT") "Slide to lend ₹${amount.toInt()}" else "Slide to record borrowing",
+                        detailRows = detailRows,
+                        accountType = if (selectedWallet == "ONLINE") "Online" else "Cash",
+                        hazeState = hazeState,
+                        onConfirm = {
+                            onSave(personName.trim(), amount, type, entryDate, dueDate, notes.ifBlank { null }, selectedWallet)
+                        },
+                        onDismiss = {
+                            currentStep = LendingEntryStep.FILL_DETAILS
+                        }
+                    )
+                }
+            }
         }
     }
     // Material Date Picker Dialog for Entry Date
@@ -1547,6 +1653,8 @@ fun LendingEntryDialog(
             DatePicker(state = datePickerState)
         }
     }
+}
+}
 }
 
 // -------------------------------------------------------------

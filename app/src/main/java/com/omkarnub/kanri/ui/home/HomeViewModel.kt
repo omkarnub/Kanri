@@ -1,4 +1,4 @@
-﻿package com.omkarnub.kanri.ui.home
+package com.omkarnub.kanri.ui.home
 
 import android.app.Application
 import android.content.BroadcastReceiver
@@ -555,7 +555,8 @@ class HomeViewModel(application: Application) : AndroidViewModel(application) {
         counterparty: String,
         sourceType: String,
         categoryId: Long? = null,
-        walletChoice: String? = null
+        walletChoice: String? = null,
+        timestamp: Long = System.currentTimeMillis()
     ) {
         viewModelScope.launch {
             val resolvedCategoryId = categoryId ?: if (!counterparty.isBlank()) {
@@ -579,7 +580,7 @@ class HomeViewModel(application: Application) : AndroidViewModel(application) {
                 displayName = counterparty.trim(),
                 bank = if (sourceType.equals("CASH", ignoreCase = true)) "Cash" else null,
                 refNo = null,
-                timestamp = System.currentTimeMillis(),
+                timestamp = timestamp,
                 categoryId = resolvedCategoryId,
                 rawSms = "Manual entry: $counterparty",
                 isManualEntry = true,

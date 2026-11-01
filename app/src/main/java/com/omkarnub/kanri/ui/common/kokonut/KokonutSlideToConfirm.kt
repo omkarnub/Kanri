@@ -235,6 +235,8 @@ fun KokonutSlideToConfirm(
         }
     }
 
+    val velocityTracker = remember { VelocityTracker() }
+
     BoxWithConstraints(
         modifier = modifier
             .fillMaxWidth()
@@ -262,19 +264,94 @@ fun KokonutSlideToConfirm(
         // Ink fill opacity: min(1, currentX / 20)
         val fillOpacity = min(1f, currentX / with(density) { 20.dp.toPx() })
 
-        // 1. Track Background: 1dp border zinc-200/800, bg zinc-100 / dark zinc-900 (or glass tokens if present)
+        // 1. Gesture Tracking Overlay (fixed coordinates on track, 1:1 direct manipulation tracking)
         Box(
             modifier = Modifier
                 .fillMaxSize()
-                .background(
-                    if (tokens != null) tokens.tintFlat else (if (dark) Zinc900 else Zinc100)
-                )
-                .border(
-                    1.dp,
-                    if (tokens != null) tokens.borderStart.copy(alpha = 0.35f) else (if (dark) Zinc800 else Zinc200),
-                    RoundedCornerShape(28.dp)
-                )
-        )
+                .pointerInput(disabled, maxDistPx) {
+                    if (disabled) return@pointerInput
+
+                    awaitEachGesture {
+                        val down = awaitFirstDown(requireUnconsumed = false)
+                        val touchX = down.position.x
+                        val thumbLeft = insetPx + xAnim.value
+                        val thumbRight = thumbLeft + thumbPx
+                        val hitThumb = touchX >= (thumbLeft - with(density) { 20.dp.toPx() }) &&
+                                touchX <= (thumbRight + with(density) { 32.dp.toPx() })
+
+                        if (!hitThumb) return@awaitEachGesture
+                        if (phase == SlidePhase.CONFIRMING || phase == SlidePhase.DONE) return@awaitEachGesture
+
+                        val grabOffset = touchX - xAnim.value
+                        velocityTracker.resetTracking()
+                        velocityTracker.addPosition(down.uptimeMillis, down.position)
+                        var isDragging = false
+                        val startTouchX = touchX
+
+                        while (true) {
+                            val event = awaitPointerEvent()
+                            val change = event.changes.firstOrNull { it.id == down.id } ?: break
+
+                            if (change.changedToUp()) {
+                                change.consume()
+                                if (!isDragging) {
+                                    // Tap nudge to 28dp over 180ms ease-out, then spring back
+                                    scope.launch {
+                                        xAnim.animateTo(with(density) { 28.dp.toPx() }, tween(180, easing = SLIDE_EASE_OUT))
+                                        if (phase == SlidePhase.IDLE) {
+                                            xAnim.animateTo(0f, spring(stiffness = 520f, dampingRatio = 0.921f))
+                                        }
+                                    }
+                                } else {
+                                    val vel = velocityTracker.calculateVelocity().x
+                                    val curProgress = if (maxDistPx > 0f) xAnim.value / maxDistPx else 0f
+                                    if (slideShouldCommit(curProgress, vel)) {
+                                        commit(maxDistPx, vel)
+                                    } else {
+                                        settleBack(vel)
+                                    }
+                                }
+                                break
+                            }
+
+                            if (change.positionChanged()) {
+                                val dx = change.position.x - startTouchX
+                                if (!isDragging && abs(dx) > with(density) { 4.dp.toPx() }) {
+                                    isDragging = true
+                                    phase = SlidePhase.DRAGGING
+                                    scope.launch { xAnim.stop() }
+                                }
+
+                                if (isDragging) {
+                                    change.consume()
+                                    velocityTracker.addPosition(change.uptimeMillis, change.position)
+                                    val targetX = change.position.x - grabOffset
+                                    val banded = slideBand(targetX, maxDistPx)
+                                    scope.launch { xAnim.snapTo(banded) }
+                                    val armed = banded >= maxDistPx * SLIDE_COMMIT_AT
+                                    if (armed != isArmed) {
+                                        isArmed = armed
+                                        if (armed) haptics.tick()
+                                    }
+                                }
+                            }
+                        }
+                    }
+                }
+        ) {
+            // Track Background: 1dp border zinc-200/800, bg zinc-100 / dark zinc-900 (or glass tokens if present)
+            Box(
+                modifier = Modifier
+                    .fillMaxSize()
+                    .background(
+                        if (tokens != null) tokens.tintFlat else (if (dark) Zinc900 else Zinc100)
+                    )
+                    .border(
+                        1.dp,
+                        if (tokens != null) tokens.borderStart.copy(alpha = 0.35f) else (if (dark) Zinc800 else Zinc200),
+                        RoundedCornerShape(28.dp)
+                    )
+            )
 
         // 2. Empty-track Label
         Box(
@@ -364,8 +441,6 @@ fun KokonutSlideToConfirm(
         }
 
         // 4. Thumb: 48dp circle, left offset INSET - 1 = 3dp, top INSET - 1 = 3dp
-        val velocityTracker = remember { VelocityTracker() }
-
         Box(
             modifier = Modifier
                 .offset {
@@ -384,69 +459,7 @@ fun KokonutSlideToConfirm(
                     width = 1.dp,
                     color = if (tokens != null) tokens.borderStart else (if (dark) Color.White.copy(alpha = 0.08f) else Color.Black.copy(alpha = 0.06f)),
                     shape = CircleShape
-                )
-                .pointerInput(disabled, phase, maxDistPx) {
-                    if (disabled || phase != SlidePhase.IDLE) return@pointerInput
-
-                    awaitEachGesture {
-                        val down = awaitFirstDown(requireUnconsumed = false)
-                        val startX = down.position.x
-                        velocityTracker.resetTracking()
-                        velocityTracker.addPosition(down.uptimeMillis, down.position)
-                        var isDragging = false
-                        var currentDragX = xAnim.value
-
-                        while (true) {
-                            val event = awaitPointerEvent()
-                            val change = event.changes.firstOrNull { it.id == down.id } ?: break
-
-                            if (change.changedToUp()) {
-                                change.consume()
-                                if (!isDragging) {
-                                    // Tap nudge to 28dp over 180ms ease-out, then spring back
-                                    scope.launch {
-                                        xAnim.animateTo(with(density) { 28.dp.toPx() }, tween(180, easing = SLIDE_EASE_OUT))
-                                        if (phase == SlidePhase.IDLE) {
-                                            xAnim.animateTo(0f, spring(stiffness = 520f, dampingRatio = 0.921f))
-                                        }
-                                    }
-                                } else {
-                                    val vel = velocityTracker.calculateVelocity().x
-                                    val curProgress = if (maxDistPx > 0f) xAnim.value / maxDistPx else 0f
-                                    if (slideShouldCommit(curProgress, vel)) {
-                                        commit(maxDistPx, vel)
-                                    } else {
-                                        settleBack(vel)
-                                    }
-                                }
-                                break
-                            }
-
-                            if (change.positionChanged()) {
-                                val dx = change.position.x - startX
-                                if (!isDragging && abs(dx) > with(density) { 4.dp.toPx() }) {
-                                    isDragging = true
-                                    phase = SlidePhase.DRAGGING
-                                    scope.launch { xAnim.stop() }
-                                }
-
-                                if (isDragging) {
-                                    change.consume()
-                                    velocityTracker.addPosition(change.uptimeMillis, change.position)
-                                    val dragAmount = change.position.x - change.previousPosition.x
-                                    currentDragX += dragAmount
-                                    val banded = slideBand(currentDragX, maxDistPx)
-                                    scope.launch { xAnim.snapTo(banded) }
-                                    val armed = currentDragX >= maxDistPx * SLIDE_COMMIT_AT
-                                    if (armed != isArmed) {
-                                        isArmed = armed
-                                        if (armed) haptics.tick()
-                                    }
-                                }
-                            }
-                        }
-                    }
-                },
+                ),
             contentAlignment = Alignment.Center
         ) {
             // Icon Stack: ArrowRight, Check, Spinner
@@ -535,5 +548,6 @@ fun KokonutSlideToConfirm(
             )
         }
     }
+}
 }
 

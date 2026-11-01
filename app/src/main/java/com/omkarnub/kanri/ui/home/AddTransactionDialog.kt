@@ -1,8 +1,28 @@
 package com.omkarnub.kanri.ui.home
 
+import android.app.TimePickerDialog
+import androidx.compose.animation.slideInVertically
+import androidx.compose.animation.slideOutVertically
+import androidx.compose.material.icons.automirrored.filled.ArrowBack
+import androidx.compose.material.icons.filled.AccessTime
+import androidx.compose.material.icons.filled.CalendarToday
+import androidx.compose.material.icons.filled.Close
+import androidx.compose.material3.DatePicker
+import androidx.compose.material3.rememberDatePickerState
+import com.omkarnub.kanri.ui.common.KanriGlassDatePickerDialog
+import androidx.compose.runtime.mutableLongStateOf
+import java.util.Calendar
+import java.util.TimeZone
+import kotlinx.coroutines.delay
+
 import androidx.activity.compose.BackHandler
+import androidx.compose.animation.AnimatedContent
+import androidx.compose.animation.slideInHorizontally
+import androidx.compose.animation.slideOutHorizontally
+import androidx.compose.animation.togetherWith
 import androidx.compose.animation.AnimatedVisibility
 import androidx.compose.animation.core.FastOutSlowInEasing
+import androidx.compose.animation.core.animateFloatAsState
 import androidx.compose.animation.core.Spring
 import androidx.compose.animation.core.spring
 import androidx.compose.animation.core.tween
@@ -133,6 +153,27 @@ fun AddTransactionDialog(
     onOpenLendBorrow: ((amount: Double, type: String, counterparty: String, note: String) -> Unit)? = null,
     hazeState: HazeState? = LocalHazeState.current
 ) {
+    AddTransactionDialog(
+        onDismiss = onDismiss,
+        onConfirm = { amount, type, counterparty, sourceType, categoryId, wallet, _ ->
+            onConfirm(amount, type, counterparty, sourceType, categoryId, wallet)
+        },
+        initialType = initialType,
+        categories = categories,
+        onOpenLendBorrow = onOpenLendBorrow,
+        hazeState = hazeState
+    )
+}
+
+@Composable
+fun AddTransactionDialog(
+    onDismiss: () -> Unit,
+    onConfirm: (amount: Double, type: String, counterparty: String, sourceType: String, categoryId: Long?, wallet: String?, timestamp: Long) -> Unit,
+    initialType: String = "DEBIT",
+    categories: List<CategoryEntity> = emptyList(),
+    onOpenLendBorrow: ((amount: Double, type: String, counterparty: String, note: String) -> Unit)? = null,
+    hazeState: HazeState? = LocalHazeState.current
+) {
 
     val context = LocalContext.current
     val haptics = rememberKanriHaptics()
@@ -190,62 +231,43 @@ fun AddTransactionDialog(
 
     val focusRequester = remember { FocusRequester() }
 
+    var isVisible by remember { mutableStateOf(false) }
+    LaunchedEffect(Unit) {
+        isVisible = true
+    }
+
+    var transactionTimestamp by remember { mutableLongStateOf(System.currentTimeMillis()) }
+    var showDatePicker by remember { mutableStateOf(false) }
+
+    fun performDismiss() {
+        if (!isVisible) return
+        scope.launch {
+            isVisible = false
+            delay(220)
+            onDismiss()
+        }
+    }
+
     LaunchedEffect(isManualInput) {
         if (isManualInput) {
             focusRequester.requestFocus()
         }
     }
 
-    when (currentStep) {
-        AddTransactionStep.AMOUNT_PAD -> {
-            BackHandler(onBack = onDismiss)
-            Box(
-                modifier = Modifier.fillMaxSize(),
-                contentAlignment = Alignment.BottomCenter
-            ) {
-                Box(
-                    modifier = Modifier
-                        .fillMaxSize()
-                        .then(
-                            if (hazeState != null) {
-                                Modifier.hazeChild(
-                                    state = hazeState,
-                                    style = dev.chrisbanes.haze.HazeStyle(
-                                        backgroundColor = Color.Black.copy(alpha = 0.52f),
-                                        tint = dev.chrisbanes.haze.HazeTint(Color.Black.copy(alpha = 0.52f)),
-                                        blurRadius = 24.dp
-                                    )
-                                )
-                            } else {
-                                Modifier.background(Color.Black.copy(alpha = 0.52f))
-                            }
-                        )
-                        .clickable(
-                            interactionSource = remember { MutableInteractionSource() },
-                            indication = null,
-                            onClick = onDismiss
-                        )
-                )
-
-                KokonutAmountPad(
-                    label = if (isDebit) "Expense" else "Income",
-                    recipientName = if (isDebit) "Expense" else "Income",
-                    initialAmount = amount,
-                    onContinue = { entered ->
-                        amount = entered
-                        manualText = if (entered % 1.0 == 0.0) entered.toLong().toString() else entered.toString()
-                        manualTextFieldValue = TextFieldValue(text = manualText, selection = TextRange(manualText.length))
-                        currentStep = AddTransactionStep.FILL_DETAILS
-                    },
-                    modifier = Modifier
-                        .fillMaxWidth()
-                        .navigationBarsPadding()
-                        .imePadding()
-                )
-            }
+    BackHandler(onBack = {
+        when (currentStep) {
+            AddTransactionStep.AMOUNT_PAD -> performDismiss()
+            AddTransactionStep.FILL_DETAILS -> currentStep = AddTransactionStep.AMOUNT_PAD
+            AddTransactionStep.SUMMARY_DRAWER -> currentStep = AddTransactionStep.FILL_DETAILS
         }
-        AddTransactionStep.FILL_DETAILS -> {
-            BackHandler(onBack = { currentStep = AddTransactionStep.AMOUNT_PAD })
+    })
+
+    val scrimAlpha by animateFloatAsState(
+        targetValue = if (isVisible) 0.55f else 0f,
+        animationSpec = tween(durationMillis = 260, easing = FastOutSlowInEasing),
+        label = "dialogScrimAlpha"
+    )
+
     Box(
         modifier = Modifier.fillMaxSize(),
         contentAlignment = Alignment.BottomCenter
@@ -254,35 +276,116 @@ fun AddTransactionDialog(
         Box(
             modifier = Modifier
                 .fillMaxSize()
-                .then(
-                    if (hazeState != null) {
-                        Modifier.hazeChild(
-                            state = hazeState,
-                            style = dev.chrisbanes.haze.HazeStyle(
-                                backgroundColor = Color.Black.copy(alpha = 0.52f),
-                                tint = dev.chrisbanes.haze.HazeTint(Color.Black.copy(alpha = 0.52f)),
-                                blurRadius = 24.dp
-                            )
-                        )
-                    } else {
-                        Modifier.background(Color.Black.copy(alpha = 0.52f))
-                    }
-                )
+                .background(Color.Black.copy(alpha = scrimAlpha))
                 .clickable(
                     interactionSource = remember { MutableInteractionSource() },
                     indication = null,
-                    onClick = onDismiss
+                    onClick = {
+                        if (currentStep == AddTransactionStep.SUMMARY_DRAWER) {
+                            currentStep = AddTransactionStep.FILL_DETAILS
+                        } else if (currentStep == AddTransactionStep.AMOUNT_PAD) {
+                            performDismiss()
+                        }
+                    }
                 )
         )
 
-        // 2. Centered Plain Themed Popup Card with Strong Frosted Blur
-        Box(
-            modifier = Modifier
-                .fillMaxWidth()
-                .imePadding()
-                .navigationBarsPadding(),
-            contentAlignment = Alignment.BottomCenter
+        // 2. Animated popup entrance and step transitions: AMOUNT_PAD -> FILL_DETAILS -> SUMMARY_DRAWER
+        AnimatedVisibility(
+            visible = isVisible,
+            enter = slideInVertically(
+                initialOffsetY = { it },
+                animationSpec = spring(dampingRatio = 0.8f, stiffness = Spring.StiffnessMediumLow)
+            ) + fadeIn(tween(180)),
+            exit = slideOutVertically(
+                targetOffsetY = { it },
+                animationSpec = tween(220, easing = FastOutSlowInEasing)
+            ) + fadeOut(tween(150)),
+            modifier = Modifier.fillMaxSize()
         ) {
+            AnimatedContent(
+                targetState = currentStep,
+                transitionSpec = {
+                    if (targetState == AddTransactionStep.SUMMARY_DRAWER) {
+                        (slideInVertically(
+                            initialOffsetY = { it },
+                            animationSpec = spring(stiffness = Spring.StiffnessMediumLow, dampingRatio = 0.82f)
+                        ) + fadeIn(tween(180))).togetherWith(
+                            slideOutVertically(
+                                targetOffsetY = { it / 4 },
+                                animationSpec = tween(180)
+                            ) + fadeOut(tween(140))
+                        )
+                    } else if (initialState == AddTransactionStep.SUMMARY_DRAWER) {
+                        (slideInVertically(
+                            initialOffsetY = { it / 4 },
+                            animationSpec = tween(180)
+                        ) + fadeIn(tween(180))).togetherWith(
+                            slideOutVertically(
+                                targetOffsetY = { it },
+                                animationSpec = tween(220, easing = FastOutSlowInEasing)
+                            ) + fadeOut(tween(160))
+                        )
+                    } else if (targetState.ordinal > initialState.ordinal) {
+                        (slideInHorizontally(
+                            initialOffsetX = { it },
+                            animationSpec = spring(stiffness = Spring.StiffnessMediumLow, dampingRatio = 0.85f)
+                        ) + fadeIn(tween(200))).togetherWith(
+                            slideOutHorizontally(
+                                targetOffsetX = { -it / 3 },
+                                animationSpec = tween(200, easing = FastOutSlowInEasing)
+                            ) + fadeOut(tween(150))
+                        )
+                    } else {
+                        (slideInHorizontally(
+                            initialOffsetX = { -it / 3 },
+                            animationSpec = spring(stiffness = Spring.StiffnessMediumLow, dampingRatio = 0.85f)
+                        ) + fadeIn(tween(200))).togetherWith(
+                            slideOutHorizontally(
+                                targetOffsetX = { it },
+                                animationSpec = tween(200, easing = FastOutSlowInEasing)
+                            ) + fadeOut(tween(150))
+                        )
+                    }
+                },
+                label = "addTransactionStepTransition",
+                modifier = Modifier.fillMaxSize()
+            ) { step ->
+            when (step) {
+                AddTransactionStep.AMOUNT_PAD -> {
+                    Box(
+                        modifier = Modifier.fillMaxSize(),
+                        contentAlignment = Alignment.BottomCenter
+                    ) {
+                        KokonutAmountPad(
+                            label = if (isDebit) "Add Expense" else "Add Income",
+                            recipientName = if (isDebit) "Expense" else "Income",
+                            initialAmount = amount,
+                            currency = CurrencyUtils.getCurrencySymbol(),
+                            showHandle = true,
+                            onClose = { performDismiss() },
+                            hazeState = hazeState,
+                            onContinue = { entered ->
+                                amount = entered
+                                manualText = if (entered % 1.0 == 0.0) entered.toLong().toString() else entered.toString()
+                                manualTextFieldValue = TextFieldValue(text = manualText, selection = TextRange(manualText.length))
+                                currentStep = AddTransactionStep.FILL_DETAILS
+                            },
+                            modifier = Modifier
+                                .fillMaxWidth()
+                                .navigationBarsPadding()
+                                .imePadding()
+                        )
+                    }
+                }
+                AddTransactionStep.FILL_DETAILS -> {
+                    Box(
+                        modifier = Modifier
+                            .fillMaxWidth()
+                            .imePadding()
+                            .navigationBarsPadding(),
+                        contentAlignment = Alignment.BottomCenter
+                    ) {
             KanriGlassCard(
                 modifier = Modifier.fillMaxWidth(),
                 shape = RoundedCornerShape(topStart = 24.dp, topEnd = 24.dp, bottomStart = 0.dp, bottomEnd = 0.dp),
@@ -525,6 +628,110 @@ fun AddTransactionDialog(
                     }
 
                     Spacer(modifier = Modifier.height(16.dp))
+
+                    // -------------------------------------------------------------
+                    // Date & Time Selection (Apple Glass Chips)
+                    // -------------------------------------------------------------
+                    Text(
+                        text = "Date & Time",
+                        color = MaterialTheme.colorScheme.onSurfaceVariant,
+                        fontSize = 12.sp,
+                        fontWeight = FontWeight.SemiBold,
+                        modifier = Modifier.align(Alignment.Start)
+                    )
+
+                    Spacer(modifier = Modifier.height(6.dp))
+
+                    Row(
+                        modifier = Modifier.fillMaxWidth(),
+                        horizontalArrangement = Arrangement.spacedBy(10.dp)
+                    ) {
+                        // Date Chip
+                        Surface(
+                            shape = RoundedCornerShape(12.dp),
+                            color = MaterialTheme.colorScheme.onSurface.copy(alpha = 0.07f),
+                            border = BorderStroke(0.8.dp, MaterialTheme.colorScheme.onSurface.copy(alpha = 0.16f)),
+                            modifier = Modifier
+                                .weight(1f)
+                                .clip(RoundedCornerShape(12.dp))
+                                .clickable {
+                                    haptics.tick()
+                                    showDatePicker = true
+                                }
+                        ) {
+                            Row(
+                                modifier = Modifier.padding(horizontal = 12.dp, vertical = 10.dp),
+                                verticalAlignment = Alignment.CenterVertically,
+                                horizontalArrangement = Arrangement.spacedBy(8.dp)
+                            ) {
+                                Icon(
+                                    imageVector = Icons.Default.CalendarToday,
+                                    contentDescription = "Date",
+                                    tint = MaterialTheme.colorScheme.onSurface,
+                                    modifier = Modifier.size(16.dp)
+                                )
+                                Text(
+                                    text = SimpleDateFormat("dd MMM yyyy", Locale.getDefault()).format(Date(transactionTimestamp)),
+                                    color = MaterialTheme.colorScheme.onSurface,
+                                    fontSize = 12.5.sp,
+                                    fontWeight = FontWeight.Medium,
+                                    fontFamily = GoogleSansFlex
+                                )
+                            }
+                        }
+
+                        // Time Chip
+                        Surface(
+                            shape = RoundedCornerShape(12.dp),
+                            color = MaterialTheme.colorScheme.onSurface.copy(alpha = 0.07f),
+                            border = BorderStroke(0.8.dp, MaterialTheme.colorScheme.onSurface.copy(alpha = 0.16f)),
+                            modifier = Modifier
+                                .weight(1f)
+                                .clip(RoundedCornerShape(12.dp))
+                                .clickable {
+                                    haptics.tick()
+                                    val cal = Calendar.getInstance().apply { timeInMillis = transactionTimestamp }
+                                    val is24Hr = android.text.format.DateFormat.is24HourFormat(context)
+                                    TimePickerDialog(
+                                        context,
+                                        { _, h, m ->
+                                            val updatedCal = Calendar.getInstance().apply {
+                                                timeInMillis = transactionTimestamp
+                                                set(Calendar.HOUR_OF_DAY, h)
+                                                set(Calendar.MINUTE, m)
+                                                set(Calendar.SECOND, 0)
+                                            }
+                                            transactionTimestamp = updatedCal.timeInMillis
+                                        },
+                                        cal.get(Calendar.HOUR_OF_DAY),
+                                        cal.get(Calendar.MINUTE),
+                                        is24Hr
+                                    ).show()
+                                }
+                        ) {
+                            Row(
+                                modifier = Modifier.padding(horizontal = 12.dp, vertical = 10.dp),
+                                verticalAlignment = Alignment.CenterVertically,
+                                horizontalArrangement = Arrangement.spacedBy(8.dp)
+                            ) {
+                                Icon(
+                                    imageVector = Icons.Default.AccessTime,
+                                    contentDescription = "Time",
+                                    tint = MaterialTheme.colorScheme.onSurface,
+                                    modifier = Modifier.size(16.dp)
+                                )
+                                Text(
+                                    text = SimpleDateFormat("hh:mm a", Locale.getDefault()).format(Date(transactionTimestamp)),
+                                    color = MaterialTheme.colorScheme.onSurface,
+                                    fontSize = 12.5.sp,
+                                    fontWeight = FontWeight.Medium,
+                                    fontFamily = GoogleSansFlex
+                                )
+                            }
+                        }
+                    }
+
+                    Spacer(modifier = Modifier.height(14.dp))
 
                     // -------------------------------------------------------------
                     // In-Popup Category Selection (Frosted glass & Highlighted selection)
@@ -874,107 +1081,169 @@ fun AddTransactionDialog(
                     // -------------------------------------------------------------
                     Row(
                         modifier = Modifier.fillMaxWidth(),
-                        horizontalArrangement = Arrangement.End,
+                        horizontalArrangement = Arrangement.SpaceBetween,
                         verticalAlignment = Alignment.CenterVertically
                     ) {
                         TextButton(onClick = {
                             haptics.tick()
-                            onDismiss()
+                            currentStep = AddTransactionStep.AMOUNT_PAD
                         }) {
                             Text(
-                                text = "Cancel",
+                                text = "Back",
                                 color = MaterialTheme.colorScheme.onSurfaceVariant,
                                 fontWeight = FontWeight.Medium
                             )
                         }
-                        Spacer(modifier = Modifier.width(8.dp))
-                        Button(
-                            onClick = {
-                                if (amount <= 0) {
-                                    errorMessage = "Please enter an amount greater than 0"
-                                    return@Button
-                                }
-                                val selectedCat = sortedCategories.firstOrNull { it.id == selectedCategoryId }
-                                if (selectedCat?.name?.contains("lend", ignoreCase = true) == true && onOpenLendBorrow != null) {
-                                    onOpenLendBorrow(
-                                        amount,
-                                        if (isDebit) "LENT" else "BORROWED",
-                                        payeeText.trim(),
-                                        ""
-                                    )
-                                    return@Button
-                                }
-                                currentStep = AddTransactionStep.SUMMARY_DRAWER
-                            },
-                            colors = kanriPrimaryButtonColors(),
-                            shape = RoundedCornerShape(12.dp)
+                        Row(
+                            verticalAlignment = Alignment.CenterVertically,
+                            horizontalArrangement = Arrangement.spacedBy(8.dp)
                         ) {
-                            Text(
-                                text = "Review Summary",
-                                fontWeight = FontWeight.Bold,
-                                modifier = Modifier.padding(horizontal = 6.dp)
-                            )
+                            TextButton(onClick = {
+                                haptics.tick()
+                                onDismiss()
+                            }) {
+                                Text(
+                                    text = "Cancel",
+                                    color = MaterialTheme.colorScheme.onSurfaceVariant,
+                                    fontWeight = FontWeight.Medium
+                                )
+                            }
+                            Button(
+                                onClick = {
+                                    if (amount <= 0) {
+                                        errorMessage = "Please enter an amount greater than 0"
+                                        return@Button
+                                    }
+                                    val selectedCat = sortedCategories.firstOrNull { it.id == selectedCategoryId }
+                                    if (selectedCat?.name?.contains("lend", ignoreCase = true) == true && onOpenLendBorrow != null) {
+                                        onOpenLendBorrow(
+                                            amount,
+                                            if (isDebit) "LENT" else "BORROWED",
+                                            payeeText.trim(),
+                                            ""
+                                        )
+                                        return@Button
+                                    }
+                                    currentStep = AddTransactionStep.SUMMARY_DRAWER
+                                },
+                                colors = kanriPrimaryButtonColors(),
+                                shape = RoundedCornerShape(12.dp)
+                            ) {
+                                Text(
+                                    text = "Proceed",
+                                    fontWeight = FontWeight.Bold,
+                                    modifier = Modifier.padding(horizontal = 6.dp)
+                                )
+                            }
                         }
                     }
                 }
             }
         }
     }
-        }
-        AddTransactionStep.SUMMARY_DRAWER -> {
-            BackHandler(onBack = { currentStep = AddTransactionStep.FILL_DETAILS })
-            val selectedCategory = sortedCategories.firstOrNull { it.id == selectedCategoryId }
-            val defaultNote = if (isDebit) "Expense" else "Income"
-            var resolvedPayee = payeeText.ifBlank { defaultNote }
+    AddTransactionStep.SUMMARY_DRAWER -> {
+        val selectedCategory = sortedCategories.firstOrNull { it.id == selectedCategoryId }
+        val defaultNote = if (isDebit) "Expense" else "Income"
+        var resolvedPayee = payeeText.ifBlank { defaultNote }
 
-            val detailRows = listOfNotNull(
-                DrawerDetailRow(title = "Type", value = if (isDebit) "Expense" else "Income"),
-                DrawerDetailRow(title = "Category", value = selectedCategory?.name ?: "General"),
-                if (payeeText.isNotBlank()) DrawerDetailRow(title = "Note / Payee", value = payeeText) else null,
-                DrawerDetailRow(title = "Account", value = if (selectedWallet == "ONLINE") "Online" else "Cash")
-            )
+        val detailRows = listOfNotNull(
+            DrawerDetailRow(title = "Type", value = if (isDebit) "Expense" else "Income"),
+            DrawerDetailRow(title = "Category", value = selectedCategory?.name ?: "General"),
+            DrawerDetailRow(title = "Date & Time", value = SimpleDateFormat("dd MMM yyyy, hh:mm a", Locale.getDefault()).format(Date(transactionTimestamp))),
+            if (payeeText.isNotBlank()) DrawerDetailRow(title = "Note / Payee", value = payeeText) else null,
+            DrawerDetailRow(title = "Payment", value = selectedSource),
+            DrawerDetailRow(title = "Account", value = if (selectedWallet == "ONLINE") "Online" else if (selectedWallet == "CASH") "Cash" else "Unlinked")
+        )
 
-            KokonutSmoothDrawer(
-                title = if (isDebit) "Review expense" else "Review income",
-                description = "${selectedCategory?.name ?: "General"} • ${SimpleDateFormat("dd MMM, hh:mm a", Locale.getDefault()).format(Date())}",
-                totalAmount = amount,
-                slideLabel = if (isDebit) "Slide to save expense" else "Slide to save income",
-                detailRows = detailRows,
-                accountType = if (selectedWallet == "ONLINE") "Online" else "Cash",
-                onConfirm = {
-                    if (!isDebit && isAllocateToGoalEnabled && selectedGoalId != null) {
-                        val chosenGoal = activeGoals.find { it.id == selectedGoalId }
-                        if (chosenGoal != null) {
-                            scope.launch(Dispatchers.IO) {
-                                val newTotal = chosenGoal.currentAmount + amount
-                                val isDone = chosenGoal.targetAmount > 0 && newTotal >= chosenGoal.targetAmount
-                                db.savingsGoalDao().updateProgress(chosenGoal.id, newTotal, isDone)
-                                db.savingsGoalDao().insertContribution(
-                                    SavingsGoalContributionEntity(
-                                        goalId = chosenGoal.id,
-                                        amount = amount,
-                                        timestamp = System.currentTimeMillis(),
-                                        note = "Income: $resolvedPayee"
-                                    )
+        KokonutSmoothDrawer(
+            title = if (isDebit) "Review expense" else "Review income",
+            description = "${selectedCategory?.name ?: "General"} • ${SimpleDateFormat("dd MMM, hh:mm a", Locale.getDefault()).format(Date(transactionTimestamp))}",
+            totalAmount = amount,
+            slideLabel = if (isDebit) "Slide to save expense" else "Slide to save income",
+            detailRows = detailRows,
+            accountType = if (selectedWallet == "ONLINE") "Online" else if (selectedWallet == "CASH") "Cash" else "Unlinked",
+            hazeState = hazeState,
+            onConfirm = {
+                if (!isDebit && isAllocateToGoalEnabled && selectedGoalId != null) {
+                    val chosenGoal = activeGoals.find { it.id == selectedGoalId }
+                    if (chosenGoal != null) {
+                        scope.launch(Dispatchers.IO) {
+                            val newTotal = chosenGoal.currentAmount + amount
+                            val isDone = chosenGoal.targetAmount > 0 && newTotal >= chosenGoal.targetAmount
+                            db.savingsGoalDao().updateProgress(chosenGoal.id, newTotal, isDone)
+                            db.savingsGoalDao().insertContribution(
+                                SavingsGoalContributionEntity(
+                                    goalId = chosenGoal.id,
+                                    amount = amount,
+                                    timestamp = transactionTimestamp,
+                                    note = "Income: $resolvedPayee"
                                 )
-                            }
-                            resolvedPayee = "[Saved ₹${amount.toInt()} for ${chosenGoal.title}] $resolvedPayee"
-                            android.widget.Toast.makeText(
-                                context,
-                                "₹${amount.toInt()} allocated to ${chosenGoal.title}",
-                                android.widget.Toast.LENGTH_SHORT
-                            ).show()
+                            )
                         }
+                        resolvedPayee = "[Saved ₹${amount.toInt()} for ${chosenGoal.title}] $resolvedPayee"
+                        android.widget.Toast.makeText(
+                            context,
+                            "₹${amount.toInt()} allocated to ${chosenGoal.title}",
+                            android.widget.Toast.LENGTH_SHORT
+                        ).show()
                     }
-                    lastSelectedWalletSession = selectedWallet
-                    haptics.success()
-                    onConfirm(amount, initialType, resolvedPayee, selectedSource, selectedCategoryId, selectedWallet)
-                },
-                onDismiss = {
-                    currentStep = AddTransactionStep.FILL_DETAILS
                 }
-            )
+                lastSelectedWalletSession = selectedWallet
+                haptics.success()
+                onConfirm(amount, initialType, resolvedPayee, selectedSource, selectedCategoryId, selectedWallet, transactionTimestamp)
+                performDismiss()
+            },
+            onDismiss = {
+                currentStep = AddTransactionStep.FILL_DETAILS
+            }
+        )
+    }
+}
+}
+
+    // Material Date Picker Dialog for Transaction Date
+    if (showDatePicker) {
+        val datePickerState = rememberDatePickerState(
+            initialSelectedDateMillis = transactionTimestamp
+        )
+        KanriGlassDatePickerDialog(
+            onDismissRequest = { showDatePicker = false },
+            confirmButton = {
+                TextButton(
+                    onClick = {
+                        val selected = datePickerState.selectedDateMillis
+                        if (selected != null) {
+                            val calUtc = Calendar.getInstance(TimeZone.getTimeZone("UTC")).apply {
+                                timeInMillis = selected
+                            }
+                            val calOrig = Calendar.getInstance().apply {
+                                timeInMillis = transactionTimestamp
+                            }
+                            val calTarget = Calendar.getInstance().apply {
+                                set(Calendar.YEAR, calUtc.get(Calendar.YEAR))
+                                set(Calendar.MONTH, calUtc.get(Calendar.MONTH))
+                                set(Calendar.DAY_OF_MONTH, calUtc.get(Calendar.DAY_OF_MONTH))
+                                set(Calendar.HOUR_OF_DAY, calOrig.get(Calendar.HOUR_OF_DAY))
+                                set(Calendar.MINUTE, calOrig.get(Calendar.MINUTE))
+                                set(Calendar.SECOND, calOrig.get(Calendar.SECOND))
+                            }
+                            transactionTimestamp = calTarget.timeInMillis
+                        }
+                        showDatePicker = false
+                    }
+                ) {
+                    Text("OK", color = MaterialTheme.colorScheme.onSurface, fontWeight = FontWeight.Bold)
+                }
+            },
+            dismissButton = {
+                TextButton(onClick = { showDatePicker = false }) {
+                    Text("Cancel", color = MaterialTheme.colorScheme.onSurfaceVariant)
+                }
+            }
+        ) {
+            DatePicker(state = datePickerState)
         }
     }
-
+}
+}
 }

@@ -369,8 +369,8 @@ fun MainNavigationScreen(
                 initialType = addTransactionInitialType,
                 categories = homeState.categories,
                 onDismiss = { showAddTransactionDialog = false },
-                onConfirm = { amount, type, counterparty, sourceType, categoryId, wallet ->
-                    homeViewModel.addManualTransaction(amount, type, counterparty, sourceType, categoryId, wallet)
+                onConfirm = { amount, type, counterparty, sourceType, categoryId, wallet, timestamp ->
+                    homeViewModel.addManualTransaction(amount, type, counterparty, sourceType, categoryId, wallet, timestamp)
                     showAddTransactionDialog = false
                 },
                 onOpenLendBorrow = { amount, type, counterparty, note ->

@@ -153,7 +153,7 @@ fun AddExpenseIncomePopup(
                 modifier = Modifier
                     .padding(horizontal = 20.dp)
                     .padding(bottom = 86.dp)
-                    .width(300.dp),
+                    .width(320.dp),
                 level = GlassLevel.Strong,
                 shape = RoundedCornerShape(26.dp),
                 hazeState = hazeState
@@ -390,5 +390,49 @@ fun IncomeFlowIcon(
             color = tint,
             style = Stroke(width = strokeWidth, cap = StrokeCap.Round, join = StrokeJoin.Round)
         )
+    }
+}
+
+/**
+ * Custom Bidirectional Exchange Flow Arrows (Lend & Borrow SVG).
+ */
+@Composable
+fun LendBorrowFlowIcon(
+    tint: Color,
+    modifier: Modifier = Modifier,
+    size: Dp = 24.dp
+) {
+    Canvas(modifier = modifier.size(size)) {
+        val strokeWidth = 2.2.dp.toPx()
+        val w = size.toPx()
+        val h = size.toPx()
+
+        // Top horizontal arrow pointing right
+        val topShaft = Path().apply {
+            moveTo(w * 0.25f, h * 0.38f)
+            lineTo(w * 0.75f, h * 0.38f)
+        }
+        drawPath(path = topShaft, color = tint, style = Stroke(width = strokeWidth, cap = StrokeCap.Round))
+
+        val topHead = Path().apply {
+            moveTo(w * 0.60f, h * 0.25f)
+            lineTo(w * 0.75f, h * 0.38f)
+            lineTo(w * 0.60f, h * 0.51f)
+        }
+        drawPath(path = topHead, color = tint, style = Stroke(width = strokeWidth, cap = StrokeCap.Round, join = StrokeJoin.Round))
+
+        // Bottom horizontal arrow pointing left
+        val bottomShaft = Path().apply {
+            moveTo(w * 0.75f, h * 0.65f)
+            lineTo(w * 0.25f, h * 0.65f)
+        }
+        drawPath(path = bottomShaft, color = tint, style = Stroke(width = strokeWidth, cap = StrokeCap.Round))
+
+        val bottomHead = Path().apply {
+            moveTo(w * 0.40f, h * 0.52f)
+            lineTo(w * 0.25f, h * 0.65f)
+            lineTo(w * 0.40f, h * 0.78f)
+        }
+        drawPath(path = bottomHead, color = tint, style = Stroke(width = strokeWidth, cap = StrokeCap.Round, join = StrokeJoin.Round))
     }
 }

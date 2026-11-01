@@ -67,6 +67,7 @@ import androidx.compose.ui.unit.IntOffset
 import androidx.compose.ui.unit.dp
 import androidx.compose.ui.unit.sp
 import com.omkarnub.kanri.ui.common.GlassLevel
+import com.omkarnub.kanri.ui.common.LocalHazeState
 import com.omkarnub.kanri.ui.common.kanriGlass
 import com.omkarnub.kanri.ui.theme.LocalKanriGlass
 import com.omkarnub.kanri.util.CurrencyUtils
@@ -91,7 +92,7 @@ import kotlin.math.roundToInt
  * Rolling amount: 240ms ease-out cubic-bezier(0.23, 1, 0.32, 1), dir * 70%
  */
 
-const val DRAWER_PEEK_HEIGHT = 200f
+const val DRAWER_PEEK_HEIGHT = 240f
 const val DRAWER_MAX_HEIGHT = 680f
 const val DRAWER_TOP_GAP = 24f
 
@@ -184,7 +185,8 @@ fun KokonutSmoothDrawer(
     balanceAfter: Double? = null,
     onConfirm: suspend () -> Unit,
     onDismiss: () -> Unit,
-    modifier: Modifier = Modifier
+    modifier: Modifier = Modifier,
+    hazeState: dev.chrisbanes.haze.HazeState? = LocalHazeState.current
 ) {
     val dark = isSystemInDarkTheme()
     val tokens = LocalKanriGlass.current
@@ -212,10 +214,16 @@ fun KokonutSmoothDrawer(
     Box(
         modifier = Modifier
             .fillMaxSize()
-            .background(Color.Black.copy(alpha = 0.5f * (0.4f + 0.6f * progress)))
+            .then(
+                if (hazeState != null) {
+                    Modifier.background(Color.Black.copy(alpha = 0.5f * (0.4f + 0.6f * progress)))
+                } else {
+                    Modifier.background(Color.Black.copy(alpha = 0.5f * (0.4f + 0.6f * progress)))
+                }
+            )
             .clickable { onDismiss() }
     ) {
-        // Bottom-anchored Sheet Card: max width 420dp, rounded top corners 16dp (rounded-t-2xl), 1dp border zinc-200/800
+        // Bottom-anchored Sheet Card: max width 420dp, rounded top corners 24dp (rounded-t-2xl), 1dp border zinc-200/800
         Box(
             modifier = Modifier
                 .align(Alignment.BottomCenter)
@@ -232,16 +240,17 @@ fun KokonutSmoothDrawer(
                     if (tokens != null) {
                         Modifier.kanriGlass(
                             level = GlassLevel.Strong,
-                            shape = RoundedCornerShape(topStart = 16.dp, topEnd = 16.dp)
+                            shape = RoundedCornerShape(topStart = 24.dp, topEnd = 24.dp),
+                            hazeState = hazeState
                         )
                     } else {
                         Modifier
-                            .clip(RoundedCornerShape(topStart = 16.dp, topEnd = 16.dp))
+                            .clip(RoundedCornerShape(topStart = 24.dp, topEnd = 24.dp))
                             .background(if (dark) Zinc950 else Color.White)
                             .border(
                                 width = 1.dp,
                                 color = if (dark) Zinc800 else Zinc200,
-                                shape = RoundedCornerShape(topStart = 16.dp, topEnd = 16.dp)
+                                shape = RoundedCornerShape(topStart = 24.dp, topEnd = 24.dp)
                             )
                     }
                 )
@@ -332,7 +341,11 @@ fun KokonutSmoothDrawer(
                         label = slideLabel,
                         confirmingLabel = "Saving…",
                         doneLabel = "Saved",
-                        onConfirm = onConfirm,
+                        onConfirm = {
+                            onConfirm()
+                            kotlinx.coroutines.delay(450)
+                            onDismiss()
+                        },
                         resetAfter = null,
                         modifier = Modifier.fillMaxWidth()
                     )
