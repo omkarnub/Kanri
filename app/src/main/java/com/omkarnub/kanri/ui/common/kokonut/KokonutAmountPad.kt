@@ -94,6 +94,59 @@ import kotlin.math.min
 const val AMOUNT_PAD_MAX_AMOUNT = 250000.0
 val AmountPadKeys = listOf("1", "2", "3", "4", "5", "6", "7", "8", "9", ".", "0", "back")
 
+sealed class AmountPadKeyResult {
+    data class Success(val newRawInput: String) : AmountPadKeyResult()
+    data object RefusedInvalid : AmountPadKeyResult()
+    data object RefusedCapped : AmountPadKeyResult()
+}
+
+fun amountPadToNumber(rawInput: String): Double {
+    return rawInput.toDoubleOrNull() ?: 0.0
+}
+
+fun amountPadMoney(value: Double, currency: String = "₹"): String {
+    val df = DecimalFormat(if (value % 1.0 == 0.0) "#,##0" else "#,##0.00", DecimalFormatSymbols(Locale.US))
+    return "$currency${df.format(value)}"
+}
+
+fun amountPadProcessKey(
+    rawInput: String,
+    key: String,
+    maxAmount: Double = AMOUNT_PAD_MAX_AMOUNT
+): AmountPadKeyResult {
+    if (key == "back") {
+        val next = if (rawInput.isNotEmpty()) rawInput.dropLast(1) else ""
+        return AmountPadKeyResult.Success(next)
+    }
+
+    if (key == ".") {
+        if (rawInput.contains(".")) {
+            return AmountPadKeyResult.RefusedInvalid
+        }
+        val next = if (rawInput.isEmpty()) "0." else "$rawInput."
+        return AmountPadKeyResult.Success(next)
+    }
+
+    // Key is 0..9
+    val dotIdx = rawInput.indexOf('.')
+    if (dotIdx != -1 && (rawInput.length - dotIdx) > 2) {
+        return AmountPadKeyResult.RefusedInvalid
+    }
+
+    val nextInput = if (rawInput.isEmpty() || rawInput == "0") {
+        key
+    } else {
+        rawInput + key
+    }
+
+    val nextNum = nextInput.toDoubleOrNull() ?: 0.0
+    if (nextNum > maxAmount) {
+        return AmountPadKeyResult.RefusedCapped
+    }
+
+    return AmountPadKeyResult.Success(nextInput)
+}
+
 
 
 @Composable
@@ -163,43 +216,17 @@ fun KokonutAmountPad(
 
     fun pressKey(key: String) {
         haptics.tick()
-        if (key == "back") {
-            if (rawInput.isNotEmpty()) {
-                rawInput = rawInput.dropLast(1)
+        when (val res = amountPadProcessKey(rawInput, key, maxAmount)) {
+            is AmountPadKeyResult.Success -> {
+                rawInput = res.newRawInput
+                isCapped = false
             }
-            isCapped = false
-            return
-        }
-
-        if (key == ".") {
-            if (rawInput.contains(".")) {
+            is AmountPadKeyResult.RefusedInvalid -> {
                 refuse(false)
-                return
             }
-            rawInput = if (rawInput.isEmpty()) "0." else "$rawInput."
-            return
-        }
-
-        // Key is 0..9
-        val dotIdx = rawInput.indexOf('.')
-        if (dotIdx != -1 && (rawInput.length - dotIdx) > 2) {
-            // Already 2 decimal digits
-            refuse(false)
-            return
-        }
-
-        val nextInput = if (rawInput.isEmpty() || rawInput == "0") {
-            key
-        } else {
-            rawInput + key
-        }
-
-        val nextNum = nextInput.toDoubleOrNull() ?: 0.0
-        if (nextNum > maxAmount) {
-            refuse(true)
-        } else {
-            rawInput = nextInput
-            isCapped = false
+            is AmountPadKeyResult.RefusedCapped -> {
+                refuse(true)
+            }
         }
     }
 
@@ -304,7 +331,7 @@ fun KokonutAmountPad(
                         text = currency,
                         fontSize = 54.sp,
                         fontFamily = GoogleSansFlex,
-                        fontWeight = FontWeight.Bold,
+                        fontWeight = FontWeight.Black,
                         color = if (isEmpty) (if (dark) Zinc700 else Zinc300) else (tokens?.textSecondary ?: if (dark) Zinc400 else Zinc500),
                         letterSpacing = (-0.025).sp,
                         modifier = Modifier.padding(end = 4.dp)
@@ -657,7 +684,8 @@ private fun TactilePresetChip(
 }
 
 /**
- * Rolling digits display for Amount Pad using GoogleSansFlex bold typography
+ * Rolling digits display for Amount Pad using GoogleSansFlex Black typography
+ * and the exact cubic bezier deceleration curve from Expense Overview.
  */
 @Composable
 private fun RollingAmountDisplay(
@@ -669,28 +697,12 @@ private fun RollingAmountDisplay(
     val density = LocalDensity.current
     val textMeasurer = rememberTextMeasurer()
 
-    // Determine characters to show
-    val displayChars = remember(rawInput) {
-        if (rawInput.isEmpty()) {
-            listOf("0")
-        } else {
-            val dotIdx = rawInput.indexOf('.')
-            val wholePart = if (dotIdx != -1) rawInput.substring(0, dotIdx) else rawInput
-            val decPart = if (dotIdx != -1) rawInput.substring(dotIdx) else ""
-
-            val numWhole = wholePart.toLongOrNull() ?: 0L
-            val df = DecimalFormat("#,##0", DecimalFormatSymbols(Locale.US))
-            val formattedWhole = if (wholePart.isEmpty()) "0" else df.format(numWhole)
-            (formattedWhole + decPart).map { it.toString() }
-        }
-    }
-
     val style = remember(fontSize) {
         androidx.compose.ui.text.TextStyle(
             fontFamily = GoogleSansFlex,
-            fontWeight = FontWeight.Bold,
+            fontWeight = FontWeight.Black,
             fontSize = fontSize,
-            letterSpacing = (-0.025).sp
+            letterSpacing = (-0.03).sp
         )
     }
 
@@ -707,16 +719,82 @@ private fun RollingAmountDisplay(
     val digitHeightDp = with(density) { digitMetrics.second.toDp() }
     val digitHeightPx = digitMetrics.second.toFloat()
 
+    // Break rawInput into tokens with stable right-anchored positional keys
+    data class DisplayToken(val key: String, val text: String, val isDigit: Boolean, val digitValue: Int = 0, val index: Int = 0)
+
+    val tokens = remember(rawInput) {
+        if (rawInput.isEmpty() || rawInput == "0") {
+            listOf(DisplayToken(key = "whole-0", text = "0", isDigit = true, digitValue = 0, index = 0))
+        } else {
+            val dotIdx = rawInput.indexOf('.')
+            val wholePart = if (dotIdx != -1) rawInput.substring(0, dotIdx) else rawInput
+            val decPart = if (dotIdx != -1) rawInput.substring(dotIdx + 1) else null
+
+            val numWhole = wholePart.toLongOrNull() ?: 0L
+            val df = DecimalFormat("#,##0", DecimalFormatSymbols(Locale.US))
+            val formattedWhole = if (wholePart.isEmpty()) "0" else df.format(numWhole)
+
+            val list = mutableListOf<DisplayToken>()
+
+            // Count total digits in formatted whole to anchor keys from right to left
+            val wholeDigits = formattedWhole.filter { it.isDigit() }
+            var wholeDigitIndex = 0
+
+            formattedWhole.forEachIndexed { fIdx, ch ->
+                if (ch.isDigit()) {
+                    val placeFromRight = (wholeDigits.length - 1) - wholeDigitIndex
+                    list.add(
+                        DisplayToken(
+                            key = "whole-$placeFromRight",
+                            text = ch.toString(),
+                            isDigit = true,
+                            digitValue = ch.digitToInt(),
+                            index = wholeDigitIndex
+                        )
+                    )
+                    wholeDigitIndex++
+                } else {
+                    list.add(
+                        DisplayToken(
+                            key = "sep-$fIdx",
+                            text = ch.toString(),
+                            isDigit = false
+                        )
+                    )
+                }
+            }
+
+            if (dotIdx != -1) {
+                list.add(DisplayToken(key = "dot", text = ".", isDigit = false))
+                decPart?.forEachIndexed { dIdx, ch ->
+                    if (ch.isDigit()) {
+                        list.add(
+                            DisplayToken(
+                                key = "dec-$dIdx",
+                                text = ch.toString(),
+                                isDigit = true,
+                                digitValue = ch.digitToInt(),
+                                index = wholeDigitIndex + dIdx
+                            )
+                        )
+                    }
+                }
+            }
+
+            list
+        }
+    }
+
     Row(
         verticalAlignment = Alignment.CenterVertically,
         horizontalArrangement = Arrangement.Center
     ) {
-        displayChars.forEachIndexed { idx, ch ->
-            key("$idx-$ch") {
-                val digit = ch.toIntOrNull()
-                if (digit != null) {
+        tokens.forEach { token ->
+            key(token.key) {
+                if (token.isDigit) {
                     SingleRollingDigitStrip(
-                        digit = digit,
+                        digit = token.digitValue,
+                        index = token.index,
                         style = style,
                         color = color,
                         width = digitWidthDp,
@@ -724,11 +802,10 @@ private fun RollingAmountDisplay(
                         heightPx = digitHeightPx
                     )
                 } else {
-                    // Non-digit like "," or "."
                     Text(
-                        text = ch,
+                        text = token.text,
                         style = style,
-                        color = if (ch == ".") color else (if (dark) Zinc500 else Zinc400),
+                        color = if (token.text == ".") color else (if (dark) Zinc500 else Zinc400),
                         textAlign = TextAlign.Center
                     )
                 }
@@ -740,6 +817,7 @@ private fun RollingAmountDisplay(
 @Composable
 private fun SingleRollingDigitStrip(
     digit: Int,
+    index: Int,
     style: androidx.compose.ui.text.TextStyle,
     color: Color,
     width: androidx.compose.ui.unit.Dp,
@@ -748,38 +826,17 @@ private fun SingleRollingDigitStrip(
 ) {
     val animDigit by animateFloatAsState(
         targetValue = digit.toFloat(),
-        animationSpec = spring(
-            stiffness = 520f,
-            dampingRatio = 0.74f
+        animationSpec = tween(
+            durationMillis = 380,
+            delayMillis = index * 14,
+            easing = CubicBezierEasing(0.16f, 1.0f, 0.3f, 1.0f) // Exact Expense Overview curve
         ),
-        label = "rollingDigit"
+        label = "rollingDigit_$index"
     )
-
-    // Entrance drop-in bounce matching Kokonut #A2 (initial y: -22, animate y: 0)
-    val entranceY = remember { Animatable(-18f) }
-    val entranceAlpha = remember { Animatable(0f) }
-    LaunchedEffect(Unit) {
-        launch {
-            entranceY.animateTo(
-                targetValue = 0f,
-                animationSpec = spring(stiffness = 480f, dampingRatio = 0.70f)
-            )
-        }
-        launch {
-            entranceAlpha.animateTo(
-                targetValue = 1f,
-                animationSpec = tween(durationMillis = 140, easing = CubicBezierEasing(0.23f, 1f, 0.32f, 1f))
-            )
-        }
-    }
 
     Box(
         modifier = Modifier
             .size(width = width, height = height)
-            .graphicsLayer {
-                translationY = entranceY.value * (heightPx / 54f)
-                alpha = entranceAlpha.value
-            }
             .clipToBounds(),
         contentAlignment = Alignment.TopStart
     ) {

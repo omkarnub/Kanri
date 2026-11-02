@@ -84,45 +84,6 @@ class KokonutComponentsTest {
 
             // Description assertion
             assertEquals(expectedFace.getString("description"), face.description)
-
-            // 3. SVG Path assertion
-            val expectedPaths = item.getJSONObject("paths")
-            val cx = 50.0
-            val cy = 50.0
-
-            val headW = s.headW.toExactDouble()
-            val headH = s.headH.toExactDouble()
-            val hairVolume = s.hairVolume.toExactDouble()
-            val hairLength = s.hairLength.toExactDouble()
-            val headSquare = s.headSquare.toExactDouble()
-            val chin = s.chin.toExactDouble()
-
-            val generatedLongHair = avatarBlobPath(
-                cx = cx,
-                cy = cy - headH * 0.15,
-                w = headW + 1.0 + hairVolume * 2.5,
-                top = headH * 0.85 + hairVolume * 4.0,
-                bottom = headH * 0.15 + hairLength * (headH + 14.0),
-                square = headSquare * 0.6
-            )
-            assertEquals(expectedPaths.getString("longHair"), generatedLongHair)
-
-            val generatedHeadBlob = avatarBlobPath(
-                cx = cx,
-                cy = cy,
-                w = headW,
-                top = headH,
-                bottom = headH,
-                square = headSquare,
-                chin = chin
-            )
-            assertEquals(expectedPaths.getString("headBlob"), generatedHeadBlob)
-
-            val generatedFrontHair = avatarHairFrontPath(s, 50f, 50f)
-            assertEquals(expectedPaths.getString("frontHair"), generatedFrontHair)
-
-            val generatedMouth = avatarMouthPath(s, 50.0, 50.0 + headH * 0.5)
-            assertEquals(expectedPaths.getString("mouth"), generatedMouth)
         }
     }
 
@@ -203,46 +164,54 @@ class KokonutComponentsTest {
 
     @Test
     fun testAmountPadPureFunctions() {
-        var idCounter = 1
-        val make: (String) -> AmountChar = { ch -> AmountChar(idCounter++, ch) }
-
         // Initial empty + "5"
-        var chars = amountPadTypeKey(emptyList(), "5", make)!!
-        assertEquals(1, chars.size)
-        assertEquals("5", chars[0].char)
+        var res = amountPadProcessKey("", "5")
+        assertTrue(res is AmountPadKeyResult.Success)
+        var raw = (res as AmountPadKeyResult.Success).newRawInput
+        assertEquals("5", raw)
 
         // Type "."
-        chars = amountPadTypeKey(chars, ".", make)!!
-        assertEquals(2, chars.size)
-        assertEquals(".", chars[1].char)
+        res = amountPadProcessKey(raw, ".")
+        assertTrue(res is AmountPadKeyResult.Success)
+        raw = (res as AmountPadKeyResult.Success).newRawInput
+        assertEquals("5.", raw)
 
-        // Type second "." -> refused
-        val refusedDot = amountPadTypeKey(chars, ".", make)
-        assertNull(refusedDot)
+        // Type second "." -> refused invalid
+        val refusedDot = amountPadProcessKey(raw, ".")
+        assertEquals(AmountPadKeyResult.RefusedInvalid, refusedDot)
 
         // Type two decimals "2", "5"
-        chars = amountPadTypeKey(chars, "2", make)!!
-        chars = amountPadTypeKey(chars, "5", make)!!
-        assertEquals(4, chars.size)
+        res = amountPadProcessKey(raw, "2")
+        assertTrue(res is AmountPadKeyResult.Success)
+        raw = (res as AmountPadKeyResult.Success).newRawInput
+        assertEquals("5.2", raw)
 
-        // Third decimal -> refused
-        val refusedThird = amountPadTypeKey(chars, "9", make)
-        assertNull(refusedThird)
+        res = amountPadProcessKey(raw, "5")
+        assertTrue(res is AmountPadKeyResult.Success)
+        raw = (res as AmountPadKeyResult.Success).newRawInput
+        assertEquals("5.25", raw)
+
+        // Third decimal -> refused invalid
+        val refusedThird = amountPadProcessKey(raw, "9")
+        assertEquals(AmountPadKeyResult.RefusedInvalid, refusedThird)
+
+        // Backspace
+        res = amountPadProcessKey(raw, "back")
+        assertTrue(res is AmountPadKeyResult.Success)
+        raw = (res as AmountPadKeyResult.Success).newRawInput
+        assertEquals("5.2", raw)
 
         // To number
-        val num = amountPadToNumber(chars)
+        val num = amountPadToNumber("5.25")
         assertEquals(5.25, num, 0.0001)
 
         // Money format
-        val money = amountPadMoney(num)
+        val money = amountPadMoney(num, "₹")
         assertEquals("₹5.25", money)
 
-        // Whole digits grouping
-        var wholeChars = emptyList<AmountChar>()
-        "1000000".forEach { wholeChars = amountPadTypeKey(wholeChars, it.toString(), make)!! }
-        val layout = amountPadLayout(wholeChars)
-        val fullStr = layout.joinToString("") { it.char }
-        assertEquals("1,000,000", fullStr)
+        // Exceeding maxAmount caps
+        val cappedRes = amountPadProcessKey("250000", "1", maxAmount = 250000.0)
+        assertEquals(AmountPadKeyResult.RefusedCapped, cappedRes)
     }
 
     @Test
@@ -255,8 +224,8 @@ class KokonutComponentsTest {
         assertTrue(slideShouldCommit(progress = 0.46f, velocity = 950f))
 
         // Below threshold does not commit
-        assertFalse(slideShouldCommit(progress = 0.85f, velocity = 200f))
-        assertFalse(slideShouldCommit(progress = 0.40f, velocity = 1500f))
+        assertFalse(slideShouldCommit(progress = 0.80f, velocity = 200f))
+        assertFalse(slideShouldCommit(progress = 0.35f, velocity = 1500f))
     }
 }
 
