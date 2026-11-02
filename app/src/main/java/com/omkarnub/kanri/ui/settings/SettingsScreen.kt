@@ -178,6 +178,7 @@ fun SettingsScreen(
     val currentThemeMode by themePrefs.themeModeFlow.collectAsState()
     val isDynamicEnabled by themePrefs.dynamicColorFlow.collectAsState()
     val currentIconStyle by themePrefs.appIconStyleFlow.collectAsState()
+    val currentGlassBg by themePrefs.glassBackgroundFlow.collectAsState()
     var pendingIconStyle by remember { mutableStateOf<AppIconStyle?>(null) }
     var showIconRestartDialog by remember { mutableStateOf(false) }
 
@@ -229,7 +230,20 @@ fun SettingsScreen(
 
 
 
+    var showThemesWindow by remember { mutableStateOf(false) }
     var showGlassCustomizerScreen by remember { mutableStateOf(false) }
+
+    if (showThemesWindow) {
+        ThemesCustomizationScreen(
+            onBack = { showThemesWindow = false },
+            onOpenGlassCustomizer = {
+                showThemesWindow = false
+                showGlassCustomizerScreen = true
+            },
+            modifier = modifier
+        )
+        return
+    }
 
     if (showGlassCustomizerScreen) {
         GlassCustomizerScreen(
@@ -662,84 +676,39 @@ fun SettingsScreen(
             // 1. APPEARANCE & THEME
             // =================================================================
             SettingsGroup(title = "APPEARANCE & THEME") {
-                // Live Theme Mockup Selector (5 styles)
-                Text(
-                    text = "Select Theme Style",
-                    fontSize = 12.sp,
-                    fontFamily = GoogleSansFlex,
-                    fontWeight = FontWeight.SemiBold,
-                    color = tokens?.textSecondary ?: MaterialTheme.colorScheme.onSurfaceVariant,
-                    modifier = Modifier.padding(horizontal = 16.dp, vertical = 8.dp)
-                )
-
-                Row(
-                    modifier = Modifier
-                        .fillMaxWidth()
-                        .horizontalScroll(rememberScrollState())
-                        .padding(horizontal = 12.dp, vertical = 4.dp),
-                    horizontalArrangement = Arrangement.spacedBy(10.dp)
-                ) {
-                    listOf(
-                        ThemeMode.SYSTEM,
-                        ThemeMode.DARK,
-                        ThemeMode.AMOLED,
-                        ThemeMode.LIGHT,
-                        ThemeMode.GLASS
-                    ).forEach { mode ->
-                        ThemePreviewCard(
-                            mode = mode,
-                            isSelected = (currentThemeMode == mode),
-                            onClick = {
-                                haptics.click()
-                                themePrefs.themeMode = mode
-                            },
-                            modifier = Modifier.width(112.dp)
-                        )
-                    }
-                }
-
-                Spacer(modifier = Modifier.height(6.dp))
-                SettingsDivider()
-
-                // Dynamic Wallpaper Theming Switch
-                SettingsSwitchRow(
-                    title = "Dynamic Colors",
-                    subtitle = "Extract tint palette from system wallpaper",
-                    icon = Icons.Default.AutoAwesome,
-                    checked = isDynamicEnabled,
-                    onCheckedChange = { themePrefs.isDynamicColor = it }
-                )
-
-                SettingsDivider()
-
-                // Glass Customizer Screen
+                // Themes & Live Backgrounds Screen Row
                 SettingsRow(
-                    title = "Glass Customizer Screen",
-                    subtitle = "Fine-tune blur radius, tints & translucency",
+                    title = "Themes & Live Backgrounds",
+                    subtitle = "${currentThemeMode.label}  •  ${currentGlassBg.displayName}",
+                    icon = Icons.Default.Palette,
+                    trailing = {
+                        Row(verticalAlignment = Alignment.CenterVertically) {
+                            Text(
+                                text = currentThemeMode.label,
+                                fontSize = 12.5.sp,
+                                fontFamily = GoogleSansFlex,
+                                fontWeight = FontWeight.SemiBold,
+                                color = MaterialTheme.colorScheme.primary
+                            )
+                            Spacer(modifier = Modifier.width(6.dp))
+                            Icon(
+                                imageVector = Icons.AutoMirrored.Filled.KeyboardArrowRight,
+                                contentDescription = null,
+                                tint = tokens?.textSecondary ?: MaterialTheme.colorScheme.onSurfaceVariant
+                            )
+                        }
+                    },
+                    onClick = { showThemesWindow = true }
+                )
+
+                SettingsDivider()
+
+                // Glass Surface Customizer
+                SettingsRow(
+                    title = "Glass Surface Engine",
+                    subtitle = "Fine-tune blur radius, noise & translucency",
                     icon = Icons.Default.BlurOn,
                     onClick = { showGlassCustomizerScreen = true }
-                )
-
-                SettingsDivider()
-
-                // Launcher App Icon
-                SettingsRow(
-                    title = "App Launcher Icon",
-                    subtitle = "${currentIconStyle.label} style",
-                    icon = Icons.Default.ColorLens,
-                    trailing = {
-                        Text(
-                            text = currentIconStyle.label,
-                            fontSize = 12.sp,
-                            fontWeight = FontWeight.Medium,
-                            color = MaterialTheme.colorScheme.primary
-                        )
-                    },
-                    onClick = {
-                        val nextStyle = if (currentIconStyle == AppIconStyle.DARK) AppIconStyle.LIGHT else AppIconStyle.DARK
-                        pendingIconStyle = nextStyle
-                        showIconRestartDialog = true
-                    }
                 )
             }
 
