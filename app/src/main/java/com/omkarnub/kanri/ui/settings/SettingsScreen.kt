@@ -44,12 +44,9 @@ import androidx.compose.foundation.shape.CircleShape
 import androidx.compose.foundation.shape.RoundedCornerShape
 import androidx.compose.foundation.verticalScroll
 import androidx.compose.material.icons.Icons
-import com.omkarnub.kanri.ui.common.kokonut.KokonutStackPanel
+import androidx.compose.foundation.horizontalScroll
+import com.omkarnub.kanri.ui.theme.GoogleSansFlex
 import com.omkarnub.kanri.util.CurrencyUtils
-import com.omkarnub.kanri.ui.common.kokonut.StackPage
-import com.omkarnub.kanri.ui.common.kokonut.StackSection
-import com.omkarnub.kanri.ui.common.kokonut.StackRow
-import com.omkarnub.kanri.ui.common.kokonut.StackRowTone
 import androidx.compose.material.icons.filled.Palette
 import androidx.compose.material.icons.filled.Category
 import androidx.compose.material.icons.filled.CloudSync
@@ -614,458 +611,739 @@ fun SettingsScreen(
     }
 
     val tokens = LocalKanriGlass.current
+    val isSystemDark = androidx.compose.foundation.isSystemInDarkTheme()
 
-    // =========================================================================
-    // MAIN SETTINGS LAYOUT - KOKONUT UI STACK PANEL DRILL-DOWN NAVIGATION
-    // =========================================================================
-    val pages = remember(
-        currentThemeMode,
-        isDynamicEnabled,
-        currentCurrency,
-        isLockEnabled,
-        merchantRules,
-        customCategories,
-        balances,
-        atmMode,
-        walletPrefs.isBalanceSpoilerEnabled,
-        isCheckingForUpdates
-    ) {
-        mapOf(
-            "settings" to StackPage(
-                title = "Settings",
-                sections = listOf(
-                    StackSection(
-                        title = "PREFERENCES",
-                        rows = listOf(
-                            StackRow(
-                                id = "pref_appearance",
-                                label = "Appearance & Themes",
-                                detail = when (currentThemeMode) {
-                                    ThemeMode.SYSTEM -> "System Theme"
-                                    ThemeMode.LIGHT -> "Light Theme"
-                                    ThemeMode.DARK -> "Dark Theme"
-                                    ThemeMode.AMOLED -> "Pitch Black (AMOLED)"
-                                    ThemeMode.GLASS -> "Frosted Glass"
-                                },
-                                icon = Icons.Default.Palette,
-                                to = "appearance"
-                            ),
-                            StackRow(
-                                id = "pref_wallets",
-                                label = "Currency & Wallets",
-                                detail = "${currentCurrency.symbol} ${currentCurrency.code} • ${currentCurrency.displayName}",
-                                icon = Icons.Default.Paid,
-                                to = "wallets"
-                            ),
-                            StackRow(
-                                id = "pref_security",
-                                label = "Security & App Lock",
-                                detail = if (isLockEnabled) "App Lock Enabled" else "Disabled",
-                                icon = Icons.Default.Lock,
-                                to = "security"
-                            )
+    Scaffold(
+        modifier = modifier.fillMaxSize(),
+        containerColor = if (tokens != null) Color.Transparent else MaterialTheme.colorScheme.background,
+        topBar = {
+            TopAppBar(
+                title = {
+                    Column {
+                        Text(
+                            text = "Settings",
+                            fontFamily = GoogleSansFlex,
+                            fontWeight = FontWeight.Bold,
+                            fontSize = 20.sp,
+                            color = tokens?.textPrimary ?: MaterialTheme.colorScheme.onSurface
                         )
-                    ),
-                    StackSection(
-                        title = "AUTOMATIONS & DATA",
-                        rows = listOf(
-                            StackRow(
-                                id = "auto_merchant",
-                                label = "Smart Merchant Rules",
-                                detail = "${merchantRules.size} rules active",
-                                icon = Icons.Default.AutoFixHigh,
-                                onSelect = { showMerchantRulesScreen = true }
-                            ),
-                            StackRow(
-                                id = "data_categories",
-                                label = "Custom Categories",
-                                detail = "${customCategories.size} custom categories",
-                                icon = Icons.Default.Category,
-                                to = "categories"
-                            ),
-                            StackRow(
-                                id = "data_backup",
-                                label = "Backup & Cloud Sync",
-                                detail = "Google Drive & local JSON statements",
-                                icon = Icons.Default.CloudSync,
-                                to = "backup"
-                            )
+                        Text(
+                            text = "Preferences & App Management",
+                            fontSize = 11.5.sp,
+                            color = tokens?.textSecondary ?: MaterialTheme.colorScheme.onSurfaceVariant
                         )
-                    ),
-                    StackSection(
-                        title = "ABOUT & SUPPORT",
-                        rows = listOf(
-                            StackRow(
-                                id = "about_info",
-                                label = "About & Legal",
-                                detail = "Version, updates, privacy policy",
-                                icon = Icons.Default.Info,
-                                to = "about"
-                            ),
-                            StackRow(
-                                id = "support_help",
-                                label = "Support & Diagnostics",
-                                detail = "Crash logs, contact us, suggest features",
-                                icon = Icons.Default.SupportAgent,
-                                to = "support"
-                            ),
-                            StackRow(
-                                id = "danger_zone",
-                                label = "Danger Zone",
-                                detail = "Reset wallets, clear app data",
-                                icon = Icons.Default.Warning,
-                                to = "danger_zone",
-                                tone = StackRowTone.DANGER
-                            )
+                    }
+                },
+                navigationIcon = {
+                    IconButton(onClick = onBack) {
+                        Icon(
+                            imageVector = Icons.AutoMirrored.Filled.ArrowBack,
+                            contentDescription = "Back",
+                            tint = tokens?.textPrimary ?: MaterialTheme.colorScheme.onSurface
                         )
-                    )
+                    }
+                },
+                colors = TopAppBarDefaults.topAppBarColors(
+                    containerColor = Color.Transparent,
+                    scrolledContainerColor = Color.Transparent
                 )
-            ),
-            "appearance" to StackPage(
-                title = "Appearance",
-                sections = listOf(
-                    StackSection(
-                        title = "THEME MODE",
-                        rows = listOf(
-                            StackRow(
-                                id = "theme_system",
-                                label = "System Default",
-                                detail = "Follows OS dark/light mode",
-                                selected = (currentThemeMode == ThemeMode.SYSTEM),
-                                onSelect = { themePrefs.themeMode = ThemeMode.SYSTEM }
-                            ),
-                            StackRow(
-                                id = "theme_light",
-                                label = "Light Theme",
-                                detail = "Soft cream & paper styling",
-                                selected = (currentThemeMode == ThemeMode.LIGHT),
-                                onSelect = { themePrefs.themeMode = ThemeMode.LIGHT }
-                            ),
-                            StackRow(
-                                id = "theme_dark",
-                                label = "Dark Theme",
-                                detail = "Deep charcoal background",
-                                selected = (currentThemeMode == ThemeMode.DARK),
-                                onSelect = { themePrefs.themeMode = ThemeMode.DARK }
-                            ),
-                            StackRow(
-                                id = "theme_amoled",
-                                label = "Pure Black (AMOLED)",
-                                detail = "Zero pixel illumination on OLED",
-                                selected = (currentThemeMode == ThemeMode.AMOLED),
-                                onSelect = { themePrefs.themeMode = ThemeMode.AMOLED }
-                            ),
-                            StackRow(
-                                id = "theme_glass",
-                                label = "Frosted Glass Mode",
-                                detail = "Hardware-accelerated live blur",
-                                selected = (currentThemeMode == ThemeMode.GLASS),
-                                onSelect = { themePrefs.themeMode = ThemeMode.GLASS }
-                            )
-                        )
-                    ),
-                    StackSection(
-                        title = "COLORS & GLASS",
-                        rows = listOf(
-                            StackRow(
-                                id = "dyn_color",
-                                label = "Dynamic Theming",
-                                detail = "Sample system wallpaper colors",
-                                checked = isDynamicEnabled,
-                                onCheckedChange = { themePrefs.isDynamicColor = it }
-                            ),
-                            StackRow(
-                                id = "glass_customizer",
-                                label = "Glass Customizer Screen",
-                                detail = "Fine-tune blur, wallpapers & translucency",
-                                icon = Icons.Default.BlurOn,
-                                onSelect = { showGlassCustomizerScreen = true }
-                            )
-                        )
-                    )
+            )
+        }
+    ) { innerPadding ->
+        Column(
+            modifier = Modifier
+                .fillMaxSize()
+                .padding(innerPadding)
+                .verticalScroll(rememberScrollState())
+                .padding(horizontal = 16.dp, vertical = 8.dp),
+            verticalArrangement = Arrangement.spacedBy(20.dp)
+        ) {
+            // =================================================================
+            // 1. APPEARANCE & THEME
+            // =================================================================
+            SettingsGroup(title = "APPEARANCE & THEME") {
+                // Live Theme Mockup Selector (5 styles)
+                Text(
+                    text = "Select Theme Style",
+                    fontSize = 12.sp,
+                    fontFamily = GoogleSansFlex,
+                    fontWeight = FontWeight.SemiBold,
+                    color = tokens?.textSecondary ?: MaterialTheme.colorScheme.onSurfaceVariant,
+                    modifier = Modifier.padding(horizontal = 16.dp, vertical = 8.dp)
                 )
-            ),
-            "wallets" to StackPage(
-                title = "Currency & Wallets",
-                sections = listOf(
-                    StackSection(
-                        title = "APP CURRENCY",
-                        rows = listOf(
-                            StackRow(
-                                id = "curr_select",
-                                label = "Primary Currency",
-                                detail = "${currentCurrency.flag} ${currentCurrency.displayName} (${currentCurrency.symbol} ${currentCurrency.code})",
-                                icon = Icons.Default.Paid,
-                                onSelect = { showCurrencyDialog = true }
-                            )
+
+                Row(
+                    modifier = Modifier
+                        .fillMaxWidth()
+                        .horizontalScroll(rememberScrollState())
+                        .padding(horizontal = 12.dp, vertical = 4.dp),
+                    horizontalArrangement = Arrangement.spacedBy(10.dp)
+                ) {
+                    listOf(
+                        ThemeMode.SYSTEM,
+                        ThemeMode.DARK,
+                        ThemeMode.AMOLED,
+                        ThemeMode.LIGHT,
+                        ThemeMode.GLASS
+                    ).forEach { mode ->
+                        ThemePreviewCard(
+                            mode = mode,
+                            isSelected = (currentThemeMode == mode),
+                            onClick = {
+                                haptics.click()
+                                themePrefs.themeMode = mode
+                            },
+                            modifier = Modifier.width(112.dp)
                         )
-                    ),
-                    StackSection(
-                        title = "PRIVACY & VISIBILITY",
-                        rows = listOf(
-                            StackRow(
-                                id = "spoiler_balance",
-                                label = "Hide Balances (Spoiler Effect)",
-                                detail = "Shimmering particle spoiler over wallet balances",
-                                checked = walletPrefs.isBalanceSpoilerEnabled,
-                                onCheckedChange = { walletPrefs.isBalanceSpoilerEnabled = it }
-                            )
-                        )
-                    ),
-                    StackSection(
-                        title = "WALLET BALANCES",
-                        rows = listOf(
-                            StackRow(
-                                id = "bal_cash",
-                                label = "Cash Balance",
-                                detail = CurrencyUtils.formatCurrency(balances?.cash ?: 0.0),
-                                icon = Icons.Default.Payments,
-                                onSelect = { walletToCorrect = "CASH" }
-                            ),
-                            StackRow(
-                                id = "bal_online",
-                                label = "Online Balance",
-                                detail = CurrencyUtils.formatCurrency(balances?.online ?: 0.0),
-                                icon = Icons.Default.AccountBalance,
-                                onSelect = { walletToCorrect = "ONLINE" }
-                            ),
-                            StackRow(
-                                id = "atm_mode",
-                                label = "ATM Withdrawal Flow",
-                                detail = if (atmMode == AtmWithdrawalMode.SPENDING) "Treated as Spending" else "Treated as Internal Transfer",
-                                onSelect = {
-                                    val next = if (atmMode == AtmWithdrawalMode.SPENDING) AtmWithdrawalMode.TRANSFER else AtmWithdrawalMode.SPENDING
-                                    walletPrefs.atmWithdrawalMode = next
-                                    Toast.makeText(context, "ATM mode: ${next.name}", Toast.LENGTH_SHORT).show()
-                                }
-                            ),
-                            StackRow(
-                                id = "wallet_reconfig",
-                                label = "Reconfigure Wallets",
-                                detail = "Set opening cash & online balances",
-                                onSelect = { showWalletSetupDialog = true }
-                            )
-                        )
-                    )
+                    }
+                }
+
+                Spacer(modifier = Modifier.height(6.dp))
+                SettingsDivider()
+
+                // Dynamic Wallpaper Theming Switch
+                SettingsSwitchRow(
+                    title = "Dynamic Colors",
+                    subtitle = "Extract tint palette from system wallpaper",
+                    icon = Icons.Default.AutoAwesome,
+                    checked = isDynamicEnabled,
+                    onCheckedChange = { themePrefs.isDynamicColor = it }
                 )
-            ),
-            "security" to StackPage(
-                title = "Security & App Lock",
-                sections = listOf(
-                    StackSection(
-                        title = "AUTHENTICATION",
-                        rows = listOf(
-                            StackRow(
-                                id = "sec_lock",
-                                label = "Biometric / Device PIN Lock",
-                                detail = "Require authentication when opening Kanri",
-                                checked = isLockEnabled,
-                                onCheckedChange = { enabled ->
-                                    securityPrefs.isLockEnabled = enabled
-                                    isLockEnabled = enabled
-                                }
-                            ),
-                            StackRow(
-                                id = "sec_test_lock",
-                                label = "Test Lock Screen",
-                                detail = "Trigger lock overlay immediately",
-                                onSelect = onTestLockScreen
-                            )
-                        )
-                    )
+
+                SettingsDivider()
+
+                // Glass Customizer Screen
+                SettingsRow(
+                    title = "Glass Customizer Screen",
+                    subtitle = "Fine-tune blur radius, tints & translucency",
+                    icon = Icons.Default.BlurOn,
+                    onClick = { showGlassCustomizerScreen = true }
                 )
-            ),
-            "categories" to StackPage(
-                title = "Categories",
-                sections = listOf(
-                    StackSection(
-                        title = "ACTIONS",
-                        rows = listOf(
-                            StackRow(
-                                id = "cat_create",
-                                label = "Create New Category",
-                                detail = "Add a custom spending category",
-                                icon = Icons.Default.Add,
-                                onSelect = { showCreateCategoryDialog = true }
-                            )
+
+                SettingsDivider()
+
+                // Launcher App Icon
+                SettingsRow(
+                    title = "App Launcher Icon",
+                    subtitle = "${currentIconStyle.label} style",
+                    icon = Icons.Default.ColorLens,
+                    trailing = {
+                        Text(
+                            text = currentIconStyle.label,
+                            fontSize = 12.sp,
+                            fontWeight = FontWeight.Medium,
+                            color = MaterialTheme.colorScheme.primary
                         )
-                    ),
-                    StackSection(
-                        title = "CUSTOM CATEGORIES (${customCategories.size})",
-                        rows = if (customCategories.isEmpty()) {
-                            listOf(
-                                StackRow(
-                                    id = "cat_empty",
-                                    label = "No Custom Categories",
-                                    detail = "Default categories are active"
-                                )
-                            )
-                        } else {
-                            customCategories.map { cat ->
-                                StackRow(
-                                    id = "cat_${cat.id}",
-                                    label = "${cat.iconName} ${cat.name}",
-                                    detail = "Tap to edit or delete",
-                                    onSelect = { categoryToEdit = cat }
-                                )
-                            }
-                        }
-                    )
+                    },
+                    onClick = {
+                        val nextStyle = if (currentIconStyle == AppIconStyle.DARK) AppIconStyle.LIGHT else AppIconStyle.DARK
+                        pendingIconStyle = nextStyle
+                        showIconRestartDialog = true
+                    }
                 )
-            ),
-            "backup" to StackPage(
-                title = "Backup & Restore",
-                sections = listOf(
-                    StackSection(
-                        title = "DATA MANAGEMENT",
-                        rows = listOf(
-                            StackRow(
-                                id = "bk_drive",
-                                label = "Google Drive Backup",
-                                detail = "Automatic background cloud sync",
-                                icon = Icons.Default.CloudSync,
-                                onSelect = {
-                                    Toast.makeText(context, "Google Drive sync is enabled", Toast.LENGTH_SHORT).show()
-                                }
-                            ),
-                            StackRow(
-                                id = "bk_export",
-                                label = "Export Transactions Statement",
-                                detail = "Export CSV or encrypted JSON from Profile tab",
-                                icon = Icons.Default.FileDownload,
-                                onSelect = {
-                                    Toast.makeText(context, "Head to Profile tab to export statements", Toast.LENGTH_SHORT).show()
-                                }
-                            )
+            }
+
+            // =================================================================
+            // 2. WALLETS & BALANCES
+            // =================================================================
+            SettingsGroup(title = "WALLETS & BALANCES") {
+                // Currency Selector
+                SettingsRow(
+                    title = "Primary Currency",
+                    subtitle = "${currentCurrency.flag} ${currentCurrency.displayName} (${currentCurrency.symbol} ${currentCurrency.code})",
+                    icon = Icons.Default.Paid,
+                    onClick = { showCurrencyDialog = true }
+                )
+
+                SettingsDivider()
+
+                // Cash Balance
+                SettingsRow(
+                    title = "Cash Balance",
+                    subtitle = CurrencyUtils.formatCurrency(balances?.cash ?: 0.0),
+                    icon = Icons.Default.Payments,
+                    trailing = {
+                        Text(
+                            text = "Correct",
+                            fontSize = 12.sp,
+                            fontWeight = FontWeight.SemiBold,
+                            color = MaterialTheme.colorScheme.primary
                         )
-                    )
+                    },
+                    onClick = { walletToCorrect = "CASH" }
                 )
-            ),
-            "about" to StackPage(
-                title = "About & Legal",
-                sections = listOf(
-                    StackSection(
-                        title = "APPLICATION INFO",
-                        rows = listOf(
-                            StackRow(
-                                id = "ab_version",
-                                label = "App Version",
-                                detail = "Kanri v1.0.0 (Production Release)",
-                                icon = Icons.Default.Info
-                            ),
-                            StackRow(
-                                id = "ab_update",
-                                label = "Check for Updates",
-                                detail = if (isCheckingForUpdates) "Checking for updates..." else "Tap to check for latest release",
-                                onSelect = {
-                                    if (!isCheckingForUpdates) {
-                                        isCheckingForUpdates = true
-                                        scope.launch {
-                                            try {
-                                                val info = appUpdateManager.checkForUpdate().getOrNull()
-                                                if (info != null) activeUpdateDialogInfo = info
-                                                else Toast.makeText(context, "You are on the latest version", Toast.LENGTH_SHORT).show()
-                                            } catch (e: Exception) {
-                                                Toast.makeText(context, "Update check failed", Toast.LENGTH_SHORT).show()
-                                            } finally {
-                                                isCheckingForUpdates = false
-                                            }
-                                        }
+
+                SettingsDivider()
+
+                // Online Balance
+                SettingsRow(
+                    title = "Online / Bank Balance",
+                    subtitle = CurrencyUtils.formatCurrency(balances?.online ?: 0.0),
+                    icon = Icons.Default.AccountBalance,
+                    trailing = {
+                        Text(
+                            text = "Correct",
+                            fontSize = 12.sp,
+                            fontWeight = FontWeight.SemiBold,
+                            color = MaterialTheme.colorScheme.primary
+                        )
+                    },
+                    onClick = { walletToCorrect = "ONLINE" }
+                )
+
+                SettingsDivider()
+
+                // Hide Balances (Spoiler Effect)
+                SettingsSwitchRow(
+                    title = "Hide Balances (Spoiler Effect)",
+                    subtitle = "Shimmering particle spoiler mask over wallet cards",
+                    icon = Icons.Default.Tune,
+                    checked = walletPrefs.isBalanceSpoilerEnabled,
+                    onCheckedChange = { walletPrefs.isBalanceSpoilerEnabled = it }
+                )
+
+                SettingsDivider()
+
+                // ATM Withdrawal Flow
+                SettingsRow(
+                    title = "ATM Withdrawal Flow",
+                    subtitle = if (atmMode == AtmWithdrawalMode.SPENDING) "Treated as Spending (Expense)" else "Treated as Internal Transfer (Bank to Cash)",
+                    icon = Icons.Default.AccountBalanceWallet,
+                    trailing = {
+                        Text(
+                            text = if (atmMode == AtmWithdrawalMode.SPENDING) "Spending" else "Transfer",
+                            fontSize = 12.sp,
+                            fontWeight = FontWeight.SemiBold,
+                            color = MaterialTheme.colorScheme.primary
+                        )
+                    },
+                    onClick = {
+                        val next = if (atmMode == AtmWithdrawalMode.SPENDING) AtmWithdrawalMode.TRANSFER else AtmWithdrawalMode.SPENDING
+                        walletPrefs.atmWithdrawalMode = next
+                        haptics.click()
+                        Toast.makeText(context, "ATM mode: ${next.name}", Toast.LENGTH_SHORT).show()
+                    }
+                )
+
+                SettingsDivider()
+
+                // Setup / Reconfigure Wallets
+                SettingsRow(
+                    title = "Reconfigure Wallets",
+                    subtitle = "Set opening cash & online balances",
+                    icon = Icons.Default.Edit,
+                    onClick = { showWalletSetupDialog = true }
+                )
+            }
+
+            // =================================================================
+            // 3. SECURITY & PRIVACY
+            // =================================================================
+            SettingsGroup(title = "SECURITY & PRIVACY") {
+                // App Lock Switch
+                SettingsSwitchRow(
+                    title = "Biometric / Device PIN Lock",
+                    subtitle = "Require biometric verification when launching Kanri",
+                    icon = Icons.Default.Lock,
+                    checked = isLockEnabled,
+                    onCheckedChange = { enabled ->
+                        securityPrefs.isLockEnabled = enabled
+                        isLockEnabled = enabled
+                    }
+                )
+
+                SettingsDivider()
+
+                // Test Lock Screen
+                SettingsRow(
+                    title = "Test Lock Screen",
+                    subtitle = "Trigger security lock overlay immediately",
+                    icon = Icons.Default.Shield,
+                    onClick = onTestLockScreen
+                )
+
+                SettingsDivider()
+
+                // Privacy Policy
+                SettingsRow(
+                    title = "Privacy Policy",
+                    subtitle = "Zero tracking & 100% offline-first architecture",
+                    icon = Icons.Default.Policy,
+                    onClick = { showPrivacyPolicyDialog = true }
+                )
+            }
+
+            // =================================================================
+            // 4. CATEGORIES & AUTOMATIONS
+            // =================================================================
+            SettingsGroup(title = "CATEGORIES & AUTOMATIONS") {
+                // Smart Merchant Rules
+                SettingsRow(
+                    title = "Smart Merchant Rules",
+                    subtitle = "${merchantRules.size} merchant category mappings active",
+                    icon = Icons.Default.AutoFixHigh,
+                    onClick = { showMerchantRulesScreen = true }
+                )
+
+                SettingsDivider()
+
+                // Custom Categories Header
+                Row(
+                    modifier = Modifier
+                        .fillMaxWidth()
+                        .padding(horizontal = 16.dp, vertical = 12.dp),
+                    horizontalArrangement = Arrangement.SpaceBetween,
+                    verticalAlignment = Alignment.CenterVertically
+                ) {
+                    Column(modifier = Modifier.weight(1f)) {
+                        Text(
+                            text = "Custom Categories",
+                            fontFamily = GoogleSansFlex,
+                            fontWeight = FontWeight.SemiBold,
+                            fontSize = 14.5.sp,
+                            color = tokens?.textPrimary ?: MaterialTheme.colorScheme.onSurface
+                        )
+                        Text(
+                            text = "${customCategories.size} custom categories created",
+                            fontSize = 12.sp,
+                            color = tokens?.textSecondary ?: MaterialTheme.colorScheme.onSurfaceVariant
+                        )
+                    }
+
+                    Button(
+                        onClick = { showCreateCategoryDialog = true },
+                        shape = RoundedCornerShape(10.dp),
+                        colors = ButtonDefaults.buttonColors(
+                            containerColor = MaterialTheme.colorScheme.primaryContainer,
+                            contentColor = MaterialTheme.colorScheme.onPrimaryContainer
+                        )
+                    ) {
+                        Icon(Icons.Default.Add, contentDescription = null, modifier = Modifier.size(16.dp))
+                        Spacer(modifier = Modifier.width(4.dp))
+                        Text("Add", fontSize = 12.sp)
+                    }
+                }
+
+                if (customCategories.isEmpty()) {
+                    Box(
+                        modifier = Modifier
+                            .fillMaxWidth()
+                            .padding(horizontal = 16.dp, vertical = 8.dp),
+                        contentAlignment = Alignment.CenterStart
+                    ) {
+                        Text(
+                            text = "Default categories are active. Tap Add to create custom tags.",
+                            fontSize = 12.sp,
+                            color = tokens?.textSecondary ?: MaterialTheme.colorScheme.onSurfaceVariant
+                        )
+                    }
+                } else {
+                    customCategories.forEach { cat ->
+                        SettingsDivider()
+                        Row(
+                            modifier = Modifier
+                                .fillMaxWidth()
+                                .padding(horizontal = 16.dp, vertical = 8.dp),
+                            horizontalArrangement = Arrangement.SpaceBetween,
+                            verticalAlignment = Alignment.CenterVertically
+                        ) {
+                            Row(
+                                verticalAlignment = Alignment.CenterVertically,
+                                horizontalArrangement = Arrangement.spacedBy(10.dp),
+                                modifier = Modifier.weight(1f)
+                            ) {
+                                Surface(
+                                    shape = CircleShape,
+                                    color = MaterialTheme.colorScheme.surfaceVariant,
+                                    modifier = Modifier.size(32.dp)
+                                ) {
+                                    Box(contentAlignment = Alignment.Center) {
+                                        Text(text = cat.iconName, fontSize = 16.sp)
                                     }
                                 }
-                            ),
-                            StackRow(
-                                id = "ab_privacy",
-                                label = "Privacy Policy",
-                                detail = "Offline-first privacy and security architecture",
-                                icon = Icons.Default.Policy,
-                                onSelect = { showPrivacyPolicyDialog = true }
-                            ),
-                            StackRow(
-                                id = "ab_onboarding",
-                                label = "Replay Intro Onboarding",
-                                detail = "Restart walkthrough slides",
-                                icon = Icons.Default.Replay,
-                                onSelect = onReplayOnboarding
-                            )
+                                Text(
+                                    text = cat.name,
+                                    fontSize = 14.sp,
+                                    fontFamily = GoogleSansFlex,
+                                    fontWeight = FontWeight.Medium,
+                                    color = tokens?.textPrimary ?: MaterialTheme.colorScheme.onSurface
+                                )
+                            }
+
+                            Row(horizontalArrangement = Arrangement.spacedBy(4.dp)) {
+                                IconButton(onClick = { categoryToEdit = cat }) {
+                                    Icon(
+                                        imageVector = Icons.Default.Edit,
+                                        contentDescription = "Edit",
+                                        tint = tokens?.textSecondary ?: MaterialTheme.colorScheme.onSurfaceVariant,
+                                        modifier = Modifier.size(18.dp)
+                                    )
+                                }
+                                IconButton(onClick = { categoryToDelete = cat }) {
+                                    Icon(
+                                        imageVector = Icons.Default.Delete,
+                                        contentDescription = "Delete",
+                                        tint = MaterialTheme.colorScheme.error,
+                                        modifier = Modifier.size(18.dp)
+                                    )
+                                }
+                            }
+                        }
+                    }
+                }
+            }
+
+            // =================================================================
+            // 5. PERMISSIONS & SYSTEM DETECTION
+            // =================================================================
+            SettingsGroup(title = "PERMISSIONS & DETECTION") {
+                Box(modifier = Modifier.padding(16.dp)) {
+                    PermissionsStatusOverview(context = context)
+                }
+            }
+
+            // =================================================================
+            // 6. BACKUP & CLOUD SYNC
+            // =================================================================
+            SettingsGroup(title = "BACKUP & DATA MANAGEMENT") {
+                SettingsRow(
+                    title = "Google Drive Cloud Backup",
+                    subtitle = "Automatic background cloud sync with your private Drive",
+                    icon = Icons.Default.CloudSync,
+                    trailing = {
+                        Text(
+                            text = "Sync",
+                            fontSize = 12.sp,
+                            fontWeight = FontWeight.SemiBold,
+                            color = MaterialTheme.colorScheme.primary
                         )
-                    )
+                    },
+                    onClick = {
+                        Toast.makeText(context, "Google Drive sync is enabled and up-to-date", Toast.LENGTH_SHORT).show()
+                    }
                 )
-            ),
-            "support" to StackPage(
-                title = "Support & Help",
-                sections = listOf(
-                    StackSection(
-                        title = "DIAGNOSTICS & FEEDBACK",
-                        rows = listOf(
-                            StackRow(
-                                id = "sup_crash",
-                                label = "Crash & Diagnostics Logs",
-                                detail = "Inspect recorded system logs",
-                                icon = Icons.Default.BugReport,
-                                onSelect = { showCrashLogsDialog = true }
-                            ),
-                            StackRow(
-                                id = "sup_suggest",
-                                label = "Suggest a Feature",
-                                detail = "Share your ideas directly with us",
-                                icon = Icons.Default.Lightbulb,
-                                onSelect = { showSuggestFeatureDialog = true }
-                            ),
-                            StackRow(
-                                id = "sup_contact",
-                                label = "Contact Support",
-                                detail = "Send us an email query",
-                                icon = Icons.Default.Email,
-                                onSelect = { showContactDialog = true }
+
+                SettingsDivider()
+
+                SettingsRow(
+                    title = "Export Transactions Statement",
+                    subtitle = "Export CSV or encrypted JSON statements from Profile tab",
+                    icon = Icons.Default.FileDownload,
+                    onClick = {
+                        Toast.makeText(context, "Head to the Profile tab to export statements", Toast.LENGTH_SHORT).show()
+                    }
+                )
+
+                SettingsDivider()
+
+                SettingsRow(
+                    title = "Replay Intro Walkthrough",
+                    subtitle = "Restart the onboarding slides and feature tour",
+                    icon = Icons.Default.Replay,
+                    onClick = onReplayOnboarding
+                )
+            }
+
+            // =================================================================
+            // 7. ABOUT & SUPPORT
+            // =================================================================
+            SettingsGroup(title = "ABOUT & SUPPORT") {
+                SettingsRow(
+                    title = "Kanri Version",
+                    subtitle = "v${BuildConfig.VERSION_NAME} (Production Build)",
+                    icon = Icons.Default.Info,
+                    trailing = {
+                        if (isCheckingForUpdates) {
+                            Text(
+                                text = "Checking...",
+                                fontSize = 12.sp,
+                                color = MaterialTheme.colorScheme.primary
                             )
-                        )
-                    )
-                )
-            ),
-            "danger_zone" to StackPage(
-                title = "Danger Zone",
-                sections = listOf(
-                    StackSection(
-                        title = "IRREVERSIBLE ACTIONS",
-                        rows = listOf(
-                            StackRow(
-                                id = "dz_reset_wallets",
-                                label = "Reset Opening Balances",
-                                detail = "Clear Cash & Online balances without deleting transactions",
-                                tone = StackRowTone.DANGER,
-                                icon = Icons.Default.Refresh,
-                                onSelect = { showResetWalletsDialog = true }
-                            ),
-                            StackRow(
-                                id = "dz_kill_app",
-                                label = "Terminate App Process",
-                                detail = "Force close Kanri background process immediately",
-                                tone = StackRowTone.DANGER,
-                                icon = Icons.Default.PowerSettingsNew,
-                                onSelect = { showKillAppDialog = true }
-                            ),
-                            StackRow(
-                                id = "dz_reset_app",
-                                label = "Reset Entire App",
-                                detail = "Permanently wipe database and all user settings",
-                                tone = StackRowTone.DANGER,
-                                icon = Icons.Default.DeleteForever,
-                                onSelect = { showResetDialog = true }
+                        } else {
+                            Text(
+                                text = "Check Updates",
+                                fontSize = 12.sp,
+                                fontWeight = FontWeight.SemiBold,
+                                color = MaterialTheme.colorScheme.primary
                             )
-                        ),
-                        footer = "Actions in this section permanently modify or reset your app state. Please proceed with caution."
-                    )
+                        }
+                    },
+                    onClick = {
+                        if (!isCheckingForUpdates) {
+                            isCheckingForUpdates = true
+                            scope.launch {
+                                try {
+                                    val info = appUpdateManager.checkForUpdate().getOrNull()
+                                    if (info != null) activeUpdateDialogInfo = info
+                                    else Toast.makeText(context, "You are on the latest version", Toast.LENGTH_SHORT).show()
+                                } catch (e: Exception) {
+                                    Toast.makeText(context, "Update check failed", Toast.LENGTH_SHORT).show()
+                                } finally {
+                                    isCheckingForUpdates = false
+                                }
+                            }
+                        }
+                    }
                 )
+
+                SettingsDivider()
+
+                SettingsRow(
+                    title = "App Health & Crash Logs",
+                    subtitle = "Inspect recorded error logs and system health",
+                    icon = Icons.Default.BugReport,
+                    onClick = { showCrashLogsDialog = true }
+                )
+
+                SettingsDivider()
+
+                SettingsRow(
+                    title = "Suggest a Feature",
+                    subtitle = "Share your ideas and feature requests directly",
+                    icon = Icons.Default.Lightbulb,
+                    onClick = { showSuggestFeatureDialog = true }
+                )
+
+                SettingsDivider()
+
+                SettingsRow(
+                    title = "Contact Support",
+                    subtitle = "Send developer an email query",
+                    icon = Icons.Default.Email,
+                    onClick = { showContactDialog = true }
+                )
+            }
+
+            // =================================================================
+            // 8. DANGER ZONE
+            // =================================================================
+            SettingsGroup(title = "DANGER ZONE", titleColor = MaterialTheme.colorScheme.error) {
+                SettingsRow(
+                    title = "Reset Opening Balances",
+                    subtitle = "Clear Cash & Online balances without deleting transactions",
+                    icon = Icons.Default.Refresh,
+                    iconTint = MaterialTheme.colorScheme.error,
+                    onClick = { showResetWalletsDialog = true }
+                )
+
+                SettingsDivider()
+
+                SettingsRow(
+                    title = "Terminate App Process",
+                    subtitle = "Force close Kanri background process immediately",
+                    icon = Icons.Default.PowerSettingsNew,
+                    iconTint = MaterialTheme.colorScheme.error,
+                    onClick = { showKillAppDialog = true }
+                )
+
+                SettingsDivider()
+
+                SettingsRow(
+                    title = "Reset Entire App",
+                    subtitle = "Permanently wipe database and all user settings",
+                    icon = Icons.Default.DeleteForever,
+                    iconTint = MaterialTheme.colorScheme.error,
+                    onClick = { showResetDialog = true }
+                )
+            }
+
+            Spacer(modifier = Modifier.height(100.dp))
+        }
+    }
+}
+
+// =============================================================================
+// REUSABLE FROSTED SETTINGS COMPONENTS
+// =============================================================================
+@Composable
+private fun SettingsGroup(
+    title: String,
+    modifier: Modifier = Modifier,
+    titleColor: Color? = null,
+    content: @Composable ColumnScope.() -> Unit
+) {
+    val tokens = LocalKanriGlass.current
+    Column(
+        modifier = modifier.fillMaxWidth(),
+        verticalArrangement = Arrangement.spacedBy(8.dp)
+    ) {
+        Text(
+            text = title,
+            fontSize = 11.5.sp,
+            fontFamily = GoogleSansFlex,
+            fontWeight = FontWeight.SemiBold,
+            letterSpacing = 0.8.sp,
+            color = titleColor ?: (tokens?.textSecondary ?: MaterialTheme.colorScheme.onSurfaceVariant.copy(alpha = 0.7f)),
+            modifier = Modifier.padding(start = 12.dp)
+        )
+        KanriGlassCard(
+            modifier = Modifier.fillMaxWidth(),
+            level = GlassLevel.Blur,
+            shape = RoundedCornerShape(18.dp)
+        ) {
+            Column(
+                modifier = Modifier
+                    .fillMaxWidth()
+                    .padding(vertical = 4.dp),
+                content = content
+            )
+        }
+    }
+}
+
+@Composable
+private fun SettingsRow(
+    title: String,
+    subtitle: String? = null,
+    icon: ImageVector? = null,
+    iconTint: Color? = null,
+    trailing: @Composable (() -> Unit)? = null,
+    onClick: (() -> Unit)? = null,
+    modifier: Modifier = Modifier
+) {
+    val tokens = LocalKanriGlass.current
+    val haptics = rememberKanriHaptics()
+
+    Row(
+        modifier = modifier
+            .fillMaxWidth()
+            .clickable(enabled = onClick != null) {
+                haptics.click()
+                onClick?.invoke()
+            }
+            .padding(horizontal = 16.dp, vertical = 12.dp),
+        horizontalArrangement = Arrangement.spacedBy(14.dp),
+        verticalAlignment = Alignment.CenterVertically
+    ) {
+        if (icon != null) {
+            Surface(
+                shape = RoundedCornerShape(10.dp),
+                color = (iconTint ?: MaterialTheme.colorScheme.primary).copy(alpha = 0.12f),
+                modifier = Modifier.size(36.dp)
+            ) {
+                Box(contentAlignment = Alignment.Center) {
+                    Icon(
+                        imageVector = icon,
+                        contentDescription = null,
+                        tint = iconTint ?: MaterialTheme.colorScheme.primary,
+                        modifier = Modifier.size(20.dp)
+                    )
+                }
+            }
+        }
+
+        Column(modifier = Modifier.weight(1f)) {
+            Text(
+                text = title,
+                fontFamily = GoogleSansFlex,
+                fontWeight = FontWeight.SemiBold,
+                fontSize = 14.5.sp,
+                color = tokens?.textPrimary ?: MaterialTheme.colorScheme.onSurface
+            )
+            if (subtitle != null) {
+                Spacer(modifier = Modifier.height(2.dp))
+                Text(
+                    text = subtitle,
+                    fontSize = 12.sp,
+                    color = tokens?.textSecondary ?: MaterialTheme.colorScheme.onSurfaceVariant
+                )
+            }
+        }
+
+        if (trailing != null) {
+            trailing()
+        } else if (onClick != null) {
+            Icon(
+                imageVector = Icons.Default.ChevronRight,
+                contentDescription = null,
+                tint = tokens?.textSecondary?.copy(alpha = 0.5f) ?: MaterialTheme.colorScheme.onSurfaceVariant.copy(alpha = 0.5f),
+                modifier = Modifier.size(18.dp)
+            )
+        }
+    }
+}
+
+@Composable
+private fun SettingsSwitchRow(
+    title: String,
+    subtitle: String? = null,
+    icon: ImageVector? = null,
+    checked: Boolean,
+    onCheckedChange: (Boolean) -> Unit,
+    modifier: Modifier = Modifier
+) {
+    val tokens = LocalKanriGlass.current
+    val haptics = rememberKanriHaptics()
+
+    Row(
+        modifier = modifier
+            .fillMaxWidth()
+            .clickable {
+                haptics.click()
+                onCheckedChange(!checked)
+            }
+            .padding(horizontal = 16.dp, vertical = 12.dp),
+        horizontalArrangement = Arrangement.spacedBy(14.dp),
+        verticalAlignment = Alignment.CenterVertically
+    ) {
+        if (icon != null) {
+            Surface(
+                shape = RoundedCornerShape(10.dp),
+                color = MaterialTheme.colorScheme.primary.copy(alpha = 0.12f),
+                modifier = Modifier.size(36.dp)
+            ) {
+                Box(contentAlignment = Alignment.Center) {
+                    Icon(
+                        imageVector = icon,
+                        contentDescription = null,
+                        tint = MaterialTheme.colorScheme.primary,
+                        modifier = Modifier.size(20.dp)
+                    )
+                }
+            }
+        }
+
+        Column(modifier = Modifier.weight(1f)) {
+            Text(
+                text = title,
+                fontFamily = GoogleSansFlex,
+                fontWeight = FontWeight.SemiBold,
+                fontSize = 14.5.sp,
+                color = tokens?.textPrimary ?: MaterialTheme.colorScheme.onSurface
+            )
+            if (subtitle != null) {
+                Spacer(modifier = Modifier.height(2.dp))
+                Text(
+                    text = subtitle,
+                    fontSize = 12.sp,
+                    color = tokens?.textSecondary ?: MaterialTheme.colorScheme.onSurfaceVariant
+                )
+            }
+        }
+
+        Switch(
+            checked = checked,
+            onCheckedChange = {
+                haptics.click()
+                onCheckedChange(it)
+            },
+            colors = SwitchDefaults.colors(
+                checkedThumbColor = Color.White,
+                checkedTrackColor = MaterialTheme.colorScheme.primary,
+                uncheckedThumbColor = Color.White.copy(alpha = 0.8f),
+                uncheckedTrackColor = if (tokens != null) tokens.tintFlat else MaterialTheme.colorScheme.surfaceVariant
             )
         )
     }
+}
 
-    KokonutStackPanel(
-        pages = pages,
-        root = "settings",
-        onBackToApp = onBack,
-        modifier = modifier
+@Composable
+private fun SettingsDivider() {
+    val tokens = LocalKanriGlass.current
+    HorizontalDivider(
+        modifier = Modifier.padding(start = 66.dp, end = 16.dp),
+        thickness = 0.8.dp,
+        color = tokens?.borderStart?.copy(alpha = 0.12f) ?: Color.White.copy(alpha = 0.08f)
     )
 }
 

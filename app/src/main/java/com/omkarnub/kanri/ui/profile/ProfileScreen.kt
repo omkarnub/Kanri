@@ -363,36 +363,46 @@ fun ProfileScreen(
         )
     }
 
-    // Edit Profile Dialog (Name & Date of Birth)
+    // Edit Profile Modal Sheet / Dialog
     if (showEditProfileDialog) {
-        Box(
-            modifier = Modifier.fillMaxSize(),
-            contentAlignment = Alignment.BottomCenter
+        androidx.compose.ui.window.Dialog(
+            onDismissRequest = { showEditProfileDialog = false },
+            properties = androidx.compose.ui.window.DialogProperties(
+                usePlatformDefaultWidth = false
+            )
         ) {
             Box(
                 modifier = Modifier
                     .fillMaxSize()
                     .background(Color.Black.copy(alpha = 0.52f))
-                    .clickable { showEditProfileDialog = false }
-            )
-            com.omkarnub.kanri.ui.common.kokonut.KokonutAvatarPicker(
-                title = "Edit Profile",
-                submitLabel = "Save",
-                initialName = currentUserName,
-                initialVariant = avatarVariant,
-                onComplete = { newName, newVariant, _ ->
-                    showEditProfileDialog = false
-                    profilePrefs.userName = newName
-                    profilePrefs.avatarVariant = newVariant
-                    profilePrefs.removeProfilePhoto()
-                    haptics.success()
-                    Toast.makeText(context, "Profile details saved", Toast.LENGTH_SHORT).show()
-                },
-                modifier = Modifier
-                    .fillMaxWidth()
-                    .navigationBarsPadding()
-                    .imePadding()
-            )
+                    .clickable { showEditProfileDialog = false },
+                contentAlignment = Alignment.BottomCenter
+            ) {
+                Box(
+                    modifier = Modifier
+                        .fillMaxWidth()
+                        .clickable(enabled = false) {}
+                ) {
+                    com.omkarnub.kanri.ui.common.kokonut.KokonutAvatarPicker(
+                        title = "Edit Profile",
+                        submitLabel = "Save",
+                        initialName = currentUserName,
+                        initialVariant = avatarVariant,
+                        onComplete = { newName, newVariant, _ ->
+                            showEditProfileDialog = false
+                            profilePrefs.userName = newName
+                            profilePrefs.avatarVariant = newVariant
+                            profilePrefs.removeProfilePhoto()
+                            haptics.success()
+                            Toast.makeText(context, "Profile details saved", Toast.LENGTH_SHORT).show()
+                        },
+                        modifier = Modifier
+                            .fillMaxWidth()
+                            .navigationBarsPadding()
+                            .imePadding()
+                    )
+                }
+            }
         }
     }
 

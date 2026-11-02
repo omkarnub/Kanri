@@ -1,45 +1,33 @@
 package com.omkarnub.kanri.ui.common.kokonut
 
-import android.graphics.Bitmap
 import android.graphics.BitmapFactory
 import android.net.Uri
 import androidx.activity.compose.rememberLauncherForActivityResult
 import androidx.activity.result.contract.ActivityResultContracts
-import androidx.compose.animation.AnimatedContent
 import androidx.compose.animation.core.Animatable
-import androidx.compose.animation.core.CubicBezierEasing
 import androidx.compose.animation.core.animateFloatAsState
 import androidx.compose.animation.core.spring
-import androidx.compose.animation.core.tween
-import androidx.compose.animation.fadeIn
-import androidx.compose.animation.fadeOut
 import androidx.compose.foundation.Canvas
 import androidx.compose.foundation.Image
 import androidx.compose.foundation.background
 import androidx.compose.foundation.border
 import androidx.compose.foundation.clickable
-import androidx.compose.foundation.gestures.detectHorizontalDragGestures
-import androidx.compose.foundation.gestures.detectTapGestures
+import androidx.compose.foundation.gestures.detectDragGestures
 import androidx.compose.foundation.isSystemInDarkTheme
 import androidx.compose.foundation.layout.Arrangement
 import androidx.compose.foundation.layout.Box
-import androidx.compose.foundation.layout.BoxWithConstraints
 import androidx.compose.foundation.layout.Column
 import androidx.compose.foundation.layout.Row
 import androidx.compose.foundation.layout.Spacer
-import androidx.compose.foundation.layout.aspectRatio
 import androidx.compose.foundation.layout.fillMaxSize
 import androidx.compose.foundation.layout.fillMaxWidth
 import androidx.compose.foundation.layout.height
-import androidx.compose.foundation.layout.offset
 import androidx.compose.foundation.layout.padding
 import androidx.compose.foundation.layout.size
 import androidx.compose.foundation.layout.width
 import androidx.compose.foundation.shape.CircleShape
 import androidx.compose.foundation.shape.RoundedCornerShape
 import androidx.compose.foundation.text.BasicTextField
-import androidx.compose.foundation.text.KeyboardActions
-import androidx.compose.foundation.text.KeyboardOptions
 import androidx.compose.material.icons.Icons
 import androidx.compose.material.icons.automirrored.filled.ArrowForward
 import androidx.compose.material.icons.filled.AddPhotoAlternate
@@ -64,7 +52,6 @@ import androidx.compose.ui.draw.rotate
 import androidx.compose.ui.draw.shadow
 import androidx.compose.ui.focus.onFocusChanged
 import androidx.compose.ui.geometry.Offset
-import androidx.compose.ui.geometry.Rect
 import androidx.compose.ui.geometry.Size
 import androidx.compose.ui.graphics.Color
 import androidx.compose.ui.graphics.Path
@@ -79,35 +66,27 @@ import androidx.compose.ui.graphics.nativeCanvas
 import androidx.compose.ui.input.pointer.pointerInput
 import androidx.compose.ui.platform.LocalContext
 import androidx.compose.ui.platform.LocalDensity
-import androidx.compose.ui.semantics.Role
-import androidx.compose.ui.semantics.contentDescription
-import androidx.compose.ui.semantics.role
-import androidx.compose.ui.semantics.semantics
 import androidx.compose.ui.text.TextStyle
 import androidx.compose.ui.text.font.FontFamily
 import androidx.compose.ui.text.font.FontWeight
-import androidx.compose.ui.text.input.ImeAction
-import androidx.compose.ui.text.input.KeyboardType
 import androidx.compose.ui.text.style.TextOverflow
-import androidx.compose.ui.unit.IntOffset
 import androidx.compose.ui.unit.dp
 import androidx.compose.ui.unit.sp
+import com.omkarnub.kanri.data.profile.UserProfilePreferences
 import com.omkarnub.kanri.ui.common.GlassLevel
 import com.omkarnub.kanri.ui.common.KanriGlassCard
-import com.omkarnub.kanri.data.profile.UserProfilePreferences
-import kotlinx.coroutines.Dispatchers
-import kotlinx.coroutines.withContext
-import kotlinx.coroutines.isActive
-import kotlin.math.abs
-import kotlin.math.floor
+import com.omkarnub.kanri.ui.theme.GoogleSansFlex
 import com.omkarnub.kanri.util.rememberKanriHaptics
+import kotlinx.coroutines.Dispatchers
 import kotlinx.coroutines.delay
+import kotlinx.coroutines.isActive
 import kotlinx.coroutines.launch
-import java.io.File
+import kotlinx.coroutines.withContext
 import java.util.Locale
 import kotlin.math.PI
+import kotlin.math.abs
 import kotlin.math.cos
-import kotlin.math.hypot
+import kotlin.math.floor
 import kotlin.math.max
 import kotlin.math.min
 import kotlin.math.pow
@@ -116,31 +95,33 @@ import kotlin.math.sin
 import kotlin.random.Random
 
 /**
- * 1:1 Port of Kokonut UI Avatar Picker (A8. avatar-picker.tsx)
+ * 1:1 Implementation of Kokonut UI Avatar Picker (A8. avatar-picker.tsx)
  *
- * Exact constants:
- * SLOT_COUNT = 5, COIN = 128, BEZEL = 176, TICKS = 60
- * DEG_PER_PX = 180 / 128
- * MAX_FLICK_STEPS = 10, TAP_SLOP = 4
- * SPRINGS:
- * - DRAG_SPRING: stiffness 140, damping 22 -> dampingRatio = 22 / (2 * sqrt(140)) = 0.9296f
- * - SHUFFLE_SPRING: stiffness 50, damping 11 -> dampingRatio = 11 / (2 * sqrt(50)) = 0.7778f
- * - MORPH: bounce 0.22, visualDuration 0.42
- * - FLY: bounce 0.18, visualDuration 0.45
- * - EYES: stiffness 180, damping 18 -> dampingRatio = 18 / (2 * sqrt(180)) = 0.6708f
+ * Core Principles & Physics:
+ * - Pure deterministic procedural face generation from (displayName, variant) seed
+ * - Mulberry32 32-bit PRNG & FNV-1a seed hashing
+ * - Continuous shape attribute interpolation enabling real-time face morphing
+ * - 3D Coin with 128dp diameter, perspective, depth discs, and 176dp 60-tick rotating bezel
+ * - Direct horizontal drag gesture with release momentum / velocity projection
+ * - Tap to turn to next face (velocity 900)
+ * - Dice shuffle button spinning 5..8 half-turns with Kokonut shuffle spring
+ * - 5 Option slots with flying swap preview
+ * - Living eyes with pointer-tracking offset & periodic blinking
+ * - Real-time name input morphing
  */
 
-const val AVATAR_COIN_SIZE = 128f
-const val AVATAR_BEZEL_SIZE = 176f
+const val AVATAR_SLOT_COUNT = 5
+const val AVATAR_COIN = 128f
+const val AVATAR_BEZEL = 176f
 const val AVATAR_TICKS = 60
-const val AVATAR_DEG_PER_PX = 180f / 128f
+const val AVATAR_DEG_PER_PX = 180f / AVATAR_COIN
 const val AVATAR_MAX_FLICK_STEPS = 10
 const val AVATAR_TAP_SLOP = 4f
-const val AVATAR_SLOT_COUNT = 5
+const val AVATAR_MIN_NAME = 2
 
 val AVATAR_DRAG_SPRING = spring<Float>(stiffness = 140f, dampingRatio = 0.93f)
-val AVATAR_SHUFFLE_SPRING = spring<Float>(stiffness = 50f, dampingRatio = 0.778f)
-val AVATAR_MORPH_SPRING = spring<Float>(stiffness = 190f, dampingRatio = 0.78f)
+val AVATAR_SHUFFLE_SPRING = spring<Float>(stiffness = 50f, dampingRatio = 0.78f)
+val AVATAR_MORPH_SPRING = spring<Float>(stiffness = 240f, dampingRatio = 0.82f)
 
 data class FaceRgb(val r: Int, val g: Int, val b: Int) {
     fun toColor(alpha: Float = 1f): Color = Color(r, g, b, (alpha * 255).roundToInt().coerceIn(0, 255))
@@ -217,89 +198,6 @@ val AVATAR_INK = Color(0xFF18181B)
 fun avatarRound2(v: Double): Float = ((v * 100.0).roundToInt() / 100.0).toFloat()
 fun avatarRound2(v: Float): Float = ((v * 100f).roundToInt() / 100f)
 
-fun avatarRound2Str(v: Double): String {
-    val r = Math.round(v * 100.0) / 100.0
-    return if (r == r.toLong().toDouble()) {
-        r.toLong().toString()
-    } else {
-        val s = String.format(Locale.US, "%.2f", r)
-        if (s.endsWith("0")) s.substring(0, s.length - 1) else s
-    }
-}
-
-fun avatarRound2Str(v: Float): String = avatarRound2Str(v.toDouble())
-
-fun avatarBlobPath(
-    cx: Double,
-    cy: Double,
-    w: Double,
-    top: Double,
-    bottom: Double,
-    square: Double,
-    chin: Double = 1.0
-): String {
-    val k = 0.552 + square * 0.28
-    val kb = k * chin
-    val n = { v: Double -> avatarRound2Str(v) }
-    return listOf(
-        "M${n(cx)} ${n(cy - top)}",
-        "C${n(cx + k * w)} ${n(cy - top)} ${n(cx + w)} ${n(cy - k * top)} ${n(cx + w)} ${n(cy)}",
-        "C${n(cx + w)} ${n(cy + kb * bottom)} ${n(cx + kb * w)} ${n(cy + bottom)} ${n(cx)} ${n(cy + bottom)}",
-        "C${n(cx - kb * w)} ${n(cy + bottom)} ${n(cx - w)} ${n(cy + kb * bottom)} ${n(cx - w)} ${n(cy)}",
-        "C${n(cx - w)} ${n(cy - k * top)} ${n(cx - k * w)} ${n(cy - top)} ${n(cx)} ${n(cy - top)}Z"
-    ).joinToString("")
-}
-
-fun avatarBlobPath(
-    cx: Float,
-    cy: Float,
-    w: Float,
-    top: Float,
-    bottom: Float,
-    square: Float,
-    chin: Float = 1f
-): String = avatarBlobPath(cx.toDouble(), cy.toDouble(), w.toDouble(), top.toDouble(), bottom.toDouble(), square.toDouble(), chin.toDouble())
-
-fun Float.toExactDouble(): Double = Math.round(this * 100.0) / 100.0
-
-fun avatarHairFrontPath(s: FaceShape, cx: Float, cy: Float): String {
-    val w = s.headW.toExactDouble()
-    val h = s.headH.toExactDouble()
-    val v = s.hairVolume.toExactDouble()
-    val cxD = cx.toDouble()
-    val cyD = cy.toDouble()
-    val temple = cyD - h * 0.12
-    val crown = cyD - h - 1.5 - v * 4.0
-    val side = w + 1.5 + v * 2.5
-    val k = 0.552 + s.headSquare.toExactDouble() * 0.28
-    val fringeY = cyD - h * (0.66 - s.hairFringe.toExactDouble() * 0.36)
-    val partX = cxD + s.hairPart.toExactDouble() * w * 0.55
-    val n = { x: Double -> avatarRound2Str(x) }
-    return listOf(
-        "M${n(cxD - side)} ${n(temple)}",
-        "C${n(cxD - side)} ${n(cyD - h * k - v * 3.0)} ${n(cxD - k * side)} ${n(crown)} ${n(cxD)} ${n(crown)}",
-        "C${n(cxD + k * side)} ${n(crown)} ${n(cxD + side)} ${n(cyD - h * k - v * 3.0)} ${n(cxD + side)} ${n(temple)}",
-        "L${n(cxD + w - 1.0)} ${n(temple)}",
-        "Q${n(cxD + w * 0.75)} ${n(fringeY + 1.0 - s.hairPart.toExactDouble() * 5.0)} ${n(partX)} ${n(fringeY - 2.5)}",
-        "Q${n(cxD - w * 0.75)} ${n(fringeY + 1.0 + s.hairPart.toExactDouble() * 5.0)} ${n(cxD - w + 1.0)} ${n(temple)}Z"
-    ).joinToString("")
-}
-
-fun avatarMouthPath(s: FaceShape, cx: Double, y: Double): String {
-    val curve = s.mouthCurve.toExactDouble() * 2.0
-    val open = s.mouthOpen.toExactDouble() * 5.0
-    val mouthWD = s.mouthW.toExactDouble()
-    val n = { x: Double -> avatarRound2Str(x) }
-    return listOf(
-        "M${n(cx - mouthWD)} ${n(y)}",
-        "Q${n(cx)} ${n(y + curve)} ${n(cx + mouthWD)} ${n(y)}",
-        "Q${n(cx)} ${n(y + curve + open)} ${n(cx - mouthWD)} ${n(y)}Z"
-    ).joinToString("")
-}
-
-fun avatarMouthPath(s: FaceShape, cx: Float, y: Float): String =
-    avatarMouthPath(s, cx.toDouble(), y.toDouble())
-
 fun avatarHashString(input: String): Long {
     var h = 2166136261L.toInt()
     for (i in 0 until input.length) {
@@ -344,52 +242,29 @@ fun createAvatarFace(seed: String): Face {
     val r = avatarMulberry32(avatarHashString(seed))
     val bg = avatarPick(AVATAR_BACKGROUNDS, r())
 
-    val headW = 18.0 + r() * 5.0
-    val headH = 22.0 + r() * 4.0
-    val headSquare = r()
-    val chin = 0.75 + r() * 0.25
-    val hairVolume = r()
-    val hairFringe = r()
-    val hairPart = r() * 2.0 - 1.0
-    val hairLength = r().pow(1.6)
-    val eyeGap = 7.5 + r() * 3.0
-    val eyeY = -2.0 + r() * 4.0
-    val eyeRx = 1.7 + r() * 0.9
-    val eyeRy = 1.9 + r() * 1.4
-    val browTilt = -2.0 + r() * 4.0
-    val browLift = 4.2 + r() * 2.0
-    val browWeight = if (r() < 0.65) 1.3 + r() * 0.8 else 0.0
-    val mouthW = 3.5 + r() * 3.0
-    val mouthCurve = r() * 4.5
-    val mouthOpen = if (r() < 0.3) 0.6 + r() * 0.4 else 0.0
-    val nose = r()
-    val glasses = if (r() < 0.25) 1.0 else 0.0
-    val cheeks = r()
-    val shoulders = r()
-
     val shape = FaceShape(
-        headW = avatarRound2(headW),
-        headH = avatarRound2(headH),
-        headSquare = avatarRound2(headSquare),
-        chin = avatarRound2(chin),
-        hairVolume = avatarRound2(hairVolume),
-        hairFringe = avatarRound2(hairFringe),
-        hairPart = avatarRound2(hairPart),
-        hairLength = avatarRound2(hairLength),
-        eyeGap = avatarRound2(eyeGap),
-        eyeY = avatarRound2(eyeY),
-        eyeRx = avatarRound2(eyeRx),
-        eyeRy = avatarRound2(eyeRy),
-        browTilt = avatarRound2(browTilt),
-        browLift = avatarRound2(browLift),
-        browWeight = avatarRound2(browWeight),
-        mouthW = avatarRound2(mouthW),
-        mouthCurve = avatarRound2(mouthCurve),
-        mouthOpen = avatarRound2(mouthOpen),
-        nose = avatarRound2(nose),
-        glasses = avatarRound2(glasses),
-        cheeks = avatarRound2(cheeks),
-        shoulders = avatarRound2(shoulders)
+        headW = avatarRound2(18.0 + r() * 5.0),
+        headH = avatarRound2(22.0 + r() * 4.0),
+        headSquare = avatarRound2(r()),
+        chin = avatarRound2(0.75 + r() * 0.25),
+        hairVolume = avatarRound2(r()),
+        hairFringe = avatarRound2(r()),
+        hairPart = avatarRound2(r() * 2.0 - 1.0),
+        hairLength = avatarRound2(r().pow(1.6)),
+        eyeGap = avatarRound2(7.5 + r() * 3.0),
+        eyeY = avatarRound2(-2.0 + r() * 4.0),
+        eyeRx = avatarRound2(1.7 + r() * 0.9),
+        eyeRy = avatarRound2(1.9 + r() * 1.4),
+        browTilt = avatarRound2(-2.0 + r() * 4.0),
+        browLift = avatarRound2(4.2 + r() * 2.0),
+        browWeight = avatarRound2(if (r() < 0.65) 1.3 + r() * 0.8 else 0.0),
+        mouthW = avatarRound2(3.5 + r() * 3.0),
+        mouthCurve = avatarRound2(r() * 4.5),
+        mouthOpen = avatarRound2(if (r() < 0.3) 0.6 + r() * 0.4 else 0.0),
+        nose = avatarRound2(r()),
+        glasses = avatarRound2(if (r() < 0.25) 1.0 else 0.0),
+        cheeks = avatarRound2(r()),
+        shoulders = avatarRound2(r())
     )
 
     return Face(
@@ -402,13 +277,60 @@ fun createAvatarFace(seed: String): Face {
     )
 }
 
+fun avatarSeed(displayName: String, variant: Int): String {
+    return "${displayName.trim().lowercase()}:$variant"
+}
+
 fun avatarPad3(v: Int): String {
     val norm = ((v % 1000) + 1000) % 1000
     return String.format(Locale.US, "%03d", norm)
 }
 
-fun avatarSeed(displayName: String, variant: Int): String {
-    return "${displayName.trim().lowercase()}:$variant"
+private fun lerp(a: Float, b: Float, t: Float): Float = a + (b - a) * t
+
+private fun lerpRgb(a: FaceRgb, b: FaceRgb, t: Float): FaceRgb {
+    val ct = t.coerceIn(0f, 1f)
+    return FaceRgb(
+        r = (a.r + (b.r - a.r) * ct).roundToInt().coerceIn(0, 255),
+        g = (a.g + (b.g - a.g) * ct).roundToInt().coerceIn(0, 255),
+        b = (a.b + (b.b - a.b) * ct).roundToInt().coerceIn(0, 255)
+    )
+}
+
+fun lerpFace(a: Face, b: Face, t: Float): Face {
+    val shape = FaceShape(
+        headW = lerp(a.shape.headW, b.shape.headW, t),
+        headH = lerp(a.shape.headH, b.shape.headH, t),
+        headSquare = lerp(a.shape.headSquare, b.shape.headSquare, t),
+        chin = lerp(a.shape.chin, b.shape.chin, t),
+        hairVolume = lerp(a.shape.hairVolume, b.shape.hairVolume, t),
+        hairFringe = lerp(a.shape.hairFringe, b.shape.hairFringe, t),
+        hairPart = lerp(a.shape.hairPart, b.shape.hairPart, t),
+        hairLength = lerp(a.shape.hairLength, b.shape.hairLength, t),
+        eyeGap = lerp(a.shape.eyeGap, b.shape.eyeGap, t),
+        eyeY = lerp(a.shape.eyeY, b.shape.eyeY, t),
+        eyeRx = lerp(a.shape.eyeRx, b.shape.eyeRx, t),
+        eyeRy = lerp(a.shape.eyeRy, b.shape.eyeRy, t),
+        browTilt = lerp(a.shape.browTilt, b.shape.browTilt, t),
+        browLift = lerp(a.shape.browLift, b.shape.browLift, t),
+        browWeight = lerp(a.shape.browWeight, b.shape.browWeight, t),
+        mouthW = lerp(a.shape.mouthW, b.shape.mouthW, t),
+        mouthCurve = lerp(a.shape.mouthCurve, b.shape.mouthCurve, t),
+        mouthOpen = lerp(a.shape.mouthOpen, b.shape.mouthOpen, t),
+        nose = lerp(a.shape.nose, b.shape.nose, t),
+        glasses = lerp(a.shape.glasses, b.shape.glasses, t),
+        cheeks = lerp(a.shape.cheeks, b.shape.cheeks, t),
+        shoulders = lerp(a.shape.shoulders, b.shape.shoulders, t)
+    )
+    val ct = t.coerceIn(0f, 1f)
+    return Face(
+        shape = shape,
+        bg = lerpRgb(a.bg, b.bg, ct),
+        skin = lerpRgb(a.skin, b.skin, ct),
+        hair = lerpRgb(a.hair, b.hair, ct),
+        shirt = lerpRgb(a.shirt, b.shirt, ct),
+        description = b.description
+    )
 }
 
 /** Draws the procedural face art inside any Canvas at size */
@@ -429,7 +351,7 @@ fun drawFaceArt(
     val shoulderTop = cy + s.headH + 3f
     val sw = 30f + s.shoulders * 8f
 
-    // Coordinate mapping: Kokonut viewBox is (12, 14) with width 76, height 76
+    // Kokonut viewBox is (12, 14) with width 76, height 76
     val scale = scope.size.width / 76f
     val offsetX = -12f * scale
     val offsetY = -14f * scale
@@ -606,6 +528,57 @@ fun drawFaceArt(
     }
 }
 
+/**
+ * Morphing Face Component: smoothly blends features from previous face to new face
+ * whenever the seed changes instead of snapping abruptly.
+ */
+@Composable
+fun MorphingFace(
+    seed: String,
+    morph: Boolean = true,
+    lookX: Float = 0f,
+    lookY: Float = 0f,
+    blinkScaleY: Float = 1f,
+    modifier: Modifier = Modifier
+) {
+    var fromFace by remember { mutableStateOf(createAvatarFace(seed)) }
+    var targetFace by remember { mutableStateOf(fromFace) }
+    val morphProgress = remember { Animatable(1f) }
+
+    LaunchedEffect(seed) {
+        val newTarget = createAvatarFace(seed)
+        if (!morph) {
+            fromFace = newTarget
+            targetFace = newTarget
+            morphProgress.snapTo(1f)
+            return@LaunchedEffect
+        }
+        if (newTarget.description != targetFace.description || newTarget.bg != targetFace.bg || newTarget.hair != targetFace.hair) {
+            fromFace = lerpFace(fromFace, targetFace, morphProgress.value)
+            targetFace = newTarget
+            morphProgress.snapTo(0f)
+            morphProgress.animateTo(
+                targetValue = 1f,
+                animationSpec = AVATAR_MORPH_SPRING
+            )
+        }
+    }
+
+    val displayedFace = remember(fromFace, targetFace, morphProgress.value) {
+        if (morphProgress.value >= 1f) targetFace else lerpFace(fromFace, targetFace, morphProgress.value)
+    }
+
+    Canvas(modifier = modifier) {
+        drawFaceArt(
+            scope = this,
+            face = displayedFace,
+            lookX = lookX,
+            lookY = lookY,
+            blinkScaleY = blinkScaleY
+        )
+    }
+}
+
 @Composable
 fun KokonutAvatarPicker(
     initialName: String = "Robin Vale",
@@ -660,11 +633,10 @@ fun KokonutAvatarPicker(
     val shownStep = (angleAnim.value / 180f).roundToInt()
     val shownVariant = currentVariant + shownStep
     val seed = remember(displayName, shownVariant) { avatarSeed(displayName, shownVariant) }
-    val currentFace = remember(seed) { createAvatarFace(seed) }
 
     // Living eyes tracking
-    var lookX by remember { mutableFloatStateOf(0f) }
-    var lookY by remember { mutableFloatStateOf(0f) }
+    val lookX = remember { Animatable(0f) }
+    val lookY = remember { Animatable(0f) }
     var blinkScaleY by remember { mutableFloatStateOf(1f) }
 
     LaunchedEffect(Unit) {
@@ -676,13 +648,13 @@ fun KokonutAvatarPicker(
         }
     }
 
-    // Bezel tick lines
+    // Bezel tick lines (60 ticks, 5th tick longer)
     val tickLines = remember {
-        val c = AVATAR_BEZEL_SIZE / 2f
+        val c = AVATAR_BEZEL / 2f
         (0 until AVATAR_TICKS).map { i ->
             val a = (i.toFloat() / AVATAR_TICKS) * 2f * PI.toFloat()
             val long = (i % 5 == 0)
-            val r1 = AVATAR_BEZEL_SIZE / 2f - 3f
+            val r1 = AVATAR_BEZEL / 2f - 3f
             val r0 = r1 - (if (long) 7f else 4f)
             Triple(
                 Offset(c + sin(a) * r0, c - cos(a) * r0),
@@ -726,7 +698,7 @@ fun KokonutAvatarPicker(
     KanriGlassCard(
         modifier = modifier.fillMaxWidth(),
         level = GlassLevel.Blur,
-        shape = RoundedCornerShape(16.dp)
+        shape = RoundedCornerShape(20.dp)
     ) {
         Column(
             modifier = Modifier
@@ -734,26 +706,28 @@ fun KokonutAvatarPicker(
                 .padding(20.dp),
             horizontalAlignment = Alignment.CenterHorizontally
         ) {
-            // Title & Description
+            // Header: Title & Description
             Column(
                 modifier = Modifier.fillMaxWidth(),
                 verticalArrangement = Arrangement.spacedBy(4.dp)
             ) {
                 Text(
                     text = title,
-                    fontSize = 16.sp,
+                    fontSize = 17.sp,
+                    fontFamily = GoogleSansFlex,
                     fontWeight = FontWeight.SemiBold,
                     color = if (dark) Zinc100 else Zinc900,
                     letterSpacing = (-0.02).sp
                 )
                 Text(
                     text = description,
-                    fontSize = 14.sp,
+                    fontSize = 13.5.sp,
+                    fontFamily = GoogleSansFlex,
                     color = if (dark) Zinc400 else Zinc500
                 )
             }
 
-            Spacer(modifier = Modifier.height(20.dp))
+            Spacer(modifier = Modifier.height(18.dp))
 
             // Bezel Stage (176dp) with rotating ticks and index mark
             val bezelRotation = angleAnim.value / 15f
@@ -761,27 +735,62 @@ fun KokonutAvatarPicker(
 
             Box(
                 modifier = Modifier
-                    .size(176.dp)
-                    .pointerInput(Unit) {
+                    .size(AVATAR_BEZEL.dp)
+                    .pointerInput(currentVariant, selectedSlot) {
                         var startX = 0f
                         var startAngle = 0f
-                        detectHorizontalDragGestures(
+                        var startTime = 0L
+                        var lastX = 0f
+                        var lastTime = 0L
+                        var moved = false
+                        val samples = mutableListOf<Pair<Float, Long>>()
+
+                        detectDragGestures(
                             onDragStart = { offset ->
                                 customPhotoPath = null
                                 isSpinning = true
                                 startX = offset.x
+                                lastX = offset.x
                                 startAngle = angleAnim.value
+                                startTime = System.currentTimeMillis()
+                                lastTime = startTime
+                                moved = false
+                                samples.clear()
+                                samples.add(startX to startTime)
                             },
-                            onHorizontalDrag = { change, dragAmount ->
+                            onDrag = { change, dragAmount ->
                                 change.consume()
-                                val dx = change.position.x - startX
-                                scope.launch { angleAnim.snapTo(startAngle + dx * AVATAR_DEG_PER_PX) }
+                                lastX = change.position.x
+                                lastTime = System.currentTimeMillis()
+                                val dx = lastX - startX
+                                if (abs(dx) > AVATAR_TAP_SLOP) {
+                                    moved = true
+                                }
+                                scope.launch {
+                                    angleAnim.snapTo(startAngle + dx * AVATAR_DEG_PER_PX)
+                                }
+                                samples.add(lastX to lastTime)
+                                if (samples.size > 6) samples.removeAt(0)
                             },
                             onDragEnd = {
-                                val targetStep = (angleAnim.value / 180f).roundToInt()
+                                val current = angleAnim.value
+                                val firstSample = samples.firstOrNull() ?: (lastX to lastTime)
+                                val dt = max(16L, lastTime - firstSample.second).toFloat() / 1000f
+                                val velocity = ((lastX - firstSample.first) / dt) * AVATAR_DEG_PER_PX
+                                val startSteps = (startAngle / 180f).roundToInt()
+                                val projected = if (moved) {
+                                    val proj = ((current + velocity * 0.28f) / 180f).roundToInt()
+                                    proj.coerceIn(startSteps - AVATAR_MAX_FLICK_STEPS, startSteps + AVATAR_MAX_FLICK_STEPS)
+                                } else {
+                                    (current / 180f).roundToInt() + 1
+                                }
+
                                 scope.launch {
-                                    angleAnim.animateTo(targetStep * 180f, AVATAR_DRAG_SPRING)
-                                    landSpin(targetStep)
+                                    angleAnim.animateTo(
+                                        targetValue = projected * 180f,
+                                        animationSpec = AVATAR_DRAG_SPRING
+                                    )
+                                    landSpin(projected)
                                 }
                             },
                             onDragCancel = {
@@ -825,7 +834,7 @@ fun KokonutAvatarPicker(
                 // 3D Coin (128dp) with depth discs and perspective
                 Box(
                     modifier = Modifier
-                        .size(128.dp)
+                        .size(AVATAR_COIN.dp)
                         .graphicsLayer {
                             rotationY = tiltAngle
                             cameraDistance = 600f
@@ -839,6 +848,19 @@ fun KokonutAvatarPicker(
                         },
                     contentAlignment = Alignment.Center
                 ) {
+                    // Depth slices
+                    for (z in 6 downTo 1) {
+                        Box(
+                            modifier = Modifier
+                                .fillMaxSize()
+                                .graphicsLayer {
+                                    translationX = (z * 0.75f) * sin(tiltAngle * PI.toFloat() / 180f)
+                                }
+                                .clip(CircleShape)
+                                .background(if (dark) Zinc700 else Zinc300)
+                        )
+                    }
+
                     if (customPhotoPath != null) {
                         val bitmap = remember(customPhotoPath) {
                             BitmapFactory.decodeFile(customPhotoPath)
@@ -853,15 +875,14 @@ fun KokonutAvatarPicker(
                             )
                         }
                     } else {
-                        Canvas(modifier = Modifier.fillMaxSize()) {
-                            drawFaceArt(
-                                scope = this,
-                                face = currentFace,
-                                lookX = lookX,
-                                lookY = lookY,
-                                blinkScaleY = blinkScaleY
-                            )
-                        }
+                        MorphingFace(
+                            seed = seed,
+                            morph = !isSpinning,
+                            lookX = lookX.value,
+                            lookY = lookY.value,
+                            blinkScaleY = blinkScaleY,
+                            modifier = Modifier.fillMaxSize()
+                        )
                     }
 
                     // Black tilt shadow overlay: |tilt| / 90 * 0.35
@@ -875,23 +896,23 @@ fun KokonutAvatarPicker(
             }
 
             // Subtitle under stage: [display name 12sp medium] [No. pad3(variant) monospace]
-            Spacer(modifier = Modifier.height(8.dp))
+            Spacer(modifier = Modifier.height(10.dp))
             Row(
                 verticalAlignment = Alignment.CenterVertically,
                 horizontalArrangement = Arrangement.spacedBy(8.dp)
             ) {
                 Text(
                     text = displayName.trim().ifEmpty { "Anonymous" },
-                    fontSize = 12.sp,
+                    fontSize = 13.sp,
+                    fontFamily = GoogleSansFlex,
                     fontWeight = FontWeight.Medium,
                     color = if (dark) Zinc100 else Zinc900,
                     maxLines = 1,
-                    overflow = TextOverflow.Ellipsis,
-                    modifier = Modifier.fillMaxWidth(0.6f)
+                    overflow = TextOverflow.Ellipsis
                 )
                 Text(
                     text = "No. ${avatarPad3(shownVariant)}",
-                    fontSize = 12.sp,
+                    fontSize = 12.5.sp,
                     fontFamily = FontFamily.Monospace,
                     color = if (dark) Zinc500 else Zinc400
                 )
@@ -910,7 +931,6 @@ fun KokonutAvatarPicker(
                     slots.forEachIndexed { i, slotVariant ->
                         val isSelected = (i == selectedSlot && customPhotoPath == null)
                         val slotSeed = remember(displayName, slotVariant) { avatarSeed(displayName, slotVariant) }
-                        val slotFace = remember(slotSeed) { createAvatarFace(slotSeed) }
 
                         Box(
                             modifier = Modifier
@@ -933,9 +953,13 @@ fun KokonutAvatarPicker(
                                         .background(if (dark) Zinc500 else Zinc400)
                                 )
                             } else {
-                                Canvas(modifier = Modifier.fillMaxSize().clip(CircleShape)) {
-                                    drawFaceArt(scope = this, face = slotFace)
-                                }
+                                MorphingFace(
+                                    seed = slotSeed,
+                                    morph = false,
+                                    modifier = Modifier
+                                        .fillMaxSize()
+                                        .clip(CircleShape)
+                                )
                             }
                         }
                     }
@@ -957,22 +981,22 @@ fun KokonutAvatarPicker(
                     Icon(
                         imageVector = Icons.Default.Casino,
                         contentDescription = "Shuffle avatar",
-                        tint = if (dark) Zinc400 else Zinc600,
+                        tint = if (dark) Zinc300 else Zinc700,
                         modifier = Modifier
-                            .size(16.dp)
+                            .size(18.dp)
                             .rotate(diceRotation)
                     )
                 }
             }
 
-            // Custom Photo Secondary Button: full-width directly under toolbar (mt 12)
-            Spacer(modifier = Modifier.height(12.dp))
+            // Custom Photo Secondary Option: 40dp height full-width button
+            Spacer(modifier = Modifier.height(14.dp))
             Box(
                 modifier = Modifier
                     .fillMaxWidth()
                     .height(40.dp)
-                    .clip(RoundedCornerShape(8.dp))
-                    .border(1.dp, if (dark) Zinc800 else Zinc200, RoundedCornerShape(8.dp))
+                    .clip(RoundedCornerShape(10.dp))
+                    .border(1.dp, if (dark) Zinc800 else Zinc200, RoundedCornerShape(10.dp))
                     .clickable {
                         if (customPhotoPath != null) {
                             customPhotoPath = null
@@ -1000,22 +1024,25 @@ fun KokonutAvatarPicker(
                     )
                     Text(
                         text = if (customPhotoPath != null) "Remove custom photo" else "Use your own photo",
-                        fontSize = 14.sp,
-                        color = if (dark) Zinc400 else Zinc600
+                        fontSize = 13.5.sp,
+                        fontFamily = GoogleSansFlex,
+                        fontWeight = FontWeight.Medium,
+                        color = if (dark) Zinc300 else Zinc700
                     )
                 }
             }
 
-            // Display Name field: mt 20, height 40, rounded 8, 1dp border zinc-200/800
-            Spacer(modifier = Modifier.height(20.dp))
+            // Display Name field: height 42, rounded 10, border zinc-200/800
+            Spacer(modifier = Modifier.height(18.dp))
             Column(
                 modifier = Modifier.fillMaxWidth(),
                 verticalArrangement = Arrangement.spacedBy(6.dp)
             ) {
                 Text(
                     text = "Display name",
-                    fontSize = 14.sp,
-                    fontWeight = FontWeight.Medium,
+                    fontSize = 13.sp,
+                    fontFamily = GoogleSansFlex,
+                    fontWeight = FontWeight.SemiBold,
                     color = if (dark) Zinc100 else Zinc900
                 )
 
@@ -1026,35 +1053,36 @@ fun KokonutAvatarPicker(
                     singleLine = true,
                     textStyle = TextStyle(
                         fontSize = 14.sp,
+                        fontFamily = GoogleSansFlex,
                         color = if (dark) Zinc100 else Zinc900
                     ),
                     modifier = Modifier
                         .fillMaxWidth()
-                        .height(40.dp)
-                        .clip(RoundedCornerShape(8.dp))
+                        .height(42.dp)
+                        .clip(RoundedCornerShape(10.dp))
                         .border(
                             width = 1.dp,
-                            color = if (isFocused) (if (dark) Zinc600 else Zinc400) else (if (dark) Zinc800 else Zinc200),
-                            shape = RoundedCornerShape(8.dp)
+                            color = if (isFocused) (if (dark) Zinc500 else Zinc400) else (if (dark) Zinc800 else Zinc200),
+                            shape = RoundedCornerShape(10.dp)
                         )
-                        .background(Color.Transparent)
+                        .background(if (dark) Zinc900.copy(alpha = 0.35f) else Zinc100.copy(alpha = 0.5f))
                         .onFocusChanged { isFocused = it.isFocused }
-                        .padding(horizontal = 12.dp, vertical = 10.dp)
+                        .padding(horizontal = 14.dp, vertical = 10.dp)
                 )
             }
 
-            // Submit Button: mt 16, height 40, rounded 8, disabled if name < 2 chars
+            // Continue CTA Button: height 44, rounded 10, disabled if name < 2 chars
             Spacer(modifier = Modifier.height(16.dp))
-            val isNameValid = displayName.trim().length >= 2
+            val isNameValid = displayName.trim().length >= AVATAR_MIN_NAME
 
             Box(
                 modifier = Modifier
                     .fillMaxWidth()
-                    .height(40.dp)
-                    .clip(RoundedCornerShape(8.dp))
+                    .height(44.dp)
+                    .clip(RoundedCornerShape(12.dp))
                     .background(
                         if (isNameValid) (if (dark) Zinc100 else Zinc900)
-                        else (if (dark) Zinc100.copy(alpha = 0.4f) else Zinc900.copy(alpha = 0.4f))
+                        else (if (dark) Zinc100.copy(alpha = 0.35f) else Zinc900.copy(alpha = 0.35f))
                     )
                     .clickable(enabled = isNameValid) {
                         haptics.click()
@@ -1069,7 +1097,8 @@ fun KokonutAvatarPicker(
                     Text(
                         text = submitLabel,
                         fontSize = 14.sp,
-                        fontWeight = FontWeight.Medium,
+                        fontFamily = GoogleSansFlex,
+                        fontWeight = FontWeight.SemiBold,
                         color = if (dark) Zinc900 else Color.White
                     )
                     Icon(
@@ -1084,7 +1113,9 @@ fun KokonutAvatarPicker(
     }
 }
 
-
+/**
+ * KanriUserAvatar: Used across HomeScreen and ProfileScreen for displaying the avatar
+ */
 @Composable
 fun KanriUserAvatar(
     name: String,

@@ -510,11 +510,25 @@ private fun TactileKeypadKey(
 ) {
     val interactionSource = remember { MutableInteractionSource() }
     val isPressed by interactionSource.collectIsPressedAsState()
+    val scope = rememberCoroutineScope()
+
+    // Tactile key compression
     val scale by animateFloatAsState(
-        targetValue = if (isPressed) 0.91f else 1f,
-        animationSpec = spring(stiffness = Spring.StiffnessMediumLow, dampingRatio = 0.74f),
+        targetValue = if (isPressed) 0.90f else 1f,
+        animationSpec = spring(stiffness = 460f, dampingRatio = 0.72f),
         label = "keyScale"
     )
+
+    // Digit punch / pop spring: compresses when pressed, punches overshoot (1.15f) on release
+    val digitScale = remember { Animatable(1f) }
+    LaunchedEffect(isPressed) {
+        if (isPressed) {
+            digitScale.animateTo(0.84f, spring(stiffness = 650f, dampingRatio = 0.75f))
+        } else if (digitScale.value < 0.99f) {
+            digitScale.animateTo(1.15f, spring(stiffness = 550f, dampingRatio = 0.62f))
+            digitScale.animateTo(1.0f, spring(stiffness = 400f, dampingRatio = 0.75f))
+        }
+    }
 
     Box(
         modifier = modifier
@@ -533,31 +547,50 @@ private fun TactileKeypadKey(
             )
             .border(
                 0.8.dp,
-                if (tokens != null) tokens.borderStart.copy(alpha = if (isPressed) 0.45f else 0.20f) else if (dark) Zinc800 else Zinc200,
+                if (tokens != null) tokens.borderStart.copy(alpha = if (isPressed) 0.50f else 0.20f) else if (dark) Zinc800 else Zinc200,
                 RoundedCornerShape(16.dp)
             )
             .clickable(
                 interactionSource = interactionSource,
                 indication = null,
-                onClick = onClick
+                onClick = {
+                    scope.launch {
+                        digitScale.snapTo(0.84f)
+                        digitScale.animateTo(1.15f, spring(stiffness = 600f, dampingRatio = 0.62f))
+                        digitScale.animateTo(1.0f, spring(stiffness = 450f, dampingRatio = 0.75f))
+                    }
+                    onClick()
+                }
             ),
         contentAlignment = Alignment.Center
     ) {
-        if (key == "back") {
-            Icon(
-                imageVector = Icons.AutoMirrored.Filled.Backspace,
-                contentDescription = "Delete",
-                tint = tokens?.textSecondary ?: if (dark) Zinc400 else Zinc500,
-                modifier = Modifier.size(22.dp)
-            )
-        } else {
-            Text(
-                text = key,
-                fontSize = 24.sp,
-                fontFamily = GoogleSansFlex,
-                fontWeight = FontWeight.SemiBold,
-                color = tokens?.textPrimary ?: if (dark) Zinc100 else Zinc900
-            )
+        Box(
+            modifier = Modifier.graphicsLayer {
+                scaleX = digitScale.value
+                scaleY = digitScale.value
+            },
+            contentAlignment = Alignment.Center
+        ) {
+            if (key == "back") {
+                Icon(
+                    imageVector = Icons.AutoMirrored.Filled.Backspace,
+                    contentDescription = "Delete",
+                    tint = if (isPressed) {
+                        tokens?.textPrimary ?: if (dark) Zinc100 else Zinc900
+                    } else {
+                        tokens?.textSecondary ?: if (dark) Zinc400 else Zinc500
+                    },
+                    modifier = Modifier.size(22.dp)
+                )
+            } else {
+                Text(
+                    text = key,
+                    fontSize = 24.sp,
+                    fontFamily = GoogleSansFlex,
+                    fontWeight = FontWeight.SemiBold,
+                    color = tokens?.textPrimary ?: if (dark) Zinc100 else Zinc900
+                )
+            }
         }
     }
 }
@@ -722,9 +755,31 @@ private fun SingleRollingDigitStrip(
         label = "rollingDigit"
     )
 
+    // Entrance drop-in bounce matching Kokonut #A2 (initial y: -22, animate y: 0)
+    val entranceY = remember { Animatable(-18f) }
+    val entranceAlpha = remember { Animatable(0f) }
+    LaunchedEffect(Unit) {
+        launch {
+            entranceY.animateTo(
+                targetValue = 0f,
+                animationSpec = spring(stiffness = 480f, dampingRatio = 0.70f)
+            )
+        }
+        launch {
+            entranceAlpha.animateTo(
+                targetValue = 1f,
+                animationSpec = tween(durationMillis = 140, easing = CubicBezierEasing(0.23f, 1f, 0.32f, 1f))
+            )
+        }
+    }
+
     Box(
         modifier = Modifier
             .size(width = width, height = height)
+            .graphicsLayer {
+                translationY = entranceY.value * (heightPx / 54f)
+                alpha = entranceAlpha.value
+            }
             .clipToBounds(),
         contentAlignment = Alignment.TopStart
     ) {
