@@ -81,7 +81,7 @@ fun SavingsGoalsSheet(
     var goalToDelete by remember { mutableStateOf<SavingsGoalEntity?>(null) }
 
     val currencyFormat = remember {
-        NumberFormat.getCurrencyInstance(Locale("en", "IN")).apply {
+        NumberFormat.getCurrencyInstance(Locale.forLanguageTag("en-IN")).apply {
             maximumFractionDigits = 0
         }
     }

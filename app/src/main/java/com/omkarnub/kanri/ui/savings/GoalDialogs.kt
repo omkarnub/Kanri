@@ -744,7 +744,7 @@ fun GoalDetailsSheet(
     val dailyPace = remember(goal) { SavingsGoalCalculator.calculateRequiredDailySavings(goal.currentAmount, goal.targetAmount, goal.targetDate) }
 
     val currencyFormat = remember {
-        NumberFormat.getCurrencyInstance(Locale("en", "IN")).apply { maximumFractionDigits = 0 }
+        NumberFormat.getCurrencyInstance(Locale.forLanguageTag("en-IN")).apply { maximumFractionDigits = 0 }
     }
     val dateFormatter = remember { SimpleDateFormat("dd MMM yyyy · hh:mm a", Locale.getDefault()) }
     val deadlineDateFormatter = remember { SimpleDateFormat("dd MMMM yyyy", Locale.getDefault()) }

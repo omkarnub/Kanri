@@ -70,7 +70,7 @@ import com.omkarnub.kanri.ui.theme.Panchang
 import com.omkarnub.kanri.ui.theme.KanriMotion
 import com.omkarnub.kanri.util.rememberKanriHaptics
 import dev.chrisbanes.haze.HazeState
-import dev.chrisbanes.haze.haze
+import dev.chrisbanes.haze.hazeSource
 import kotlinx.coroutines.launch
 
 @OptIn(ExperimentalMaterial3Api::class)
@@ -146,7 +146,7 @@ fun LendingScreen(
             Scaffold(
                 modifier = Modifier
                     .fillMaxSize()
-                    .haze(lendingHazeState),
+                    .hazeSource(state = lendingHazeState),
                 containerColor = if (tokens != null) androidx.compose.ui.graphics.Color.Transparent else MaterialTheme.colorScheme.background,
                 snackbarHost = { SnackbarHost(snackbarHostState) },
             topBar = {

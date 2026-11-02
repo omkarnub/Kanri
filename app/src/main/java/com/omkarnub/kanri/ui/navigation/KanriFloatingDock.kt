@@ -65,7 +65,7 @@ import com.omkarnub.kanri.ui.common.rememberKanriGlassTheme
 import com.omkarnub.kanri.ui.theme.LocalKanriGlass
 import com.omkarnub.kanri.ui.theme.KanriMotion
 import dev.chrisbanes.haze.HazeState
-import dev.chrisbanes.haze.hazeChild
+import dev.chrisbanes.haze.hazeEffect
 
 /**
  * Minimalist Frosted Glass Navigation Dock:
@@ -149,7 +149,7 @@ fun KanriFloatingDock(
                 .clip(RoundedCornerShape(32.dp))
                 .then(
                     if (hazeState != null) {
-                        Modifier.hazeChild(
+                        Modifier.hazeEffect(
                             state = hazeState,
                             style = dockTheme.hazeStyle
                         )
@@ -396,7 +396,7 @@ private fun DockAddButton(
             .clip(CircleShape)
             .then(
                 if (hazeState != null) {
-                    Modifier.hazeChild(
+                    Modifier.hazeEffect(
                         state = hazeState,
                         style = dockTheme.hazeStyle
                     )

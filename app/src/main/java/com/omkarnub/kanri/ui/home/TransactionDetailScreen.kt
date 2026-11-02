@@ -1,4 +1,4 @@
-﻿package com.omkarnub.kanri.ui.home
+package com.omkarnub.kanri.ui.home
 
 import android.widget.Toast
 import androidx.activity.compose.BackHandler
@@ -33,6 +33,7 @@ import androidx.compose.foundation.text.KeyboardOptions
 import androidx.compose.foundation.verticalScroll
 import androidx.compose.material.icons.Icons
 import androidx.compose.material.icons.automirrored.filled.ArrowBack
+import androidx.compose.material.icons.automirrored.filled.Notes
 import androidx.compose.material.icons.automirrored.filled.ReceiptLong
 import androidx.compose.material.icons.filled.AccountBalance
 import androidx.compose.material.icons.filled.AccountBalanceWallet
@@ -45,7 +46,6 @@ import androidx.compose.material.icons.filled.ContentCopy
 import androidx.compose.material.icons.filled.DeleteOutline
 import androidx.compose.material.icons.filled.Edit
 import androidx.compose.material.icons.filled.Info
-import androidx.compose.material.icons.filled.Notes
 import androidx.compose.material.icons.filled.Schedule
 import androidx.compose.material.icons.filled.Sms
 import androidx.compose.material.icons.filled.Tune
@@ -938,7 +938,7 @@ fun TransactionDetailScreen(
                                     horizontalArrangement = Arrangement.spacedBy(8.dp)
                                 ) {
                                     Icon(
-                                        imageVector = Icons.Default.Notes,
+                                        imageVector = Icons.AutoMirrored.Filled.Notes,
                                         contentDescription = null,
                                         tint = MaterialTheme.colorScheme.onSurfaceVariant,
                                         modifier = Modifier.size(18.dp)

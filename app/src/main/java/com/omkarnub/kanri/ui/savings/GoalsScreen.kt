@@ -27,7 +27,7 @@ import androidx.compose.material.icons.filled.Add
 import androidx.compose.material.icons.filled.Delete
 import androidx.compose.material.icons.filled.Edit
 import androidx.compose.material.icons.filled.Info
-import androidx.compose.material.icons.filled.Sort
+import androidx.compose.material.icons.automirrored.filled.Sort
 import androidx.compose.material.icons.filled.SwapVert
 import androidx.compose.material3.Card
 import androidx.compose.material3.CardDefaults
@@ -110,7 +110,7 @@ fun GoalsScreen(
     var goalToDelete by remember { mutableStateOf<SavingsGoalEntity?>(null) }
 
     val currencyFormat = remember {
-        NumberFormat.getCurrencyInstance(Locale("en", "IN")).apply {
+        NumberFormat.getCurrencyInstance(Locale.forLanguageTag("en-IN")).apply {
             maximumFractionDigits = 0
         }
     }
@@ -403,7 +403,7 @@ fun GoalsScreen(
                             contentAlignment = Alignment.Center
                         ) {
                             Icon(
-                                imageVector = Icons.Default.Sort,
+                                imageVector = Icons.AutoMirrored.Filled.Sort,
                                 contentDescription = "Sort goals",
                                 tint = MaterialTheme.colorScheme.onSurfaceVariant,
                                 modifier = Modifier.size(18.dp)

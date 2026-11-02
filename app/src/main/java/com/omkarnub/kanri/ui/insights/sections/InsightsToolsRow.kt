@@ -12,9 +12,9 @@ import androidx.compose.foundation.layout.padding
 import androidx.compose.foundation.layout.size
 import androidx.compose.foundation.shape.RoundedCornerShape
 import androidx.compose.material.icons.Icons
-import androidx.compose.material.icons.filled.CompareArrows
+import androidx.compose.material.icons.automirrored.filled.CompareArrows
+import androidx.compose.material.icons.automirrored.filled.TrendingUp
 import androidx.compose.material.icons.filled.AutoAwesome
-import androidx.compose.material.icons.filled.TrendingUp
 import androidx.compose.material3.Card
 import androidx.compose.material3.CardDefaults
 import androidx.compose.material3.Icon
@@ -61,7 +61,7 @@ fun InsightsToolsRow(
             horizontalArrangement = Arrangement.spacedBy(10.dp)
         ) {
             ToolButton(
-                icon = Icons.Default.CompareArrows,
+                icon = Icons.AutoMirrored.Filled.CompareArrows,
                 title = "Compare",
                 subtitle = "Two months",
                 onClick = onCompareMonthsClick,
@@ -77,7 +77,7 @@ fun InsightsToolsRow(
             )
 
             ToolButton(
-                icon = Icons.Default.TrendingUp,
+                icon = Icons.AutoMirrored.Filled.TrendingUp,
                 title = "All-Time",
                 subtitle = "Trends view",
                 onClick = onAllTimeTrendsClick,

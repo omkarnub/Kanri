@@ -99,7 +99,7 @@ fun RecurringPaymentsSheet(
     var prefillCandidate by remember { mutableStateOf<RecurringCandidate?>(null) }
 
     val currencyFormat = remember {
-        NumberFormat.getCurrencyInstance(Locale("en", "IN")).apply {
+        NumberFormat.getCurrencyInstance(Locale.forLanguageTag("en-IN")).apply {
             maximumFractionDigits = 0
         }
     }

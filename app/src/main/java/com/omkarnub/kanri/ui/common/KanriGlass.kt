@@ -553,7 +553,7 @@ fun Modifier.frostedGlass(
     .clip(shape)
     .then(
         if (hazeState != null) {
-            Modifier.hazeChild(
+            Modifier.hazeEffect(
                 state = hazeState,
                 style = glassTheme.hazeStyle
             )
