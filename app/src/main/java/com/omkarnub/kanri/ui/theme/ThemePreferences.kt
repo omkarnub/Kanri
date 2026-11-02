@@ -124,14 +124,6 @@ class ThemePreferences(private val context: Context) {
         set(value) {
             prefs.edit().putString(KEY_THEME_MODE, value.name).apply()
             _themeModeFlow.value = value
-            try {
-                val targetClass = AppIconManager.getTargetActivityClass(appIconStyle, value)
-                context.packageManager.setComponentEnabledSetting(
-                    android.content.ComponentName(context, targetClass),
-                    android.content.pm.PackageManager.COMPONENT_ENABLED_STATE_ENABLED,
-                    android.content.pm.PackageManager.DONT_KILL_APP
-                )
-            } catch (e: Exception) {}
         }
 
     var appIconStyle: AppIconStyle

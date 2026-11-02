@@ -17,12 +17,13 @@ import androidx.compose.runtime.collectAsState
 import androidx.compose.runtime.getValue
 import androidx.compose.runtime.mutableStateOf
 import androidx.compose.runtime.remember
+import androidx.compose.runtime.saveable.rememberSaveable
 import androidx.compose.runtime.setValue
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
 import androidx.lifecycle.viewmodel.compose.viewModel
 import dev.chrisbanes.haze.HazeState
-import dev.chrisbanes.haze.haze
+import dev.chrisbanes.haze.hazeSource
 import com.omkarnub.kanri.ui.common.LocalHazeState
 import com.omkarnub.kanri.ui.home.AddTransactionDialog
 import com.omkarnub.kanri.ui.home.HomeScreen
@@ -78,11 +79,11 @@ fun MainNavigationScreen(
     onTestLockScreen: () -> Unit = {},
     modifier: Modifier = Modifier
 ) {
-    var selectedTab by remember { mutableStateOf(KanriTab.HOME) }
-    var showProfileScreen by remember { mutableStateOf(false) }
-    var showSettingsScreen by remember { mutableStateOf(false) }
-    var showHistoryScreen by remember { mutableStateOf(false) }
-    var viewingTransactionId by remember { mutableStateOf<Long?>(null) }
+    var selectedTab by rememberSaveable { mutableStateOf(KanriTab.HOME) }
+    var showProfileScreen by rememberSaveable { mutableStateOf(false) }
+    var showSettingsScreen by rememberSaveable { mutableStateOf(false) }
+    var showHistoryScreen by rememberSaveable { mutableStateOf(false) }
+    var viewingTransactionId by rememberSaveable { mutableStateOf<Long?>(null) }
     var isInsightsSubScreenOpen by remember { mutableStateOf(false) }
 
     val homeViewModel: HomeViewModel = viewModel()
@@ -253,7 +254,7 @@ fun MainNavigationScreen(
                                 .fillMaxSize()
                                 .then(
                                     if (parentHazeState == null) {
-                                        Modifier.haze(effectiveHazeState)
+                                        Modifier.hazeSource(state = effectiveHazeState)
                                     } else {
                                         Modifier
                                     }
@@ -337,7 +338,6 @@ fun MainNavigationScreen(
                     ProfileScreen(
                         onClose = { showProfileScreen = false },
                         onOpenSettings = {
-                            showProfileScreen = false
                             showSettingsScreen = true
                         },
                         modifier = Modifier.fillMaxSize()

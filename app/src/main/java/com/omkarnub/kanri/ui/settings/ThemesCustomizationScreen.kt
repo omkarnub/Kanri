@@ -317,37 +317,7 @@ fun ThemesCustomizationScreen(
             }
 
             // =========================================================================
-            // 2. LIVE SHADER BACKGROUNDS (8 PRESETS)
-            // =========================================================================
-            item {
-                Column(verticalArrangement = Arrangement.spacedBy(10.dp)) {
-                    Text(
-                        text = "LIVE SHADER BACKGROUNDS (8 PRESETS)",
-                        fontFamily = GoogleSansFlex,
-                        fontWeight = FontWeight.Bold,
-                        fontSize = 12.sp,
-                        letterSpacing = 1.sp,
-                        color = tokens?.textSecondary ?: MaterialTheme.colorScheme.onSurfaceVariant
-                    )
-
-                    Column(verticalArrangement = Arrangement.spacedBy(8.dp)) {
-                        GlassBackgroundType.entries.forEach { bgType ->
-                            val isSelected = (currentGlassBg == bgType)
-                            ShaderOptionCard(
-                                type = bgType,
-                                isSelected = isSelected,
-                                onClick = {
-                                    haptics.click()
-                                    themePrefs.glassBackground = bgType
-                                }
-                            )
-                        }
-                    }
-                }
-            }
-
-            // =========================================================================
-            // 3. THEME MODE SELECTION
+            // 2. THEME MODE SELECTION
             // =========================================================================
             item {
                 Column(verticalArrangement = Arrangement.spacedBy(10.dp)) {
@@ -381,6 +351,54 @@ fun ThemesCustomizationScreen(
                                 onClick = {
                                     haptics.click()
                                     themePrefs.themeMode = mode
+                                }
+                            )
+                        }
+                    }
+                }
+            }
+
+            // =========================================================================
+            // 3. LIVE SHADER BACKGROUNDS (8 PRESETS)
+            // =========================================================================
+            item {
+                Column(verticalArrangement = Arrangement.spacedBy(10.dp)) {
+                    Row(
+                        modifier = Modifier.fillMaxWidth(),
+                        horizontalArrangement = Arrangement.SpaceBetween,
+                        verticalAlignment = Alignment.CenterVertically
+                    ) {
+                        Text(
+                            text = "LIVE SHADER BACKGROUNDS",
+                            fontFamily = GoogleSansFlex,
+                            fontWeight = FontWeight.Bold,
+                            fontSize = 12.sp,
+                            letterSpacing = 1.sp,
+                            color = tokens?.textSecondary ?: MaterialTheme.colorScheme.onSurfaceVariant
+                        )
+                        if (currentThemeMode != ThemeMode.GLASS) {
+                            Text(
+                                text = "Active in Glass Mode",
+                                fontFamily = GoogleSansFlex,
+                                fontSize = 11.5.sp,
+                                fontWeight = FontWeight.Medium,
+                                color = MaterialTheme.colorScheme.primary
+                            )
+                        }
+                    }
+
+                    Column(verticalArrangement = Arrangement.spacedBy(8.dp)) {
+                        GlassBackgroundType.entries.forEach { bgType ->
+                            val isSelected = (currentGlassBg == bgType)
+                            ShaderOptionCard(
+                                type = bgType,
+                                isSelected = isSelected,
+                                onClick = {
+                                    haptics.click()
+                                    themePrefs.glassBackground = bgType
+                                    if (currentThemeMode != ThemeMode.GLASS) {
+                                        themePrefs.themeMode = ThemeMode.GLASS
+                                    }
                                 }
                             )
                         }

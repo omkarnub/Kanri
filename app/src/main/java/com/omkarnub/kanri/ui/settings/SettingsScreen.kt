@@ -123,6 +123,7 @@ import androidx.compose.runtime.getValue
 import androidx.compose.runtime.mutableStateOf
 import androidx.compose.runtime.remember
 import androidx.compose.runtime.rememberCoroutineScope
+import androidx.compose.runtime.saveable.rememberSaveable
 import androidx.compose.runtime.setValue
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
@@ -230,8 +231,8 @@ fun SettingsScreen(
 
 
 
-    var showThemesWindow by remember { mutableStateOf(false) }
-    var showGlassCustomizerScreen by remember { mutableStateOf(false) }
+    var showThemesWindow by rememberSaveable { mutableStateOf(false) }
+    var showGlassCustomizerScreen by rememberSaveable { mutableStateOf(false) }
 
     if (showThemesWindow) {
         ThemesCustomizationScreen(

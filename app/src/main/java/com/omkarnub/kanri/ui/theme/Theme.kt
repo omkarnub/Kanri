@@ -229,6 +229,15 @@ fun KanriTheme(
                 val insetsController = WindowCompat.getInsetsController(window, view)
                 insetsController.isAppearanceLightStatusBars = !isDark
                 insetsController.isAppearanceLightNavigationBars = !isDark
+
+                val windowBackdrop = when (resolvedThemeMode) {
+                    ThemeMode.GLASS -> android.graphics.Color.parseColor("#0B0B0E")
+                    ThemeMode.AMOLED -> android.graphics.Color.BLACK
+                    ThemeMode.DARK -> android.graphics.Color.parseColor("#121212")
+                    ThemeMode.LIGHT -> android.graphics.Color.parseColor("#FEFAEC")
+                    ThemeMode.SYSTEM -> if (!isDark) android.graphics.Color.parseColor("#FEFAEC") else android.graphics.Color.parseColor("#121212")
+                }
+                window.setBackgroundDrawable(android.graphics.drawable.ColorDrawable(windowBackdrop))
             }
         }
     }
