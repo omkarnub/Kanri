@@ -13,7 +13,7 @@ import androidx.compose.foundation.Canvas
 import androidx.compose.foundation.background
 import androidx.compose.foundation.border
 import androidx.compose.foundation.clickable
-import androidx.compose.foundation.isSystemInDarkTheme
+import com.omkarnub.kanri.ui.theme.isAppInDarkTheme
 import androidx.compose.foundation.layout.Arrangement
 import androidx.compose.foundation.layout.Box
 import androidx.compose.foundation.layout.Column
@@ -186,7 +186,7 @@ fun spendingRingSpringStep(state: FloatArray, target: Float, dt: Float): Boolean
  */
 @Composable
 fun getKokonutPalette(): List<Color> {
-    val dark = isSystemInDarkTheme()
+    val dark = isAppInDarkTheme()
     val tokens = LocalKanriGlass.current
     return remember(dark) {
         if (dark) {
@@ -209,7 +209,7 @@ fun KokonutSpendingRing(
     categories: List<SpendingCategory>,
     modifier: Modifier = Modifier
 ) {
-    val dark = isSystemInDarkTheme()
+    val dark = isAppInDarkTheme()
     val tokens = LocalKanriGlass.current
     val palette = getKokonutPalette()
     val haptics = rememberKanriHaptics()

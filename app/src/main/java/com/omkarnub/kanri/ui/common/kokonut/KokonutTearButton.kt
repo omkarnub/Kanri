@@ -15,7 +15,7 @@ import androidx.compose.foundation.gestures.awaitEachGesture
 import androidx.compose.foundation.gestures.awaitFirstDown
 import androidx.compose.foundation.gestures.detectDragGestures
 import androidx.compose.foundation.gestures.detectTapGestures
-import androidx.compose.foundation.isSystemInDarkTheme
+import com.omkarnub.kanri.ui.theme.isAppInDarkTheme
 import androidx.compose.ui.input.pointer.changedToUp
 import androidx.compose.ui.input.pointer.positionChanged
 import androidx.compose.ui.semantics.onClick
@@ -179,7 +179,7 @@ fun KokonutTearButton(
     onConfirm: () -> Unit,
     modifier: Modifier = Modifier
 ) {
-    val dark = isSystemInDarkTheme()
+    val dark = isAppInDarkTheme()
     val tokens = LocalKanriGlass.current
     val haptics = rememberKanriHaptics()
     val density = LocalDensity.current

@@ -17,7 +17,7 @@ import androidx.compose.foundation.background
 import androidx.compose.foundation.border
 import androidx.compose.foundation.gestures.awaitEachGesture
 import androidx.compose.foundation.gestures.awaitFirstDown
-import androidx.compose.foundation.isSystemInDarkTheme
+import com.omkarnub.kanri.ui.theme.isAppInDarkTheme
 import androidx.compose.foundation.layout.Box
 import androidx.compose.foundation.layout.BoxWithConstraints
 import androidx.compose.foundation.layout.Row
@@ -172,7 +172,7 @@ fun KokonutSlideToConfirm(
     modifier: Modifier = Modifier
 ) {
     val effectiveDoneLabel = doneLabel ?: confirmationType.defaultDoneLabel
-    val dark = isSystemInDarkTheme()
+    val dark = isAppInDarkTheme()
     val tokens = LocalKanriGlass.current
     val haptics = rememberKanriHaptics()
     val scope = rememberCoroutineScope()

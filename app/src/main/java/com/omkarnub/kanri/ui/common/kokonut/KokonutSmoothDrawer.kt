@@ -16,7 +16,7 @@ import androidx.compose.foundation.background
 import androidx.compose.foundation.border
 import androidx.compose.foundation.clickable
 import androidx.compose.foundation.gestures.detectVerticalDragGestures
-import androidx.compose.foundation.isSystemInDarkTheme
+import com.omkarnub.kanri.ui.theme.isAppInDarkTheme
 import androidx.compose.foundation.layout.Arrangement
 import androidx.compose.foundation.layout.Box
 import androidx.compose.foundation.layout.Column
@@ -118,7 +118,7 @@ fun KokonutSmoothDrawer(
     modifier: Modifier = Modifier,
     hazeState: HazeState? = LocalHazeState.current
 ) {
-    val dark = isSystemInDarkTheme()
+    val dark = isAppInDarkTheme()
     val tokens = LocalKanriGlass.current
     val haptics = rememberKanriHaptics()
     val scope = rememberCoroutineScope()

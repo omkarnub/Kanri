@@ -256,84 +256,68 @@ fun Modifier.kanriGlass(
                 } else Modifier
             )
     } else {
-        // Fallback for solid themes (Light, Dark, AMOLED):
-        // If haze is present and blur is requested, apply strong frosted glass blur
-        if (currentHaze != null && isBlurCapable && (level == GlassLevel.Blur || level == GlassLevel.Strong)) {
-            val isDark = MaterialTheme.colorScheme.surface.luminance() < 0.5f
-            val blurRad = if (level == GlassLevel.Strong) 36.dp else 24.dp
-            val frostBg = if (isDark) {
-                if (level == GlassLevel.Strong) Color(0xFF14151B).copy(alpha = 0.94f) else Color(0xFF181820).copy(alpha = 0.55f)
-            } else {
-                if (level == GlassLevel.Strong) Color(0xFFFAF9F5).copy(alpha = 0.96f) else Color.White.copy(alpha = 0.60f)
-            }
-            val tintColor = if (isDark) {
-                if (level == GlassLevel.Strong) Color(0xFF141418).copy(alpha = 0.75f) else Color(0xFF181820).copy(alpha = 0.60f)
-            } else {
-                if (level == GlassLevel.Strong) Color.White.copy(alpha = 0.80f) else Color.White.copy(alpha = 0.68f)
-            }
-            val borderBrush = if (isDark) {
-                Brush.linearGradient(
-                    colors = listOf(Color.White.copy(alpha = 0.28f), Color.White.copy(alpha = 0.06f))
-                )
-            } else {
-                Brush.linearGradient(
-                    colors = listOf(Color.Black.copy(alpha = 0.18f), Color.Black.copy(alpha = 0.05f))
-                )
-            }
-            this
-                .scale(scale)
-                .shadow(
-                    elevation = if (level == GlassLevel.Strong) 10.dp else 4.dp,
-                    shape = effectiveShape,
-                    spotColor = Color.Black.copy(alpha = 0.40f)
-                )
-                .clip(effectiveShape)
-                .hazeEffect(
-                    state = currentHaze,
-                    style = HazeStyle(
-                        backgroundColor = frostBg,
-                        tint = HazeTint(tintColor),
-                        blurRadius = blurRad,
-                        noiseFactor = 0.04f
-                    )
-                )
-                .border(
-                    width = 1.dp,
-                    brush = borderBrush,
-                    shape = effectiveShape
-                )
-                .then(
-                    if (onClick != null) {
-                        Modifier.clickable(
-                            interactionSource = interactionSource,
-                            indication = null,
-                            onClick = {
-                                haptics.click()
-                                onClick()
-                            }
-                        )
-                    } else Modifier
-                )
-        } else {
-            val solidBg = when (level) {
-                GlassLevel.Blur -> MaterialTheme.colorScheme.surfaceContainer
-                GlassLevel.Flat -> MaterialTheme.colorScheme.surfaceContainerLow
-                GlassLevel.Strong -> MaterialTheme.colorScheme.surfaceContainerHigh
-            }
-            this
-                .scale(scale)
-                .clip(effectiveShape)
-                .background(solidBg)
-                .then(
-                    if (onClick != null) {
-                        Modifier.clickable(
-                            interactionSource = interactionSource,
-                            indication = ripple(),
-                            onClick = onClick
-                        )
-                    } else Modifier
-                )
+        // Solid themes (Light, Dark, AMOLED, System):
+        // Render high-fidelity, polished surfaces calibrated to each theme's lighting and elevation.
+        val isDark = MaterialTheme.colorScheme.surface.luminance() < 0.5f
+
+        val cardBg = when (level) {
+            GlassLevel.Strong -> if (isDark) MaterialTheme.colorScheme.surfaceContainerHigh else Color(0xFFFFFFFF)
+            GlassLevel.Blur -> if (isDark) MaterialTheme.colorScheme.surfaceContainer else Color(0xFFFFFFFF)
+            GlassLevel.Flat -> if (isDark) MaterialTheme.colorScheme.surfaceContainerLow else MaterialTheme.colorScheme.surfaceContainer
         }
+
+        val borderBrush = if (isDark) {
+            Brush.linearGradient(
+                colors = listOf(Color.White.copy(alpha = 0.14f), Color.White.copy(alpha = 0.04f))
+            )
+        } else {
+            Brush.linearGradient(
+                colors = listOf(
+                    MaterialTheme.colorScheme.outlineVariant.copy(alpha = 0.45f),
+                    MaterialTheme.colorScheme.outlineVariant.copy(alpha = 0.15f)
+                )
+            )
+        }
+
+        val shadowElevation = if (level == GlassLevel.Strong) {
+            if (isDark) 6.dp else 2.5.dp
+        } else if (level == GlassLevel.Blur) {
+            if (isDark) 3.dp else 1.dp
+        } else {
+            0.dp
+        }
+
+        val spotShadow = if (isDark) Color.Black.copy(alpha = 0.35f) else Color.Black.copy(alpha = 0.035f)
+        val ambientShadow = if (isDark) Color.Black.copy(alpha = 0.18f) else Color.Black.copy(alpha = 0.015f)
+
+        this
+            .scale(scale)
+            .then(
+                if (shadowElevation > 0.dp) {
+                    Modifier.shadow(
+                        elevation = shadowElevation,
+                        shape = effectiveShape,
+                        spotColor = spotShadow,
+                        ambientColor = ambientShadow
+                    )
+                } else Modifier
+            )
+            .clip(effectiveShape)
+            .background(cardBg)
+            .border(
+                width = 0.8.dp,
+                brush = borderBrush,
+                shape = effectiveShape
+            )
+            .then(
+                if (onClick != null) {
+                    Modifier.clickable(
+                        interactionSource = interactionSource,
+                        indication = ripple(),
+                        onClick = onClick
+                    )
+                } else Modifier
+            )
     }
 }
 
@@ -495,25 +479,25 @@ fun getKanriGlassTheme(
         )
 
         ThemeMode.LIGHT -> KanriGlassTheme(
-            glassBorder = BorderStroke(0.8.dp, Color(0x20000000)),
+            glassBorder = BorderStroke(0.8.dp, Color(0xFFE2DEC9).copy(alpha = 0.65f)),
             activeContentColor = Color(0xFF000000),
             inactiveContentColor = Color(0x60000000),
             addButtonIconColor = Color(0xFF000000),
-            shadowColor = Color(0x15000000),
-            shadowElevation = 12.dp,
+            shadowColor = Color.Black.copy(alpha = 0.04f),
+            shadowElevation = 8.dp,
             hazeStyle = HazeStyle(
-                backgroundColor = LightBackground.copy(alpha = 0.60f),
-                tint = HazeTint(LightBackground.copy(alpha = 0.25f)),
+                backgroundColor = Color.White.copy(alpha = 0.85f),
+                tint = HazeTint(Color.White.copy(alpha = 0.65f)),
                 blurRadius = 24.dp,
-                noiseFactor = 0.04f
+                noiseFactor = 0.03f
             ),
             popupHazeStyle = HazeStyle(
-                backgroundColor = LightBackground.copy(alpha = 0.75f),
-                tint = HazeTint(LightBackground.copy(alpha = 0.35f)),
+                backgroundColor = Color.White.copy(alpha = 0.92f),
+                tint = HazeTint(Color.White.copy(alpha = 0.75f)),
                 blurRadius = 36.dp,
-                noiseFactor = 0.05f
+                noiseFactor = 0.04f
             ),
-            fallbackBackgroundColor = LightBackground.copy(alpha = 0.88f)
+            fallbackBackgroundColor = Color.White.copy(alpha = 0.94f)
         )
     }
 }
@@ -863,10 +847,22 @@ fun KanriGlassDialog(
                 Offset.Infinite
             )
         } else {
-            Brush.linearGradient(
-                listOf(Color.White.copy(alpha = 0.18f), Color.White.copy(alpha = 0.05f))
-            )
+            val isDark = MaterialTheme.colorScheme.surface.luminance() < 0.5f
+            if (isDark) {
+                Brush.linearGradient(
+                    listOf(Color.White.copy(alpha = 0.18f), Color.White.copy(alpha = 0.05f))
+                )
+            } else {
+                Brush.linearGradient(
+                    listOf(
+                        MaterialTheme.colorScheme.outlineVariant.copy(alpha = 0.50f),
+                        MaterialTheme.colorScheme.outlineVariant.copy(alpha = 0.15f)
+                    )
+                )
+            }
         }
+
+        val isDarkSurface = MaterialTheme.colorScheme.surface.luminance() < 0.5f
 
         Box(
             modifier = Modifier.fillMaxSize(),
@@ -880,9 +876,9 @@ fun KanriGlassDialog(
                         alpha = dialogAlpha.value
                     }
                     .shadow(
-                        elevation = if (tokens != null) 24.dp else 16.dp,
+                        elevation = if (tokens != null) 24.dp else (if (isDarkSurface) 16.dp else 6.dp),
                         shape = shape,
-                        spotColor = Color.Black.copy(alpha = 0.45f)
+                        spotColor = if (tokens != null || isDarkSurface) Color.Black.copy(alpha = 0.45f) else Color.Black.copy(alpha = 0.06f)
                     )
                     .border(
                         width = tokens?.borderWidth ?: 1.dp,

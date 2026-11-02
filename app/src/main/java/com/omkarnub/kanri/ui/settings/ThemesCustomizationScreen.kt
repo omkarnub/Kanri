@@ -10,7 +10,6 @@ import androidx.compose.foundation.background
 import androidx.compose.foundation.border
 import androidx.compose.foundation.clickable
 import androidx.compose.foundation.horizontalScroll
-import androidx.compose.foundation.isSystemInDarkTheme
 import androidx.compose.foundation.layout.Arrangement
 import androidx.compose.foundation.layout.Box
 import androidx.compose.foundation.layout.Column
@@ -82,6 +81,7 @@ import com.omkarnub.kanri.ui.theme.LocalKanriGlass
 import com.omkarnub.kanri.ui.theme.Panchang
 import com.omkarnub.kanri.ui.theme.ThemeMode
 import com.omkarnub.kanri.ui.theme.ThemePreferences
+import com.omkarnub.kanri.ui.theme.isAppInDarkTheme
 import com.omkarnub.kanri.util.rememberKanriHaptics
 
 /**
@@ -141,7 +141,6 @@ fun ThemesCustomizationScreen(
     val themePrefs = remember { ThemePreferences.getInstance(context) }
     val hazeState = LocalHazeState.current
     val tokens = LocalKanriGlass.current
-    val isSystemDark = isSystemInDarkTheme()
 
     val currentThemeMode by themePrefs.themeModeFlow.collectAsState()
     val currentGlassBg by themePrefs.glassBackgroundFlow.collectAsState()
@@ -627,7 +626,6 @@ private fun ShaderOptionCard(
     modifier: Modifier = Modifier
 ) {
     val tokens = LocalKanriGlass.current
-    val dark = isSystemInDarkTheme()
 
     val scale by animateFloatAsState(
         targetValue = if (isSelected) 1.01f else 1f,
@@ -691,14 +689,14 @@ private fun ShaderOptionCard(
                     fontFamily = GoogleSansFlex,
                     fontWeight = FontWeight.Bold,
                     fontSize = 14.5.sp,
-                    color = tokens?.textPrimary ?: if (dark) Color.White else Color(0xFF09090B)
+                    color = tokens?.textPrimary ?: MaterialTheme.colorScheme.onSurface
                 )
                 Spacer(modifier = Modifier.height(2.dp))
                 Text(
                     text = getShaderSubtitle(type),
                     fontFamily = GoogleSansFlex,
                     fontSize = 12.sp,
-                    color = tokens?.textSecondary ?: if (dark) Color(0xFFA1A1AA) else Color(0xFF71717A),
+                    color = tokens?.textSecondary ?: MaterialTheme.colorScheme.onSurfaceVariant,
                     maxLines = 1
                 )
             }
@@ -726,7 +724,7 @@ private fun ShaderOptionCard(
                         .clip(CircleShape)
                         .border(
                             1.5.dp,
-                            tokens?.borderStart ?: if (dark) Color(0xFF3F3F46) else Color(0xFFD4D4D8),
+                            tokens?.borderStart ?: MaterialTheme.colorScheme.outlineVariant,
                             CircleShape
                         )
                 )
@@ -744,7 +742,6 @@ private fun ThemeModeCard(
     modifier: Modifier = Modifier
 ) {
     val tokens = LocalKanriGlass.current
-    val dark = isSystemInDarkTheme()
 
     KanriGlassCard(
         modifier = modifier
@@ -767,14 +764,14 @@ private fun ThemeModeCard(
                     .clip(CircleShape)
                     .background(
                         if (isSelected) MaterialTheme.colorScheme.primaryContainer
-                        else (tokens?.tintFlat ?: if (dark) Color(0xFF27272A) else Color(0xFFF4F4F5))
+                        else (tokens?.tintFlat ?: MaterialTheme.colorScheme.surfaceContainerHighest)
                     ),
                 contentAlignment = Alignment.Center
             ) {
                 Icon(
                     imageVector = icon,
                     contentDescription = null,
-                    tint = if (isSelected) MaterialTheme.colorScheme.primary else (tokens?.textSecondary ?: if (dark) Color(0xFFA1A1AA) else Color(0xFF71717A)),
+                    tint = if (isSelected) MaterialTheme.colorScheme.primary else (tokens?.textSecondary ?: MaterialTheme.colorScheme.onSurfaceVariant),
                     modifier = Modifier.size(18.dp)
                 )
             }
@@ -784,7 +781,7 @@ private fun ThemeModeCard(
                 fontFamily = GoogleSansFlex,
                 fontWeight = if (isSelected) FontWeight.Bold else FontWeight.Medium,
                 fontSize = 12.sp,
-                color = if (isSelected) (tokens?.textPrimary ?: MaterialTheme.colorScheme.onSurface) else (tokens?.textSecondary ?: if (dark) Color(0xFFA1A1AA) else Color(0xFF71717A))
+                color = if (isSelected) (tokens?.textPrimary ?: MaterialTheme.colorScheme.onSurface) else (tokens?.textSecondary ?: MaterialTheme.colorScheme.onSurfaceVariant)
             )
         }
     }

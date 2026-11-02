@@ -1,5 +1,6 @@
 package com.omkarnub.kanri.ui.theme
 
+import androidx.compose.runtime.Composable
 import androidx.compose.runtime.Immutable
 import androidx.compose.runtime.staticCompositionLocalOf
 import androidx.compose.ui.geometry.Offset
@@ -50,6 +51,15 @@ data class KanriGlassTokens(
 )
 
 val LocalKanriGlass = staticCompositionLocalOf<KanriGlassTokens?> { null }
+val LocalIsDarkTheme = staticCompositionLocalOf<Boolean> { true }
+
+/**
+ * Returns true if the active app theme is dark (DARK, AMOLED, or GLASS with dark background).
+ * Never relies directly on system OS dark theme when user has explicitly selected a theme.
+ */
+@Composable
+fun isAppInDarkTheme(): Boolean = LocalIsDarkTheme.current
+
 
 /**
  * User-configurable factors for customizing glass cards, components, and buttons.

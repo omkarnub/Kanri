@@ -80,6 +80,28 @@ All defects identified across compilation, runtime theme switching, state preser
   - Migrated `rememberPlainTooltipPositionProvider` to `rememberTooltipPositionProvider(TooltipAnchorPosition.Above)`.
 - **Result:** Zero deprecation warnings across all core UI modules.
 
+### Defect 6: Light Theme Cards Had Visible Dark Grayscale Borders and Harsh Shadows (Visual Polish)
+- **Files:** `KanriGlass.kt`, `Color.kt`, `InstantPopupCard.kt`
+- **Root Cause:**
+  1. `Modifier.kanriGlass` fallback for solid themes applied a 1.dp black gradient border: `Brush.linearGradient(listOf(Color.Black.copy(0.18f), Color.Black.copy(0.05f)))` (18% black stroke) when `!isDark`.
+  2. Applied aggressive `4.dp` drop shadow with `Color.Black.copy(0.40f)` (40% black spot shadow) over warm cream background `#FAF9F5`, producing a dark halo ring around all cards.
+  3. `KanriGlassTheme` for `ThemeMode.LIGHT` hardcoded `glassBorder = BorderStroke(0.8.dp, Color(0x20000000))` (12.5% black border around floating dock and menus).
+  4. `LightOutlineVariant` was `#DDD9CD` (30 points darker grey than `#FAF9F5`), causing card outlines to look stark.
+- **Fix:**
+  - In `Modifier.kanriGlass` solid light mode: Cards now render crisp pure white `Color(0xFFFFFFFF)` fill with delicate `0.8.dp` warm outline border `Brush.linearGradient(listOf(outlineVariant.copy(0.45f), outlineVariant.copy(0.15f)))`.
+  - Replaced 40% black drop shadow with soft ambient light elevation `1.5.dp`, spot shadow `Color.Black.copy(0.035f)`, ambient shadow `Color.Black.copy(0.015f)`.
+  - Refined `LightOutlineVariant` to `#E8E4DA` and `LightOutline` to `#C4C0B4` for subtle warm boundaries.
+  - In `KanriGlassTheme(ThemeMode.LIGHT)`, set `glassBorder = BorderStroke(0.8.dp, Color(0xFFE2DEC9).copy(alpha = 0.65f))` and soft ambient `0.04f` shadow.
+- **Result:** Light theme cards across Home, Insights, Lend, Goals, Settings, and Dialogs render with pure radiant white surfaces, hairline warm edges, and subtle diffuse depth.
+
+### Defect 7: OS Dark Mode Desynchronization in UI Components (Theme Logic)
+- **Files:** `KanriGlassTokens.kt`, `Theme.kt`, `ThemesCustomizationScreen.kt`, `AnimatedMonochromeRingChart.kt`, `KokonutAmountPad.kt`, `KokonutAvatarPicker.kt`, `KokonutSlideToConfirm.kt`, `KokonutSmoothDrawer.kt`, `KokonutSpendingRing.kt`, `KokonutSpoilerText.kt`, `KokonutStackPanel.kt`, `KokonutTearButton.kt`
+- **Root Cause:** Multiple UI components called `isSystemInDarkTheme()`. If a user selected Light theme in Kanri while their Android OS system setting was dark, components like `ShaderOptionCard` in `ThemesCustomizationScreen` used white text on white card surfaces (`displayName` color check), and `AnimatedMonochromeRingChart` rendered dark palette rings on light backgrounds.
+- **Fix:**
+  - Introduced `LocalIsDarkTheme` and `@Composable fun isAppInDarkTheme(): Boolean` provided centrally in `Theme.kt` based on resolved app theme mode.
+  - Migrated all UI components from `isSystemInDarkTheme()` to `isAppInDarkTheme()` and semantic `MaterialTheme.colorScheme` tokens.
+- **Result:** Flawless contrast and color resolution in all 4 theme modes regardless of the OS dark mode setting.
+
 ---
 
 ## 4. Release Build & Security Readiness
@@ -146,3 +168,4 @@ qa_screenshots/
 ## 6. Conclusion
 
 The Kanri codebase is clean, robust, and verified across all supported themes. All unit tests pass, release builds succeed under R8 minification, runtime theme switching is flicker-free, and navigation state persists across all user interactions. The application is ready for production release.
+

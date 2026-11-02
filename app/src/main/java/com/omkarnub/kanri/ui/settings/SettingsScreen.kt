@@ -626,7 +626,6 @@ fun SettingsScreen(
     }
 
     val tokens = LocalKanriGlass.current
-    val isSystemDark = androidx.compose.foundation.isSystemInDarkTheme()
 
     Scaffold(
         modifier = modifier.fillMaxSize(),

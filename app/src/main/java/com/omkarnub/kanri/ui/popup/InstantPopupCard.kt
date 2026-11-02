@@ -135,7 +135,7 @@ fun InstantPopupCard(
     val secondaryTextColor = glassTokens?.textSecondary ?: if (isLight) Color(0xFF6B685F) else Color(0xFFA6A6A6)
     val chipBg = glassTokens?.tintFlat ?: if (isLight) Color(0xFFF4F2EB) else if (isAmoled) Color(0xFF141414) else Color(0xFF1E1E1E)
     val inputBg = glassTokens?.tintFlat ?: if (isLight) Color(0xFFECEAE2) else if (isAmoled) Color(0xFF1A1A1A) else Color(0xFF242424)
-    val neutralBorder = glassTokens?.borderEnd ?: if (isLight) Color(0x18000000) else Color(0x22FFFFFF)
+    val neutralBorder = glassTokens?.borderEnd ?: if (isLight) Color(0xFFE8E4DA) else Color(0x22FFFFFF)
     val activeBorder = glassTokens?.accent ?: if (isLight) Color(0xFF000000) else Color(0xFFFFFFFF)
 
     val specularGradient = if (glassTokens != null) {
@@ -143,9 +143,9 @@ fun InstantPopupCard(
     } else if (isLight) {
         Brush.verticalGradient(
             listOf(
-                Color(0x50FFFFFF),
-                Color(0x12000000),
-                Color(0x06000000)
+                Color.White.copy(alpha = 0.60f),
+                Color(0xFFE8E4DA).copy(alpha = 0.50f),
+                Color(0xFFE8E4DA).copy(alpha = 0.20f)
             )
         )
     } else {

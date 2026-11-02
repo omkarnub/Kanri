@@ -242,7 +242,10 @@ fun KanriTheme(
         }
     }
 
-    CompositionLocalProvider(LocalKanriGlass provides glassTokens) {
+    CompositionLocalProvider(
+        LocalKanriGlass provides glassTokens,
+        LocalIsDarkTheme provides isDark
+    ) {
         MaterialTheme(
             colorScheme = colorScheme,
             typography = Typography,

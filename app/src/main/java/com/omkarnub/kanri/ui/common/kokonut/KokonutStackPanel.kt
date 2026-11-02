@@ -14,7 +14,7 @@ import androidx.compose.foundation.background
 import androidx.compose.foundation.border
 import androidx.compose.foundation.clickable
 import androidx.compose.foundation.gestures.detectHorizontalDragGestures
-import androidx.compose.foundation.isSystemInDarkTheme
+import com.omkarnub.kanri.ui.theme.isAppInDarkTheme
 import androidx.compose.foundation.layout.Arrangement
 import androidx.compose.foundation.layout.Box
 import androidx.compose.foundation.layout.BoxWithConstraints
@@ -135,7 +135,7 @@ fun KokonutToggle(
     on: Boolean,
     modifier: Modifier = Modifier
 ) {
-    val dark = isSystemInDarkTheme()
+    val dark = isAppInDarkTheme()
     val density = LocalDensity.current
 
     // Toggle 36x22dp, thumb 18dp at 2dp offset, translateX 14dp when on
@@ -176,7 +176,7 @@ fun KokonutStackPanel(
     onBackToApp: () -> Unit,
     modifier: Modifier = Modifier
 ) {
-    val dark = isSystemInDarkTheme()
+    val dark = isAppInDarkTheme()
     val tokens = LocalKanriGlass.current
     val haptics = rememberKanriHaptics()
     val scope = rememberCoroutineScope()
@@ -400,7 +400,7 @@ private fun StackPageView(
     page: StackPage,
     onOpen: (StackRow) -> Unit
 ) {
-    val dark = isSystemInDarkTheme()
+    val dark = isAppInDarkTheme()
     val tokens = LocalKanriGlass.current
 
     Column(
@@ -474,7 +474,7 @@ private fun StackRowView(
     row: StackRow,
     onClick: () -> Unit
 ) {
-    val dark = isSystemInDarkTheme()
+    val dark = isAppInDarkTheme()
     val tokens = LocalKanriGlass.current
 
     val labelColor = when (row.tone) {
