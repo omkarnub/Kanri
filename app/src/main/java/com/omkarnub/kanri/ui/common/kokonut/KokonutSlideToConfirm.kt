@@ -108,6 +108,41 @@ enum class SlidePhase {
     IDLE, DRAGGING, CONFIRMING, DONE
 }
 
+/**
+ * Slide confirmation entry type defining the completion colors and banner message
+ */
+enum class SlideConfirmationType(
+    val defaultDoneLabel: String,
+    val lightColor: Color,
+    val darkColor: Color
+) {
+    INCOME(
+        defaultDoneLabel = "Income entry added!",
+        lightColor = Color(0xFF059669), // Emerald 600
+        darkColor = Color(0xFF10B981)   // Emerald 500
+    ),
+    EXPENSE(
+        defaultDoneLabel = "Expense entry added!",
+        lightColor = Color(0xFFE11D48), // Crimson / Rose 600
+        darkColor = Color(0xFFF43F5E)   // Crimson / Rose 500
+    ),
+    LEND(
+        defaultDoneLabel = "Lending entry added!",
+        lightColor = Color(0xFF4F46E5), // Indigo 600
+        darkColor = Color(0xFF6366F1)   // Indigo 500
+    ),
+    BORROW(
+        defaultDoneLabel = "Borrowing entry added!",
+        lightColor = Color(0xFFD97706), // Amber 600
+        darkColor = Color(0xFFF59E0B)   // Amber 500
+    ),
+    DEFAULT(
+        defaultDoneLabel = "Saved",
+        lightColor = Color(0xFF059669),
+        darkColor = Color(0xFF10B981)
+    )
+}
+
 /** Pure overdrag math matching Kokonut band() */
 fun slideBand(raw: Float, max: Float): Float {
     if (raw > max) {
@@ -129,12 +164,14 @@ fun slideShouldCommit(progress: Float, velocity: Float): Boolean {
 fun KokonutSlideToConfirm(
     label: String = "Slide to confirm",
     confirmingLabel: String = "Saving…",
-    doneLabel: String = "Saved",
+    doneLabel: String? = null,
+    confirmationType: SlideConfirmationType = SlideConfirmationType.DEFAULT,
     onConfirm: suspend () -> Unit,
     resetAfter: Long? = null,
     disabled: Boolean = false,
     modifier: Modifier = Modifier
 ) {
+    val effectiveDoneLabel = doneLabel ?: confirmationType.defaultDoneLabel
     val dark = isSystemInDarkTheme()
     val tokens = LocalKanriGlass.current
     val haptics = rememberKanriHaptics()
@@ -363,9 +400,9 @@ fun KokonutSlideToConfirm(
                 )
             }
 
-            // 3. Ink Fill Layer (emerald when done, monochrome dark/light during drag)
+            // 3. Ink Fill Layer (custom colored when done, monochrome dark/light during drag)
             val inkBgColor = if (isDone) {
-                if (dark) Emerald500 else Emerald600
+                if (dark) confirmationType.darkColor else confirmationType.lightColor
             } else {
                 if (dark) Zinc100 else Zinc900
             }
@@ -389,7 +426,7 @@ fun KokonutSlideToConfirm(
 
             // Ink Label
             val inkTextColor = if (isDone) {
-                if (dark) Color(0xFF022C22) else Color.White
+                Color.White
             } else {
                 if (dark) Zinc900 else Color.White
             }
@@ -439,7 +476,7 @@ fun KokonutSlideToConfirm(
 
                         val text = when (targetPhase) {
                             SlidePhase.CONFIRMING -> confirmingLabel
-                            SlidePhase.DONE -> doneLabel
+                            SlidePhase.DONE -> effectiveDoneLabel
                             else -> label
                         }
                         Text(

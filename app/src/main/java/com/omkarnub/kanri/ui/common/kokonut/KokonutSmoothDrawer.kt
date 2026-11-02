@@ -64,6 +64,7 @@ import androidx.compose.ui.text.style.TextOverflow
 import androidx.compose.ui.unit.IntOffset
 import androidx.compose.ui.unit.dp
 import androidx.compose.ui.unit.sp
+import com.omkarnub.kanri.ui.common.AnimatedNumberText
 import com.omkarnub.kanri.ui.common.GlassLevel
 import com.omkarnub.kanri.ui.common.KanriGlassCard
 import com.omkarnub.kanri.ui.common.LocalHazeState
@@ -111,6 +112,7 @@ fun KokonutSmoothDrawer(
     detailRows: List<DrawerDetailRow> = emptyList(),
     accountType: String = "Cash",
     balanceAfter: Double? = null,
+    confirmationType: SlideConfirmationType = SlideConfirmationType.DEFAULT,
     onConfirm: suspend () -> Unit,
     onDismiss: () -> Unit,
     modifier: Modifier = Modifier,
@@ -297,7 +299,7 @@ fun KokonutSmoothDrawer(
             KokonutSlideToConfirm(
                 label = slideLabel,
                 confirmingLabel = "Saving…",
-                doneLabel = "Saved",
+                confirmationType = confirmationType,
                 onConfirm = {
                     onConfirm()
                     delay(350)
@@ -312,7 +314,7 @@ fun KokonutSmoothDrawer(
 }
 
 /**
- * Bold rolling amount for drawer header
+ * Bold rolling amount for drawer header using AnimatedNumberText
  */
 @Composable
 private fun DrawerRollingAmount(
@@ -320,69 +322,24 @@ private fun DrawerRollingAmount(
     color: Color,
     modifier: Modifier = Modifier
 ) {
-    var previousAmount by remember { mutableDoubleStateOf(amount) }
-    val direction = if (amount >= previousAmount) 1 else -1
-
-    LaunchedEffect(amount) {
-        previousAmount = amount
-    }
-
     val currency = CurrencyUtils.getCurrencySymbol()
     val formatted = remember(amount, currency) {
         val df = DecimalFormat(if (amount % 1.0 == 0.0) "#,##0" else "#,##0.00", DecimalFormatSymbols(Locale.US))
         "$currency${df.format(amount)}"
     }
 
-    val chars = formatted.toList()
-
-    Row(
+    AnimatedNumberText(
+        text = formatted,
         modifier = modifier,
-        verticalAlignment = Alignment.CenterVertically,
-        horizontalArrangement = Arrangement.End
-    ) {
-        chars.forEachIndexed { index, ch ->
-            val slotKey = "slot-$index"
-            if (ch in '0'..'9') {
-                Box(
-                    modifier = Modifier.height(28.dp),
-                    contentAlignment = Alignment.Center
-                ) {
-                    AnimatedContent(
-                        targetState = ch,
-                        transitionSpec = {
-                            (fadeIn(animationSpec = tween(240, easing = ROLLING_EASE_OUT)) +
-                                    slideInVertically(
-                                        animationSpec = tween(240, easing = ROLLING_EASE_OUT),
-                                        initialOffsetY = { (direction * it * 0.7f).roundToInt() }
-                                    )) togetherWith
-                                    (fadeOut(animationSpec = tween(240, easing = ROLLING_EASE_OUT)) +
-                                            slideOutVertically(
-                                                animationSpec = tween(240, easing = ROLLING_EASE_OUT),
-                                                targetOffsetY = { (-direction * it * 0.7f).roundToInt() }
-                                            ))
-                        },
-                        label = slotKey
-                    ) { targetChar ->
-                        Text(
-                            text = targetChar.toString(),
-                            fontSize = 20.sp,
-                            fontFamily = GoogleSansFlex,
-                            fontWeight = FontWeight.Bold,
-                            color = color,
-                            letterSpacing = (-0.02).sp
-                        )
-                    }
-                }
-            } else {
-                Text(
-                    text = ch.toString(),
-                    fontSize = 20.sp,
-                    fontFamily = GoogleSansFlex,
-                    fontWeight = FontWeight.Bold,
-                    color = color,
-                    letterSpacing = (-0.02).sp
-                )
-            }
-        }
-    }
+        style = androidx.compose.ui.text.TextStyle(
+            fontFamily = GoogleSansFlex,
+            fontWeight = FontWeight.Black,
+            fontSize = 20.sp,
+            letterSpacing = (-0.02).sp
+        ),
+        color = color,
+        durationMillis = 380,
+        delayPerDigitMillis = 14,
+        animateFromZero = false
+    )
 }

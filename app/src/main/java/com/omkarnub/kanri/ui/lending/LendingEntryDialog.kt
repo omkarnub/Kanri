@@ -130,6 +130,8 @@ import dev.chrisbanes.haze.ExperimentalHazeApi
 import dev.chrisbanes.haze.HazeState
 import com.omkarnub.kanri.ui.common.kokonut.KokonutAmountPad
 import com.omkarnub.kanri.ui.common.kokonut.KokonutSmoothDrawer
+import com.omkarnub.kanri.ui.common.kokonut.KokonutSlideToConfirm
+import com.omkarnub.kanri.ui.common.kokonut.SlideConfirmationType
 import com.omkarnub.kanri.ui.common.kokonut.DrawerDetailRow
 import java.text.SimpleDateFormat
 import java.util.Date
@@ -1462,6 +1464,7 @@ fun LendingEntryDialog(
                         slideLabel = if (type == "LENT") "Slide to lend ₹${amount.toInt()}" else "Slide to record borrowing",
                         detailRows = detailRows,
                         accountType = if (selectedWallet == "ONLINE") "Online" else "Cash",
+                        confirmationType = if (type == "LENT") SlideConfirmationType.LEND else SlideConfirmationType.BORROW,
                         hazeState = hazeState,
                         onConfirm = {
                             onSave(personName.trim(), amount, type, entryDate, dueDate, notes.ifBlank { null }, selectedWallet)

@@ -87,7 +87,9 @@ import com.omkarnub.kanri.ui.common.LocalHazeState
 import com.omkarnub.kanri.ui.common.kanriPrimaryButtonColors
 import com.omkarnub.kanri.ui.common.kokonut.DrawerDetailRow
 import com.omkarnub.kanri.ui.common.kokonut.KokonutAmountPad
+import com.omkarnub.kanri.ui.common.kokonut.KokonutSlideToConfirm
 import com.omkarnub.kanri.ui.common.kokonut.KokonutSmoothDrawer
+import com.omkarnub.kanri.ui.common.kokonut.SlideConfirmationType
 import com.omkarnub.kanri.ui.common.rememberKanriGlassTheme
 import com.omkarnub.kanri.ui.savings.GoalIcon
 import com.omkarnub.kanri.ui.theme.GoogleSansFlex
@@ -979,6 +981,7 @@ fun AddTransactionDialog(
                                 slideLabel = if (isDebit) "Slide to save expense" else "Slide to save income",
                                 detailRows = detailRows,
                                 accountType = if (selectedWallet == "ONLINE") "Online" else if (selectedWallet == "CASH") "Cash" else "Unlinked",
+                                confirmationType = if (isDebit) SlideConfirmationType.EXPENSE else SlideConfirmationType.INCOME,
                                 hazeState = hazeState,
                                 onConfirm = {
                                     if (!isDebit && isAllocateToGoalEnabled && selectedGoalId != null) {
