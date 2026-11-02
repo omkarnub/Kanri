@@ -20,4 +20,5 @@ app/release/
 
 skills-lock.json
 *.png
+!qa_screenshots/**
 scratch/
