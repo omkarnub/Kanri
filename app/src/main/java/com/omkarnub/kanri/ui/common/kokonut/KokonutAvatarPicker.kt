@@ -5,7 +5,12 @@ import android.net.Uri
 import androidx.activity.compose.rememberLauncherForActivityResult
 import androidx.activity.result.contract.ActivityResultContracts
 import androidx.compose.animation.core.Animatable
+import androidx.compose.animation.core.FastOutSlowInEasing
+import androidx.compose.animation.core.RepeatMode
+import androidx.compose.animation.core.animateFloat
 import androidx.compose.animation.core.animateFloatAsState
+import androidx.compose.animation.core.infiniteRepeatable
+import androidx.compose.animation.core.rememberInfiniteTransition
 import androidx.compose.animation.core.spring
 import androidx.compose.foundation.Canvas
 import androidx.compose.foundation.Image
@@ -13,6 +18,7 @@ import androidx.compose.foundation.background
 import androidx.compose.foundation.border
 import androidx.compose.foundation.clickable
 import androidx.compose.foundation.gestures.detectDragGestures
+import androidx.compose.foundation.horizontalScroll
 import androidx.compose.foundation.isSystemInDarkTheme
 import androidx.compose.foundation.layout.Arrangement
 import androidx.compose.foundation.layout.Box
@@ -25,6 +31,7 @@ import androidx.compose.foundation.layout.height
 import androidx.compose.foundation.layout.padding
 import androidx.compose.foundation.layout.size
 import androidx.compose.foundation.layout.width
+import androidx.compose.foundation.rememberScrollState
 import androidx.compose.foundation.shape.CircleShape
 import androidx.compose.foundation.shape.RoundedCornerShape
 import androidx.compose.foundation.text.BasicTextField
@@ -40,6 +47,7 @@ import androidx.compose.runtime.LaunchedEffect
 import androidx.compose.runtime.getValue
 import androidx.compose.runtime.mutableFloatStateOf
 import androidx.compose.runtime.mutableIntStateOf
+import androidx.compose.runtime.mutableLongStateOf
 import androidx.compose.runtime.mutableStateListOf
 import androidx.compose.runtime.mutableStateOf
 import androidx.compose.runtime.remember
@@ -110,7 +118,7 @@ import kotlin.random.Random
  * - Real-time name input morphing
  */
 
-const val AVATAR_SLOT_COUNT = 5
+const val AVATAR_SLOT_COUNT = 8
 const val AVATAR_COIN = 128f
 const val AVATAR_BEZEL = 176f
 const val AVATAR_TICKS = 60
@@ -568,7 +576,22 @@ fun MorphingFace(
         if (morphProgress.value >= 1f) targetFace else lerpFace(fromFace, targetFace, morphProgress.value)
     }
 
-    Canvas(modifier = modifier) {
+    val infiniteTransition = androidx.compose.animation.core.rememberInfiniteTransition(label = "faceLife")
+    val breatheY by infiniteTransition.animateFloat(
+        initialValue = -1.2f,
+        targetValue = 1.2f,
+        animationSpec = androidx.compose.animation.core.infiniteRepeatable(
+            animation = androidx.compose.animation.core.tween(2400, easing = androidx.compose.animation.core.FastOutSlowInEasing),
+            repeatMode = androidx.compose.animation.core.RepeatMode.Reverse
+        ),
+        label = "breatheY"
+    )
+
+    Canvas(
+        modifier = modifier.graphicsLayer {
+            translationY = if (morph) breatheY else 0f
+        }
+    ) {
         drawFaceArt(
             scope = this,
             face = displayedFace,
@@ -609,6 +632,7 @@ fun KokonutAvatarPicker(
     var customPhotoPath by remember {
         mutableStateOf<String?>(userPrefs.profilePhotoPath)
     }
+    var photoVersion by remember { mutableLongStateOf(System.currentTimeMillis()) }
 
     val photoPickerLauncher = rememberLauncherForActivityResult(
         contract = ActivityResultContracts.PickVisualMedia()
@@ -620,6 +644,7 @@ fun KokonutAvatarPicker(
                 }
                 if (ok) {
                     customPhotoPath = userPrefs.profilePhotoPath
+                    photoVersion = System.currentTimeMillis()
                     haptics.success()
                 }
             }
@@ -645,22 +670,6 @@ fun KokonutAvatarPicker(
             blinkScaleY = 0.1f
             delay(120)
             blinkScaleY = 1f
-        }
-    }
-
-    // Bezel tick lines (60 ticks, 5th tick longer)
-    val tickLines = remember {
-        val c = AVATAR_BEZEL / 2f
-        (0 until AVATAR_TICKS).map { i ->
-            val a = (i.toFloat() / AVATAR_TICKS) * 2f * PI.toFloat()
-            val long = (i % 5 == 0)
-            val r1 = AVATAR_BEZEL / 2f - 3f
-            val r0 = r1 - (if (long) 7f else 4f)
-            Triple(
-                Offset(c + sin(a) * r0, c - cos(a) * r0),
-                Offset(c + sin(a) * r1, c - cos(a) * r1),
-                long
-            )
         }
     }
 
@@ -810,14 +819,25 @@ fun KokonutAvatarPicker(
                         .fillMaxSize()
                         .graphicsLayer { rotationZ = bezelRotation }
                 ) {
-                    tickLines.forEach { (p0, p1, long) ->
+                    val cx = size.width / 2f
+                    val cy = size.height / 2f
+                    val rOuter = size.minDimension / 2f - 4.dp.toPx()
+                    val rLongInner = rOuter - 9.dp.toPx()
+                    val rShortInner = rOuter - 5.dp.toPx()
+
+                    for (i in 0 until AVATAR_TICKS) {
+                        val a = (i.toFloat() / AVATAR_TICKS) * 2f * PI.toFloat()
+                        val isLong = (i % 5 == 0)
+                        val rInner = if (isLong) rLongInner else rShortInner
+                        val p0 = Offset(cx + sin(a) * rInner, cy - cos(a) * rInner)
+                        val p1 = Offset(cx + sin(a) * rOuter, cy - cos(a) * rOuter)
                         drawLine(
-                            color = if (dark) Zinc700 else Zinc300,
+                            color = if (dark) (if (isLong) Zinc500 else Zinc700) else (if (isLong) Zinc500 else Zinc300),
                             start = p0,
                             end = p1,
-                            strokeWidth = (if (long) 1.5f else 1.0f) * density.density,
+                            strokeWidth = (if (isLong) 2.dp else 1.2.dp).toPx(),
                             cap = StrokeCap.Round,
-                            alpha = if (long) 1f else 0.6f
+                            alpha = if (isLong) 1f else 0.65f
                         )
                     }
                 }
@@ -826,6 +846,7 @@ fun KokonutAvatarPicker(
                 Box(
                     modifier = Modifier
                         .align(Alignment.TopCenter)
+                        .padding(top = 2.dp)
                         .size(width = 2.dp, height = 12.dp)
                         .clip(CircleShape)
                         .background(if (dark) Zinc100 else Zinc900)
@@ -862,7 +883,7 @@ fun KokonutAvatarPicker(
                     }
 
                     if (customPhotoPath != null) {
-                        val bitmap = remember(customPhotoPath) {
+                        val bitmap = remember(customPhotoPath, photoVersion) {
                             BitmapFactory.decodeFile(customPhotoPath)
                         }
                         if (bitmap != null) {
@@ -920,14 +941,20 @@ fun KokonutAvatarPicker(
 
             Spacer(modifier = Modifier.height(20.dp))
 
-            // 5 Slots Toolbar + Shuffle Button
+            // 8 Slots Toolbar + Shuffle Button
             Row(
                 modifier = Modifier.fillMaxWidth(),
                 horizontalArrangement = Arrangement.SpaceBetween,
                 verticalAlignment = Alignment.CenterVertically
             ) {
-                // 5 Slots: 40dp circles
-                Row(horizontalArrangement = Arrangement.spacedBy(8.dp)) {
+                // 8 Slots: 40dp circles in horizontal scroll
+                Row(
+                    modifier = Modifier
+                        .weight(1f)
+                        .horizontalScroll(rememberScrollState()),
+                    horizontalArrangement = Arrangement.spacedBy(8.dp),
+                    verticalAlignment = Alignment.CenterVertically
+                ) {
                     slots.forEachIndexed { i, slotVariant ->
                         val isSelected = (i == selectedSlot && customPhotoPath == null)
                         val slotSeed = remember(displayName, slotVariant) { avatarSeed(displayName, slotVariant) }
@@ -964,6 +991,8 @@ fun KokonutAvatarPicker(
                         }
                     }
                 }
+
+                Spacer(modifier = Modifier.width(8.dp))
 
                 // Shuffle button: 40dp circle, dice icon rotates angle / 4
                 val diceRotation = angleAnim.value / 4f
@@ -1128,8 +1157,11 @@ fun KanriUserAvatar(
         contentAlignment = Alignment.Center
     ) {
         if (!photoPath.isNullOrEmpty()) {
-            val bitmap = remember(photoPath) {
-                BitmapFactory.decodeFile(photoPath)
+            val fileMod = remember(photoPath) {
+                try { java.io.File(photoPath).lastModified() } catch (e: Exception) { 0L }
+            }
+            val bitmap = remember(photoPath, fileMod) {
+                try { BitmapFactory.decodeFile(photoPath) } catch (e: Exception) { null }
             }
             if (bitmap != null) {
                 Image(

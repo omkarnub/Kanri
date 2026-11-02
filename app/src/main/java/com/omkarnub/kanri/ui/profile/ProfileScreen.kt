@@ -388,11 +388,13 @@ fun ProfileScreen(
                         submitLabel = "Save",
                         initialName = currentUserName,
                         initialVariant = avatarVariant,
-                        onComplete = { newName, newVariant, _ ->
+                        onComplete = { newName, newVariant, pickedPhoto ->
                             showEditProfileDialog = false
                             profilePrefs.userName = newName
                             profilePrefs.avatarVariant = newVariant
-                            profilePrefs.removeProfilePhoto()
+                            if (pickedPhoto == null) {
+                                profilePrefs.removeProfilePhoto()
+                            }
                             haptics.success()
                             Toast.makeText(context, "Profile details saved", Toast.LENGTH_SHORT).show()
                         },
