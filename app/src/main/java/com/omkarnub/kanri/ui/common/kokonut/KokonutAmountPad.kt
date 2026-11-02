@@ -4,6 +4,7 @@ import androidx.compose.animation.AnimatedContent
 import androidx.compose.animation.AnimatedVisibility
 import androidx.compose.animation.core.Animatable
 import androidx.compose.animation.core.CubicBezierEasing
+import androidx.compose.animation.core.Spring
 import androidx.compose.animation.core.animateFloatAsState
 import androidx.compose.animation.core.keyframes
 import androidx.compose.animation.core.spring
@@ -30,6 +31,7 @@ import androidx.compose.foundation.layout.height
 import androidx.compose.foundation.layout.padding
 import androidx.compose.foundation.layout.size
 import androidx.compose.foundation.layout.width
+import androidx.compose.foundation.layout.wrapContentSize
 import androidx.compose.foundation.shape.CircleShape
 import androidx.compose.foundation.shape.RoundedCornerShape
 import androidx.compose.material.icons.Icons
@@ -44,8 +46,6 @@ import androidx.compose.runtime.LaunchedEffect
 import androidx.compose.runtime.getValue
 import androidx.compose.runtime.key
 import androidx.compose.runtime.mutableFloatStateOf
-import androidx.compose.runtime.mutableIntStateOf
-import androidx.compose.runtime.mutableStateListOf
 import androidx.compose.runtime.mutableStateOf
 import androidx.compose.runtime.remember
 import androidx.compose.runtime.rememberCoroutineScope
@@ -53,17 +53,15 @@ import androidx.compose.runtime.setValue
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.draw.clip
+import androidx.compose.ui.draw.clipToBounds
 import androidx.compose.ui.graphics.Color
 import androidx.compose.ui.graphics.graphicsLayer
 import androidx.compose.ui.layout.onSizeChanged
 import androidx.compose.ui.platform.LocalDensity
-import androidx.compose.ui.semantics.Role
-import androidx.compose.ui.semantics.contentDescription
-import androidx.compose.ui.semantics.role
-import androidx.compose.ui.semantics.semantics
 import androidx.compose.ui.text.font.FontWeight
+import androidx.compose.ui.text.rememberTextMeasurer
 import androidx.compose.ui.text.style.TextAlign
-import androidx.compose.ui.text.style.TextOverflow
+import androidx.compose.ui.unit.TextUnit
 import androidx.compose.ui.unit.dp
 import androidx.compose.ui.unit.sp
 import com.omkarnub.kanri.ui.common.GlassLevel
@@ -81,136 +79,22 @@ import java.util.Locale
 import kotlin.math.min
 
 /**
- * 1:1 Port of Kokonut UI Amount Pad (A2. amount-pad.tsx)
+ * 1:1 Port of Kokonut UI Amount Pad (#A2 amount-pad.tsx)
  *
- * Exact constants & physics:
- * MAX_WHOLE_DIGITS = 7, KEYPAD 3x4 (height 56, rounded 16, 24sp),
- * AMOUNT FONT: 56sp semibold, letter-spacing -0.025em, tabular
- * SPRINGS:
- * - digitIn: stiffness 520f, dampingRatio 0.7355f (mass 0.8, damping 30)
- * - slide: stiffness 500f, dampingRatio 0.894f
- * - fit: stiffness 380f, dampingRatio 0.872f
- * SHAKE: 0, -10, 9, -6, 4, 0 over 360ms ease-out
- * PRESETS: 100, 500, 1000, 2000
+ * Polished to the core with Apple Fluid Design & Emil Kowalski Principles:
+ * - Starts from ZERO (clean 0 display)
+ * - Bold rolling digits with GoogleSansFlex font matching app typography
+ * - Tactile spring keypress feedback (0.91x scale, haptic clicks)
+ * - Additive / Set presets (+100, +500, +1,000, +2,000)
+ * - Centered drag handle pill & top-right close icon (no badge)
+ * - Fluid scale-to-fit amount container
+ * - Smooth "Continue" CTA button
  */
 
-const val AMOUNT_PAD_MAX_WHOLE_DIGITS = 7
+const val AMOUNT_PAD_MAX_AMOUNT = 250000.0
 val AmountPadKeys = listOf("1", "2", "3", "4", "5", "6", "7", "8", "9", ".", "0", "back")
 
-data class AmountChar(
-    val id: Int,
-    val char: String
-)
 
-enum class AmountGlyphKind {
-    DIGIT, SEP, GHOST
-}
-
-data class AmountGlyph(
-    val key: String,
-    val char: String,
-    val kind: AmountGlyphKind
-)
-
-fun amountPadToNumber(chars: List<AmountChar>): Double {
-    val s = chars.joinToString("") { it.char }
-    return s.toDoubleOrNull() ?: 0.0
-}
-
-fun amountPadMoney(value: Double, currency: String = CurrencyUtils.getCurrencySymbol()): String {
-    val df = DecimalFormat(if (value % 1.0 == 0.0) "#,##0" else "#,##0.00", DecimalFormatSymbols(Locale.US))
-    return "$currency${df.format(value)}"
-}
-
-/** Pure function matching typeKey() in Kokonut UI */
-fun amountPadTypeKey(
-    chars: List<AmountChar>,
-    key: String,
-    make: (String) -> AmountChar
-): List<AmountChar>? {
-    val point = chars.indexOfFirst { it.char == "." }
-    if (key == ".") {
-        if (point != -1) return null
-        return if (chars.isEmpty()) listOf(make("0"), make(".")) else chars + make(".")
-    }
-    val centsFull = point != -1 && (chars.size - point) > 2
-    val wholeFull = point == -1 && chars.size >= AMOUNT_PAD_MAX_WHOLE_DIGITS
-    if (centsFull || wholeFull) return null
-    return if (chars.size == 1 && chars[0].char == "0") {
-        listOf(make(key))
-    } else {
-        chars + make(key)
-    }
-}
-
-/** Pure function matching layout() in Kokonut UI */
-fun amountPadLayout(chars: List<AmountChar>): List<AmountGlyph> {
-    val point = chars.indexOfFirst { it.char == "." }
-    val whole = if (point == -1) chars else chars.subList(0, point)
-    val glyphs = mutableListOf<AmountGlyph>()
-
-    whole.forEachIndexed { index, c ->
-        val fromRight = whole.size - index
-        if (index > 0 && fromRight % 3 == 0) {
-            glyphs.add(AmountGlyph(key = "comma-${c.id}", char = ",", kind = AmountGlyphKind.SEP))
-        }
-        glyphs.add(AmountGlyph(key = "d-${c.id}", char = c.char, kind = AmountGlyphKind.DIGIT))
-    }
-
-    if (point != -1) {
-        val cents = chars.subList(point + 1, chars.size)
-        glyphs.add(AmountGlyph(key = "dot", char = ".", kind = AmountGlyphKind.SEP))
-        for (c in cents) {
-            glyphs.add(AmountGlyph(key = "d-${c.id}", char = c.char, kind = AmountGlyphKind.DIGIT))
-        }
-        for (i in cents.size until 2) {
-            glyphs.add(AmountGlyph(key = "ghost-$i", char = "0", kind = AmountGlyphKind.GHOST))
-        }
-    }
-    return glyphs
-}
-
-@Composable
-private fun AnimatedAmountGlyph(
-    glyph: AmountGlyph,
-    glyphColor: Color,
-    modifier: Modifier = Modifier
-) {
-    val density = LocalDensity.current
-    val animOffsetY = remember { Animatable(-24f) }
-    val animAlpha = remember { Animatable(0f) }
-
-    LaunchedEffect(glyph.key) {
-        launch {
-            animOffsetY.animateTo(
-                targetValue = 0f,
-                animationSpec = spring(
-                    stiffness = 520f,
-                    dampingRatio = 0.7355f
-                )
-            )
-        }
-        launch {
-            animAlpha.animateTo(
-                targetValue = 1f,
-                animationSpec = tween(durationMillis = 160)
-            )
-        }
-    }
-
-    Text(
-        text = glyph.char,
-        fontSize = 58.sp,
-        fontFamily = GoogleSansFlex,
-        fontWeight = FontWeight.Bold,
-        color = glyphColor,
-        letterSpacing = (-0.025).sp,
-        modifier = modifier.graphicsLayer {
-            translationY = animOffsetY.value * density.density
-            alpha = animAlpha.value
-        }
-    )
-}
 
 @Composable
 fun KokonutAmountPad(
@@ -218,7 +102,7 @@ fun KokonutAmountPad(
     recipientName: String = "Expense",
     recipientHandle: String? = null,
     initialAmount: Double = 0.0,
-    maxAmount: Double = 250000.0,
+    maxAmount: Double = AMOUNT_PAD_MAX_AMOUNT,
     balance: Double? = null,
     presets: List<Int> = listOf(100, 500, 1000, 2000),
     currency: String = CurrencyUtils.getCurrencySymbol(),
@@ -235,27 +119,22 @@ fun KokonutAmountPad(
     val scope = rememberCoroutineScope()
     val density = LocalDensity.current
 
-    var nextId by remember { mutableIntStateOf(1) }
-    fun makeChar(ch: String): AmountChar {
-        val id = nextId
-        nextId += 1
-        return AmountChar(id, ch)
-    }
-
-    val chars = remember {
-        mutableStateListOf<AmountChar>().apply {
+    // Raw input string representing typed characters (e.g. "", "5", "50", "50.5")
+    var rawInput by remember {
+        mutableStateOf(
             if (initialAmount > 0.0) {
-                val str = if (initialAmount % 1.0 == 0.0) initialAmount.toLong().toString() else initialAmount.toString()
-                str.forEach { add(makeChar(it.toString())) }
-            }
-        }
+                if (initialAmount % 1.0 == 0.0) initialAmount.toLong().toString() else initialAmount.toString()
+            } else ""
+        )
     }
 
     var isCapped by remember { mutableStateOf(false) }
     val shakeX = remember { Animatable(0f) }
 
-    val value = remember(chars.toList()) { amountPadToNumber(chars) }
-    val isEmpty = chars.isEmpty()
+    val numericValue = remember(rawInput) {
+        rawInput.toDoubleOrNull() ?: 0.0
+    }
+    val isEmpty = rawInput.isEmpty() || numericValue <= 0.0
 
     fun refuse(showCap: Boolean) {
         haptics.warning()
@@ -267,7 +146,6 @@ fun KokonutAmountPad(
             }
         }
         scope.launch {
-            // Shake keyframes: 0, -10, 9, -6, 4, 0 over 360ms ease-out
             shakeX.animateTo(
                 targetValue = 0f,
                 animationSpec = keyframes {
@@ -286,56 +164,67 @@ fun KokonutAmountPad(
     fun pressKey(key: String) {
         haptics.tick()
         if (key == "back") {
-            if (chars.isNotEmpty()) {
-                chars.removeAt(chars.size - 1)
+            if (rawInput.isNotEmpty()) {
+                rawInput = rawInput.dropLast(1)
             }
             isCapped = false
             return
         }
 
-        val next = amountPadTypeKey(chars, key, ::makeChar)
-        if (next == null) {
+        if (key == ".") {
+            if (rawInput.contains(".")) {
+                refuse(false)
+                return
+            }
+            rawInput = if (rawInput.isEmpty()) "0." else "$rawInput."
+            return
+        }
+
+        // Key is 0..9
+        val dotIdx = rawInput.indexOf('.')
+        if (dotIdx != -1 && (rawInput.length - dotIdx) > 2) {
+            // Already 2 decimal digits
             refuse(false)
-        } else if (amountPadToNumber(next) > maxAmount) {
+            return
+        }
+
+        val nextInput = if (rawInput.isEmpty() || rawInput == "0") {
+            key
+        } else {
+            rawInput + key
+        }
+
+        val nextNum = nextInput.toDoubleOrNull() ?: 0.0
+        if (nextNum > maxAmount) {
             refuse(true)
         } else {
-            chars.clear()
-            chars.addAll(next)
+            rawInput = nextInput
+            isCapped = false
         }
     }
 
     fun applyPreset(presetVal: Int) {
         haptics.click()
         isCapped = false
-        val clamped = min(presetVal.toDouble(), maxAmount)
-        val str = clamped.toInt().toString()
-        chars.clear()
-        str.forEach { chars.add(makeChar(it.toString())) }
-    }
-
-    val glyphs = remember(chars.toList()) { amountPadLayout(chars) }
-
-    // Initials calculation
-    val initials = remember(recipientName) {
-        val parts = recipientName.trim().split(" ").filter { it.isNotEmpty() }
-        when {
-            parts.size >= 2 -> "${parts[0].first()}${parts[1].first()}".uppercase()
-            parts.isNotEmpty() && parts[0].isNotEmpty() -> parts[0].take(2).uppercase()
-            else -> "EX"
+        val currentNum = rawInput.toDoubleOrNull() ?: 0.0
+        val nextNum = if (currentNum <= 0.0) {
+            presetVal.toDouble()
+        } else {
+            currentNum + presetVal.toDouble()
         }
-    }
 
-    val effectiveAccent = accentColor ?: when {
-        label.contains("Income", ignoreCase = true) -> Color(0xFF30A46C)
-        label.contains("Lend", ignoreCase = true) -> Color(0xFF3B82F6)
-        label.contains("Borrow", ignoreCase = true) -> Color(0xFFF59E0B)
-        else -> Color(0xFFE54D2E)
+        if (nextNum > maxAmount) {
+            refuse(true)
+            return
+        }
+
+        rawInput = if (nextNum % 1.0 == 0.0) nextNum.toLong().toString() else "%.2f".format(Locale.US, nextNum)
     }
 
     KanriGlassCard(
         modifier = modifier.fillMaxWidth(),
         level = GlassLevel.Strong,
-        shape = RoundedCornerShape(topStart = 24.dp, topEnd = 24.dp, bottomStart = 0.dp, bottomEnd = 0.dp),
+        shape = RoundedCornerShape(topStart = 26.dp, topEnd = 26.dp, bottomStart = 0.dp, bottomEnd = 0.dp),
         hazeState = hazeState
     ) {
         Column(
@@ -343,11 +232,11 @@ fun KokonutAmountPad(
                 .fillMaxWidth()
                 .padding(horizontal = 20.dp, vertical = 12.dp)
         ) {
-            // Top Bar: Centered drag handle pill + optional close icon on top right (no badge)
+            // Top Bar: Centered drag handle pill + right-aligned close icon (No badge)
             Row(
                 modifier = Modifier
                     .fillMaxWidth()
-                    .padding(top = 4.dp, bottom = 4.dp),
+                    .padding(top = 2.dp, bottom = 4.dp),
                 verticalAlignment = Alignment.CenterVertically
             ) {
                 Spacer(modifier = Modifier.size(36.dp))
@@ -381,22 +270,21 @@ fun KokonutAmountPad(
                 }
             }
 
-            // Amount Area: height 80dp, centered with per-glyph animation & scale-fit
-            Spacer(modifier = Modifier.height(18.dp))
+            // Amount Display Area: Bold GoogleSansFlex, Rolling Digits, Scale-Fit
+            Spacer(modifier = Modifier.height(14.dp))
 
             BoxWithConstraints(
                 modifier = Modifier
                     .fillMaxWidth()
-                    .height(80.dp),
+                    .height(84.dp),
                 contentAlignment = Alignment.Center
             ) {
                 val frameWidthPx = constraints.maxWidth.toFloat()
-
                 var contentWidthPx by remember { mutableFloatStateOf(0f) }
-                val targetScale = if (contentWidthPx > 0f) min(1f, frameWidthPx / contentWidthPx) else 1f
+                val targetScale = if (contentWidthPx > 0f) min(1f, (frameWidthPx - 32f) / contentWidthPx) else 1f
                 val animatedScale by animateFloatAsState(
                     targetValue = targetScale,
-                    animationSpec = spring(stiffness = 380f, dampingRatio = 0.872f),
+                    animationSpec = spring(stiffness = 380f, dampingRatio = 0.88f),
                     label = "fitScale"
                 )
 
@@ -408,52 +296,31 @@ fun KokonutAmountPad(
                             scaleY = animatedScale
                         }
                         .onSizeChanged { contentWidthPx = it.width.toFloat() },
-                    verticalAlignment = Alignment.Bottom,
+                    verticalAlignment = Alignment.CenterVertically,
                     horizontalArrangement = Arrangement.Center
                 ) {
-                    // Currency symbol with mr 2dp
+                    // Currency Symbol (e.g. ₹)
                     Text(
                         text = currency,
-                        fontSize = 58.sp,
+                        fontSize = 54.sp,
                         fontFamily = GoogleSansFlex,
                         fontWeight = FontWeight.Bold,
-                        color = if (isEmpty) (if (dark) Zinc700 else Zinc300) else (if (dark) Zinc500 else Zinc400),
+                        color = if (isEmpty) (if (dark) Zinc700 else Zinc300) else (tokens?.textSecondary ?: if (dark) Zinc400 else Zinc500),
                         letterSpacing = (-0.025).sp,
                         modifier = Modifier.padding(end = 4.dp)
                     )
 
-                    if (isEmpty) {
-                        // Empty state: faint placeholder "0"
-                        Text(
-                            text = "0",
-                            fontSize = 58.sp,
-                            fontFamily = GoogleSansFlex,
-                            fontWeight = FontWeight.Bold,
-                            color = if (dark) Zinc700 else Zinc300,
-                            letterSpacing = (-0.025).sp
-                        )
-                    } else {
-                        // Layout glyphs with #A2 per-character drop-in spring animation
-                        Row(verticalAlignment = Alignment.Bottom) {
-                            glyphs.forEach { glyph ->
-                                key(glyph.key) {
-                                    val glyphColor = when (glyph.kind) {
-                                        AmountGlyphKind.DIGIT -> tokens?.textPrimary ?: if (dark) Zinc50 else Zinc900
-                                        AmountGlyphKind.SEP -> tokens?.textSecondary ?: if (dark) Zinc500 else Zinc400
-                                        AmountGlyphKind.GHOST -> if (dark) Zinc700 else Zinc300
-                                    }
-                                    AnimatedAmountGlyph(
-                                        glyph = glyph,
-                                        glyphColor = glyphColor
-                                    )
-                                }
-                            }
-                        }
-                    }
+                    // Rolling Digits Display
+                    RollingAmountDisplay(
+                        rawInput = rawInput,
+                        fontSize = 54.sp,
+                        color = if (isEmpty) (if (dark) Zinc700 else Zinc300) else (tokens?.textPrimary ?: if (dark) Zinc50 else Zinc900),
+                        dark = dark
+                    )
                 }
             }
 
-            // Cap line / Subtitle line: height 20dp, 12sp, centered
+            // Cap Warning / Subtitle line: height 20dp
             Box(
                 modifier = Modifier
                     .fillMaxWidth()
@@ -478,7 +345,7 @@ fun KokonutAmountPad(
                 ) { capped ->
                     if (capped) {
                         Text(
-                            text = "Up to ${amountPadMoney(maxAmount, currency)} per entry",
+                            text = "Up to $currency${DecimalFormat("#,##0").format(maxAmount)} per entry",
                             fontSize = 12.sp,
                             fontWeight = FontWeight.Medium,
                             color = if (dark) Color(0xFFF87171) else Color(0xFFDC2626),
@@ -486,7 +353,7 @@ fun KokonutAmountPad(
                         )
                     } else {
                         val subText = if (balance != null) {
-                            "Balance ${amountPadMoney(balance, currency)}"
+                            "Balance $currency${DecimalFormat("#,##0.00").format(balance)}"
                         } else {
                             "Tap keypad to set amount"
                         }
@@ -500,99 +367,60 @@ fun KokonutAmountPad(
                 }
             }
 
-            // Presets: row centered gap 8dp, height 32, px 12
+            // Presets Row: Tactile spring buttons (+100, +500, +1,000, +2,000)
             Spacer(modifier = Modifier.height(14.dp))
             Row(
                 modifier = Modifier.fillMaxWidth(),
                 horizontalArrangement = Arrangement.spacedBy(8.dp, Alignment.CenterHorizontally)
             ) {
                 presets.forEach { preset ->
-                    Box(
-                        modifier = Modifier
-                            .height(32.dp)
-                            .clip(RoundedCornerShape(16.dp))
-                            .border(
-                                1.dp,
-                                if (tokens != null) tokens.borderStart.copy(alpha = 0.35f) else if (dark) Zinc800 else Zinc200,
-                                RoundedCornerShape(16.dp)
-                            )
-                            .background(
-                                if (tokens != null) tokens.tintFlat else if (dark) Zinc900.copy(alpha = 0.5f) else Zinc100.copy(alpha = 0.6f)
-                            )
-                            .clickable { applyPreset(preset) }
-                            .padding(horizontal = 14.dp),
-                        contentAlignment = Alignment.Center
-                    ) {
-                        Text(
-                            text = amountPadMoney(preset.toDouble(), currency),
-                            fontSize = 12.sp,
-                            fontFamily = GoogleSansFlex,
-                            fontWeight = FontWeight.SemiBold,
-                            color = tokens?.textPrimary ?: if (dark) Zinc200 else Zinc800
-                        )
-                    }
+                    TactilePresetChip(
+                        preset = preset,
+                        currency = currency,
+                        onClick = { applyPreset(preset) },
+                        tokens = tokens,
+                        dark = dark
+                    )
                 }
             }
 
-            // Keypad: 3-column grid gap 4dp, height 56dp per key
+            // Keypad: 3-column grid, 54dp key height with tactile spring press feedback
             Spacer(modifier = Modifier.height(14.dp))
             val keypadRows = AmountPadKeys.chunked(3)
             Column(
                 modifier = Modifier.fillMaxWidth(),
-                verticalArrangement = Arrangement.spacedBy(4.dp)
+                verticalArrangement = Arrangement.spacedBy(6.dp)
             ) {
                 keypadRows.forEach { rowKeys ->
                     Row(
                         modifier = Modifier.fillMaxWidth(),
-                        horizontalArrangement = Arrangement.spacedBy(4.dp)
+                        horizontalArrangement = Arrangement.spacedBy(6.dp)
                     ) {
                         rowKeys.forEach { key ->
-                            val interactionSource = remember { MutableInteractionSource() }
-                            val isPressed by interactionSource.collectIsPressedAsState()
-                            val keyBg = if (isPressed) {
-                                if (tokens != null) tokens.tintStrong else if (dark) Zinc800 else Zinc100
-                            } else {
-                                Color.Transparent
-                            }
-
-                            Box(
-                                modifier = Modifier
-                                    .weight(1f)
-                                    .height(54.dp)
-                                    .clip(RoundedCornerShape(16.dp))
-                                    .background(keyBg)
-                                    .clickable(
-                                        interactionSource = interactionSource,
-                                        indication = null
-                                    ) { pressKey(key) },
-                                contentAlignment = Alignment.Center
-                            ) {
-                                if (key == "back") {
-                                    Icon(
-                                        imageVector = Icons.AutoMirrored.Filled.Backspace,
-                                        contentDescription = "Delete",
-                                        tint = tokens?.textSecondary ?: Zinc500,
-                                        modifier = Modifier.size(24.dp)
-                                    )
-                                } else {
-                                    Text(
-                                        text = key,
-                                        fontSize = 24.sp,
-                                        fontFamily = GoogleSansFlex,
-                                        fontWeight = FontWeight.SemiBold,
-                                        color = tokens?.textPrimary ?: if (dark) Zinc100 else Zinc900
-                                    )
-                                }
-                            }
+                            TactileKeypadKey(
+                                key = key,
+                                onClick = { pressKey(key) },
+                                modifier = Modifier.weight(1f),
+                                tokens = tokens,
+                                dark = dark
+                            )
                         }
                     }
                 }
             }
 
-            // Action Button: height 48dp, rounded 16dp
-            Spacer(modifier = Modifier.height(12.dp))
+            // Action Button: Full-width "Continue" with tactile press feedback
+            Spacer(modifier = Modifier.height(14.dp))
+            val interactionSource = remember { MutableInteractionSource() }
+            val isBtnPressed by interactionSource.collectIsPressedAsState()
+            val btnScale by animateFloatAsState(
+                targetValue = if (isBtnPressed) 0.96f else 1f,
+                animationSpec = spring(stiffness = Spring.StiffnessMediumLow, dampingRatio = 0.8f),
+                label = "btnScale"
+            )
+
             val btnBg = if (isEmpty) {
-                if (tokens != null) tokens.tintFlat else if (dark) Zinc900 else Zinc100
+                if (tokens != null) tokens.tintFlat.copy(alpha = 0.5f) else if (dark) Zinc900 else Zinc100
             } else {
                 if (dark) Zinc100 else Zinc900
             }
@@ -605,15 +433,22 @@ fun KokonutAmountPad(
             Box(
                 modifier = Modifier
                     .fillMaxWidth()
-                    .height(48.dp)
+                    .height(50.dp)
+                    .graphicsLayer {
+                        scaleX = btnScale
+                        scaleY = btnScale
+                    }
                     .clip(RoundedCornerShape(16.dp))
                     .background(btnBg)
-                    .clickable {
-                        if (isEmpty || value <= 0.0) {
+                    .clickable(
+                        interactionSource = interactionSource,
+                        indication = null
+                    ) {
+                        if (isEmpty || numericValue <= 0.0) {
                             refuse(false)
                         } else {
                             haptics.click()
-                            onContinue(value)
+                            onContinue(numericValue)
                         }
                     },
                 contentAlignment = Alignment.Center
@@ -621,15 +456,15 @@ fun KokonutAmountPad(
                 AnimatedContent(
                     targetState = isEmpty,
                     transitionSpec = {
-                        (fadeIn(animationSpec = tween(200, easing = KOKONUT_EASE_OUT)) +
+                        (fadeIn(animationSpec = tween(180, easing = KOKONUT_EASE_OUT)) +
                                 slideInVertically(
-                                    animationSpec = tween(200, easing = KOKONUT_EASE_OUT),
-                                    initialOffsetY = { 10 }
+                                    animationSpec = tween(180, easing = KOKONUT_EASE_OUT),
+                                    initialOffsetY = { 8 }
                                 )) togetherWith
-                                (fadeOut(animationSpec = tween(200, easing = KOKONUT_EASE_OUT)) +
+                                (fadeOut(animationSpec = tween(180, easing = KOKONUT_EASE_OUT)) +
                                         slideOutVertically(
-                                            animationSpec = tween(200, easing = KOKONUT_EASE_OUT),
-                                            targetOffsetY = { -10 }
+                                            animationSpec = tween(180, easing = KOKONUT_EASE_OUT),
+                                            targetOffsetY = { -8 }
                                         ))
                     },
                     label = "btnLabelTransition"
@@ -644,14 +479,273 @@ fun KokonutAmountPad(
                             tint = btnTextColor,
                             modifier = Modifier.size(16.dp)
                         )
+                        val formattedAmount = remember(numericValue) {
+                            val df = DecimalFormat(if (numericValue % 1.0 == 0.0) "#,##0" else "#,##0.00", DecimalFormatSymbols(Locale.US))
+                            df.format(numericValue)
+                        }
                         Text(
-                            text = if (empty) "Enter an amount" else "Continue ${amountPadMoney(value, currency)}",
-                            fontSize = 14.sp,
+                            text = if (empty) "Enter an amount" else "Continue  •  $currency$formattedAmount",
+                            fontSize = 15.sp,
                             fontFamily = GoogleSansFlex,
                             fontWeight = FontWeight.SemiBold,
                             color = btnTextColor
                         )
                     }
+                }
+            }
+        }
+    }
+}
+
+/**
+ * Tactile Keypad Key with 0.91f spring scale on press
+ */
+@Composable
+private fun TactileKeypadKey(
+    key: String,
+    onClick: () -> Unit,
+    modifier: Modifier = Modifier,
+    tokens: com.omkarnub.kanri.ui.theme.KanriGlassTokens?,
+    dark: Boolean
+) {
+    val interactionSource = remember { MutableInteractionSource() }
+    val isPressed by interactionSource.collectIsPressedAsState()
+    val scale by animateFloatAsState(
+        targetValue = if (isPressed) 0.91f else 1f,
+        animationSpec = spring(stiffness = Spring.StiffnessMediumLow, dampingRatio = 0.74f),
+        label = "keyScale"
+    )
+
+    Box(
+        modifier = modifier
+            .height(54.dp)
+            .graphicsLayer {
+                scaleX = scale
+                scaleY = scale
+            }
+            .clip(RoundedCornerShape(16.dp))
+            .background(
+                if (isPressed) {
+                    if (tokens != null) tokens.tintStrong else if (dark) Zinc800 else Zinc200
+                } else {
+                    if (tokens != null) tokens.tintFlat.copy(alpha = 0.35f) else if (dark) Zinc900.copy(alpha = 0.45f) else Zinc100.copy(alpha = 0.6f)
+                }
+            )
+            .border(
+                0.8.dp,
+                if (tokens != null) tokens.borderStart.copy(alpha = if (isPressed) 0.45f else 0.20f) else if (dark) Zinc800 else Zinc200,
+                RoundedCornerShape(16.dp)
+            )
+            .clickable(
+                interactionSource = interactionSource,
+                indication = null,
+                onClick = onClick
+            ),
+        contentAlignment = Alignment.Center
+    ) {
+        if (key == "back") {
+            Icon(
+                imageVector = Icons.AutoMirrored.Filled.Backspace,
+                contentDescription = "Delete",
+                tint = tokens?.textSecondary ?: if (dark) Zinc400 else Zinc500,
+                modifier = Modifier.size(22.dp)
+            )
+        } else {
+            Text(
+                text = key,
+                fontSize = 24.sp,
+                fontFamily = GoogleSansFlex,
+                fontWeight = FontWeight.SemiBold,
+                color = tokens?.textPrimary ?: if (dark) Zinc100 else Zinc900
+            )
+        }
+    }
+}
+
+/**
+ * Tactile Preset Chip with 0.94f spring scale on press
+ */
+@Composable
+private fun TactilePresetChip(
+    preset: Int,
+    currency: String,
+    onClick: () -> Unit,
+    tokens: com.omkarnub.kanri.ui.theme.KanriGlassTokens?,
+    dark: Boolean
+) {
+    val interactionSource = remember { MutableInteractionSource() }
+    val isPressed by interactionSource.collectIsPressedAsState()
+    val scale by animateFloatAsState(
+        targetValue = if (isPressed) 0.94f else 1f,
+        animationSpec = spring(stiffness = Spring.StiffnessMediumLow, dampingRatio = 0.78f),
+        label = "presetScale"
+    )
+
+    Box(
+        modifier = Modifier
+            .height(34.dp)
+            .graphicsLayer {
+                scaleX = scale
+                scaleY = scale
+            }
+            .clip(RoundedCornerShape(17.dp))
+            .border(
+                1.dp,
+                if (tokens != null) tokens.borderStart.copy(alpha = 0.35f) else if (dark) Zinc800 else Zinc200,
+                RoundedCornerShape(17.dp)
+            )
+            .background(
+                if (isPressed) {
+                    if (tokens != null) tokens.tintStrong else if (dark) Zinc800 else Zinc200
+                } else {
+                    if (tokens != null) tokens.tintFlat else if (dark) Zinc900.copy(alpha = 0.5f) else Zinc100.copy(alpha = 0.6f)
+                }
+            )
+            .clickable(
+                interactionSource = interactionSource,
+                indication = null,
+                onClick = onClick
+            )
+            .padding(horizontal = 14.dp),
+        contentAlignment = Alignment.Center
+    ) {
+        val formatted = remember(preset) {
+            val df = DecimalFormat("#,##0")
+            df.format(preset)
+        }
+        Text(
+            text = "+$currency$formatted",
+            fontSize = 12.5.sp,
+            fontFamily = GoogleSansFlex,
+            fontWeight = FontWeight.SemiBold,
+            color = tokens?.textPrimary ?: if (dark) Zinc200 else Zinc800
+        )
+    }
+}
+
+/**
+ * Rolling digits display for Amount Pad using GoogleSansFlex bold typography
+ */
+@Composable
+private fun RollingAmountDisplay(
+    rawInput: String,
+    fontSize: TextUnit,
+    color: Color,
+    dark: Boolean
+) {
+    val density = LocalDensity.current
+    val textMeasurer = rememberTextMeasurer()
+
+    // Determine characters to show
+    val displayChars = remember(rawInput) {
+        if (rawInput.isEmpty()) {
+            listOf("0")
+        } else {
+            val dotIdx = rawInput.indexOf('.')
+            val wholePart = if (dotIdx != -1) rawInput.substring(0, dotIdx) else rawInput
+            val decPart = if (dotIdx != -1) rawInput.substring(dotIdx) else ""
+
+            val numWhole = wholePart.toLongOrNull() ?: 0L
+            val df = DecimalFormat("#,##0", DecimalFormatSymbols(Locale.US))
+            val formattedWhole = if (wholePart.isEmpty()) "0" else df.format(numWhole)
+            (formattedWhole + decPart).map { it.toString() }
+        }
+    }
+
+    val style = remember(fontSize) {
+        androidx.compose.ui.text.TextStyle(
+            fontFamily = GoogleSansFlex,
+            fontWeight = FontWeight.Bold,
+            fontSize = fontSize,
+            letterSpacing = (-0.025).sp
+        )
+    }
+
+    val digitMetrics = remember(style, density) {
+        val samples = (0..9).map { d ->
+            textMeasurer.measure(d.toString(), style).size
+        }
+        val maxWidth = samples.maxOf { it.width }
+        val maxHeight = samples.maxOf { it.height }
+        maxWidth to maxHeight
+    }
+
+    val digitWidthDp = with(density) { digitMetrics.first.toDp() }
+    val digitHeightDp = with(density) { digitMetrics.second.toDp() }
+    val digitHeightPx = digitMetrics.second.toFloat()
+
+    Row(
+        verticalAlignment = Alignment.CenterVertically,
+        horizontalArrangement = Arrangement.Center
+    ) {
+        displayChars.forEachIndexed { idx, ch ->
+            key("$idx-$ch") {
+                val digit = ch.toIntOrNull()
+                if (digit != null) {
+                    SingleRollingDigitStrip(
+                        digit = digit,
+                        style = style,
+                        color = color,
+                        width = digitWidthDp,
+                        height = digitHeightDp,
+                        heightPx = digitHeightPx
+                    )
+                } else {
+                    // Non-digit like "," or "."
+                    Text(
+                        text = ch,
+                        style = style,
+                        color = if (ch == ".") color else (if (dark) Zinc500 else Zinc400),
+                        textAlign = TextAlign.Center
+                    )
+                }
+            }
+        }
+    }
+}
+
+@Composable
+private fun SingleRollingDigitStrip(
+    digit: Int,
+    style: androidx.compose.ui.text.TextStyle,
+    color: Color,
+    width: androidx.compose.ui.unit.Dp,
+    height: androidx.compose.ui.unit.Dp,
+    heightPx: Float
+) {
+    val animDigit by animateFloatAsState(
+        targetValue = digit.toFloat(),
+        animationSpec = spring(
+            stiffness = 520f,
+            dampingRatio = 0.74f
+        ),
+        label = "rollingDigit"
+    )
+
+    Box(
+        modifier = Modifier
+            .size(width = width, height = height)
+            .clipToBounds(),
+        contentAlignment = Alignment.TopStart
+    ) {
+        Column(
+            modifier = Modifier
+                .wrapContentSize(unbounded = true, align = Alignment.TopStart)
+                .graphicsLayer {
+                    translationY = -animDigit * heightPx
+                }
+        ) {
+            for (i in 0..9) {
+                Box(
+                    modifier = Modifier.size(width = width, height = height),
+                    contentAlignment = Alignment.Center
+                ) {
+                    Text(
+                        text = i.toString(),
+                        style = style,
+                        color = color,
+                        textAlign = TextAlign.Center
+                    )
                 }
             }
         }

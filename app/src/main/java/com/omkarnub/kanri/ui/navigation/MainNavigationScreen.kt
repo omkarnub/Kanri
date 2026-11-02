@@ -96,7 +96,7 @@ fun MainNavigationScreen(
 
     var showAddLendingDialog by remember { mutableStateOf(false) }
     var addLendingInitialType by remember { mutableStateOf("LENT") }
-    var addLendingInitialAmount by remember { androidx.compose.runtime.mutableDoubleStateOf(100.0) }
+    var addLendingInitialAmount by remember { androidx.compose.runtime.mutableDoubleStateOf(0.0) }
     var addLendingInitialPerson by remember { mutableStateOf("") }
     var addLendingInitialNotes by remember { mutableStateOf<String?>("") }
     var showSplitSheet by remember { mutableStateOf(false) }
@@ -371,7 +371,6 @@ fun MainNavigationScreen(
                 onDismiss = { showAddTransactionDialog = false },
                 onConfirm = { amount, type, counterparty, sourceType, categoryId, wallet, timestamp ->
                     homeViewModel.addManualTransaction(amount, type, counterparty, sourceType, categoryId, wallet, timestamp)
-                    showAddTransactionDialog = false
                 },
                 onOpenLendBorrow = { amount, type, counterparty, note ->
                     showAddTransactionDialog = false
@@ -391,7 +390,6 @@ fun MainNavigationScreen(
                 onDismiss = { showAddLendingDialog = false },
                 onSave = { personName, amount, type, date, dueDate, notes, wallet ->
                     lendingViewModel.addRecord(personName, amount, type, dueDate, notes, wallet)
-                    showAddLendingDialog = false
                 },
                 initialType = addLendingInitialType,
                 initialPersonName = addLendingInitialPerson,

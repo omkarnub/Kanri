@@ -153,7 +153,7 @@ enum class LendingEntryStep {
 fun LendingEntryDialog(
     initialType: String = "LENT",
     initialPersonName: String = "",
-    initialAmount: Double = 100.0,
+    initialAmount: Double = 0.0,
     initialDate: Long = System.currentTimeMillis(),
     initialDueDate: Long? = null,
     initialNotes: String? = null,
@@ -582,185 +582,65 @@ fun LendingEntryDialog(
 
                     Spacer(modifier = Modifier.height(14.dp))
 
-                    // Amount Stepper with [-] and [+]
+                    // Sleek Amount Summary Card with Edit Affordance (replaces duplicate steppers)
                     Surface(
-                        shape = RoundedCornerShape(20.dp),
+                        shape = RoundedCornerShape(18.dp),
                         color = sectionCardColor,
                         border = sectionCardBorder,
-                        modifier = Modifier.fillMaxWidth()
+                        modifier = Modifier
+                            .fillMaxWidth()
+                            .clip(RoundedCornerShape(18.dp))
+                            .clickable(enabled = !hasRepayments && !isEditing) {
+                                currentStep = LendingEntryStep.AMOUNT_PAD
+                            }
                     ) {
                         Row(
                             modifier = Modifier
                                 .fillMaxWidth()
-                                .padding(horizontal = 8.dp, vertical = 12.dp),
+                                .padding(horizontal = 18.dp, vertical = 14.dp),
                             verticalAlignment = Alignment.CenterVertically,
                             horizontalArrangement = Arrangement.SpaceBetween
                         ) {
-                            // Decrease [-]
-                            IconButton(
-                                onClick = {
-                                    val step = if (amount <= 50) 10.0 else 50.0
-                                    val next = (amount - step).coerceAtLeast(0.0)
-                                    amount = next
-                                    manualText = next.toLong().toString()
-                                    isManualInput = false
-                                },
-                                enabled = !hasRepayments,
-                                modifier = Modifier
-                                    .size(38.dp)
-                                    .clip(CircleShape)
-                                    .background(MaterialTheme.colorScheme.onSurface.copy(alpha = 0.08f))
-                            ) {
-                                Icon(
-                                    imageVector = Icons.Default.Remove,
-                                    contentDescription = "Decrease",
-                                    tint = MaterialTheme.colorScheme.onSurface,
-                                    modifier = Modifier.size(18.dp)
+                            Column {
+                                Text(
+                                    text = if (type == "LENT") "LENT AMOUNT" else "BORROWED AMOUNT",
+                                    fontSize = 11.sp,
+                                    fontWeight = FontWeight.SemiBold,
+                                    letterSpacing = 1.sp,
+                                    color = MaterialTheme.colorScheme.onSurfaceVariant
+                                )
+                                Spacer(modifier = Modifier.height(2.dp))
+                                val formatted = CurrencyUtils.formatCurrency(amount, includeDecimals = (amount % 1.0 != 0.0))
+                                Text(
+                                    text = formatted,
+                                    fontSize = 28.sp,
+                                    fontWeight = FontWeight.Bold,
+                                    color = MaterialTheme.colorScheme.onSurface,
+                                    letterSpacing = (-0.02).sp
                                 )
                             }
 
-                            // Central Amount Number / Tap to type
-                            Box(
-                                modifier = Modifier
-                                    .weight(1f)
-                                    .padding(horizontal = 4.dp),
-                                contentAlignment = Alignment.Center
-                            ) {
-                                if (isManualInput && !hasRepayments) {
-                                    OutlinedTextField(
-                                        value = manualTextFieldValue,
-                                        onValueChange = { newValue ->
-                                            val filtered = newValue.text.filter { ch -> ch.isDigit() }
-                                            val newSelection = TextRange(filtered.length)
-                                            manualTextFieldValue = TextFieldValue(text = filtered, selection = newSelection)
-                                            manualText = filtered
-                                            val parsed = filtered.toDoubleOrNull()
-                                            if (parsed != null) {
-                                                amount = parsed
-                                            }
-                                        },
-                                        prefix = { Text("${CurrencyUtils.getCurrencySymbol()} ", fontWeight = FontWeight.Bold) },
-                                        singleLine = true,
-                                        keyboardOptions = KeyboardOptions(
-                                            keyboardType = KeyboardType.Number,
-                                            imeAction = ImeAction.Done
-                                        ),
-                                        keyboardActions = KeyboardActions(
-                                            onDone = {
-                                                val parsed = manualText.toDoubleOrNull()
-                                                if (parsed != null) amount = parsed
-                                                isManualInput = false
-                                            }
-                                        ),
-                                        modifier = Modifier
-                                            .fillMaxWidth()
-                                            .focusRequester(focusRequester),
-                                        colors = OutlinedTextFieldDefaults.colors(
-                                            focusedBorderColor = MaterialTheme.colorScheme.onSurface,
-                                            unfocusedBorderColor = MaterialTheme.colorScheme.outlineVariant
-                                        )
-                                    )
-                                } else {
-                                    Column(
-                                        modifier = Modifier
-                                            .clip(RoundedCornerShape(12.dp))
-                                            .clickable(enabled = !hasRepayments) {
-                                                val str = amount.toLong().toString()
-                                                manualTextFieldValue = TextFieldValue(text = str, selection = TextRange(str.length))
-                                                manualText = str
-                                                isManualInput = true
-                                            }
-                                            .padding(horizontal = 4.dp, vertical = 2.dp),
-                                        horizontalAlignment = Alignment.CenterHorizontally
-                                    ) {
-                                        val formatted = CurrencyUtils.formatCurrency(amount, includeDecimals = false)
-                                        AnimatedNumberText(
-                                            text = formatted,
-                                            style = MaterialTheme.typography.headlineMedium.copy(
-                                                fontWeight = FontWeight.Black
-                                            ),
-                                            color = MaterialTheme.colorScheme.onSurface,
-                                            fontSize = 26.sp,
-                                            animateFromZero = false
-                                        )
-                                        if (!hasRepayments) {
-                                            Row(
-                                                verticalAlignment = Alignment.CenterVertically,
-                                                horizontalArrangement = Arrangement.spacedBy(3.dp),
-                                                modifier = Modifier.padding(top = 2.dp)
-                                            ) {
-                                                Icon(
-                                                    imageVector = Icons.Default.Edit,
-                                                    contentDescription = "Edit",
-                                                    tint = MaterialTheme.colorScheme.onSurfaceVariant.copy(alpha = 0.6f),
-                                                    modifier = Modifier.size(11.dp)
-                                                )
-                                                Text(
-                                                    text = "Tap to type",
-                                                    fontSize = 10.sp,
-                                                    color = MaterialTheme.colorScheme.onSurfaceVariant.copy(alpha = 0.6f)
-                                                )
-                                            }
-                                        }
-                                    }
-                                }
-                            }
-
-                            // Increase [+]
-                            IconButton(
-                                onClick = {
-                                    val step = if (amount < 50) 10.0 else 50.0
-                                    val next = amount + step
-                                    amount = next
-                                    manualText = next.toLong().toString()
-                                    isManualInput = false
-                                },
-                                enabled = !hasRepayments,
-                                modifier = Modifier
-                                    .size(38.dp)
-                                    .clip(CircleShape)
-                                    .background(MaterialTheme.colorScheme.onSurface.copy(alpha = 0.08f))
-                            ) {
-                                Icon(
-                                    imageVector = Icons.Default.Add,
-                                    contentDescription = "Increase",
-                                    tint = MaterialTheme.colorScheme.onSurface,
-                                    modifier = Modifier.size(18.dp)
-                                )
-                            }
-                        }
-                    }
-
-                    // Increment Chips: +10 +50 +100 +500
-                    if (!hasRepayments) {
-                        Spacer(modifier = Modifier.height(10.dp))
-                        Row(
-                            modifier = Modifier.fillMaxWidth(),
-                            horizontalArrangement = Arrangement.spacedBy(8.dp)
-                        ) {
-                            listOf(10.0, 50.0, 100.0, 500.0).forEach { inc ->
+                            if (!hasRepayments && !isEditing) {
                                 Surface(
-                                    shape = RoundedCornerShape(10.dp),
-                                    color = sectionCardColor,
-                                    border = sectionCardBorder,
-                                    modifier = Modifier
-                                        .weight(1f)
-                                        .clip(RoundedCornerShape(10.dp))
-                                        .clickable {
-                                            amount += inc
-                                            manualText = amount.toLong().toString()
-                                        }
+                                    shape = RoundedCornerShape(12.dp),
+                                    color = MaterialTheme.colorScheme.onSurface.copy(alpha = 0.08f),
+                                    border = BorderStroke(0.8.dp, MaterialTheme.colorScheme.onSurface.copy(alpha = 0.16f))
                                 ) {
-                                    Box(
-                                        modifier = Modifier.padding(vertical = 7.dp),
-                                        contentAlignment = Alignment.Center
+                                    Row(
+                                        modifier = Modifier.padding(horizontal = 10.dp, vertical = 6.dp),
+                                        verticalAlignment = Alignment.CenterVertically,
+                                        horizontalArrangement = Arrangement.spacedBy(4.dp)
                                     ) {
+                                        Icon(
+                                            imageVector = Icons.Default.Edit,
+                                            contentDescription = "Edit Amount",
+                                            tint = MaterialTheme.colorScheme.onSurface,
+                                            modifier = Modifier.size(13.dp)
+                                        )
                                         Text(
-                                            text = "+${inc.toInt()}",
-                                            style = MaterialTheme.typography.labelMedium.copy(
-                                                fontWeight = FontWeight.SemiBold,
-                                                fontSize = 12.sp
-                                            ),
+                                            text = "Edit",
+                                            fontSize = 12.sp,
+                                            fontWeight = FontWeight.Medium,
                                             color = MaterialTheme.colorScheme.onSurface
                                         )
                                     }

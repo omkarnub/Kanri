@@ -3,12 +3,8 @@ package com.omkarnub.kanri.ui.common.kokonut
 import androidx.compose.animation.AnimatedContent
 import androidx.compose.animation.core.Animatable
 import androidx.compose.animation.core.CubicBezierEasing
-import androidx.compose.animation.core.LinearEasing
-import androidx.compose.animation.core.RepeatMode
-import androidx.compose.animation.core.animateFloat
+import androidx.compose.animation.core.Spring
 import androidx.compose.animation.core.animateFloatAsState
-import androidx.compose.animation.core.infiniteRepeatable
-import androidx.compose.animation.core.rememberInfiniteTransition
 import androidx.compose.animation.core.spring
 import androidx.compose.animation.core.tween
 import androidx.compose.animation.fadeIn
@@ -19,33 +15,24 @@ import androidx.compose.animation.togetherWith
 import androidx.compose.foundation.Canvas
 import androidx.compose.foundation.background
 import androidx.compose.foundation.border
-import androidx.compose.foundation.clickable
 import androidx.compose.foundation.gestures.awaitEachGesture
 import androidx.compose.foundation.gestures.awaitFirstDown
-import androidx.compose.foundation.gestures.detectHorizontalDragGestures
-import androidx.compose.foundation.gestures.detectTapGestures
 import androidx.compose.foundation.isSystemInDarkTheme
-import androidx.compose.ui.input.pointer.changedToUp
-import androidx.compose.ui.input.pointer.positionChanged
-import com.omkarnub.kanri.ui.theme.LocalKanriGlass
-import kotlin.math.abs
-import androidx.compose.foundation.layout.Arrangement
 import androidx.compose.foundation.layout.Box
 import androidx.compose.foundation.layout.BoxWithConstraints
 import androidx.compose.foundation.layout.Row
-import androidx.compose.foundation.layout.fillMaxHeight
 import androidx.compose.foundation.layout.fillMaxSize
 import androidx.compose.foundation.layout.fillMaxWidth
 import androidx.compose.foundation.layout.height
 import androidx.compose.foundation.layout.offset
 import androidx.compose.foundation.layout.padding
 import androidx.compose.foundation.layout.size
-import androidx.compose.foundation.layout.width
 import androidx.compose.foundation.shape.CircleShape
 import androidx.compose.foundation.shape.RoundedCornerShape
 import androidx.compose.material.icons.Icons
 import androidx.compose.material.icons.automirrored.filled.ArrowForward
 import androidx.compose.material.icons.filled.Check
+import androidx.compose.material3.CircularProgressIndicator
 import androidx.compose.material3.Icon
 import androidx.compose.material3.Text
 import androidx.compose.runtime.Composable
@@ -59,20 +46,15 @@ import androidx.compose.runtime.setValue
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.draw.clip
-import androidx.compose.ui.draw.scale
 import androidx.compose.ui.draw.shadow
 import androidx.compose.ui.geometry.CornerRadius
 import androidx.compose.ui.geometry.Offset
-import androidx.compose.ui.geometry.Rect
-import androidx.compose.ui.geometry.RoundRect
 import androidx.compose.ui.geometry.Size
 import androidx.compose.ui.graphics.Color
-import androidx.compose.ui.graphics.Path
-import androidx.compose.ui.graphics.StrokeCap
-import androidx.compose.ui.graphics.drawscope.Stroke
-import androidx.compose.ui.graphics.drawscope.clipPath
 import androidx.compose.ui.graphics.graphicsLayer
+import androidx.compose.ui.input.pointer.changedToUp
 import androidx.compose.ui.input.pointer.pointerInput
+import androidx.compose.ui.input.pointer.positionChanged
 import androidx.compose.ui.input.pointer.util.VelocityTracker
 import androidx.compose.ui.platform.LocalDensity
 import androidx.compose.ui.semantics.Role
@@ -80,46 +62,47 @@ import androidx.compose.ui.semantics.contentDescription
 import androidx.compose.ui.semantics.role
 import androidx.compose.ui.semantics.semantics
 import androidx.compose.ui.text.font.FontWeight
-import androidx.compose.ui.text.style.TextAlign
 import androidx.compose.ui.unit.IntOffset
 import androidx.compose.ui.unit.dp
 import androidx.compose.ui.unit.sp
+import com.omkarnub.kanri.ui.theme.GoogleSansFlex
+import com.omkarnub.kanri.ui.theme.LocalKanriGlass
 import com.omkarnub.kanri.util.rememberKanriHaptics
 import kotlinx.coroutines.async
 import kotlinx.coroutines.awaitAll
 import kotlinx.coroutines.coroutineScope
 import kotlinx.coroutines.delay
 import kotlinx.coroutines.launch
+import kotlin.math.abs
 import kotlin.math.exp
 import kotlin.math.max
 import kotlin.math.min
 import kotlin.math.roundToInt
 
 /**
- * 1:1 Port of Kokonut UI Slide to Confirm (A4. slide-to-confirm.tsx)
+ * 1:1 Port of Kokonut UI Slide to Confirm (#A4 slide-to-confirm.tsx)
  *
- * Exact constants:
- * HEIGHT = 56, INSET = 4, THUMB = 48 (HEIGHT - 2 * INSET)
- * COMMIT_AT = 0.9, FLICK_SPEED = 900 px/s, FLICK_FROM = 0.45
- * OVERDRAG = 8, TAP_SLOP = 4
- * SPRINGS:
- * - settle / landing: stiffness = 520f, dampingRatio = 0.921f
- * EASINGS:
- * - glide: 420ms CubicBezierEasing(0.65f, 0f, 0.35f, 1f)
- * - flooding cover: 360ms CubicBezierEasing(0.23f, 1f, 0.32f, 1f)
+ * Polished to the core with Apple Fluid Design:
+ * - Direct 1:1 finger manipulation with ZERO latency
+ * - Synchronous drag offset tracking so the slider NEVER gets stuck
+ * - Smooth rubberband overdrag resistance (band curve)
+ * - Fluid ink trailing layer
+ * - Tactile release commit (threshold 0.85 or flick)
+ * - Saving spinner -> Saved emerald checkmark
  */
 
 const val SLIDE_HEIGHT = 56f
 const val SLIDE_INSET = 4f
 const val SLIDE_THUMB = 48f
-const val SLIDE_COMMIT_AT = 0.9f
-const val SLIDE_FLICK_SPEED = 900f
-const val SLIDE_FLICK_FROM = 0.45f
+const val SLIDE_COMMIT_AT = 0.85f
+const val SLIDE_FLICK_SPEED = 800f
+const val SLIDE_FLICK_FROM = 0.40f
 const val SLIDE_OVERDRAG = 8f
-const val SLIDE_TAP_SLOP = 4f
 
 val SLIDE_EASE_OUT = CubicBezierEasing(0.23f, 1f, 0.32f, 1f)
 val SLIDE_EASE_IN_OUT = CubicBezierEasing(0.65f, 0f, 0.35f, 1f)
+
+
 
 enum class SlidePhase {
     IDLE, DRAGGING, CONFIRMING, DONE
@@ -161,6 +144,10 @@ fun KokonutSlideToConfirm(
     var phase by remember { mutableStateOf(SlidePhase.IDLE) }
     var isArmed by remember { mutableStateOf(false) }
 
+    // Direct synchronous drag offset for 0-latency tracking
+    var dragX by remember { mutableFloatStateOf(0f) }
+    var isDragging by remember { mutableStateOf(false) }
+
     val xAnim = remember { Animatable(0f) }
     val coverAnim = remember { Animatable(0f) }
 
@@ -171,41 +158,37 @@ fun KokonutSlideToConfirm(
         isArmed = false
         phase = SlidePhase.IDLE
         scope.launch {
-            launch { coverAnim.animateTo(0f, tween(300, easing = SLIDE_EASE_OUT)) }
+            launch { coverAnim.animateTo(0f, tween(280, easing = SLIDE_EASE_OUT)) }
             launch {
                 xAnim.animateTo(
                     targetValue = 0f,
-                    animationSpec = spring(stiffness = 520f, dampingRatio = 0.921f, visibilityThreshold = 0.5f),
+                    animationSpec = spring(stiffness = 520f, dampingRatio = 0.92f, visibilityThreshold = 0.5f),
                     initialVelocity = velocity
                 )
             }
         }
     }
 
-    fun commit(maxDist: Float, velocity: Float = 0f, glide: Boolean = false) {
+    fun commit(maxDist: Float, velocity: Float = 0f) {
         phase = SlidePhase.CONFIRMING
         isArmed = true
         haptics.tick()
 
         scope.launch {
             val landingJob = async {
-                if (glide) {
-                    xAnim.animateTo(maxDist, tween(420, easing = SLIDE_EASE_IN_OUT))
-                } else {
-                    xAnim.animateTo(
-                        targetValue = maxDist,
-                        animationSpec = spring(stiffness = 520f, dampingRatio = 0.921f),
-                        initialVelocity = velocity
-                    )
-                }
+                xAnim.animateTo(
+                    targetValue = maxDist,
+                    animationSpec = spring(stiffness = 520f, dampingRatio = 0.92f),
+                    initialVelocity = velocity
+                )
             }
 
             val floodingJob = async {
-                coverAnim.animateTo(1f, tween(360, easing = SLIDE_EASE_OUT))
+                coverAnim.animateTo(1f, tween(320, easing = SLIDE_EASE_OUT))
             }
 
             val minDelayJob = async {
-                delay(800)
+                delay(600)
             }
 
             var success = false
@@ -227,7 +210,7 @@ fun KokonutSlideToConfirm(
                     isArmed = false
                     phase = SlidePhase.IDLE
                     launch { coverAnim.animateTo(0f, tween(360, easing = SLIDE_EASE_OUT)) }
-                    launch { xAnim.animateTo(0f, tween(600, easing = SLIDE_EASE_IN_OUT)) }
+                    launch { xAnim.animateTo(0f, tween(500, easing = SLIDE_EASE_IN_OUT)) }
                 }
             } else {
                 settleBack(0f)
@@ -255,16 +238,16 @@ fun KokonutSlideToConfirm(
         val insetPx = with(density) { SLIDE_INSET.dp.toPx() }
         val maxDistPx = max(0f, trackWidthPx - thumbPx - insetPx * 2f)
 
-        val currentX = xAnim.value
+        // Current X position: Direct touch tracking during drag, animated otherwise
+        val currentX = if (isDragging) dragX else xAnim.value
         val progress = if (maxDistPx > 0f) (currentX / maxDistPx).coerceIn(0f, 1f) else 0f
         val cover = coverAnim.value
 
-        // Empty track label opacity: max(0, 1 - progress * 0.55)
-        val emptyLabelOpacity = max(0f, 1f - progress * 0.55f)
-        // Ink fill opacity: min(1, currentX / 20)
-        val fillOpacity = min(1f, currentX / with(density) { 20.dp.toPx() })
+        // Label opacities
+        val emptyLabelOpacity = max(0f, 1f - progress * 0.70f)
+        val fillOpacity = min(1f, currentX / with(density) { 16.dp.toPx() })
 
-        // 1. Gesture Tracking Overlay (fixed coordinates on track, 1:1 direct manipulation tracking)
+        // 1. Gesture Tracking Layer (1:1 Direct touch tracking with zero coroutine latency)
         Box(
             modifier = Modifier
                 .fillMaxSize()
@@ -276,16 +259,16 @@ fun KokonutSlideToConfirm(
                         val touchX = down.position.x
                         val thumbLeft = insetPx + xAnim.value
                         val thumbRight = thumbLeft + thumbPx
-                        val hitThumb = touchX >= (thumbLeft - with(density) { 20.dp.toPx() }) &&
-                                touchX <= (thumbRight + with(density) { 32.dp.toPx() })
 
+                        // Generous grab area: allows grabbing thumb from anywhere near it
+                        val hitThumb = touchX <= (thumbRight + with(density) { 44.dp.toPx() })
                         if (!hitThumb) return@awaitEachGesture
                         if (phase == SlidePhase.CONFIRMING || phase == SlidePhase.DONE) return@awaitEachGesture
 
                         val grabOffset = touchX - xAnim.value
                         velocityTracker.resetTracking()
                         velocityTracker.addPosition(down.uptimeMillis, down.position)
-                        var isDragging = false
+                        var draggingStarted = false
                         val startTouchX = touchX
 
                         while (true) {
@@ -294,21 +277,28 @@ fun KokonutSlideToConfirm(
 
                             if (change.changedToUp()) {
                                 change.consume()
-                                if (!isDragging) {
-                                    // Tap nudge to 28dp over 180ms ease-out, then spring back
+                                if (!draggingStarted) {
+                                    // Tap nudge
                                     scope.launch {
-                                        xAnim.animateTo(with(density) { 28.dp.toPx() }, tween(180, easing = SLIDE_EASE_OUT))
+                                        xAnim.animateTo(with(density) { 24.dp.toPx() }, tween(160, easing = SLIDE_EASE_OUT))
                                         if (phase == SlidePhase.IDLE) {
-                                            xAnim.animateTo(0f, spring(stiffness = 520f, dampingRatio = 0.921f))
+                                            xAnim.animateTo(0f, spring(stiffness = 520f, dampingRatio = 0.92f))
                                         }
                                     }
                                 } else {
                                     val vel = velocityTracker.calculateVelocity().x
-                                    val curProgress = if (maxDistPx > 0f) xAnim.value / maxDistPx else 0f
+                                    val curProgress = if (maxDistPx > 0f) dragX / maxDistPx else 0f
+                                    isDragging = false
                                     if (slideShouldCommit(curProgress, vel)) {
-                                        commit(maxDistPx, vel)
+                                        scope.launch {
+                                            xAnim.snapTo(dragX)
+                                            commit(maxDistPx, vel)
+                                        }
                                     } else {
-                                        settleBack(vel)
+                                        scope.launch {
+                                            xAnim.snapTo(dragX)
+                                            settleBack(vel)
+                                        }
                                     }
                                 }
                                 break
@@ -316,18 +306,20 @@ fun KokonutSlideToConfirm(
 
                             if (change.positionChanged()) {
                                 val dx = change.position.x - startTouchX
-                                if (!isDragging && abs(dx) > with(density) { 4.dp.toPx() }) {
+                                if (!draggingStarted && abs(dx) > with(density) { 3.dp.toPx() }) {
+                                    draggingStarted = true
                                     isDragging = true
                                     phase = SlidePhase.DRAGGING
-                                    scope.launch { xAnim.stop() }
+                                    dragX = xAnim.value
                                 }
 
-                                if (isDragging) {
+                                if (draggingStarted) {
                                     change.consume()
                                     velocityTracker.addPosition(change.uptimeMillis, change.position)
                                     val targetX = change.position.x - grabOffset
                                     val banded = slideBand(targetX, maxDistPx)
-                                    scope.launch { xAnim.snapTo(banded) }
+                                    dragX = banded
+
                                     val armed = banded >= maxDistPx * SLIDE_COMMIT_AT
                                     if (armed != isArmed) {
                                         isArmed = armed
@@ -339,7 +331,7 @@ fun KokonutSlideToConfirm(
                     }
                 }
         ) {
-            // Track Background: 1dp border zinc-200/800, bg zinc-100 / dark zinc-900 (or glass tokens if present)
+            // Track Background
             Box(
                 modifier = Modifier
                     .fillMaxSize()
@@ -353,201 +345,164 @@ fun KokonutSlideToConfirm(
                     )
             )
 
-        // 2. Empty-track Label
-        Box(
-            modifier = Modifier
-                .fillMaxSize()
-                .padding(start = 24.dp)
-                .graphicsLayer { alpha = emptyLabelOpacity },
-            contentAlignment = Alignment.Center
-        ) {
-            Text(
-                text = label,
-                fontSize = 14.sp,
-                fontWeight = FontWeight.Medium,
-                color = tokens?.textSecondary ?: if (dark) Zinc400 else Zinc500,
-                maxLines = 1
-            )
-        }
-
-        // 3. Ink Layer: bg zinc-900 / dark zinc-100 (turns emerald-600 / dark emerald-500 when done)
-        val inkBgColor = if (isDone) {
-            if (dark) Emerald500 else Emerald600
-        } else {
-            if (dark) Zinc100 else Zinc900
-        }
-
-        Canvas(
-            modifier = Modifier
-                .fillMaxSize()
-                .graphicsLayer { alpha = fillOpacity }
-        ) {
-            val clipRight = (1f - cover) * max(0f, trackWidthPx - currentX - insetPx - thumbPx / 2f)
-            val inkWidth = trackWidthPx - clipRight
-            if (inkWidth > 0f) {
-                drawRoundRect(
-                    color = inkBgColor,
-                    topLeft = Offset.Zero,
-                    size = Size(inkWidth, size.height),
-                    cornerRadius = CornerRadius(size.height / 2f, size.height / 2f)
-                )
-            }
-        }
-
-        // Ink label (white / dark zinc-900; done: white / dark emerald-950)
-        val inkTextColor = if (isDone) {
-            if (dark) Color(0xFF022C22) else Color.White
-        } else {
-            if (dark) Zinc900 else Color.White
-        }
-
-        Box(
-            modifier = Modifier
-                .fillMaxSize()
-                .padding(start = if (phase == SlidePhase.IDLE || phase == SlidePhase.DRAGGING) 24.dp else 0.dp)
-                .padding(end = if (isBusy || isDone) 24.dp else 0.dp)
-                .graphicsLayer { alpha = fillOpacity },
-            contentAlignment = Alignment.Center
-        ) {
-            AnimatedContent(
-                targetState = phase,
-                transitionSpec = {
-                    (fadeIn(animationSpec = tween(260, easing = SLIDE_EASE_OUT)) +
-                            slideInVertically(
-                                animationSpec = tween(260, easing = SLIDE_EASE_OUT),
-                                initialOffsetY = { 8 }
-                            )) togetherWith
-                            (fadeOut(animationSpec = tween(260, easing = SLIDE_EASE_OUT)) +
-                                    slideOutVertically(
-                                        animationSpec = tween(260, easing = SLIDE_EASE_OUT),
-                                        targetOffsetY = { -8 }
-                                    ))
-                },
-                label = "inkStageLabel"
-            ) { targetPhase ->
-                val text = when (targetPhase) {
-                    SlidePhase.CONFIRMING -> confirmingLabel
-                    SlidePhase.DONE -> doneLabel
-                    else -> label
-                }
+            // 2. Empty-track Label
+            Box(
+                modifier = Modifier
+                    .fillMaxSize()
+                    .padding(start = 28.dp)
+                    .graphicsLayer { alpha = emptyLabelOpacity },
+                contentAlignment = Alignment.Center
+            ) {
                 Text(
-                    text = text,
-                    fontSize = 14.sp,
+                    text = label,
+                    fontSize = 14.5.sp,
+                    fontFamily = GoogleSansFlex,
                     fontWeight = FontWeight.Medium,
-                    color = inkTextColor,
+                    color = tokens?.textSecondary ?: if (dark) Zinc400 else Zinc500,
                     maxLines = 1
                 )
             }
-        }
 
-        // 4. Thumb: 48dp circle, left offset INSET - 1 = 3dp, top INSET - 1 = 3dp
-        Box(
-            modifier = Modifier
-                .offset {
-                    IntOffset(
-                        x = (insetPx - with(density) { 1.dp.toPx() } + currentX).roundToInt(),
-                        y = (insetPx - with(density) { 1.dp.toPx() }).roundToInt()
-                    )
-                }
-                .size(48.dp)
-                .shadow(elevation = 2.dp, shape = CircleShape)
-                .clip(CircleShape)
-                .background(
-                    if (tokens != null) tokens.tintStrong else (if (dark) Zinc800 else Color.White)
-                )
-                .border(
-                    width = 1.dp,
-                    color = if (tokens != null) tokens.borderStart else (if (dark) Color.White.copy(alpha = 0.08f) else Color.Black.copy(alpha = 0.06f)),
-                    shape = CircleShape
-                ),
-            contentAlignment = Alignment.Center
-        ) {
-            // Icon Stack: ArrowRight, Check, Spinner
-            val infiniteTransition = rememberInfiniteTransition(label = "spinnerTransition")
-            val spinAngle by infiniteTransition.animateFloat(
-                initialValue = 0f,
-                targetValue = 360f,
-                animationSpec = infiniteRepeatable(
-                    animation = tween(700, easing = LinearEasing),
-                    repeatMode = RepeatMode.Restart
-                ),
-                label = "spinnerAngle"
-            )
+            // 3. Ink Fill Layer (emerald when done, monochrome dark/light during drag)
+            val inkBgColor = if (isDone) {
+                if (dark) Emerald500 else Emerald600
+            } else {
+                if (dark) Zinc100 else Zinc900
+            }
 
-            // Arrow Right icon
-            val arrowOffset by animateFloatAsState(
-                targetValue = if (isArmed && !isBusy && !isDone) 2f else if (isBusy || isDone) 6f else 0f,
-                label = "arrowOffset"
-            )
-            val arrowAlpha by animateFloatAsState(
-                targetValue = if (isBusy || isDone) 0f else 1f,
-                label = "arrowAlpha"
-            )
-
-            Icon(
-                imageVector = Icons.AutoMirrored.Filled.ArrowForward,
-                contentDescription = null,
-                tint = tokens?.textPrimary ?: if (dark) Zinc100 else Zinc900,
+            Canvas(
                 modifier = Modifier
-                    .size(20.dp)
-                    .graphicsLayer {
-                        translationX = arrowOffset * density.density
-                        alpha = arrowAlpha
-                    }
-            )
-
-            // Spinner (24dp, appears when busy)
-            if (isBusy) {
-                Canvas(
-                    modifier = Modifier
-                        .size(24.dp)
-                        .graphicsLayer { rotationZ = spinAngle }
-                ) {
-                    val strokeW = 2.5f * density.density
-                    val r = 9f * density.density
-                    // Track circle
-                    drawCircle(
-                        color = if (dark) Zinc700 else Zinc200,
-                        radius = r,
-                        style = Stroke(width = strokeW)
-                    )
-                    // Arc dash
-                    drawArc(
-                        color = if (dark) Zinc100 else Zinc900,
-                        startAngle = 0f,
-                        sweepAngle = 100f,
-                        useCenter = false,
-                        style = Stroke(width = strokeW, cap = StrokeCap.Round)
+                    .fillMaxSize()
+                    .graphicsLayer { alpha = fillOpacity }
+            ) {
+                val clipRight = (1f - cover) * max(0f, trackWidthPx - currentX - insetPx - thumbPx / 2f)
+                val inkWidth = trackWidthPx - clipRight
+                if (inkWidth > 0f) {
+                    drawRoundRect(
+                        color = inkBgColor,
+                        topLeft = Offset.Zero,
+                        size = Size(inkWidth, size.height),
+                        cornerRadius = CornerRadius(size.height / 2f, size.height / 2f)
                     )
                 }
             }
 
-            // Check icon (20dp, appears with scale 0.5 -> 1 when done)
-            val checkScale by animateFloatAsState(
-                targetValue = if (isDone) 1f else 0.5f,
-                animationSpec = tween(200, easing = SLIDE_EASE_OUT),
-                label = "checkScale"
-            )
-            val checkAlpha by animateFloatAsState(
-                targetValue = if (isDone) 1f else 0f,
-                animationSpec = tween(200, easing = SLIDE_EASE_OUT),
-                label = "checkAlpha"
-            )
+            // Ink Label
+            val inkTextColor = if (isDone) {
+                if (dark) Color(0xFF022C22) else Color.White
+            } else {
+                if (dark) Zinc900 else Color.White
+            }
 
-            Icon(
-                imageVector = Icons.Default.Check,
-                contentDescription = null,
-                tint = if (dark) Emerald400 else Emerald600,
+            Box(
                 modifier = Modifier
-                    .size(20.dp)
-                    .graphicsLayer {
-                        scaleX = checkScale
-                        scaleY = checkScale
-                        alpha = checkAlpha
+                    .fillMaxSize()
+                    .padding(start = if (phase == SlidePhase.IDLE || phase == SlidePhase.DRAGGING) 28.dp else 0.dp)
+                    .padding(end = if (isBusy || isDone) 28.dp else 0.dp)
+                .graphicsLayer { alpha = fillOpacity },
+                contentAlignment = Alignment.Center
+            ) {
+                AnimatedContent(
+                    targetState = phase,
+                    transitionSpec = {
+                        (fadeIn(animationSpec = tween(220, easing = SLIDE_EASE_OUT)) +
+                                slideInVertically(
+                                    animationSpec = tween(220, easing = SLIDE_EASE_OUT),
+                                    initialOffsetY = { 8 }
+                                )) togetherWith
+                                (fadeOut(animationSpec = tween(220, easing = SLIDE_EASE_OUT)) +
+                                        slideOutVertically(
+                                            animationSpec = tween(220, easing = SLIDE_EASE_OUT),
+                                            targetOffsetY = { -8 }
+                                        ))
+                    },
+                    label = "inkStageLabel"
+                ) { targetPhase ->
+                    Row(
+                        verticalAlignment = Alignment.CenterVertically,
+                        horizontalArrangement = androidx.compose.foundation.layout.Arrangement.spacedBy(8.dp)
+                    ) {
+                        if (targetPhase == SlidePhase.CONFIRMING) {
+                            CircularProgressIndicator(
+                                modifier = Modifier.size(16.dp),
+                                color = inkTextColor,
+                                strokeWidth = 2.dp
+                            )
+                        } else if (targetPhase == SlidePhase.DONE) {
+                            Icon(
+                                imageVector = Icons.Default.Check,
+                                contentDescription = null,
+                                tint = inkTextColor,
+                                modifier = Modifier.size(18.dp)
+                            )
+                        }
+
+                        val text = when (targetPhase) {
+                            SlidePhase.CONFIRMING -> confirmingLabel
+                            SlidePhase.DONE -> doneLabel
+                            else -> label
+                        }
+                        Text(
+                            text = text,
+                            fontSize = 14.5.sp,
+                            fontFamily = GoogleSansFlex,
+                            fontWeight = FontWeight.SemiBold,
+                            color = inkTextColor,
+                            maxLines = 1
+                        )
                     }
-            )
+                }
+            }
+
+            // 4. Draggable Thumb (Circle 48dp)
+            Box(
+                modifier = Modifier
+                    .offset {
+                        IntOffset(
+                            x = (insetPx + currentX).roundToInt(),
+                            y = insetPx.roundToInt()
+                        )
+                    }
+                    .size(SLIDE_THUMB.dp)
+                    .shadow(elevation = 6.dp, shape = CircleShape)
+                    .clip(CircleShape)
+                    .background(
+                        if (isDone) {
+                            if (dark) Color.White else Color.White
+                        } else {
+                            if (dark) Zinc100 else Zinc900
+                        }
+                    ),
+                contentAlignment = Alignment.Center
+            ) {
+                val thumbIconColor = if (isDone) {
+                    if (dark) Emerald600 else Emerald600
+                } else {
+                    if (dark) Zinc900 else Color.White
+                }
+
+                if (isDone) {
+                    Icon(
+                        imageVector = Icons.Default.Check,
+                        contentDescription = "Success",
+                        tint = thumbIconColor,
+                        modifier = Modifier.size(22.dp)
+                    )
+                } else if (isBusy) {
+                    CircularProgressIndicator(
+                        modifier = Modifier.size(20.dp),
+                        color = thumbIconColor,
+                        strokeWidth = 2.2.dp
+                    )
+                } else {
+                    Icon(
+                        imageVector = Icons.AutoMirrored.Filled.ArrowForward,
+                        contentDescription = "Slide thumb",
+                        tint = thumbIconColor,
+                        modifier = Modifier.size(20.dp)
+                    )
+                }
+            }
         }
     }
 }
-}
-
