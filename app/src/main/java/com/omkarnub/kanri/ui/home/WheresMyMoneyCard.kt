@@ -36,8 +36,17 @@ import androidx.compose.ui.unit.dp
 import androidx.compose.ui.unit.sp
 import com.omkarnub.kanri.data.wallet.WalletBalances
 import com.omkarnub.kanri.data.wallet.WalletPreferences
+import android.os.Build
+import androidx.compose.animation.core.FastOutSlowInEasing
+import androidx.compose.animation.core.animateDpAsState
+import androidx.compose.animation.core.tween
+import androidx.compose.material.icons.filled.Visibility
+import androidx.compose.material.icons.filled.VisibilityOff
+import androidx.compose.material3.IconButton
+import androidx.compose.runtime.mutableStateOf
+import androidx.compose.runtime.setValue
+import androidx.compose.ui.draw.blur
 import com.omkarnub.kanri.ui.common.AnimatedNumberText
-import com.omkarnub.kanri.ui.common.kokonut.KokonutSpoilerText
 import com.omkarnub.kanri.ui.theme.ExpenseRed
 import com.omkarnub.kanri.ui.theme.IncomeGreen
 import com.omkarnub.kanri.util.CurrencyUtils
@@ -64,6 +73,10 @@ fun ManageMoneyBalanceCard(
     val walletPrefs = remember { WalletPreferences.getInstance(context) }
     val isSpoilerEnabled by walletPrefs.isBalanceSpoilerEnabledFlow.collectAsState()
     val tokens = LocalKanriGlass.current
+    val haptics = rememberKanriHaptics()
+
+    // Local reveal state: when spoiler is enabled, default to hidden (!isSpoilerEnabled)
+    var isRevealed by remember(isSpoilerEnabled) { mutableStateOf(!isSpoilerEnabled) }
 
     val secondaryLabelColor = tokens?.textPrimary?.copy(alpha = 0.80f)
         ?: MaterialTheme.colorScheme.onSurface.copy(alpha = 0.80f)
@@ -171,7 +184,11 @@ fun ManageMoneyBalanceCard(
         modifier = modifier
             .fillMaxWidth()
             .semantics {
-                contentDescription = "Wallets. Cash: ${CurrencyUtils.formatCurrency(balances.cash)}, today: $cashFlowText. Online: ${CurrencyUtils.formatCurrency(balances.online)}, today: $onlineFlowText"
+                contentDescription = if (isRevealed) {
+                    "Wallets. Cash: ${CurrencyUtils.formatCurrency(balances.cash)}, today: $cashFlowText. Online: ${CurrencyUtils.formatCurrency(balances.online)}, today: $onlineFlowText"
+                } else {
+                    "Wallets. Balances hidden. Tap eye icon to reveal."
+                }
             },
         level = GlassLevel.Blur,
         shape = RoundedCornerShape(24.dp),
@@ -182,7 +199,7 @@ fun ManageMoneyBalanceCard(
                 .fillMaxWidth()
                 .padding(horizontal = 18.dp, vertical = 16.dp)
         ) {
-            // Header Row: Title & Arrow SVG
+            // Header Row: Title & Action Icons
             Row(
                 modifier = Modifier.fillMaxWidth(),
                 horizontalArrangement = Arrangement.SpaceBetween,
@@ -197,12 +214,32 @@ fun ManageMoneyBalanceCard(
                     color = secondaryLabelColor
                 )
 
-                Icon(
-                    imageVector = Icons.AutoMirrored.Filled.ArrowForward,
-                    contentDescription = "Open Full Wallet Window",
-                    tint = secondaryLabelColor,
-                    modifier = Modifier.size(18.dp)
-                )
+                Row(
+                    verticalAlignment = Alignment.CenterVertically,
+                    horizontalArrangement = Arrangement.spacedBy(4.dp)
+                ) {
+                    IconButton(
+                        onClick = {
+                            haptics.click()
+                            isRevealed = !isRevealed
+                        },
+                        modifier = Modifier.size(28.dp)
+                    ) {
+                        Icon(
+                            imageVector = if (isRevealed) Icons.Default.Visibility else Icons.Default.VisibilityOff,
+                            contentDescription = if (isRevealed) "Hide balances" else "Reveal balances",
+                            tint = secondaryLabelColor,
+                            modifier = Modifier.size(18.dp)
+                        )
+                    }
+
+                    Icon(
+                        imageVector = Icons.AutoMirrored.Filled.ArrowForward,
+                        contentDescription = "Open Full Wallet Window",
+                        tint = secondaryLabelColor,
+                        modifier = Modifier.size(18.dp)
+                    )
+                }
             }
 
             Spacer(modifier = Modifier.height(14.dp))
@@ -232,18 +269,12 @@ fun ManageMoneyBalanceCard(
                         )
                     }
                     Spacer(modifier = Modifier.height(4.dp))
-                    KokonutSpoilerText(
-                        isSpoilerActive = isSpoilerEnabled,
-                        speckColor = MaterialTheme.colorScheme.onSurface
-                    ) {
-                        AnimatedNumberText(
-                            text = CurrencyUtils.formatCurrency(balances.cash),
-                            style = MaterialTheme.typography.titleLarge.copy(
-                                fontWeight = FontWeight.Bold
-                            ),
-                            color = if (balances.cash < 0) ExpenseRed else MaterialTheme.colorScheme.onSurface
-                        )
-                    }
+                    BlurredBalanceAmount(
+                        amount = balances.cash,
+                        isBlurred = !isRevealed,
+                        onReveal = { isRevealed = true },
+                        horizontalAlignment = Alignment.Start
+                    )
                     Spacer(modifier = Modifier.height(3.dp))
                     Text(
                         text = cashFlowText,
@@ -277,18 +308,12 @@ fun ManageMoneyBalanceCard(
                         )
                     }
                     Spacer(modifier = Modifier.height(4.dp))
-                    KokonutSpoilerText(
-                        isSpoilerActive = isSpoilerEnabled,
-                        speckColor = MaterialTheme.colorScheme.onSurface
-                    ) {
-                        AnimatedNumberText(
-                            text = CurrencyUtils.formatCurrency(balances.online),
-                            style = MaterialTheme.typography.titleLarge.copy(
-                                fontWeight = FontWeight.Bold
-                            ),
-                            color = if (balances.online < 0) ExpenseRed else MaterialTheme.colorScheme.onSurface
-                        )
-                    }
+                    BlurredBalanceAmount(
+                        amount = balances.online,
+                        isBlurred = !isRevealed,
+                        onReveal = { isRevealed = true },
+                        horizontalAlignment = Alignment.End
+                    )
                     Spacer(modifier = Modifier.height(3.dp))
                     Text(
                         text = onlineFlowText,
@@ -318,4 +343,59 @@ fun WheresMyMoneyCard(
         onSetupClick = onSetupClick,
         modifier = modifier
     )
+}
+
+@Composable
+private fun BlurredBalanceAmount(
+    amount: Double,
+    isBlurred: Boolean,
+    onReveal: () -> Unit,
+    modifier: Modifier = Modifier,
+    horizontalAlignment: Alignment.Horizontal = Alignment.Start
+) {
+    val haptics = rememberKanriHaptics()
+    val animatedBlur by animateDpAsState(
+        targetValue = if (isBlurred) 12.dp else 0.dp,
+        animationSpec = tween(durationMillis = 250, easing = FastOutSlowInEasing),
+        label = "balanceBlurAnimation"
+    )
+
+    Box(
+        modifier = modifier
+            .clip(RoundedCornerShape(6.dp))
+            .clickable(
+                enabled = isBlurred,
+                onClick = {
+                    haptics.click()
+                    onReveal()
+                }
+            )
+            .then(
+                if (animatedBlur > 0.dp) {
+                    Modifier.blur(animatedBlur)
+                } else {
+                    Modifier
+                }
+            ),
+        contentAlignment = if (horizontalAlignment == Alignment.End) Alignment.CenterEnd else Alignment.CenterStart
+    ) {
+        if (Build.VERSION.SDK_INT < Build.VERSION_CODES.S && isBlurred) {
+            Text(
+                text = "••••••••",
+                style = MaterialTheme.typography.titleLarge.copy(
+                    fontWeight = FontWeight.Bold,
+                    letterSpacing = 2.sp
+                ),
+                color = MaterialTheme.colorScheme.onSurface.copy(alpha = 0.5f)
+            )
+        } else {
+            AnimatedNumberText(
+                text = CurrencyUtils.formatCurrency(amount),
+                style = MaterialTheme.typography.titleLarge.copy(
+                    fontWeight = FontWeight.Bold
+                ),
+                color = if (amount < 0) ExpenseRed else MaterialTheme.colorScheme.onSurface
+            )
+        }
+    }
 }

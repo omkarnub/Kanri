@@ -161,22 +161,23 @@ fun Modifier.kanriGlass(
             )
         }
 
+        val glassShadowElevation = when (level) {
+            GlassLevel.Strong -> 2.dp
+            GlassLevel.Blur -> 1.dp
+            GlassLevel.Flat -> 0.dp
+        }
+        val glassSpotShadow = Color.Black.copy(alpha = 0.035f)
+        val glassAmbientShadow = Color.Black.copy(alpha = 0.015f)
+
         val baseModifier = this
             .scale(scale)
             .then(
-                if (level == GlassLevel.Blur) {
+                if (glassShadowElevation > 0.dp) {
                     Modifier.shadow(
-                        elevation = 4.dp,
+                        elevation = glassShadowElevation,
                         shape = effectiveShape,
-                        spotColor = tokens.shadow,
-                        ambientColor = tokens.shadow.copy(alpha = tokens.shadow.alpha * 0.4f)
-                    )
-                } else if (level == GlassLevel.Strong) {
-                    Modifier.shadow(
-                        elevation = 8.dp,
-                        shape = effectiveShape,
-                        spotColor = tokens.shadow,
-                        ambientColor = tokens.shadow.copy(alpha = tokens.shadow.alpha * 0.4f)
+                        spotColor = glassSpotShadow,
+                        ambientColor = glassAmbientShadow
                     )
                 } else {
                     Modifier
@@ -228,15 +229,10 @@ fun Modifier.kanriGlass(
             }
         }
 
+        val glassBorderWidth = (tokens.borderWidth * 0.8f).coerceIn(0.6.dp, 1.dp)
+
         surfaceModifier
-            .then(
-                if (tokens.edgeHairline.alpha > 0f) {
-                    Modifier.border(width = 1.dp, color = tokens.edgeHairline, shape = effectiveShape)
-                } else {
-                    Modifier
-                }
-            )
-            .border(width = tokens.borderWidth, brush = borderBrush, shape = effectiveShape)
+            .border(width = glassBorderWidth, brush = borderBrush, shape = effectiveShape)
             .then(
                 if (onClick != null) {
                     Modifier
@@ -876,12 +872,12 @@ fun KanriGlassDialog(
                         alpha = dialogAlpha.value
                     }
                     .shadow(
-                        elevation = if (tokens != null) 24.dp else (if (isDarkSurface) 16.dp else 6.dp),
+                        elevation = if (tokens != null) 4.dp else (if (isDarkSurface) 16.dp else 6.dp),
                         shape = shape,
-                        spotColor = if (tokens != null || isDarkSurface) Color.Black.copy(alpha = 0.45f) else Color.Black.copy(alpha = 0.06f)
+                        spotColor = if (tokens != null) Color.Black.copy(alpha = 0.04f) else (if (isDarkSurface) Color.Black.copy(alpha = 0.35f) else Color.Black.copy(alpha = 0.04f))
                     )
                     .border(
-                        width = tokens?.borderWidth ?: 1.dp,
+                        width = (tokens?.borderWidth ?: 1.dp).coerceAtMost(0.8.dp),
                         brush = dialogBorder,
                         shape = shape
                     ),
@@ -915,11 +911,11 @@ fun KanriGlassDialog(
 fun kanriGlassTextFieldColors(): TextFieldColors {
     val tokens = LocalKanriGlass.current
     return if (tokens != null) {
-        val containerColor = if (tokens.isDark) Color.White.copy(alpha = 0.05f) else Color.Black.copy(alpha = 0.03f)
+        val containerColor = Color.White.copy(alpha = 0.06f)
         val focusedBorder = tokens.accent
-        val unfocusedBorder = if (tokens.isDark) Color.White.copy(alpha = 0.18f) else Color.Black.copy(alpha = 0.12f)
-        val textColor = if (tokens.isDark) Color.White else Color(0xFF18181B)
-        val placeholderColor = if (tokens.isDark) Color.White.copy(alpha = 0.45f) else Color.Black.copy(alpha = 0.45f)
+        val unfocusedBorder = Color.White.copy(alpha = 0.20f)
+        val textColor = tokens.textPrimary
+        val placeholderColor = tokens.textTertiary
 
         OutlinedTextFieldDefaults.colors(
             focusedContainerColor = containerColor,

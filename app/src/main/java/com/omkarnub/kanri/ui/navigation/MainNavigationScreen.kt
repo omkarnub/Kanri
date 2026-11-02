@@ -252,13 +252,7 @@ fun MainNavigationScreen(
                             label = "tabTransition",
                             modifier = Modifier
                                 .fillMaxSize()
-                                .then(
-                                    if (parentHazeState == null) {
-                                        Modifier.hazeSource(state = effectiveHazeState)
-                                    } else {
-                                        Modifier
-                                    }
-                                )
+                                .hazeSource(state = effectiveHazeState)
                         ) { targetTab ->
                             when (targetTab) {
                                 KanriTab.HOME -> HomeScreen(

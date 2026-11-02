@@ -198,7 +198,7 @@ fun WalletSetupDialog(
                 } else Color.Transparent
                 val cashTabBorder = if (isCashSelected) {
                     if (tokens != null) {
-                        BorderStroke(1.dp, if (tokens.isDark) Color.White.copy(alpha = 0.32f) else Color.Black.copy(alpha = 0.15f))
+                        BorderStroke(0.8.dp, Color.White.copy(alpha = 0.28f))
                     } else BorderStroke(0.5.dp, MaterialTheme.colorScheme.outlineVariant)
                 } else null
 
@@ -255,7 +255,7 @@ fun WalletSetupDialog(
                 } else Color.Transparent
                 val onlineTabBorder = if (isOnlineSelected) {
                     if (tokens != null) {
-                        BorderStroke(1.dp, if (tokens.isDark) Color.White.copy(alpha = 0.32f) else Color.Black.copy(alpha = 0.15f))
+                        BorderStroke(0.8.dp, Color.White.copy(alpha = 0.28f))
                     } else BorderStroke(0.5.dp, MaterialTheme.colorScheme.outlineVariant)
                 } else null
 

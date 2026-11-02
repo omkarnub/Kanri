@@ -213,15 +213,11 @@ fun createCustomGlassTokens(c: GlassCustomization): KanriGlassTokens {
     ).copy(alpha = (c.surfaceOpacity * 1.5f).coerceIn(0.05f, 0.75f))
     val fallbackSurface = baseTintColor.copy(alpha = c.surfaceOpacity.coerceIn(0.01f, 0.60f))
 
-    val borderBase = if (c.tintLightness < 0f) {
-        lerpColor(Color.White, Color(0xFF9090A0), (-c.tintLightness).coerceIn(0f, 1f))
-    } else {
-        Color.White
-    }
-
-    val borderStart = borderBase.copy(alpha = c.borderOpacity.coerceIn(0f, 0.85f))
-    val borderEnd = borderBase.copy(alpha = (c.borderOpacity * 0.20f).coerceIn(0f, 0.50f))
-    val shadow = Color.Black.copy(alpha = c.shadowIntensity.coerceIn(0f, 0.70f))
+    // In glass mode, borders are always specular white rim reflections (never dark gray or black)
+    val borderBase = Color.White
+    val borderStart = borderBase.copy(alpha = c.borderOpacity.coerceIn(0.12f, 0.35f))
+    val borderEnd = borderBase.copy(alpha = (c.borderOpacity * 0.20f).coerceIn(0.02f, 0.12f))
+    val shadow = Color.Black.copy(alpha = 0.035f)
 
     return GlassTokens.copy(
         blurRadius = c.blurRadiusDp.coerceIn(0f, 60f).dp,
@@ -232,7 +228,7 @@ fun createCustomGlassTokens(c: GlassCustomization): KanriGlassTokens {
         borderStart = borderStart,
         borderEnd = borderEnd,
         shadow = shadow,
-        borderWidth = c.borderWidthDp.coerceIn(0.5f, 4.0f).dp,
+        borderWidth = (c.borderWidthDp * 0.8f).coerceIn(0.6f, 1.0f).dp,
         cornerRadius = c.cornerRadiusDp.coerceIn(8f, 40f).dp,
         buttonOpacity = c.buttonOpacity.coerceIn(0.04f, 0.50f),
         expenseColor = computeAdaptedAccentColor(Color(c.expenseColorHex), c.tintLightness),
@@ -276,10 +272,10 @@ val GlassTokens = KanriGlassTokens(
     tintFlat = Color.White.copy(alpha = 0.05f),
     tintStrong = Color.White.copy(alpha = 0.12f),
     fallbackSurface = Color.White.copy(alpha = 0.08f),
-    borderStart = Color.White.copy(alpha = 0.28f),
+    borderStart = Color.White.copy(alpha = 0.25f),
     borderEnd = Color.White.copy(alpha = 0.05f),
     edgeHairline = Color.Transparent,
-    shadow = Color.Black.copy(alpha = 0.25f),
+    shadow = Color.Black.copy(alpha = 0.035f),
     textPrimary = Color(0xFFF5F5F7),
     textSecondary = Color(0xFFF5F5F7).copy(alpha = 0.70f),
     textTertiary = Color(0xFFF5F5F7).copy(alpha = 0.44f),
@@ -288,7 +284,7 @@ val GlassTokens = KanriGlassTokens(
     credit = Color(0xFFFFFFFF),
     debit = Color(0xFFC8C8D2),
     track = Color.White.copy(alpha = 0.10f),
-    borderWidth = 1.dp,
+    borderWidth = 0.8.dp,
     cornerRadius = 20.dp,
     buttonOpacity = 0.16f,
     expenseColor = Color(0xFFE54D2E),

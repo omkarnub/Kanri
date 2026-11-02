@@ -43,6 +43,10 @@ import androidx.compose.foundation.rememberScrollState
 import androidx.compose.foundation.shape.CircleShape
 import androidx.compose.foundation.shape.RoundedCornerShape
 import androidx.compose.foundation.verticalScroll
+import androidx.compose.foundation.selection.toggleable
+import androidx.compose.ui.semantics.Role
+import androidx.compose.material.icons.filled.Visibility
+import androidx.compose.material.icons.filled.VisibilityOff
 import androidx.compose.material.icons.Icons
 import androidx.compose.foundation.horizontalScroll
 import com.omkarnub.kanri.ui.theme.GoogleSansFlex
@@ -224,6 +228,7 @@ fun SettingsScreen(
     val isWalletConfigured by walletRepo.isConfigured().collectAsState(initial = false)
     val balances by walletRepo.observeBalances().collectAsState(initial = null)
     val atmMode by walletPrefs.atmWithdrawalModeFlow.collectAsState()
+    val isBalanceSpoilerEnabled by walletPrefs.isBalanceSpoilerEnabledFlow.collectAsState()
 
     var showWalletSetupDialog by remember { mutableStateOf(false) }
     var walletToCorrect by remember { mutableStateOf<String?>(null) }
@@ -762,12 +767,12 @@ fun SettingsScreen(
 
                 SettingsDivider()
 
-                // Hide Balances (Spoiler Effect)
+                // Hide Balances (Privacy Mask)
                 SettingsSwitchRow(
-                    title = "Hide Balances (Spoiler Effect)",
-                    subtitle = "Shimmering particle spoiler mask over wallet cards",
-                    icon = Icons.Default.Tune,
-                    checked = walletPrefs.isBalanceSpoilerEnabled,
+                    title = "Hide Balances",
+                    subtitle = "Obfuscate wallet balances until tapped or revealed",
+                    icon = if (isBalanceSpoilerEnabled) Icons.Default.VisibilityOff else Icons.Default.Visibility,
+                    checked = isBalanceSpoilerEnabled,
                     onCheckedChange = { walletPrefs.isBalanceSpoilerEnabled = it }
                 )
 
@@ -1247,10 +1252,14 @@ private fun SettingsSwitchRow(
     Row(
         modifier = modifier
             .fillMaxWidth()
-            .clickable {
-                haptics.click()
-                onCheckedChange(!checked)
-            }
+            .toggleable(
+                value = checked,
+                role = Role.Switch,
+                onValueChange = {
+                    haptics.click()
+                    onCheckedChange(it)
+                }
+            )
             .padding(horizontal = 16.dp, vertical = 12.dp),
         horizontalArrangement = Arrangement.spacedBy(14.dp),
         verticalAlignment = Alignment.CenterVertically
@@ -1292,10 +1301,7 @@ private fun SettingsSwitchRow(
 
         Switch(
             checked = checked,
-            onCheckedChange = {
-                haptics.click()
-                onCheckedChange(it)
-            },
+            onCheckedChange = null,
             colors = SwitchDefaults.colors(
                 checkedThumbColor = Color.White,
                 checkedTrackColor = MaterialTheme.colorScheme.primary,

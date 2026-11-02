@@ -64,7 +64,10 @@ import com.omkarnub.kanri.ui.common.kanriGlass
 import com.omkarnub.kanri.ui.common.rememberKanriGlassTheme
 import com.omkarnub.kanri.ui.theme.LocalKanriGlass
 import com.omkarnub.kanri.ui.theme.KanriMotion
+import androidx.compose.ui.graphics.Brush
 import dev.chrisbanes.haze.HazeState
+import dev.chrisbanes.haze.HazeStyle
+import dev.chrisbanes.haze.HazeTint
 import dev.chrisbanes.haze.hazeEffect
 
 /**
@@ -116,6 +119,14 @@ fun KanriFloatingDock(
     ) {
         // Main Navigation Glass Pill (Capsule enclosing the 4 tabs)
         val pillModifier = if (tokens != null) {
+            val glassHazeStyle = remember(tokens.tintBlur, tokens.blurRadius) {
+                HazeStyle(
+                    backgroundColor = Color.White.copy(alpha = 0.12f),
+                    tint = HazeTint(tokens.tintBlur.copy(alpha = 0.18f)),
+                    blurRadius = tokens.blurRadius.coerceAtLeast(24.dp),
+                    noiseFactor = 0.02f
+                )
+            }
             Modifier
                 .weight(1f)
                 .height(64.dp)
@@ -125,10 +136,32 @@ fun KanriFloatingDock(
                     scaleX = 0.94f + 0.06f * dockEntrance.value
                     scaleY = 0.94f + 0.06f * dockEntrance.value
                 }
-                .kanriGlass(
-                    level = GlassLevel.Blur,
+                .shadow(
+                    elevation = 2.dp,
                     shape = RoundedCornerShape(32.dp),
-                    hazeState = hazeState
+                    spotColor = Color.Black.copy(alpha = 0.035f),
+                    ambientColor = Color.Black.copy(alpha = 0.015f)
+                )
+                .clip(RoundedCornerShape(32.dp))
+                .then(
+                    if (hazeState != null) {
+                        Modifier.hazeEffect(
+                            state = hazeState,
+                            style = glassHazeStyle
+                        )
+                    } else {
+                        Modifier.background(Color.White.copy(alpha = 0.14f))
+                    }
+                )
+                .border(
+                    width = 0.8.dp,
+                    brush = Brush.linearGradient(
+                        listOf(
+                            Color.White.copy(alpha = 0.35f),
+                            Color.White.copy(alpha = 0.08f)
+                        )
+                    ),
+                    shape = RoundedCornerShape(32.dp)
                 )
         } else {
             Modifier
@@ -369,12 +402,42 @@ private fun DockAddButton(
     )
 
     val buttonModifier = if (tokens != null) {
+        val glassHazeStyle = remember(tokens.tintBlur, tokens.blurRadius) {
+            HazeStyle(
+                backgroundColor = Color.White.copy(alpha = 0.14f),
+                tint = HazeTint(tokens.tintBlur.copy(alpha = 0.22f)),
+                blurRadius = tokens.blurRadius.coerceAtLeast(24.dp),
+                noiseFactor = 0.02f
+            )
+        }
         modifier
             .scale(scale)
-            .kanriGlass(
-                level = GlassLevel.Blur,
+            .shadow(
+                elevation = 2.dp,
                 shape = CircleShape,
-                hazeState = hazeState
+                spotColor = Color.Black.copy(alpha = 0.035f),
+                ambientColor = Color.Black.copy(alpha = 0.015f)
+            )
+            .clip(CircleShape)
+            .then(
+                if (hazeState != null) {
+                    Modifier.hazeEffect(
+                        state = hazeState,
+                        style = glassHazeStyle
+                    )
+                } else {
+                    Modifier.background(Color.White.copy(alpha = 0.16f))
+                }
+            )
+            .border(
+                width = 0.8.dp,
+                brush = Brush.linearGradient(
+                    listOf(
+                        Color.White.copy(alpha = 0.40f),
+                        Color.White.copy(alpha = 0.10f)
+                    )
+                ),
+                shape = CircleShape
             )
             .clickable(
                 interactionSource = interactionSource,

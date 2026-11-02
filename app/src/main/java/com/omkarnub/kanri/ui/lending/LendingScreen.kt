@@ -191,7 +191,7 @@ fun LendingScreen(
                                         shape = CircleShape
                                     )
                                     .background(
-                                        color = if (tokens?.isDark != false) Color.White.copy(alpha = 0.16f) else Color.Black.copy(alpha = 0.08f),
+                                        color = Color.White.copy(alpha = 0.16f),
                                         shape = CircleShape
                                     ),
                                 textColor = tokens?.textPrimary ?: MaterialTheme.colorScheme.onSurface,
