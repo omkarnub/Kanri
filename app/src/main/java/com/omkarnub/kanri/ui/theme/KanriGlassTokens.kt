@@ -211,7 +211,7 @@ fun createCustomGlassTokens(c: GlassCustomization): KanriGlassTokens {
         if (c.tintLightness < 0f) Color(0xFF16161C) else Color.White,
         0.5f
     ).copy(alpha = (c.surfaceOpacity * 1.5f).coerceIn(0.05f, 0.75f))
-    val fallbackSurface = baseTintColor.copy(alpha = c.surfaceOpacity.coerceIn(0.01f, 0.60f))
+    val fallbackSurface = (if (c.tintLightness < 0f) Color(0xFF14151B) else Color(0xFFFAF9F5)).copy(alpha = 0.88f)
 
     // In glass mode, borders are always specular white rim reflections (never dark gray or black)
     val borderBase = Color.White

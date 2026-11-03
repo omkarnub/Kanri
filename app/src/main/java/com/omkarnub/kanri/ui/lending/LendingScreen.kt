@@ -141,14 +141,13 @@ fun LendingScreen(
 
     val tokens = com.omkarnub.kanri.ui.theme.LocalKanriGlass.current
 
-    CompositionLocalProvider(LocalHazeState provides lendingHazeState) {
-        Box(modifier = modifier.fillMaxSize()) {
-            Scaffold(
-                modifier = Modifier
-                    .fillMaxSize()
-                    .hazeSource(state = lendingHazeState),
-                containerColor = if (tokens != null) androidx.compose.ui.graphics.Color.Transparent else MaterialTheme.colorScheme.background,
-                snackbarHost = { SnackbarHost(snackbarHostState) },
+    Box(modifier = modifier.fillMaxSize()) {
+        Scaffold(
+            modifier = Modifier
+                .fillMaxSize()
+                .hazeSource(state = lendingHazeState),
+            containerColor = if (tokens != null) androidx.compose.ui.graphics.Color.Transparent else MaterialTheme.colorScheme.background,
+            snackbarHost = { SnackbarHost(snackbarHostState) },
             topBar = {
                 if (hubState.selectedPersonSummary == null) {
                     TopAppBar(
@@ -177,7 +176,6 @@ fun LendingScreen(
                                 },
                                 shape = CircleShape,
                                 level = GlassLevel.Strong,
-                                hazeState = lendingHazeState,
                                 modifier = Modifier
                                     .padding(end = 12.dp)
                                     .border(
@@ -470,7 +468,6 @@ fun LendingScreen(
                 }
             }
         }
-    }
 
     // Dialogs
     CompositionLocalProvider(LocalHazeState provides lendingHazeState) {

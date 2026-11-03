@@ -219,6 +219,7 @@ fun MainNavigationScreen(
     val parentHazeState = LocalHazeState.current
     val localHazeState = remember { dev.chrisbanes.haze.HazeState() }
     val effectiveHazeState = parentHazeState ?: localHazeState
+    val dockHazeState = remember { dev.chrisbanes.haze.HazeState() }
 
     CompositionLocalProvider(LocalHazeState provides effectiveHazeState) {
         // Apple HIG horizontal push & pop transitions between Main App Tabs, History, Profile, Settings, and TransactionDetail
@@ -252,7 +253,7 @@ fun MainNavigationScreen(
                             label = "tabTransition",
                             modifier = Modifier
                                 .fillMaxSize()
-                                .hazeSource(state = effectiveHazeState)
+                                .hazeSource(state = dockHazeState)
                         ) { targetTab ->
                             when (targetTab) {
                                 KanriTab.HOME -> HomeScreen(
@@ -294,7 +295,7 @@ fun MainNavigationScreen(
                                 addTransactionInitialType = "CREDIT"
                                 showAddTransactionDialog = true
                             },
-                            hazeState = effectiveHazeState
+                            hazeState = dockHazeState
                         )
 
                         // Floating Translucent Glass Dock Overlay (slides down when detail sub-screen is active)
@@ -315,7 +316,7 @@ fun MainNavigationScreen(
                                 onTabSelected = { selectedTab = it },
                                 onAddClick = { showAddExpenseIncomeSheet = !showAddExpenseIncomeSheet },
                                 isAddMenuOpen = showAddExpenseIncomeSheet,
-                                hazeState = effectiveHazeState
+                                hazeState = dockHazeState
                             )
                         }
                     }

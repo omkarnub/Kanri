@@ -119,10 +119,16 @@ fun KanriFloatingDock(
     ) {
         // Main Navigation Glass Pill (Capsule enclosing the 4 tabs)
         val pillModifier = if (tokens != null) {
-            val glassHazeStyle = remember(tokens.tintBlur, tokens.blurRadius) {
+            val glassHazeStyle = remember(tokens.tintBlur, tokens.blurRadius, tokens.isDark) {
+                val dockBg = (if (tokens.isDark) Color(0xFF14151E) else Color(0xFFFAF9F5)).copy(
+                    alpha = if (tokens.isDark) 0.38f else 0.58f
+                )
+                val dockTint = (if (tokens.isDark) Color.White else Color(0xFF18181B)).copy(
+                    alpha = if (tokens.isDark) 0.16f else 0.25f
+                )
                 HazeStyle(
-                    backgroundColor = Color.White.copy(alpha = 0.12f),
-                    tint = HazeTint(tokens.tintBlur.copy(alpha = 0.18f)),
+                    backgroundColor = dockBg,
+                    tint = HazeTint(dockTint),
                     blurRadius = tokens.blurRadius.coerceAtLeast(24.dp),
                     noiseFactor = 0.02f
                 )
@@ -402,10 +408,16 @@ private fun DockAddButton(
     )
 
     val buttonModifier = if (tokens != null) {
-        val glassHazeStyle = remember(tokens.tintBlur, tokens.blurRadius) {
+        val glassHazeStyle = remember(tokens.tintBlur, tokens.blurRadius, tokens.isDark) {
+            val dockBg = (if (tokens.isDark) Color(0xFF14151E) else Color(0xFFFAF9F5)).copy(
+                alpha = if (tokens.isDark) 0.40f else 0.60f
+            )
+            val dockTint = (if (tokens.isDark) Color.White else Color(0xFF18181B)).copy(
+                alpha = if (tokens.isDark) 0.18f else 0.28f
+            )
             HazeStyle(
-                backgroundColor = Color.White.copy(alpha = 0.14f),
-                tint = HazeTint(tokens.tintBlur.copy(alpha = 0.22f)),
+                backgroundColor = dockBg,
+                tint = HazeTint(dockTint),
                 blurRadius = tokens.blurRadius.coerceAtLeast(24.dp),
                 noiseFactor = 0.02f
             )

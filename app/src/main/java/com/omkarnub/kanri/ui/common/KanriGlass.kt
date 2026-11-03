@@ -187,44 +187,61 @@ fun Modifier.kanriGlass(
 
         val surfaceModifier = when (level) {
             GlassLevel.Blur -> {
+                val frostBg = (if (tokens.isDark) Color(0xFF14151E) else Color(0xFFFAF9F5)).copy(
+                    alpha = if (tokens.isDark) 0.38f else 0.55f
+                )
+                val frostTint = tokens.tintBlur.copy(
+                    alpha = (tokens.tintBlur.alpha * 2.2f).coerceIn(0.18f, 0.45f)
+                )
                 if (isBlurCapable && currentHaze != null) {
-                    baseModifier.hazeEffect(
-                        state = currentHaze,
-                        style = HazeStyle(
-                            backgroundColor = Color.Transparent,
-                            tint = HazeTint(tokens.tintBlur),
-                            blurRadius = tokens.blurRadius
-                        )
-                    )
-                } else if (isBlurCapable) {
-                    baseModifier.background(tokens.tintBlur.copy(alpha = if (tokens.isDark) 0.16f else 0.72f))
-                } else {
-                    baseModifier.background(tokens.fallbackSurface)
-                }
-            }
-            GlassLevel.Flat -> {
-                baseModifier.background(tokens.tintFlat)
-            }
-            GlassLevel.Strong -> {
-                if (isBlurCapable && currentHaze != null) {
-                    val frostBg = (if (tokens.isDark) Color(0xFF14151B) else Color(0xFFFAF9F5)).copy(alpha = 0.70f)
                     baseModifier.hazeEffect(
                         state = currentHaze,
                         style = HazeStyle(
                             backgroundColor = frostBg,
-                            tint = HazeTint(tokens.tintStrong),
-                            blurRadius = (tokens.blurRadius * 1.45f).coerceAtLeast(36.dp),
-                            noiseFactor = 0.04f
+                            tint = HazeTint(frostTint),
+                            blurRadius = tokens.blurRadius.coerceAtLeast(20.dp),
+                            noiseFactor = 0.025f
                         )
                     )
                 } else if (isBlurCapable) {
                     baseModifier
-                        .background(tokens.fallbackSurface)
-                        .background(tokens.tintStrong)
+                        .background(frostBg)
+                        .background(frostTint)
                 } else {
                     baseModifier
+                        .background(frostBg)
                         .background(tokens.fallbackSurface)
-                        .background(tokens.tintStrong)
+                }
+            }
+            GlassLevel.Flat -> {
+                val flatBg = if (tokens.isDark) {
+                    Color.White.copy(alpha = (tokens.buttonOpacity * 0.9f).coerceIn(0.08f, 0.28f))
+                } else {
+                    Color.Black.copy(alpha = (tokens.buttonOpacity * 0.5f).coerceIn(0.04f, 0.18f))
+                }
+                baseModifier.background(flatBg)
+            }
+            GlassLevel.Strong -> {
+                val strongBg = (if (tokens.isDark) Color(0xFF14151B) else Color(0xFFFAF9F5)).copy(
+                    alpha = if (tokens.isDark) 0.68f else 0.88f
+                )
+                val strongTint = tokens.tintStrong.copy(
+                    alpha = (tokens.tintStrong.alpha * 1.5f).coerceIn(0.25f, 0.60f)
+                )
+                if (isBlurCapable && currentHaze != null) {
+                    baseModifier.hazeEffect(
+                        state = currentHaze,
+                        style = HazeStyle(
+                            backgroundColor = strongBg,
+                            tint = HazeTint(strongTint),
+                            blurRadius = (tokens.blurRadius * 1.45f).coerceAtLeast(36.dp),
+                            noiseFactor = 0.035f
+                        )
+                    )
+                } else {
+                    baseModifier
+                        .background(strongBg)
+                        .background(strongTint)
                 }
             }
         }
@@ -409,25 +426,25 @@ fun getKanriGlassTheme(
 ): KanriGlassTheme {
     return when (themeMode) {
         ThemeMode.GLASS -> KanriGlassTheme(
-            glassBorder = BorderStroke(0.8.dp, Color.White.copy(alpha = 0.22f)),
+            glassBorder = BorderStroke(0.8.dp, Color.White.copy(alpha = 0.25f)),
             activeContentColor = DarkOffWhite,
             inactiveContentColor = Color(0x99FFFFFF),
             addButtonIconColor = DarkOffWhite,
-            shadowColor = Color.Black.copy(alpha = 0.30f),
-            shadowElevation = 14.dp,
+            shadowColor = Color.Black.copy(alpha = 0.25f),
+            shadowElevation = 8.dp,
             hazeStyle = HazeStyle(
-                backgroundColor = Color.White.copy(alpha = 0.08f),
-                tint = HazeTint(Color.White.copy(alpha = 0.04f)),
+                backgroundColor = Color(0xFF14151F).copy(alpha = 0.72f),
+                tint = HazeTint(Color.White.copy(alpha = 0.14f)),
                 blurRadius = 24.dp,
                 noiseFactor = 0.03f
             ),
             popupHazeStyle = HazeStyle(
-                backgroundColor = Color.White.copy(alpha = 0.12f),
-                tint = HazeTint(Color.White.copy(alpha = 0.06f)),
+                backgroundColor = Color(0xFF14151F).copy(alpha = 0.88f),
+                tint = HazeTint(Color.White.copy(alpha = 0.16f)),
                 blurRadius = 36.dp,
                 noiseFactor = 0.04f
             ),
-            fallbackBackgroundColor = Color.White.copy(alpha = 0.08f)
+            fallbackBackgroundColor = Color(0xFF14151F).copy(alpha = 0.88f)
         )
 
         ThemeMode.DARK, ThemeMode.SYSTEM -> KanriGlassTheme(
@@ -531,6 +548,7 @@ fun Modifier.frostedGlass(
         }
     )
     .clip(shape)
+    .background(glassTheme.fallbackBackgroundColor)
     .then(
         if (hazeState != null) {
             Modifier.hazeEffect(
@@ -541,7 +559,6 @@ fun Modifier.frostedGlass(
             Modifier
         }
     )
-    .background(if (hazeState != null) Color.Transparent else glassTheme.fallbackBackgroundColor)
     .border(
         border = glassTheme.glassBorder,
         shape = shape
