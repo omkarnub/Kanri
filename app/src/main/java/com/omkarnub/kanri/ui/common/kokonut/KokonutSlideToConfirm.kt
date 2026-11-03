@@ -1,6 +1,7 @@
 package com.omkarnub.kanri.ui.common.kokonut
 
 import androidx.compose.animation.AnimatedContent
+import androidx.compose.animation.animateColorAsState
 import androidx.compose.animation.core.Animatable
 import androidx.compose.animation.core.CubicBezierEasing
 import androidx.compose.animation.core.Spring
@@ -9,6 +10,8 @@ import androidx.compose.animation.core.spring
 import androidx.compose.animation.core.tween
 import androidx.compose.animation.fadeIn
 import androidx.compose.animation.fadeOut
+import androidx.compose.animation.scaleIn
+import androidx.compose.animation.scaleOut
 import androidx.compose.animation.slideInVertically
 import androidx.compose.animation.slideOutVertically
 import androidx.compose.animation.togetherWith
@@ -117,27 +120,27 @@ enum class SlideConfirmationType(
     val darkColor: Color
 ) {
     INCOME(
-        defaultDoneLabel = "Income entry added!",
+        defaultDoneLabel = "Income added!",
         lightColor = Color(0xFF059669), // Emerald 600
         darkColor = Color(0xFF10B981)   // Emerald 500
     ),
     EXPENSE(
-        defaultDoneLabel = "Expense entry added!",
-        lightColor = Color(0xFFE11D48), // Crimson / Rose 600
-        darkColor = Color(0xFFF43F5E)   // Crimson / Rose 500
+        defaultDoneLabel = "Expense saved!",
+        lightColor = Color(0xFF059669), // Emerald 600 (Green success)
+        darkColor = Color(0xFF10B981)   // Emerald 500
     ),
     LEND(
-        defaultDoneLabel = "Lending entry added!",
-        lightColor = Color(0xFF4F46E5), // Indigo 600
-        darkColor = Color(0xFF6366F1)   // Indigo 500
+        defaultDoneLabel = "Loan saved!",
+        lightColor = Color(0xFF059669), // Emerald 600
+        darkColor = Color(0xFF10B981)   // Emerald 500
     ),
     BORROW(
-        defaultDoneLabel = "Borrowing entry added!",
-        lightColor = Color(0xFFD97706), // Amber 600
-        darkColor = Color(0xFFF59E0B)   // Amber 500
+        defaultDoneLabel = "Borrowing saved!",
+        lightColor = Color(0xFF059669), // Emerald 600
+        darkColor = Color(0xFF10B981)   // Emerald 500
     ),
     DEFAULT(
-        defaultDoneLabel = "Saved",
+        defaultDoneLabel = "Saved!",
         lightColor = Color(0xFF059669),
         darkColor = Color(0xFF10B981)
     )
@@ -167,6 +170,7 @@ fun KokonutSlideToConfirm(
     doneLabel: String? = null,
     confirmationType: SlideConfirmationType = SlideConfirmationType.DEFAULT,
     onConfirm: suspend () -> Unit,
+    onSuccessComplete: (() -> Unit)? = null,
     resetAfter: Long? = null,
     disabled: Boolean = false,
     modifier: Modifier = Modifier
@@ -221,11 +225,11 @@ fun KokonutSlideToConfirm(
             }
 
             val floodingJob = async {
-                coverAnim.animateTo(1f, tween(320, easing = SLIDE_EASE_OUT))
+                coverAnim.animateTo(1f, tween(300, easing = SLIDE_EASE_OUT))
             }
 
             val minDelayJob = async {
-                delay(600)
+                delay(550)
             }
 
             var success = false
@@ -242,7 +246,13 @@ fun KokonutSlideToConfirm(
             if (success) {
                 phase = SlidePhase.DONE
                 haptics.success()
-                if (resetAfter != null) {
+
+                // Hold green success state so the user clearly sees the checkmark & message
+                delay(650)
+
+                if (onSuccessComplete != null) {
+                    onSuccessComplete()
+                } else if (resetAfter != null) {
                     delay(resetAfter)
                     isArmed = false
                     phase = SlidePhase.IDLE
@@ -400,12 +410,18 @@ fun KokonutSlideToConfirm(
                 )
             }
 
-            // 3. Ink Fill Layer (custom colored when done, monochrome dark/light during drag)
-            val inkBgColor = if (isDone) {
+            // 3. Ink Fill Layer (custom emerald green when done, monochrome dark/light during drag)
+            val targetInkBgColor = if (isDone) {
                 if (dark) confirmationType.darkColor else confirmationType.lightColor
             } else {
                 if (dark) Zinc100 else Zinc900
             }
+
+            val animatedInkBgColor by animateColorAsState(
+                targetValue = targetInkBgColor,
+                animationSpec = tween(durationMillis = 280, easing = SLIDE_EASE_OUT),
+                label = "slideInkBg"
+            )
 
             Canvas(
                 modifier = Modifier
@@ -416,7 +432,7 @@ fun KokonutSlideToConfirm(
                 val inkWidth = trackWidthPx - clipRight
                 if (inkWidth > 0f) {
                     drawRoundRect(
-                        color = inkBgColor,
+                        color = animatedInkBgColor,
                         topLeft = Offset.Zero,
                         size = Size(inkWidth, size.height),
                         cornerRadius = CornerRadius(size.height / 2f, size.height / 2f)
@@ -434,9 +450,9 @@ fun KokonutSlideToConfirm(
             Box(
                 modifier = Modifier
                     .fillMaxSize()
-                    .padding(start = if (phase == SlidePhase.IDLE || phase == SlidePhase.DRAGGING) 28.dp else 0.dp)
-                    .padding(end = if (isBusy || isDone) 28.dp else 0.dp)
-                .graphicsLayer { alpha = fillOpacity },
+                    .padding(start = if (phase == SlidePhase.IDLE || phase == SlidePhase.DRAGGING) 28.dp else 20.dp)
+                    .padding(end = if (isBusy || isDone) 56.dp else 0.dp)
+                    .graphicsLayer { alpha = fillOpacity },
                 contentAlignment = Alignment.Center
             ) {
                 AnimatedContent(
@@ -492,6 +508,30 @@ fun KokonutSlideToConfirm(
             }
 
             // 4. Draggable Thumb (Circle 48dp)
+            val targetThumbBg = if (isDone) Color.White else (if (dark) Zinc100 else Zinc900)
+            val animatedThumbBg by animateColorAsState(
+                targetValue = targetThumbBg,
+                animationSpec = tween(240, easing = SLIDE_EASE_OUT),
+                label = "slideThumbBg"
+            )
+
+            val targetThumbIconColor = if (isDone) {
+                if (dark) confirmationType.darkColor else confirmationType.lightColor
+            } else {
+                if (dark) Zinc900 else Color.White
+            }
+            val animatedThumbIconColor by animateColorAsState(
+                targetValue = targetThumbIconColor,
+                animationSpec = tween(240, easing = SLIDE_EASE_OUT),
+                label = "slideThumbIconColor"
+            )
+
+            val thumbScale by animateFloatAsState(
+                targetValue = if (isDone) 1f else (if (isBusy) 0.94f else 1f),
+                animationSpec = spring(stiffness = Spring.StiffnessMediumLow, dampingRatio = 0.65f),
+                label = "thumbScale"
+            )
+
             Box(
                 modifier = Modifier
                     .offset {
@@ -501,43 +541,52 @@ fun KokonutSlideToConfirm(
                         )
                     }
                     .size(SLIDE_THUMB.dp)
+                    .graphicsLayer {
+                        scaleX = thumbScale
+                        scaleY = thumbScale
+                    }
                     .shadow(elevation = 6.dp, shape = CircleShape)
                     .clip(CircleShape)
-                    .background(
-                        if (isDone) {
-                            if (dark) Color.White else Color.White
-                        } else {
-                            if (dark) Zinc100 else Zinc900
-                        }
-                    ),
+                    .background(animatedThumbBg),
                 contentAlignment = Alignment.Center
             ) {
-                val thumbIconColor = if (isDone) {
-                    if (dark) Emerald600 else Emerald600
-                } else {
-                    if (dark) Zinc900 else Color.White
-                }
-
-                if (isDone) {
-                    Icon(
-                        imageVector = Icons.Default.Check,
-                        contentDescription = "Success",
-                        tint = thumbIconColor,
-                        modifier = Modifier.size(22.dp)
-                    )
-                } else if (isBusy) {
-                    CircularProgressIndicator(
-                        modifier = Modifier.size(20.dp),
-                        color = thumbIconColor,
-                        strokeWidth = 2.2.dp
-                    )
-                } else {
-                    Icon(
-                        imageVector = Icons.AutoMirrored.Filled.ArrowForward,
-                        contentDescription = "Slide thumb",
-                        tint = thumbIconColor,
-                        modifier = Modifier.size(20.dp)
-                    )
+                AnimatedContent(
+                    targetState = when {
+                        isDone -> "done"
+                        isBusy -> "busy"
+                        else -> "idle"
+                    },
+                    transitionSpec = {
+                        (fadeIn(animationSpec = tween(180)) + scaleIn(initialScale = 0.7f, animationSpec = spring(dampingRatio = 0.7f)))
+                            .togetherWith(fadeOut(animationSpec = tween(140)) + scaleOut(targetScale = 0.7f))
+                    },
+                    label = "thumbIconContent"
+                ) { state ->
+                    when (state) {
+                        "done" -> {
+                            Icon(
+                                imageVector = Icons.Default.Check,
+                                contentDescription = "Success",
+                                tint = animatedThumbIconColor,
+                                modifier = Modifier.size(22.dp)
+                            )
+                        }
+                        "busy" -> {
+                            CircularProgressIndicator(
+                                modifier = Modifier.size(20.dp),
+                                color = animatedThumbIconColor,
+                                strokeWidth = 2.2.dp
+                            )
+                        }
+                        else -> {
+                            Icon(
+                                imageVector = Icons.AutoMirrored.Filled.ArrowForward,
+                                contentDescription = "Slide thumb",
+                                tint = animatedThumbIconColor,
+                                modifier = Modifier.size(20.dp)
+                            )
+                        }
+                    }
                 }
             }
         }

@@ -1009,8 +1009,9 @@ fun AddTransactionDialog(
                                         }
                                     }
                                     lastSelectedWalletSession = selectedWallet
-                                    haptics.success()
                                     onConfirm(amount, initialType, resolvedPayee, selectedSource, selectedCategoryId, selectedWallet, transactionTimestamp)
+                                },
+                                onSuccessComplete = {
                                     performDismiss()
                                 },
                                 onDismiss = {

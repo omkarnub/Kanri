@@ -1,4 +1,4 @@
-﻿package com.omkarnub.kanri.ui.lending
+package com.omkarnub.kanri.ui.lending
 
 import androidx.compose.runtime.Composable
 import androidx.compose.runtime.CompositionLocalProvider
@@ -163,7 +163,6 @@ fun LendingTransactionBridgeDialog(
                     LendingTransactionSyncHelper.syncLendingRecord(recordId, db, context)
 
                     onRecordSaved?.invoke(recordId)
-                    onDismiss()
                 }
             }
         )

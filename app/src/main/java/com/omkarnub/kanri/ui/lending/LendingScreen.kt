@@ -502,8 +502,6 @@ fun LendingScreen(
                             wallet = wallet
                         )
                     }
-                    showAddEntryDialog = false
-                    editingEntry = null
                 }
             )
         }

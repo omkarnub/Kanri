@@ -115,6 +115,7 @@ fun KokonutSmoothDrawer(
     confirmationType: SlideConfirmationType = SlideConfirmationType.DEFAULT,
     onConfirm: suspend () -> Unit,
     onDismiss: () -> Unit,
+    onSuccessComplete: (() -> Unit)? = null,
     modifier: Modifier = Modifier,
     hazeState: HazeState? = LocalHazeState.current
 ) {
@@ -300,10 +301,13 @@ fun KokonutSmoothDrawer(
                 label = slideLabel,
                 confirmingLabel = "Saving…",
                 confirmationType = confirmationType,
-                onConfirm = {
-                    onConfirm()
-                    delay(350)
-                    onDismiss()
+                onConfirm = onConfirm,
+                onSuccessComplete = {
+                    if (onSuccessComplete != null) {
+                        onSuccessComplete()
+                    } else {
+                        onDismiss()
+                    }
                 },
                 resetAfter = null,
                 modifier = Modifier.fillMaxWidth()

@@ -1469,6 +1469,9 @@ fun LendingEntryDialog(
                         onConfirm = {
                             onSave(personName.trim(), amount, type, entryDate, dueDate, notes.ifBlank { null }, selectedWallet)
                         },
+                        onSuccessComplete = {
+                            performDismiss()
+                        },
                         onDismiss = {
                             currentStep = LendingEntryStep.FILL_DETAILS
                         }
