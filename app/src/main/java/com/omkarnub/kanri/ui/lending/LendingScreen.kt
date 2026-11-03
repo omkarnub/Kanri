@@ -70,7 +70,6 @@ import com.omkarnub.kanri.ui.theme.Panchang
 import com.omkarnub.kanri.ui.theme.KanriMotion
 import com.omkarnub.kanri.util.rememberKanriHaptics
 import dev.chrisbanes.haze.HazeState
-import dev.chrisbanes.haze.hazeSource
 import kotlinx.coroutines.launch
 
 @OptIn(ExperimentalMaterial3Api::class)
@@ -102,9 +101,6 @@ fun LendingScreen(
     // Split Expense Sheet
     var showSplitSheet by remember { mutableStateOf(false) }
     val splitSheetState = rememberModalBottomSheetState(skipPartiallyExpanded = true)
-
-    // Local HazeState to blur screen content behind dialog cards
-    val lendingHazeState = remember { HazeState() }
 
     // Entrance animation animatables (played once on tab entrance)
     val headerAlpha = remember { Animatable(0f) }
@@ -143,9 +139,7 @@ fun LendingScreen(
 
     Box(modifier = modifier.fillMaxSize()) {
         Scaffold(
-            modifier = Modifier
-                .fillMaxSize()
-                .hazeSource(state = lendingHazeState),
+            modifier = Modifier.fillMaxSize(),
             containerColor = if (tokens != null) androidx.compose.ui.graphics.Color.Transparent else MaterialTheme.colorScheme.background,
             snackbarHost = { SnackbarHost(snackbarHostState) },
             topBar = {
@@ -470,8 +464,7 @@ fun LendingScreen(
         }
 
     // Dialogs
-    CompositionLocalProvider(LocalHazeState provides lendingHazeState) {
-        // 1. Add / Edit Entry Dialog
+    // 1. Add / Edit Entry Dialog
         if (showAddEntryDialog) {
             val recentPeople = remember(hubState.allPeopleSummaries) {
                 hubState.allPeopleSummaries.map { it.displayName }
@@ -641,10 +634,9 @@ fun LendingScreen(
                     hubViewModel.repayPersonDues(p.displayName, "BORROWED", p.toPay, System.currentTimeMillis(), "UPI payment")
                     upiDialogPerson = null
                 },
-                hazeState = lendingHazeState
+                hazeState = null
             )
         }
-    }
 
     // 6. Split a Bill Full Screen Overlay
     androidx.compose.animation.AnimatedVisibility(

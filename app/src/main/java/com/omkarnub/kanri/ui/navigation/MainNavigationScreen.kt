@@ -23,7 +23,6 @@ import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
 import androidx.lifecycle.viewmodel.compose.viewModel
 import dev.chrisbanes.haze.HazeState
-import dev.chrisbanes.haze.hazeSource
 import com.omkarnub.kanri.ui.common.LocalHazeState
 import com.omkarnub.kanri.ui.home.AddTransactionDialog
 import com.omkarnub.kanri.ui.home.HomeScreen
@@ -219,7 +218,6 @@ fun MainNavigationScreen(
     val parentHazeState = LocalHazeState.current
     val localHazeState = remember { dev.chrisbanes.haze.HazeState() }
     val effectiveHazeState = parentHazeState ?: localHazeState
-    val dockHazeState = remember { dev.chrisbanes.haze.HazeState() }
 
     CompositionLocalProvider(LocalHazeState provides effectiveHazeState) {
         // Apple HIG horizontal push & pop transitions between Main App Tabs, History, Profile, Settings, and TransactionDetail
@@ -251,9 +249,7 @@ fun MainNavigationScreen(
                                 KanriMotion.tabTransition(isForward)
                             },
                             label = "tabTransition",
-                            modifier = Modifier
-                                .fillMaxSize()
-                                .hazeSource(state = dockHazeState)
+                            modifier = Modifier.fillMaxSize()
                         ) { targetTab ->
                             when (targetTab) {
                                 KanriTab.HOME -> HomeScreen(
@@ -295,7 +291,7 @@ fun MainNavigationScreen(
                                 addTransactionInitialType = "CREDIT"
                                 showAddTransactionDialog = true
                             },
-                            hazeState = dockHazeState
+                            hazeState = effectiveHazeState
                         )
 
                         // Floating Translucent Glass Dock Overlay (slides down when detail sub-screen is active)
@@ -316,7 +312,7 @@ fun MainNavigationScreen(
                                 onTabSelected = { selectedTab = it },
                                 onAddClick = { showAddExpenseIncomeSheet = !showAddExpenseIncomeSheet },
                                 isAddMenuOpen = showAddExpenseIncomeSheet,
-                                hazeState = dockHazeState
+                                hazeState = effectiveHazeState
                             )
                         }
                     }
