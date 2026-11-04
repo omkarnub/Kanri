@@ -1842,7 +1842,7 @@ var __publicField = (obj, key, value) => __defNormalProp(obj, typeof key !== "sy
   const PETAL_MAX = 72;
   const BURST = 18;
   const BURST_POOL = BURST * 4;
-  const vals = {
+  const sceneVals = {
     bloom: 5,
     petals: 5,
     petalSize: 14,
@@ -1864,7 +1864,7 @@ var __publicField = (obj, key, value) => __defNormalProp(obj, typeof key !== "sy
       petalColor: "#F3D0EB"
     }
   };
-  let dirty = true;
+  let isSceneDirty = true;
   function init() {
     const root = document.getElementById("root");
     const canvas = document.getElementById("stage");
@@ -1940,6 +1940,26 @@ var __publicField = (obj, key, value) => __defNormalProp(obj, typeof key !== "sy
     });
     ro.observe(root);
     io.observe(root);
+    if (!W || !H) {
+      W = root.clientWidth || window.innerWidth || 1080;
+      H = root.clientHeight || window.innerHeight || 1920;
+      dpr = soft ? 1 : Math.min(2, window.devicePixelRatio || 1);
+      measure();
+      sizeDirty = true;
+    }
+    window.addEventListener("resize", () => {
+      const nw = root.clientWidth || window.innerWidth;
+      const nh = root.clientHeight || window.innerHeight;
+      if (nw && nh && (nw !== W || nh !== H)) {
+        W = nw;
+        H = nh;
+        dpr = soft ? 1 : Math.min(2, window.devicePixelRatio || 1);
+        measure();
+        sizeDirty = true;
+        if (W && H) draw(0);
+        wake();
+      }
+    });
     const onMove = (e) => {
       if (e.clientX === ptr.cx && e.clientY === ptr.cy && ptr.over) return;
       ptr.cx = e.clientX;
@@ -2249,10 +2269,10 @@ var __publicField = (obj, key, value) => __defNormalProp(obj, typeof key !== "sy
     const wake = () => {
       if (!raf && onScreen && !document.hidden) raf = requestAnimationFrame(frame);
     };
-    const triggerWake = () => {
-      dirty = true;
+    function triggerWake() {
+      isSceneDirty = true;
       wake();
-    };
+    }
     let cloudNear = 0, cloudFar = 0, windDir = 1;
     let animating = false, burstAlive = false;
     const frame = (now) => {
@@ -2264,9 +2284,9 @@ var __publicField = (obj, key, value) => __defNormalProp(obj, typeof key !== "sy
         lastTick = -1;
         return;
       }
-      const dirty2 = dirty2 || sizeDirty;
+      const dirty = isSceneDirty || sizeDirty;
       const active = job !== null || pending || animating || physAwake || ptr.moved || ptr.tap || burstAlive;
-      if (!active && !dirty2) {
+      if (!active && !dirty) {
         lastNow = -1;
         lastTick = -1;
         return;
@@ -2275,9 +2295,9 @@ var __publicField = (obj, key, value) => __defNormalProp(obj, typeof key !== "sy
       tmp9.set(gaps);
       const period = tmp9.sort()[4];
       const N = Math.max(1, Math.floor(16.7 / Math.max(1, period) + 0.1));
-      if (!dirty2 && ++ticks % N !== 0) return;
+      if (!dirty && ++ticks % N !== 0) return;
       const dt = lastNow < 0 ? 0 : Math.min(0.05, (now - lastNow) / 1e3);
-      if (lastNow >= 0 && !job && !dirty2) fgaps[fgi++ % 15] = Math.min(200, now - lastNow);
+      if (lastNow >= 0 && !job && !dirty) fgaps[fgi++ % 15] = Math.min(200, now - lastNow);
       lastNow = now;
       draw(dt);
       if (++drawn > 30 && !job && animating) {
@@ -2333,10 +2353,10 @@ var __publicField = (obj, key, value) => __defNormalProp(obj, typeof key !== "sy
       ctx.setTransform(ma * la + mc * lb, mb * la + md * lb, mc * c - ma * sn, md * c - mb * sn, ma * x + mc * y + me, mb * x + md * y + mf);
     };
     const draw = (dt) => {
-      const v = vals;
+      const v = sceneVals;
       const adv = v.advanced;
-      if (dirty) sceneCheck = true;
-      dirty = false;
+      if (isSceneDirty) sceneCheck = true;
+      isSceneDirty = false;
       if (sizeDirty) {
         sizeCanvas();
         sizeDirty = false;
