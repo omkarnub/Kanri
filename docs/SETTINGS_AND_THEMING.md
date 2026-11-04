@@ -18,11 +18,11 @@ The settings architecture adheres to:
      - When `Glass` is selected:
        - **Live Shader Backgrounds**: 10 animated WebGL / Canvas backgrounds displayed **side by side in 2 columns** (`Gemini Aurora`, `Grain Gradient`, `Hero Geometric`, `Prism Swirl`, `Cloudscape`, `Ink Ridges`, `Fuji & Sakura`, `Sumi-e Mist`, `Thistle Portico`, `Still Sunset Meadow`).
          - **Thistle Portico**: High-performance Canvas 2D scene with pointed Gothic arch, castle view, wisteria racemes swaying in the wind, falling petals, and luminous light shafts.
-         - **Still Sunset Meadow**: 3D voxel landscape with interactive grass parting, blocky flowers, rolling hills, and a dynamic real-world day/sunset/night cycle driven by the user's local time zone.
+         - **Still Sunset Meadow**: 3D voxel landscape with interactive grass parting, blocky flowers, rolling hills, and a 15-keyframe photorealistic 24-hour day cycle (Golden Rose sunrise, crisp morning azure, real-life Rayleigh daylight blue, fiery sunset peak, and starry cosmic night) driven by the user's local time zone.
         - **Customise Glass Components** action row navigating to `GlassCustomizerScreen`:
-          - **Live Glass Preview Card**: Shows real-time visual feedback of blur depth, translucency, specular border reflections, and corner curvature over the active live background.
-          - **Frosted Blur (0 to 50 dp)**: Directly scales hardware backdrop blur through Haze / RenderNode without restrictive minimum clamping, allowing clean transitions down to 0 dp (clear glass).
-          - **Glass Tint (2% to 40%)**: Dynamically adjusts background alpha and tint saturation.
+          - **Live Glass Preview Card**: Shows real-time visual feedback of blur depth, translucency, specular border reflections, and corner curvature over a high-contrast preview canvas with glowing orbs and lines in `hazeSource`.
+          - **Frosted Blur (0 to 50 dp)**: Directly scales hardware backdrop blur through Haze / RenderNode without restrictive minimum clamping, allowing clean transitions from crystal clear glass (0 dp) up to silky, heavy frosted diffusion (50 dp).
+          - **Glass Tint (-1.0 to +1.0)**: Center-neutral slider (default `0.0f` = "No tint") allowing smooth adjustment to dark smoky obsidian glass (sliding left) or luminous crystalline white frost glass (sliding right), complete with quick-snap buttons (`Dark -50%`, `No tint 0%`, `Light +50%`).
           - **Border & Edge Shine (0% to 70%)**: Controls specular edge reflection intensity from fully off (0%) up to intense luminance.
           - **Corner Curvature (10 to 32 dp)**: Modifies corner radius dynamically across cards.
    - **App Launcher Icon**: Toggle between Dark and Light activity aliases with confirmation dialog.

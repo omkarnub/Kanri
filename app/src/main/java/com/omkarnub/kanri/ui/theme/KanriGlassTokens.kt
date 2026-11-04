@@ -47,7 +47,8 @@ data class KanriGlassTokens(
     val expenseColor: Color = Color(0xFFE54D2E),
     val incomeColor: Color = Color(0xFF30A46C),
     val expenseTintOpacity: Float = 0.18f,
-    val incomeTintOpacity: Float = 0.18f
+    val incomeTintOpacity: Float = 0.18f,
+    val tintLightness: Float = 0.0f
 )
 
 val LocalKanriGlass = staticCompositionLocalOf<KanriGlassTokens?> { null }
@@ -191,27 +192,43 @@ fun computeAdaptedAccentColor(baseColor: Color, tintLightness: Float): Color {
 }
 
 fun createCustomGlassTokens(c: GlassCustomization): KanriGlassTokens {
-    val darkBase = Color(0xFF0F0F14)
+    val lightness = c.tintLightness.coerceIn(-1.0f, 1.0f)
+    val darkBase = Color(0xFF0A0B10)
     val whiteBase = Color(0xFFFFFFFF)
 
     // Tint calculation:
-    // If tintLightness < 0, blend from pure white towards dark smoky obsidian.
-    // If tintLightness >= 0, stay pure white with pristine crystal luminescence.
-    val baseTintColor = if (c.tintLightness < 0f) {
-        val darkFactor = (-c.tintLightness).coerceIn(0f, 1f)
-        lerpColor(whiteBase, darkBase, darkFactor)
-    } else {
-        whiteBase
-    }
+    // Middle (0.0f): Neutral crystal glass with no dark or light tint cast
+    // Sliding left (< 0.0f): Dark tint (smoky obsidian glass)
+    // Sliding right (> 0.0f): Light tint (luminous white frost glass)
+    val tintBlur: Color
+    val tintFlat: Color
+    val tintStrong: Color
+    val fallbackSurface: Color
 
-    val tintBlur = baseTintColor.copy(alpha = c.surfaceOpacity.coerceIn(0.01f, 0.60f))
-    val tintFlat = baseTintColor.copy(alpha = c.buttonOpacity.coerceIn(0.01f, 0.50f))
-    val tintStrong = lerpColor(
-        baseTintColor,
-        if (c.tintLightness < 0f) Color(0xFF16161C) else Color.White,
-        0.5f
-    ).copy(alpha = (c.surfaceOpacity * 1.5f).coerceIn(0.05f, 0.75f))
-    val fallbackSurface = (if (c.tintLightness < 0f) Color(0xFF14151B) else Color(0xFFFAF9F5)).copy(alpha = 0.88f)
+    when {
+        lightness < -0.04f -> {
+            val d = (-lightness).coerceIn(0f, 1f)
+            val base = lerpColor(whiteBase, darkBase, (0.4f + d * 0.6f))
+            tintBlur = base.copy(alpha = (0.06f + d * 0.40f).coerceIn(0.04f, 0.65f))
+            tintFlat = Color.Black.copy(alpha = (0.08f + d * 0.35f).coerceIn(0.05f, 0.50f))
+            tintStrong = Color(0xFF0C0D14).copy(alpha = (0.28f + d * 0.55f).coerceIn(0.20f, 0.90f))
+            fallbackSurface = Color(0xFF0A0B10).copy(alpha = (0.80f + d * 0.16f).coerceIn(0.70f, 0.96f))
+        }
+        lightness > 0.04f -> {
+            val l = lightness.coerceIn(0f, 1f)
+            tintBlur = Color.White.copy(alpha = (0.05f + l * 0.38f).coerceIn(0.04f, 0.60f))
+            tintFlat = Color.White.copy(alpha = (0.08f + l * 0.30f).coerceIn(0.06f, 0.45f))
+            tintStrong = Color.White.copy(alpha = (0.22f + l * 0.50f).coerceIn(0.18f, 0.85f))
+            fallbackSurface = Color(0xFFFAF9F5).copy(alpha = (0.80f + l * 0.16f).coerceIn(0.70f, 0.96f))
+        }
+        else -> {
+            // Neutral / No tint: pure clear glass with no dark or light cast
+            tintBlur = Color.White.copy(alpha = 0.04f)
+            tintFlat = Color.White.copy(alpha = 0.08f)
+            tintStrong = Color(0xFF14151B).copy(alpha = 0.22f)
+            fallbackSurface = Color(0xFF14151B).copy(alpha = 0.80f)
+        }
+    }
 
     // In glass mode, borders are specular white rim reflections (never dark gray or black)
     val borderBase = Color.White
@@ -231,8 +248,9 @@ fun createCustomGlassTokens(c: GlassCustomization): KanriGlassTokens {
         borderWidth = (c.borderWidthDp * 0.8f).coerceIn(0.6f, 1.0f).dp,
         cornerRadius = c.cornerRadiusDp.coerceIn(8f, 40f).dp,
         buttonOpacity = c.buttonOpacity.coerceIn(0.04f, 0.50f),
-        expenseColor = computeAdaptedAccentColor(Color(c.expenseColorHex), c.tintLightness),
-        incomeColor = computeAdaptedAccentColor(Color(c.incomeColorHex), c.tintLightness),
+        tintLightness = lightness,
+        expenseColor = computeAdaptedAccentColor(Color(c.expenseColorHex), lightness),
+        incomeColor = computeAdaptedAccentColor(Color(c.incomeColorHex), lightness),
         expenseTintOpacity = c.expenseTintOpacity.coerceIn(0.04f, 0.50f),
         incomeTintOpacity = c.incomeTintOpacity.coerceIn(0.04f, 0.50f)
     )

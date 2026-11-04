@@ -23,6 +23,7 @@ import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
 import androidx.lifecycle.viewmodel.compose.viewModel
 import dev.chrisbanes.haze.HazeState
+import dev.chrisbanes.haze.hazeSource
 import com.omkarnub.kanri.ui.common.LocalHazeState
 import com.omkarnub.kanri.ui.home.AddTransactionDialog
 import com.omkarnub.kanri.ui.home.HomeScreen
@@ -249,7 +250,9 @@ fun MainNavigationScreen(
                                 KanriMotion.tabTransition(isForward)
                             },
                             label = "tabTransition",
-                            modifier = Modifier.fillMaxSize()
+                            modifier = Modifier
+                                .fillMaxSize()
+                                .hazeSource(effectiveHazeState)
                         ) { targetTab ->
                             when (targetTab) {
                                 KanriTab.HOME -> HomeScreen(

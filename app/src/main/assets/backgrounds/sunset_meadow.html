@@ -758,12 +758,66 @@ void main() {
     a[1] * wa + b[1] * wb + c[1] * wc,
     a[2] * wa + b[2] * wb + c[2] * wc
   ];
+  // 24-Hour Photorealistic & Atmospheric Day Cycle
+  // Golden Rose Sunrise -> Crisp Morning Azure -> Real-Life Daylight Blue -> Fiery Sunset -> Indigo Dusk -> Starry Night with Moon
+  const SKY_KEYFRAMES = [
+    { hour: 0.0,  top: hex("#040716"), hor: hex("#0E1738"), glow: hex("#9DB0F0"), light: [0.22, 0.27, 0.46], clouds: [0.26, 0.30, 0.45], gold: 0.0, night: 1.0, day: 0.0 },
+    { hour: 4.5,  top: hex("#070B22"), hor: hex("#161D44"), glow: hex("#A0B4F2"), light: [0.28, 0.32, 0.50], clouds: [0.32, 0.34, 0.48], gold: 0.1, night: 0.9, day: 0.0 },
+    { hour: 5.5,  top: hex("#684A6A"), hor: hex("#C86D74"), glow: hex("#FFAE8C"), light: [0.65, 0.58, 0.62], clouds: [0.75, 0.62, 0.68], gold: 0.6, night: 0.3, day: 0.1 },
+    { hour: 6.3,  top: hex("#B47290"), hor: hex("#FFA085"), glow: hex("#FFE2BE"), light: [1.08, 0.94, 0.90], clouds: [1.10, 0.88, 0.92], gold: 0.9, night: 0.0, day: 0.3 }, // Golden Rose Sunrise
+    { hour: 7.5,  top: hex("#7689CE"), hor: hex("#D4BFE0"), glow: hex("#FFF0D4"), light: [1.10, 1.04, 0.98], clouds: [1.08, 0.96, 0.96], gold: 0.4, night: 0.0, day: 0.6 },
+    { hour: 8.5,  top: hex("#3B8AE8"), hor: hex("#A8D4F8"), glow: hex("#FFF8E7"), light: [1.12, 1.10, 1.05], clouds: [1.04, 1.02, 1.00], gold: 0.08, night: 0.0, day: 0.85 }, // Morning Azure
+    { hour: 11.0, top: hex("#2563EB"), hor: hex("#93C5FD"), glow: hex("#FFFFFF"), light: [1.18, 1.16, 1.12], clouds: [1.02, 1.02, 1.02], gold: 0.0, night: 0.0, day: 1.0 }, // Real-life Daylight
+    { hour: 14.5, top: hex("#2563EB"), hor: hex("#93C5FD"), glow: hex("#FFFFFF"), light: [1.18, 1.16, 1.12], clouds: [1.02, 1.02, 1.02], gold: 0.0, night: 0.0, day: 1.0 }, // Real-life Daylight
+    { hour: 16.8, top: hex("#3B82F6"), hor: hex("#BFDBFE"), glow: hex("#FFF3D6"), light: [1.15, 1.10, 1.02], clouds: [1.05, 1.00, 0.95], gold: 0.2, night: 0.0, day: 0.8 },
+    { hour: 17.8, top: hex("#B6587A"), hor: hex("#FA7E52"), glow: hex("#FFB25A"), light: [1.12, 0.92, 0.78], clouds: [1.14, 0.88, 0.76], gold: 0.85, night: 0.0, day: 0.3 }, // Sunset
+    { hour: 18.5, top: hex("#D87093"), hor: hex("#F97316"), glow: hex("#FFC078"), light: [1.10, 0.85, 0.72], clouds: [1.15, 0.85, 0.72], gold: 1.0, night: 0.0, day: 0.15 }, // Sunset peak
+    { hour: 19.6, top: hex("#6A3D78"), hor: hex("#9D4EDD"), glow: hex("#E0AAFF"), light: [0.65, 0.52, 0.72], clouds: [0.70, 0.54, 0.75], gold: 0.5, night: 0.3, day: 0.0 }, // Dusk
+    { hour: 20.6, top: hex("#1E1B4B"), hor: hex("#312E81"), glow: hex("#A78BFA"), light: [0.40, 0.38, 0.58], clouds: [0.45, 0.40, 0.60], gold: 0.15, night: 0.75, day: 0.0 }, // Twilight
+    { hour: 21.8, top: hex("#040716"), hor: hex("#0E1738"), glow: hex("#9DB0F0"), light: [0.22, 0.27, 0.46], clouds: [0.26, 0.30, 0.45], gold: 0.0, night: 1.0, day: 0.0 }, // Night
+    { hour: 24.0, top: hex("#040716"), hor: hex("#0E1738"), glow: hex("#9DB0F0"), light: [0.22, 0.27, 0.46], clouds: [0.26, 0.30, 0.45], gold: 0.0, night: 1.0, day: 0.0 }
+  ];
+
+  function lerpCol(a, b, t) {
+    return [
+      a[0] + (b[0] - a[0]) * t,
+      a[1] + (b[1] - a[1]) * t,
+      a[2] + (b[2] - a[2]) * t
+    ];
+  }
+  function lerpVal(a, b, t) {
+    return a + (b - a) * t;
+  }
+  function getSkyEnvironment(h) {
+    const wrappedH = ((h % 24) + 24) % 24;
+    let i = 0;
+    while (i < SKY_KEYFRAMES.length - 1 && SKY_KEYFRAMES[i + 1].hour < wrappedH) {
+      i++;
+    }
+    const k1 = SKY_KEYFRAMES[i];
+    const k2 = SKY_KEYFRAMES[Math.min(i + 1, SKY_KEYFRAMES.length - 1)];
+    const span = k2.hour - k1.hour;
+    const rawT = span > 0 ? (wrappedH - k1.hour) / span : 0;
+    const t = clamp(rawT, 0, 1);
+    const easeT = 0.5 - 0.5 * Math.cos(t * Math.PI);
+
+    return {
+      top: lerpCol(k1.top, k2.top, easeT),
+      hor: lerpCol(k1.hor, k2.hor, easeT),
+      glow: lerpCol(k1.glow, k2.glow, easeT),
+      light: lerpCol(k1.light, k2.light, easeT),
+      clouds: lerpCol(k1.clouds, k2.clouds, easeT),
+      gold: lerpVal(k1.gold, k2.gold, easeT),
+      night: lerpVal(k1.night, k2.night, easeT),
+      day: lerpVal(k1.day, k2.day, easeT)
+    };
+  }
+
   function dayAt(hour) {
     const th = (hour - 6) / 24 * Math.PI * 2;
     const e = Math.sin(th);
-    const day = smooth(0.12, 0.5, e);
-    const gold = (1 - day) * smooth(-0.2, 0, e);
-    return { th, e, day, gold, night: 1 - day - gold };
+    const env = getSkyEnvironment(hour);
+    return { th, e, ...env };
   }
   const PUSH_ROWS = 28;
   const PUSH_HZ = 1.4;
@@ -1126,28 +1180,23 @@ void main() {
       const src = D.e > -0.3 ? sun : moon;
       keyDir += (clamp((src[0] - aspect / 2) / (aspect / 2), -1, 1) - keyDir) * (1 - Math.exp(-dt / 0.8));
       if (dt === 0) keyDir = clamp((src[0] - aspect / 2) / (aspect / 2), -1, 1);
-      const sk = p.sky;
-      const userTop = parseColor(sk.top, hex(DEFAULT_SKY.top));
-      const userHor = parseColor(sk.horizon, hex(DEFAULT_SKY.horizon));
-      const userGlow = parseColor(sk.glow, hex(DEFAULT_SKY.glow));
-      const w3 = (a, b, c) => blend3(a, b, c, D.day, D.gold, D.night);
-      const top = w3(DAY_SKY.top, userTop, NIGHT_SKY.top);
-      const hor = w3(DAY_SKY.horizon, userHor, NIGHT_SKY.horizon);
-      const glow = w3(DAY_SKY.glow, userGlow, NIGHT_SKY.glow);
+      const top = D.top;
+      const hor = D.hor;
+      const glow = D.glow;
       shared.uTime.value = time;
       shared.uWind.value = clamp(p.wind, 0, 10) / 5;
       shared.uAspect.value = aspect;
       setV(shared.uGlow, glow);
-      setV(shared.uLight, w3(LIGHT_DAY, [1, 1, 1], LIGHT_NIGHT));
+      setV(shared.uLight, D.light);
       shared.uKeyDir.value = keyDir;
-      setV(shared.uHazeA, w3(mix(DAY_SKY.horizon, [0.86, 0.9, 0.95], 0.3), mix(userHor, C.hazeGold, 0.7), shade(NIGHT_SKY.horizon, 0.9)));
-      setV(shared.uHazeB, w3(mix(DAY_SKY.glow, DAY_SKY.horizon, 0.5), mix(userGlow, C.hazeSun, 0.55), shade(NIGHT_SKY.glow, 0.35)));
+      setV(shared.uHazeA, mix(hor, [0.86, 0.9, 0.95], 0.25));
+      setV(shared.uHazeB, mix(glow, hor, 0.45));
       shared.uHazeK.value = 17e-4 * clamp(p.haze, 0, 10);
       shared.uSunNdc.value.set(src[0] / aspect * 2 - 1, 1 - 2 * src[1]);
       voxelMat.uniforms.uCloudShift.value = cloudShift;
       voxelMat.uniforms.uCloudWrap.value = built.cloudWrap;
       voxelMat.uniforms.uRimK.value = sunUp * (1 - 0.5 * D.day) + 0.15 * moonUp * smooth(-0.3, -0.5, D.e);
-      setV(voxelMat.uniforms.uCloudLight, w3(CLOUD_DAY, [1, 1, 1], CLOUD_NIGHT));
+      setV(voxelMat.uniforms.uCloudLight, D.clouds);
       voxelMat.uniforms.uCloudWhite.value = D.day * 0.8 + D.night * 0.6;
       skyMat.uniforms.uHy.value = h;
       setV(skyMat.uniforms.uTop, top);
