@@ -32,7 +32,7 @@
 | **Dynamic Color** | Material You wallpaper-extracted | Follows system colors | Available on Android 12+ (API 31+); adapts Dark or Light scheme from system wallpaper. |
 
 ### Live Glass Shaders Supported (8 Variants):
-1. **Gemini Aurora (`aurora`)**: Google Gemini mobile neural aurora effect with electric blue, cyan, violet, and fuchsia ribbons.
+1. **Gemini Aurora (`aurora`)**: Google Gemini mobile neural aurora WebGL shader with dual-cycle buttery blend (#7cff67,#22d3c5,#8f5cff to #ff8a5c,#ff5c8a,#8a5cff).
 2. **Grain Gradient (`grain_gradient`)**: Deep monochromatic textural gradient.
 3. **Hero Geometric (`hero_geometric`)**: Deep blue geometric ambient field.
 4. **Prism Swirl (`prism_gradient`)**: Prismatic light diffraction.

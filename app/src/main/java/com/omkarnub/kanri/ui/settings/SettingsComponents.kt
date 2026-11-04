@@ -645,10 +645,11 @@ fun getShaderGradientBrush(type: GlassBackgroundType): Brush {
         GlassBackgroundType.AURORA -> Brush.linearGradient(
             colors = listOf(
                 Color(0xFF07090E),
-                Color(0xFF1A73E8),
-                Color(0xFF00E5FF),
-                Color(0xFF7C3AED),
-                Color(0xFFD946EF),
+                Color(0xFF7CFF67),
+                Color(0xFF22D3C5),
+                Color(0xFF8F5CFF),
+                Color(0xFFFF5C8A),
+                Color(0xFFFF8A5C),
                 Color(0xFF07090E)
             )
         )
@@ -678,7 +679,7 @@ fun getShaderGradientBrush(type: GlassBackgroundType): Brush {
 
 fun getShaderDescription(type: GlassBackgroundType): String {
     return when (type) {
-        GlassBackgroundType.AURORA -> "Gemini mobile neural aurora with cyan, cobalt & fuchsia ribbons"
+        GlassBackgroundType.AURORA -> "Dual-cycle Gemini aurora smoothly blending lime, turquoise & violet into coral, pink & violet"
         GlassBackgroundType.GRAIN_GRADIENT -> "Film-grade atmospheric grain"
         GlassBackgroundType.HERO_GEOMETRIC -> "Precision isometric low-poly geometry"
         GlassBackgroundType.PRISM_GRADIENT -> "Dynamic refractive glass caustics"

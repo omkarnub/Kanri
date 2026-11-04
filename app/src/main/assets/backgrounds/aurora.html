@@ -14,210 +14,182 @@
       user-select: none;
       touch-action: none;
     }
-
-    .gradient-container {
-      position: absolute;
-      inset: 0;
+    canvas {
+      display: block;
       width: 100vw;
       height: 100vh;
-      overflow: hidden;
-      background: radial-gradient(ellipse at 50% 32%, #0d1224 0%, #080a14 55%, #040509 100%);
-    }
-
-    .blur-wrapper {
-      position: absolute;
-      inset: -25%;
-      width: 150%;
-      height: 150%;
-      filter: blur(85px);
-      -webkit-filter: blur(85px);
-      transform: translate3d(0, 0, 0);
-      will-change: transform;
-    }
-
-    .orb {
-      position: absolute;
-      border-radius: 50%;
-      mix-blend-mode: screen;
-      will-change: transform;
-    }
-
-    /* 1. Gemini Electric Blue & Radiant Cyan Spark (Google Blue core) */
-    .orb-cyan-blue {
-      top: 8%;
-      left: -6%;
-      width: 96vw;
-      height: 96vw;
-      background: radial-gradient(ellipse at 45% 45%,
-        rgba(0, 229, 255, 0.92) 0%,
-        rgba(26, 115, 232, 0.85) 26%,
-        rgba(66, 133, 244, 0.60) 52%,
-        rgba(37, 99, 235, 0.22) 75%,
-        rgba(37, 99, 235, 0.0) 100%
-      );
-      animation: geminiDrift1 26s ease-in-out infinite alternate;
-    }
-
-    /* 2. Gemini Radiant Violet & Vivid Fuchsia / Magenta Aurora Ribbon */
-    .orb-violet-pink {
-      top: 14%;
-      right: -10%;
-      width: 102vw;
-      height: 102vw;
-      background: radial-gradient(ellipse at 55% 50%,
-        rgba(255, 46, 147, 0.88) 0%,
-        rgba(217, 70, 239, 0.78) 25%,
-        rgba(168, 85, 247, 0.58) 50%,
-        rgba(124, 58, 237, 0.25) 75%,
-        rgba(124, 58, 237, 0.0) 100%
-      );
-      transform-origin: 45% 55%;
-      animation: geminiOrbit 32s linear infinite reverse;
-    }
-
-    /* 3. Gemini Neural Core — Incandescent Spark Pulsar (Thinking / Live Core) */
-    .orb-neural-core {
-      top: 28%;
-      left: 18%;
-      width: 76vw;
-      height: 76vw;
-      background: radial-gradient(circle at center,
-        rgba(240, 249, 255, 0.95) 0%,
-        rgba(186, 230, 253, 0.75) 20%,
-        rgba(56, 189, 248, 0.48) 42%,
-        rgba(99, 102, 241, 0.20) 70%,
-        rgba(99, 102, 241, 0.0) 100%
-      );
-      animation: geminiPulse 14s ease-in-out infinite alternate;
-    }
-
-    /* 4. Google Live Sunset Ribbon — Coral Red & Amber Gold (Warm Horizon Accent) */
-    .orb-coral-amber {
-      bottom: 5%;
-      left: 6%;
-      width: 92vw;
-      height: 88vw;
-      background: radial-gradient(ellipse at 45% 55%,
-        rgba(251, 188, 4, 0.82) 0%,
-        rgba(249, 115, 22, 0.65) 26%,
-        rgba(234, 67, 53, 0.48) 52%,
-        rgba(225, 29, 72, 0.18) 76%,
-        rgba(225, 29, 72, 0.0) 100%
-      );
-      animation: geminiDrift2 30s ease-in-out infinite alternate;
-    }
-
-    /* 5. Google Emerald Shimmer — Jade / Mint Flow Ribbon (Perimeter Accent) */
-    .orb-emerald-teal {
-      top: 48%;
-      right: 4%;
-      width: 82vw;
-      height: 82vw;
-      background: radial-gradient(circle at center,
-        rgba(52, 168, 83, 0.75) 0%,
-        rgba(16, 185, 129, 0.52) 30%,
-        rgba(6, 182, 212, 0.30) 60%,
-        rgba(6, 182, 212, 0.0) 100%
-      );
-      transform-origin: calc(50% + 140px) calc(50% - 90px);
-      animation: geminiOrbit 38s linear infinite;
-    }
-
-    /* 6. Gemini Cosmic Indigo Atmospheric Veil (Seamless Diffuse Body) */
-    .orb-atmosphere {
-      top: 16%;
-      left: 10%;
-      width: 108vw;
-      height: 108vw;
-      background: radial-gradient(circle at center,
-        rgba(99, 102, 241, 0.42) 0%,
-        rgba(139, 92, 246, 0.32) 35%,
-        rgba(236, 72, 153, 0.18) 65%,
-        rgba(236, 72, 153, 0.0) 100%
-      );
-      animation: geminiDriftVertical 34s ease-in-out infinite alternate;
-    }
-
-    @keyframes geminiDrift1 {
-      0% {
-        transform: translate3d(-18%, -10%, 0) scale(1.0);
-      }
-      50% {
-        transform: translate3d(18%, 14%, 0) scale(1.10);
-      }
-      100% {
-        transform: translate3d(-18%, -10%, 0) scale(1.0);
-      }
-    }
-
-    @keyframes geminiOrbit {
-      0% {
-        transform: rotate(0deg);
-      }
-      100% {
-        transform: rotate(360deg);
-      }
-    }
-
-    @keyframes geminiPulse {
-      0% {
-        transform: scale(0.88) translate3d(-6%, -4%, 0);
-        opacity: 0.85;
-      }
-      50% {
-        transform: scale(1.16) translate3d(8%, 6%, 0);
-        opacity: 1.0;
-      }
-      100% {
-        transform: scale(0.88) translate3d(-6%, -4%, 0);
-        opacity: 0.85;
-      }
-    }
-
-    @keyframes geminiDrift2 {
-      0% {
-        transform: translate3d(22%, 8%, 0) scale(1.05);
-      }
-      50% {
-        transform: translate3d(-18%, -10%, 0) scale(0.96);
-      }
-      100% {
-        transform: translate3d(22%, 8%, 0) scale(1.05);
-      }
-    }
-
-    @keyframes geminiDriftVertical {
-      0% {
-        transform: translateY(-22%) scale(0.98);
-      }
-      50% {
-        transform: translateY(22%) scale(1.05);
-      }
-      100% {
-        transform: translateY(-22%) scale(0.98);
-      }
-    }
-
-    /* Micro-fine analogue grain for smooth organic dithering (prevents 8-bit OLED banding) */
-    .noise-overlay {
-      position: absolute;
-      inset: 0;
-      opacity: 0.035;
-      background-image: url("data:image/svg+xml,%3Csvg viewBox='0 0 200 200' xmlns='http://www.w3.org/2000/svg'%3E%3Cfilter id='noiseFilter'%3E%3CfeTurbulence type='fractalNoise' baseFrequency='0.8' numOctaves='3' stitchTiles='stitch'/%3E%3C/filter%3E%3Crect width='100%25' height='100%25' filter='url(%23noiseFilter)'/%3E%3C/svg%3E");
+      pointer-events: none;
     }
   </style>
 </head>
 <body>
-  <div class="gradient-container">
-    <div class="blur-wrapper">
-      <div class="orb orb-cyan-blue"></div>
-      <div class="orb orb-violet-pink"></div>
-      <div class="orb orb-atmosphere"></div>
-      <div class="orb orb-neural-core"></div>
-      <div class="orb orb-coral-amber"></div>
-      <div class="orb orb-emerald-teal"></div>
-    </div>
-    <div class="noise-overlay"></div>
-  </div>
+<canvas id="auroraCanvas"></canvas>
+<script>
+(function() {
+  const canvas = document.getElementById('auroraCanvas');
+  const gl = canvas.getContext('webgl2', { alpha: false, antialias: false, depth: false, powerPreference: 'low-power' })
+          || canvas.getContext('webgl', { alpha: false, antialias: false, depth: false, powerPreference: 'low-power' })
+          || canvas.getContext('experimental-webgl', { alpha: false, antialias: false, depth: false, powerPreference: 'low-power' });
+  if (!gl) return;
+
+  const VS_SOURCE = `
+    attribute vec2 a_position;
+    varying vec2 v_uv;
+    void main() {
+      v_uv = a_position * 0.5 + 0.5;
+      gl_Position = vec4(a_position, 0.0, 1.0);
+    }
+  `;
+
+  const FS_SOURCE = `
+    precision highp float;
+    varying vec2 v_uv;
+    uniform vec2 u_resolution;
+    uniform float u_time;
+
+    // Cycle 1: #7cff67, #22d3c5, #8f5cff
+    const vec3 C1_LIME      = vec3(124.0 / 255.0, 255.0 / 255.0, 103.0 / 255.0);
+    const vec3 C1_TURQUOISE = vec3(34.0  / 255.0, 211.0 / 255.0, 197.0 / 255.0);
+    const vec3 C1_VIOLET    = vec3(143.0 / 255.0, 92.0  / 255.0, 255.0 / 255.0);
+
+    // Cycle 2: #ff8a5c, #ff5c8a, #8a5cff
+    const vec3 C2_CORAL     = vec3(255.0 / 255.0, 138.0 / 255.0, 92.0  / 255.0);
+    const vec3 C2_PINK      = vec3(255.0 / 255.0, 92.0  / 255.0, 138.0 / 255.0);
+    const vec3 C2_VIOLET    = vec3(138.0 / 255.0, 92.0  / 255.0, 255.0 / 255.0);
+
+    void main() {
+      float aspect = u_resolution.x / u_resolution.y;
+      vec2 uv = v_uv - 0.5;
+      uv.x *= aspect;
+
+      // Buttery smooth 2-cycle oscillation (~20s total period)
+      float omega = 0.314159265; // 2 * PI / 20.0
+      float rawWave = -cos(u_time * omega);
+      // Smoothstep dwell and ease
+      float blend = smoothstep(-0.65, 0.65, rawWave);
+
+      vec3 col1 = mix(C1_LIME, C2_CORAL, blend);
+      vec3 col2 = mix(C1_TURQUOISE, C2_PINK, blend);
+      vec3 col3 = mix(C1_VIOLET, C2_VIOLET, blend);
+
+      // Fluid harmonic domain warping (undulating aurora ribbons)
+      float t = u_time * 0.30;
+      vec2 warp = vec2(
+        sin(uv.y * 2.8 + t * 0.6) * 0.12 + cos(uv.x * 2.2 - t * 0.4) * 0.08,
+        cos(uv.x * 2.5 - t * 0.5) * 0.14 + sin(uv.y * 3.2 + t * 0.3) * 0.09
+      );
+      vec2 w_uv = uv + warp;
+
+      // Stream 1: Primary upper wave (Lime <-> Coral)
+      vec2 pos1 = vec2(-0.24 * aspect + 0.16 * sin(t * 0.65), -0.20 + 0.13 * cos(t * 0.55));
+      float d1 = length(w_uv - pos1);
+      float s1 = exp(-d1 * d1 * 3.6);
+
+      // Stream 2: Complementary central wave (Turquoise <-> Pink)
+      vec2 pos2 = vec2(0.22 * aspect + 0.15 * cos(t * 0.60), 0.06 + 0.16 * sin(t * 0.75));
+      float d2 = length(w_uv - pos2);
+      float s2 = exp(-d2 * d2 * 3.2);
+
+      // Stream 3: Deep celestial lower wave (Violet <-> Violet)
+      vec2 pos3 = vec2(0.02 * aspect + 0.18 * sin(t * 0.45), 0.26 + 0.14 * cos(t * 0.50));
+      float d3 = length(w_uv - pos3);
+      float s3 = exp(-d3 * d3 * 2.8);
+
+      // Stream 4: Fluid atmospheric ambient curtain
+      float wave = sin(w_uv.x * 2.2 + t * 0.45) * cos(w_uv.y * 2.6 - t * 0.35);
+      float s4 = smoothstep(-0.25, 0.85, wave) * 0.30;
+
+      // Central neural incandescent spark pulsar (living AI presence)
+      vec2 sparkPos = vec2(0.02 * sin(t * 0.35), -0.06 + 0.04 * cos(t * 0.45));
+      float dSpark = length(uv - sparkPos);
+      float pulse = 0.88 + 0.12 * sin(u_time * 1.4);
+      float spark = exp(-dSpark * dSpark * 13.0) * pulse;
+
+      // Deep cosmic space background (rich dark obsidian with subtle indigo depth)
+      vec3 bg = mix(vec3(0.048, 0.065, 0.115), vec3(0.025, 0.032, 0.052), v_uv.y);
+
+      // Luminous synthesis
+      vec3 color = bg;
+      color += col1 * (s1 * 0.90);
+      color += col2 * (s2 * 0.85);
+      color += col3 * (s3 * 0.80 + s4 * 0.35);
+      color += vec3(0.96, 0.98, 1.0) * (spark * 0.55);
+
+      // Filmic tone mapping for buttery highlight falloff without hard clamping
+      color = color / (color + vec3(0.82));
+
+      // Micro-dither to eliminate 8-bit color banding on OLED screens
+      float noise = (fract(sin(dot(gl_FragCoord.xy, vec2(12.9898, 78.233))) * 43758.5453) - 0.5) * (1.5 / 255.0);
+      color += noise;
+
+      gl_FragColor = vec4(color, 1.0);
+    }
+  `;
+
+  function createShader(type, src) {
+    const s = gl.createShader(type);
+    gl.shaderSource(s, src);
+    gl.compileShader(s);
+    if (!gl.getShaderParameter(s, gl.COMPILE_STATUS)) {
+      console.error(gl.getShaderInfoLog(s));
+      gl.deleteShader(s);
+      return null;
+    }
+    return s;
+  }
+
+  const vs = createShader(gl.VERTEX_SHADER, VS_SOURCE);
+  const fs = createShader(gl.FRAGMENT_SHADER, FS_SOURCE);
+  if (!vs || !fs) return;
+
+  const prog = gl.createProgram();
+  gl.attachShader(prog, vs);
+  gl.attachShader(prog, fs);
+  gl.linkProgram(prog);
+  if (!gl.getProgramParameter(prog, gl.LINK_STATUS)) {
+    console.error(gl.getProgramInfoLog(prog));
+    return;
+  }
+  gl.useProgram(prog);
+
+  const quadBuf = gl.createBuffer();
+  gl.bindBuffer(gl.ARRAY_BUFFER, quadBuf);
+  gl.bufferData(gl.ARRAY_BUFFER, new Float32Array([
+    -1, -1,
+     1, -1,
+    -1,  1,
+    -1,  1,
+     1, -1,
+     1,  1
+  ]), gl.STATIC_DRAW);
+
+  const aPos = gl.getAttribLocation(prog, 'a_position');
+  gl.enableVertexAttribArray(aPos);
+  gl.vertexAttribPointer(aPos, 2, gl.FLOAT, false, 0, 0);
+
+  const uRes = gl.getUniformLocation(prog, 'u_resolution');
+  const uTime = gl.getUniformLocation(prog, 'u_time');
+
+  let pixelRatio = 1;
+  function resize() {
+    pixelRatio = Math.min(window.devicePixelRatio || 1, 1.25);
+    canvas.width = Math.max(1, Math.floor(window.innerWidth * pixelRatio));
+    canvas.height = Math.max(1, Math.floor(window.innerHeight * pixelRatio));
+    gl.viewport(0, 0, canvas.width, canvas.height);
+  }
+  window.addEventListener('resize', resize);
+  resize();
+
+  const start = performance.now();
+  function render(now) {
+    const t = (now - start) * 0.001;
+    gl.uniform2f(uRes, canvas.width, canvas.height);
+    gl.uniform1f(uTime, t);
+    gl.drawArrays(gl.TRIANGLES, 0, 6);
+    requestAnimationFrame(render);
+  }
+  requestAnimationFrame(render);
+})();
+</script>
 </body>
 </html>
