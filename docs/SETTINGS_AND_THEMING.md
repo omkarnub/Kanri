@@ -1,26 +1,24 @@
 # Settings & Theming Architecture
 
 ## 1. Overview
-The Settings experience in Kanri provides a centralized, cohesive control center for configuring appearance, account balances, security gates, automated rules, system permissions, and data backups. 
+The Settings experience in Kanri provides a centralized, cohesive control center for configuring appearance, account balances, security gates, automated rules, system permissions, and offline data backups. 
 
 The settings architecture adheres to:
-- **Clean Architecture & Unidirectional Data Flow**: State hoisted to ViewModels and reactive Preference stores (`ThemePreferences`, `WalletPreferences`, `SecurityPreferences`, `CloudBackupPreferences`), observing via StateFlow / MutableState.
+- **Clean Architecture & Unidirectional Data Flow**: State hoisted to ViewModels and reactive Preference stores (`ThemePreferences`, `WalletPreferences`, `SecurityPreferences`, `UserProfilePreferences`), observing via StateFlow / MutableState.
 - **Strict Theme Decoupling**: Glass-specific UI and live WebGL backgrounds are strictly mounted only when the `GLASS` theme mode is active. In solid modes (`LIGHT`, `DARK`, `AMOLED`, and `SYSTEM`), zero glass surfaces, WebViews, or background shaders run.
-- **Zero Missing Settings**: All 49 user-configurable options and actions documented in `SETTINGS_INVENTORY.md` are unified into one scannable hierarchy.
+- **100% Offline-First Data**: Financial data, backups, and profile information stay securely on-device with AES-256 GCM encryption.
 
 ---
 
 ## 2. Information Architecture: 8 Functional Sections
 
-1. **Appearance & Theme**:
-   - Visual phone preview cards for `System`, `Light`, `Dark`, `AMOLED`, and `Glass`.
-   - `AnimatedVisibility(currentThemeMode == ThemeMode.GLASS)` reveals:
-     - 8 Live WebGL Shader Thumbnails (`Aurora`, `Grain Gradient`, `Hero Geometric`, `Prism Gradient`, `Cloud Shader`, `Ink Ridges`, `Fuji Sakura`, `Sumi-e Mist`).
-     - Quick Presets: Default, Ultra Sheer, Deep Obsidian, Luminous Frost, Neon Crystal.
-     - Advanced Glass Engine drill-down (`GlassCustomizerScreen`).
-     - Reduce Transparency & Motion toggle.
-   - Dynamic System Colors (Android 12+ wallpaper colors).
-   - App Launcher Icon selector (Dark / Light icon aliases) with restart dialog.
+1. **Appearance**:
+   - **Themes Sub-Window** (`ThemeSettingsScreen`):
+     - Visual phone preview cards for `System`, `Light`, `Dark`, `AMOLED`, and `Glass`.
+     - When `Glass` is selected:
+       - **Live Shader Backgrounds**: 8 animated WebGL shaders displayed **side by side in 2 columns** (`Aurora`, `Grain Gradient`, `Hero Geometric`, `Prism Gradient`, `Cloud Shader`, `Ink Ridges`, `Fuji Sakura`, `Sumi-e Mist`).
+       - **Customise Glass Components** action row navigating to `GlassCustomizerScreen`.
+   - **App Launcher Icon**: Toggle between Dark and Light activity aliases with confirmation dialog.
 
 2. **Wallets & Currency**:
    - Primary App Currency selection (40+ international currencies with flags and symbols).
@@ -31,7 +29,6 @@ The settings architecture adheres to:
 
 3. **Security & Privacy**:
    - Biometric / Screen Lock switch.
-   - Test Lock Screen immediate action.
    - Privacy Mask (Balance Spoiler) switch.
    - Offline Privacy Policy dialog.
 
@@ -40,15 +37,14 @@ The settings architecture adheres to:
    - Custom Categories management (create, edit, delete with 30+ custom icons).
 
 5. **Permissions & System Detection**:
-   - Real-time permission status badges and system deep-links for:
+   - Modern **toggle switches** with real-time status and system deep-links for:
      - Bank SMS Detection (`RECEIVE_SMS`, `READ_SMS`).
      - Payment Notification Listener (`BIND_NOTIFICATION_LISTENER_SERVICE`).
      - App Notifications (`POST_NOTIFICATIONS`).
      - Floating Overlay Quick Category (`SYSTEM_ALERT_WINDOW`).
-     - Battery Optimization Exemption (`ACTION_REQUEST_IGNORE_BATTERY_OPTIMIZATIONS`).
+     - Background Battery Exemption (`ACTION_REQUEST_IGNORE_BATTERY_OPTIMIZATIONS`).
 
 6. **Data & Backup**:
-   - Google Drive Cloud Backup manager dialog (mode toggle, auto-backup, account info, manual sync).
    - Offline Backup Export (Encrypted AES-256 GCM or plain JSON).
    - Offline Backup Restore (File picker + passphrase decrypt + merge/overwrite).
    - Automated Monthly Statement frequency scheduler.
@@ -68,52 +64,26 @@ The settings architecture adheres to:
 
 ---
 
-## 3. Theme Resolution & Lifecycle
+## 3. Customise Glass Components (`GlassCustomizerScreen`)
 
-### Theme Resolution Flow
-```
-User Selection (ThemeMode)
-       │
-       ▼
-ThemePreferences.key_theme_mode
-       │
-       ▼
-Theme.kt (KanriTheme)
-       │
-       ├─► effectiveThemeMode (resolves SYSTEM against isSystemInDarkTheme())
-       │
-       ├─► glassTokens:
-       │      • If GLASS: Non-null (KanriGlassTokens with custom blur, tint, borders)
-       │      • If LIGHT/DARK/AMOLED: NULL
-       │
-       ├─► colorScheme:
-       │      • GLASS: dynamicGlassColorScheme
-       │      • DYNAMIC: dynamicDarkColorScheme / dynamicLightColorScheme
-       │      • AMOLED: KanriAmoledColorScheme (Pure #000000)
-       │      • DARK: KanriDarkColorScheme (Charcoal #121212)
-       │      • LIGHT: KanriLightColorScheme (Cream #FBF8EE)
-       │
-       └─► System Bars: WindowCompat insets controller tints status/nav icons
-```
+The glass customization interface has been refined into a minimal, focused tool:
+- **No live preview container**: Changes apply immediately to the actual running app backdrop and UI cards.
+- **No presets**: Eliminates confusing preset overrides.
+- **4 Essential Sliders**:
+  1. **Frosted blur** (`blurRadiusDp`: 0dp - 50dp)
+  2. **Glass tint** (`surfaceOpacity`: 2% - 40%)
+  3. **Border & edge shine** (`borderOpacity`: 0% - 70%)
+  4. **Corner curvature** (`cornerRadiusDp`: 10dp - 32dp)
+- **Actions**:
+  - **Reset to default**: Reverts sliders to standard values.
+  - **Save & Exit**: Saves configuration to preferences and navigates back.
 
-### Background Resource Teardown
-In `GlassBackgroundView.kt`:
-```kotlin
-AndroidView(
-    factory = { ctx ->
-        WebView(ctx).apply {
-            // WebGL shader initialization
-        }
-    },
-    onRelease = { webView ->
-        webView.stopLoading()
-        webView.destroy()
-    }
-)
-DisposableEffect(Unit) {
-    onDispose {
-        // Releases hardware-accelerated WebGL context immediately
-    }
-}
-```
-When exiting `ThemeMode.GLASS`, `glassTokens` becomes null, causing `KanriBackdropHost` to immediately detach `GlassBackdrop`, triggering `onRelease` and `DisposableEffect.onDispose`. This prevents GPU, memory, or battery consumption in solid themes.
+---
+
+## 4. User Birthday & Celebration System
+
+- **Setting Birthday**: In `ProfileScreen`, user can tap the Date of Birth row to open `KanriGlassDatePickerDialog` and select their birthday (formatted as `dd MMM yyyy`).
+- **Dynamic Greeting**: On the user's birthday, `HomeViewModel` and `GreetingResolver` display a festive greeting:
+  - Header: `"Happy Birthday, {name}! 🎂"`
+  - Subtitle: `"Wishing you joy, good health, and abundance in the year ahead ✨"`
+- **Birthday Notifications**: `BirthdayHelper.checkAndTriggerBirthdayNotification` fires an annual high-priority celebration notification on their birthday.

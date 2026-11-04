@@ -1,4 +1,4 @@
-﻿package com.omkarnub.kanri.data.notification
+package com.omkarnub.kanri.data.notification
 
 import android.app.NotificationChannel
 import android.app.NotificationManager
@@ -39,6 +39,7 @@ class DailyReminderWorker(
         return try {
             val db = KanriDatabase.getDatabase(applicationContext)
             ensureChannel()
+            com.omkarnub.kanri.util.BirthdayHelper.checkAndTriggerBirthdayNotification(applicationContext)
 
             val todayCal = Calendar.getInstance().apply {
                 set(Calendar.HOUR_OF_DAY, 0)

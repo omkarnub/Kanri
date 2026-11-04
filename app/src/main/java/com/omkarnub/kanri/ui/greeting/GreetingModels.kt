@@ -37,6 +37,7 @@ data class GreetingContext(
     val streakDays: Int,
     val needsReviewCount: Int,
     val isFirstLaunchToday: Boolean,
+    val isBirthday: Boolean = false,
     val seed: Long,
     val lastSubtitleRuleId: Int? = null,
     val lastShownEpochDay: Long? = null,

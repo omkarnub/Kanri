@@ -36,6 +36,7 @@ class UserProfilePreferences(private val context: Context) {
         private const val KEY_USER_DOB = "key_user_dob"
         private const val KEY_PROFILE_PHOTO_PATH = "key_profile_photo_path"
         private const val KEY_AVATAR_VARIANT = "key_avatar_variant"
+        private const val KEY_LAST_BIRTHDAY_NOTIFIED_YEAR = "key_last_birthday_notified_year"
         private const val PROFILE_IMAGE_FILENAME = "kanri_profile_avatar.jpg"
         private const val DEFAULT_NAME = "Alex"
 
@@ -80,6 +81,12 @@ class UserProfilePreferences(private val context: Context) {
             val trimmed = value.trim()
             prefs.edit().putString(KEY_USER_DOB, trimmed).apply()
             _userDobFlow.value = trimmed
+        }
+
+    var lastBirthdayNotifiedYear: Int
+        get() = prefs.getInt(KEY_LAST_BIRTHDAY_NOTIFIED_YEAR, -1)
+        set(value) {
+            prefs.edit().putInt(KEY_LAST_BIRTHDAY_NOTIFIED_YEAR, value).apply()
         }
 
     var profilePhotoPath: String?

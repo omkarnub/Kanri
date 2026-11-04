@@ -151,11 +151,8 @@ fun SettingsScreen(
     // -------------------------------------------------------------------------
     val themePrefs = remember { ThemePreferences.getInstance(context) }
     val currentThemeMode by themePrefs.themeModeFlow.collectAsState()
-    val isDynamicEnabled by themePrefs.dynamicColorFlow.collectAsState()
-    val isReduceTransparency by themePrefs.reduceTransparencyFlow.collectAsState()
     val currentIconStyle by themePrefs.appIconStyleFlow.collectAsState()
     val currentGlassBg by themePrefs.glassBackgroundFlow.collectAsState()
-    val glassCustomization by themePrefs.glassCustomizationFlow.collectAsState()
 
     val securityPrefs = remember { SecurityPreferences.getInstance(context) }
     var isLockEnabled by remember { mutableStateOf(securityPrefs.isLockEnabled) }
@@ -169,9 +166,6 @@ fun SettingsScreen(
     val balances by walletRepo.observeBalances().collectAsState(initial = null)
     val atmMode by walletPrefs.atmWithdrawalModeFlow.collectAsState()
     val isBalanceSpoilerEnabled by walletPrefs.isBalanceSpoilerEnabledFlow.collectAsState()
-
-    val cloudPrefs = remember { CloudBackupPreferences.getInstance(context) }
-    val cloudBackupMode by cloudPrefs.backupModeFlow.collectAsState()
 
     val exportSchedule by ExportScheduler.scheduleFlow.collectAsState()
     val isAutoMonthly = (exportSchedule == ExportScheduler.ExportSchedule.MONTHLY)
@@ -187,11 +181,11 @@ fun SettingsScreen(
     // -------------------------------------------------------------------------
     // Sub-Screen & Dialog States
     // -------------------------------------------------------------------------
+    var showThemeSettingsScreen by rememberSaveable { mutableStateOf(false) }
     var showGlassCustomizerScreen by rememberSaveable { mutableStateOf(false) }
     var showMerchantRulesScreen by rememberSaveable { mutableStateOf(false) }
 
     var showCurrencyDialog by remember { mutableStateOf(false) }
-    var showCloudBackupDialog by remember { mutableStateOf(false) }
     var showExportStatementSheet by remember { mutableStateOf(false) }
     var showPrivacyPolicyDialog by remember { mutableStateOf(false) }
     var showCrashLogsDialog by remember { mutableStateOf(false) }
@@ -264,9 +258,24 @@ fun SettingsScreen(
     // -------------------------------------------------------------------------
     // Sub-Screen Overlays
     // -------------------------------------------------------------------------
+    if (showThemeSettingsScreen) {
+        ThemeSettingsScreen(
+            onBack = { showThemeSettingsScreen = false },
+            onNavigateToGlassCustomizer = {
+                showThemeSettingsScreen = false
+                showGlassCustomizerScreen = true
+            },
+            modifier = modifier
+        )
+        return
+    }
+
     if (showGlassCustomizerScreen) {
         GlassCustomizerScreen(
-            onBack = { showGlassCustomizerScreen = false },
+            onBack = {
+                showGlassCustomizerScreen = false
+                showThemeSettingsScreen = true
+            },
             modifier = modifier
         )
         return
@@ -293,10 +302,6 @@ fun SettingsScreen(
             },
             onDismiss = { showCurrencyDialog = false }
         )
-    }
-
-    if (showCloudBackupDialog) {
-        CloudBackupDialog(onDismiss = { showCloudBackupDialog = false })
     }
 
     if (showExportStatementSheet) {
@@ -824,192 +829,24 @@ fun SettingsScreen(
             verticalArrangement = Arrangement.spacedBy(20.dp)
         ) {
             // =================================================================
-            // 1. APPEARANCE & THEME (HIGHEST PRIORITY)
+            // 1. APPEARANCE
             // =================================================================
-            SettingsGroup(title = "APPEARANCE & THEME") {
-                // Single Proper Theme Selector with 5 realistic preview cards
-                Column(
-                    modifier = Modifier
-                        .fillMaxWidth()
-                        .padding(horizontal = 14.dp, vertical = 10.dp)
-                ) {
-                    Text(
-                        text = "THEME MODE",
-                        fontFamily = GoogleSansFlex,
-                        fontWeight = FontWeight.Bold,
-                        fontSize = 11.sp,
-                        letterSpacing = 1.sp,
-                        color = tokens?.textSecondary ?: MaterialTheme.colorScheme.onSurfaceVariant
-                    )
-                    Spacer(modifier = Modifier.height(10.dp))
-
-                    Row(
-                        modifier = Modifier
-                            .fillMaxWidth()
-                            .horizontalScroll(rememberScrollState()),
-                        horizontalArrangement = Arrangement.spacedBy(10.dp)
-                    ) {
-                        listOf(
-                            ThemeMode.SYSTEM,
-                            ThemeMode.LIGHT,
-                            ThemeMode.DARK,
-                            ThemeMode.AMOLED,
-                            ThemeMode.GLASS
-                        ).forEach { mode ->
-                            val isSelected = (currentThemeMode == mode)
-                            ThemePreviewCard(
-                                mode = mode,
-                                isSelected = isSelected,
-                                onClick = {
-                                    themePrefs.themeMode = mode
-                                }
-                            )
-                        }
-                    }
+            SettingsGroup(title = "APPEARANCE") {
+                val themeLabel = when (currentThemeMode) {
+                    ThemeMode.SYSTEM -> "Follow System"
+                    ThemeMode.LIGHT -> "Light Theme"
+                    ThemeMode.DARK -> "Dark Theme"
+                    ThemeMode.AMOLED -> "AMOLED Black"
+                    ThemeMode.GLASS -> "Glass (${currentGlassBg.displayName})"
                 }
-
-                // =============================================================
-                // GLASS CUSTOMIZATION (ONLY COMPOSED WHEN GLASS IS SELECTED)
-                // =============================================================
-                AnimatedVisibility(
-                    visible = (currentThemeMode == ThemeMode.GLASS),
-                    enter = fadeIn() + expandVertically(),
-                    exit = fadeOut() + shrinkVertically()
-                ) {
-                    Column(modifier = Modifier.fillMaxWidth()) {
-                        SettingsDivider()
-
-                        // Capability warning if device limits blur
-                        val isBlurCapable = GlassCapabilities.isBlurSupported(context, isReduceTransparency)
-                        if (!isBlurCapable) {
-                            Surface(
-                                shape = RoundedCornerShape(12.dp),
-                                color = MaterialTheme.colorScheme.surfaceVariant.copy(alpha = 0.6f),
-                                border = BorderStroke(1.dp, MaterialTheme.colorScheme.outlineVariant),
-                                modifier = Modifier
-                                    .fillMaxWidth()
-                                    .padding(horizontal = 14.dp, vertical = 8.dp)
-                            ) {
-                                Row(
-                                    modifier = Modifier.padding(12.dp),
-                                    verticalAlignment = Alignment.CenterVertically,
-                                    horizontalArrangement = Arrangement.spacedBy(10.dp)
-                                ) {
-                                    Icon(
-                                        imageVector = Icons.Default.Info,
-                                        contentDescription = null,
-                                        tint = MaterialTheme.colorScheme.primary,
-                                        modifier = Modifier.size(20.dp)
-                                    )
-                                    Text(
-                                        text = if (isReduceTransparency) "Transparency is manually reduced."
-                                        else "Real-time blur is adapted for battery/performance on this device.",
-                                        fontSize = 12.sp,
-                                        color = MaterialTheme.colorScheme.onSurfaceVariant,
-                                        lineHeight = 16.sp
-                                    )
-                                }
-                            }
-                            SettingsDivider()
-                        }
-
-                        // Live Shaders Background Picker
-                        Column(
-                            modifier = Modifier
-                                .fillMaxWidth()
-                                .padding(horizontal = 14.dp, vertical = 10.dp)
-                        ) {
-                            Row(
-                                modifier = Modifier.fillMaxWidth(),
-                                horizontalArrangement = Arrangement.SpaceBetween,
-                                verticalAlignment = Alignment.CenterVertically
-                            ) {
-                                Text(
-                                    text = "LIVE SHADER BACKGROUNDS",
-                                    fontFamily = GoogleSansFlex,
-                                    fontWeight = FontWeight.Bold,
-                                    fontSize = 11.sp,
-                                    letterSpacing = 1.sp,
-                                    color = tokens?.textSecondary ?: MaterialTheme.colorScheme.onSurfaceVariant
-                                )
-                                Text(
-                                    text = currentGlassBg.displayName,
-                                    fontFamily = GoogleSansFlex,
-                                    fontWeight = FontWeight.SemiBold,
-                                    fontSize = 11.5.sp,
-                                    color = MaterialTheme.colorScheme.primary
-                                )
-                            }
-                            Spacer(modifier = Modifier.height(10.dp))
-
-                            Column(verticalArrangement = Arrangement.spacedBy(8.dp)) {
-                                GlassBackgroundType.entries.forEach { bgType ->
-                                    val isSelected = (currentGlassBg == bgType)
-                                    ShaderPreviewCard(
-                                        type = bgType,
-                                        isSelected = isSelected,
-                                        onClick = {
-                                            themePrefs.glassBackground = bgType
-                                        }
-                                    )
-                                }
-                            }
-                        }
-
-                        SettingsDivider()
-
-                        // Glass Surface Customizer entry with quick presets
-                        Column(
-                            modifier = Modifier
-                                .fillMaxWidth()
-                                .padding(horizontal = 14.dp, vertical = 10.dp)
-                        ) {
-                            Text(
-                                text = "GLASS SURFACE ENGINE",
-                                fontFamily = GoogleSansFlex,
-                                fontWeight = FontWeight.Bold,
-                                fontSize = 11.sp,
-                                letterSpacing = 1.sp,
-                                color = tokens?.textSecondary ?: MaterialTheme.colorScheme.onSurfaceVariant
-                            )
-                            Spacer(modifier = Modifier.height(8.dp))
-                            GlassQuickPresetsRow(
-                                currentConfig = glassCustomization,
-                                onSelectPreset = { preset ->
-                                    themePrefs.glassCustomization = preset
-                                }
-                            )
-                        }
-
-                        SettingsRow(
-                            title = "Fine-tune Glass Surface Engine",
-                            subtitle = "Adjust blur radius, surface opacity, rim shine & specular light",
-                            icon = Icons.Default.BlurOn,
-                            onClick = { showGlassCustomizerScreen = true }
-                        )
-
-                        SettingsDivider()
-
-                        // Reduce Transparency Toggle
-                        SettingsSwitchRow(
-                            title = "Reduce Transparency",
-                            subtitle = "Substitute frosted blur with solid matte surfaces",
-                            icon = Icons.Default.Opacity,
-                            checked = isReduceTransparency,
-                            onCheckedChange = { themePrefs.isReduceTransparency = it }
-                        )
+                SettingsRow(
+                    title = "Themes",
+                    subtitle = themeLabel,
+                    icon = Icons.Default.ColorLens,
+                    onClick = {
+                        haptics.click()
+                        showThemeSettingsScreen = true
                     }
-                }
-
-                SettingsDivider()
-
-                // Dynamic Colors Row (Android 12+)
-                SettingsSwitchRow(
-                    title = "Dynamic Colors",
-                    subtitle = "Extract tint palette from system wallpaper (Android 12+)",
-                    icon = Icons.Default.AutoAwesome,
-                    checked = isDynamicEnabled,
-                    onCheckedChange = { themePrefs.isDynamicColor = it }
                 )
 
                 SettingsDivider()
@@ -1018,7 +855,7 @@ fun SettingsScreen(
                 SettingsRow(
                     title = "App Launcher Icon",
                     subtitle = "Currently using ${currentIconStyle.label} icon",
-                    icon = Icons.Default.ColorLens,
+                    icon = Icons.Default.AutoAwesome,
                     trailing = {
                         Text(
                             text = currentIconStyle.label,
@@ -1132,16 +969,6 @@ fun SettingsScreen(
                         securityPrefs.isLockEnabled = enabled
                         isLockEnabled = enabled
                     }
-                )
-
-                SettingsDivider()
-
-                // Test Lock Screen
-                SettingsRow(
-                    title = "Test Lock Screen",
-                    subtitle = "Trigger security lock overlay immediately",
-                    icon = Icons.Default.Shield,
-                    onClick = onTestLockScreen
                 )
 
                 SettingsDivider()
@@ -1299,24 +1126,6 @@ fun SettingsScreen(
             // 6. DATA & BACKUP
             // =================================================================
             SettingsGroup(title = "DATA & BACKUP") {
-                // Google Drive Cloud Backup
-                SettingsRow(
-                    title = "Google Drive Cloud Backup",
-                    subtitle = if (cloudBackupMode == BackupMode.CLOUD) "Active • Automatic encrypted backup to Google Drive" else "Offline • Tap to configure cloud backup",
-                    icon = Icons.Default.CloudSync,
-                    trailing = {
-                        Text(
-                            text = if (cloudBackupMode == BackupMode.CLOUD) "Connected" else "Configure",
-                            fontSize = 12.sp,
-                            fontWeight = FontWeight.SemiBold,
-                            color = MaterialTheme.colorScheme.primary
-                        )
-                    },
-                    onClick = { showCloudBackupDialog = true }
-                )
-
-                SettingsDivider()
-
                 // Generate Statement
                 SettingsRow(
                     title = "Generate Statement (PDF / CSV)",

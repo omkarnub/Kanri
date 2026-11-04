@@ -130,6 +130,7 @@ fun ProfileScreen(
     val isAutoMonthly = exportSchedule == ExportScheduler.ExportSchedule.MONTHLY
 
     var showEditProfileDialog by remember { mutableStateOf(false) }
+    var showBirthdayPicker by remember { mutableStateOf(false) }
     var showPhotoOptionsDialog by remember { mutableStateOf(false) }
     var showExportStatementSheet by remember { mutableStateOf(false) }
     var showBackupRestoreSheet by remember { mutableStateOf(false) }
@@ -351,6 +352,49 @@ fun ProfileScreen(
         BackupRestoreSheet(onDismiss = { showBackupRestoreSheet = false })
     }
 
+    // Birthday Date Picker Dialog
+    if (showBirthdayPicker) {
+        val initialDateMillis = remember(currentUserDob) {
+            try {
+                if (currentUserDob.isNotBlank()) {
+                    val sdf = SimpleDateFormat("dd MMM yyyy", Locale.getDefault())
+                    sdf.parse(currentUserDob)?.time ?: System.currentTimeMillis()
+                } else System.currentTimeMillis()
+            } catch (_: Exception) {
+                System.currentTimeMillis()
+            }
+        }
+        val datePickerState = rememberDatePickerState(initialSelectedDateMillis = initialDateMillis)
+        KanriGlassDatePickerDialog(
+            onDismissRequest = { showBirthdayPicker = false },
+            confirmButton = {
+                TextButton(
+                    onClick = {
+                        val millis = datePickerState.selectedDateMillis
+                        if (millis != null) {
+                            val formatter = SimpleDateFormat("dd MMM yyyy", Locale.getDefault())
+                            val formatted = formatter.format(Date(millis))
+                            profilePrefs.userDob = formatted
+                            haptics.success()
+                            Toast.makeText(context, "Birthday saved: $formatted", Toast.LENGTH_SHORT).show()
+                            com.omkarnub.kanri.util.BirthdayHelper.checkAndTriggerBirthdayNotification(context)
+                        }
+                        showBirthdayPicker = false
+                    }
+                ) {
+                    Text("Save", fontWeight = FontWeight.Bold)
+                }
+            },
+            dismissButton = {
+                TextButton(onClick = { showBirthdayPicker = false }) {
+                    Text("Cancel")
+                }
+            }
+        ) {
+            DatePicker(state = datePickerState)
+        }
+    }
+
     // Kokonut Avatar Selector Dialog (12 Presets + Custom Photo Upload)
     if (showPhotoOptionsDialog) {
         KokonutAvatarSelectorDialog(
@@ -552,7 +596,7 @@ fun ProfileScreen(
                             .clip(RoundedCornerShape(8.dp))
                             .clickable {
                                 haptics.click()
-                                showEditProfileDialog = true
+                                showBirthdayPicker = true
                             }
                             .padding(horizontal = 8.dp, vertical = 4.dp)
                     ) {

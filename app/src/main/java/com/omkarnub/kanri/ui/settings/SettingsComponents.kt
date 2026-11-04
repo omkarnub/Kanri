@@ -1,6 +1,7 @@
 package com.omkarnub.kanri.ui.settings
 
 import android.Manifest
+import android.app.Activity
 import android.content.ClipData
 import android.content.ClipboardManager
 import android.content.Context
@@ -11,6 +12,10 @@ import android.os.Build
 import android.os.PowerManager
 import android.provider.Settings
 import android.widget.Toast
+import com.omkarnub.kanri.util.BatteryOptimizationHelper
+import androidx.compose.material.icons.filled.Email
+import androidx.compose.material.icons.filled.Notifications
+import androidx.compose.material.icons.filled.PowerSettingsNew
 import androidx.compose.animation.AnimatedVisibility
 import androidx.compose.animation.core.animateFloatAsState
 import androidx.compose.animation.core.spring
@@ -872,7 +877,7 @@ fun GlassQuickPresetsRow(
 }
 
 // =============================================================================
-// 8. PERMISSIONS STATUS OVERVIEW
+// 8. PERMISSIONS STATUS OVERVIEW (TOGGLE SWITCH REDESIGN)
 // =============================================================================
 @Composable
 fun PermissionsStatusOverview(
@@ -880,124 +885,143 @@ fun PermissionsStatusOverview(
     modifier: Modifier = Modifier
 ) {
     val haptics = rememberKanriHaptics()
-    val isSmsAllowed = com.omkarnub.kanri.util.SmsPermissionHelper.hasSmsPermissions(context)
-    val isNotificationAccessAllowed = NotificationAccessHelper.isNotificationAccessGranted(context)
-
-    val isNotifAllowed = if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.TIRAMISU) {
-        ContextCompat.checkSelfPermission(context, Manifest.permission.POST_NOTIFICATIONS) == PackageManager.PERMISSION_GRANTED
-    } else {
-        NotificationManagerCompat.from(context).areNotificationsEnabled()
+    var isSmsAllowed by remember { mutableStateOf(com.omkarnub.kanri.util.SmsPermissionHelper.hasSmsPermissions(context)) }
+    var isNotificationAccessAllowed by remember { mutableStateOf(NotificationAccessHelper.isNotificationAccessGranted(context)) }
+    var isNotifAllowed by remember {
+        mutableStateOf(
+            if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.TIRAMISU) {
+                ContextCompat.checkSelfPermission(context, Manifest.permission.POST_NOTIFICATIONS) == PackageManager.PERMISSION_GRANTED
+            } else {
+                NotificationManagerCompat.from(context).areNotificationsEnabled()
+            }
+        )
     }
+    var isOverlayAllowed by remember { mutableStateOf(Settings.canDrawOverlays(context)) }
+    var isBatteryUnrestricted by remember { mutableStateOf(BatteryOptimizationHelper.isIgnoringBatteryOptimizations(context)) }
 
-    val isOverlayAllowed = Settings.canDrawOverlays(context)
-
-    val powerManager = context.getSystemService(Context.POWER_SERVICE) as? PowerManager
-    val isBatteryUnrestricted = powerManager?.isIgnoringBatteryOptimizations(context.packageName) == true
+    // Re-check on resume when returning from Android Settings
+    val lifecycleOwner = androidx.lifecycle.compose.LocalLifecycleOwner.current
+    androidx.compose.runtime.DisposableEffect(lifecycleOwner) {
+        val observer = androidx.lifecycle.LifecycleEventObserver { _, event ->
+            if (event == androidx.lifecycle.Lifecycle.Event.ON_RESUME) {
+                isSmsAllowed = com.omkarnub.kanri.util.SmsPermissionHelper.hasSmsPermissions(context)
+                isNotificationAccessAllowed = NotificationAccessHelper.isNotificationAccessGranted(context)
+                isNotifAllowed = if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.TIRAMISU) {
+                    ContextCompat.checkSelfPermission(context, Manifest.permission.POST_NOTIFICATIONS) == PackageManager.PERMISSION_GRANTED
+                } else {
+                    NotificationManagerCompat.from(context).areNotificationsEnabled()
+                }
+                isOverlayAllowed = Settings.canDrawOverlays(context)
+                isBatteryUnrestricted = BatteryOptimizationHelper.isIgnoringBatteryOptimizations(context)
+            }
+        }
+        lifecycleOwner.lifecycle.addObserver(observer)
+        onDispose {
+            lifecycleOwner.lifecycle.removeObserver(observer)
+        }
+    }
 
     Column(
         modifier = modifier.fillMaxWidth(),
-        verticalArrangement = Arrangement.spacedBy(10.dp)
+        verticalArrangement = Arrangement.spacedBy(4.dp)
     ) {
-        PermissionItemRow(name = "Bank SMS Detection (Primary)", isAllowed = isSmsAllowed)
-        PermissionItemRow(name = "Payment Notification Listener", isAllowed = isNotificationAccessAllowed)
-        PermissionItemRow(name = "Transaction Notifications", isAllowed = isNotifAllowed)
-        PermissionItemRow(name = "Instant Floating Overlay", isAllowed = isOverlayAllowed)
-        PermissionItemRow(
-            name = "Background Battery",
-            isAllowed = isBatteryUnrestricted,
-            allowedLabel = "Unrestricted",
-            deniedLabel = "Optimized"
+        // 1. Bank SMS Detection
+        SettingsSwitchRow(
+            title = "Bank SMS Detection",
+            subtitle = "Reads incoming transaction alerts offline",
+            icon = Icons.Default.Email,
+            checked = isSmsAllowed,
+            onCheckedChange = {
+                haptics.click()
+                if (context is Activity) {
+                    com.omkarnub.kanri.util.SmsPermissionHelper.requestSmsPermissions(context)
+                } else {
+                    val intent = Intent(Settings.ACTION_APPLICATION_DETAILS_SETTINGS).apply {
+                        data = Uri.fromParts("package", context.packageName, null)
+                        addFlags(Intent.FLAG_ACTIVITY_NEW_TASK)
+                    }
+                    context.startActivity(intent)
+                }
+            }
         )
 
-        Spacer(modifier = Modifier.height(4.dp))
+        SettingsDivider()
 
-        if (!isSmsAllowed) {
-            Button(
-                onClick = {
-                    haptics.click()
-                    if (context is android.app.Activity) {
-                        com.omkarnub.kanri.util.SmsPermissionHelper.requestSmsPermissions(context)
-                    } else {
-                        val intent = Intent(Settings.ACTION_APPLICATION_DETAILS_SETTINGS).apply {
-                            data = Uri.fromParts("package", context.packageName, null)
-                        }
-                        context.startActivity(intent)
-                    }
-                },
-                modifier = Modifier.fillMaxWidth(),
-                shape = RoundedCornerShape(10.dp)
-            ) {
-                Text("Enable Bank SMS Detection", fontSize = 12.5.sp)
-            }
-        }
-
-        if (!isNotificationAccessAllowed) {
-            Button(
-                onClick = {
-                    haptics.click()
-                    NotificationAccessHelper.openNotificationAccessSettings(context)
-                },
-                modifier = Modifier.fillMaxWidth(),
-                shape = RoundedCornerShape(10.dp)
-            ) {
-                Text("Enable Notification Access", fontSize = 12.5.sp)
-            }
-        }
-
-        OutlinedButton(
-            onClick = {
+        // 2. Payment Notification Listener
+        SettingsSwitchRow(
+            title = "Payment Notification Listener",
+            subtitle = "Catches UPI apps (GPay, PhonePe, Paytm, CRED)",
+            icon = Icons.Default.Notifications,
+            checked = isNotificationAccessAllowed,
+            onCheckedChange = {
                 haptics.click()
-                val intent = Intent(Settings.ACTION_APPLICATION_DETAILS_SETTINGS).apply {
-                    data = Uri.fromParts("package", context.packageName, null)
+                NotificationAccessHelper.openNotificationAccessSettings(context)
+            }
+        )
+
+        SettingsDivider()
+
+        // 3. Transaction Notifications
+        SettingsSwitchRow(
+            title = "Transaction Notifications",
+            subtitle = "Alerts for detected transactions & reminders",
+            icon = Icons.Default.Notifications,
+            checked = isNotifAllowed,
+            onCheckedChange = {
+                haptics.click()
+                val intent = if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.O) {
+                    Intent(Settings.ACTION_APP_NOTIFICATION_SETTINGS).apply {
+                        putExtra(Settings.EXTRA_APP_PACKAGE, context.packageName)
+                        addFlags(Intent.FLAG_ACTIVITY_NEW_TASK)
+                    }
+                } else {
+                    Intent(Settings.ACTION_APPLICATION_DETAILS_SETTINGS).apply {
+                        data = Uri.fromParts("package", context.packageName, null)
+                        addFlags(Intent.FLAG_ACTIVITY_NEW_TASK)
+                    }
                 }
                 context.startActivity(intent)
-            },
-            modifier = Modifier.fillMaxWidth(),
-            shape = RoundedCornerShape(10.dp)
-        ) {
-            Text("Manage All Permissions in System Settings", fontSize = 12.sp)
-        }
-    }
-}
-
-@Composable
-private fun PermissionItemRow(
-    name: String,
-    isAllowed: Boolean,
-    allowedLabel: String = "Allowed",
-    deniedLabel: String = "Denied"
-) {
-    Row(
-        modifier = Modifier.fillMaxWidth(),
-        horizontalArrangement = Arrangement.SpaceBetween,
-        verticalAlignment = Alignment.CenterVertically
-    ) {
-        Text(
-            text = name,
-            fontFamily = GoogleSansFlex,
-            fontSize = 13.sp,
-            color = MaterialTheme.colorScheme.onSurface
+            }
         )
 
-        Surface(
-            shape = RoundedCornerShape(6.dp),
-            color = if (isAllowed)
-                MaterialTheme.colorScheme.primaryContainer.copy(alpha = 0.5f)
-            else
-                MaterialTheme.colorScheme.surfaceVariant.copy(alpha = 0.5f),
-            border = BorderStroke(
-                0.8.dp,
-                if (isAllowed) MaterialTheme.colorScheme.primary else MaterialTheme.colorScheme.outlineVariant
-            )
-        ) {
-            Text(
-                text = if (isAllowed) allowedLabel else deniedLabel,
-                fontSize = 11.sp,
-                fontWeight = FontWeight.SemiBold,
-                color = if (isAllowed) MaterialTheme.colorScheme.onSurface else MaterialTheme.colorScheme.onSurfaceVariant,
-                modifier = Modifier.padding(horizontal = 8.dp, vertical = 2.dp)
-            )
-        }
+        SettingsDivider()
+
+        // 4. Instant Floating Overlay
+        SettingsSwitchRow(
+            title = "Floating Quick Category",
+            subtitle = "Shows interactive prompt after a transaction",
+            icon = Icons.Default.AutoAwesome,
+            checked = isOverlayAllowed,
+            onCheckedChange = {
+                haptics.click()
+                try {
+                    val intent = Intent(Settings.ACTION_MANAGE_OVERLAY_PERMISSION, Uri.parse("package:${context.packageName}")).apply {
+                        addFlags(Intent.FLAG_ACTIVITY_NEW_TASK)
+                    }
+                    context.startActivity(intent)
+                } catch (_: Exception) {
+                    val fallback = Intent(Settings.ACTION_APPLICATION_DETAILS_SETTINGS).apply {
+                        data = Uri.fromParts("package", context.packageName, null)
+                        addFlags(Intent.FLAG_ACTIVITY_NEW_TASK)
+                    }
+                    context.startActivity(fallback)
+                }
+            }
+        )
+
+        SettingsDivider()
+
+        // 5. Background Battery Exemption
+        SettingsSwitchRow(
+            title = "Background Battery Unrestricted",
+            subtitle = "Prevents system from stopping transaction capture",
+            icon = Icons.Default.PowerSettingsNew,
+            checked = isBatteryUnrestricted,
+            onCheckedChange = {
+                haptics.click()
+                BatteryOptimizationHelper.requestIgnoreBatteryOptimizations(context)
+            }
+        )
     }
 }
 

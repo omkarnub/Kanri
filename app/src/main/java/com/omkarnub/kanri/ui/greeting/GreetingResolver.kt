@@ -1,4 +1,4 @@
-﻿package com.omkarnub.kanri.ui.greeting
+package com.omkarnub.kanri.ui.greeting
 
 import com.omkarnub.kanri.util.CurrencyUtils
 import java.time.LocalTime
@@ -58,6 +58,18 @@ object GreetingResolver {
      * Resolves the greeting and subtitle deterministically from the given context.
      */
     fun resolve(context: GreetingContext): GreetingResult {
+        if (context.isBirthday) {
+            val birthdayGreeting = formatGreeting("Happy Birthday, {name}! 🎂", context.userName)
+            val birthdaySubtitle = "Wishing you joy, good health, and abundance in the year ahead ✨"
+            return GreetingResult(
+                greeting = birthdayGreeting,
+                subtitle = birthdaySubtitle,
+                tone = Tone.Positive,
+                ruleId = 99,
+                action = GreetingAction.None
+            )
+        }
+
         val timeBucket = getTimeBucket(context.now.toLocalTime())
         val seed = if (context.seed != 0L) context.seed else computeSeed(context.now.toLocalDate().toEpochDay(), timeBucket)
         val rng = Random(seed)

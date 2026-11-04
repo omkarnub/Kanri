@@ -425,17 +425,26 @@ class HomeViewModel(application: Application) : AndroidViewModel(application) {
         }
     }
 
+    private val userProfilePrefs = com.omkarnub.kanri.data.profile.UserProfilePreferences.getInstance(application)
+    private val profileDataFlow = combine(userProfilePrefs.userNameFlow, userProfilePrefs.userDobFlow) { name, dob -> name to dob }
+
+    init {
+        com.omkarnub.kanri.util.BirthdayHelper.checkAndTriggerBirthdayNotification(application)
+    }
+
     val greeting: StateFlow<GreetingResult> = combine(
         uiState,
         greetingDataStore.antiRepetitionState,
         createTimeBucketFlow(),
         createMidnightRolloverFlow(),
-        com.omkarnub.kanri.data.profile.UserProfilePreferences.getInstance(getApplication()).userNameFlow
-    ) { state, antiRep, now, _, currentUserName ->
+        profileDataFlow
+    ) { state, antiRep, now, _, profileData ->
+        val (currentUserName, currentUserDob) = profileData
         val localDate = now.toLocalDate()
         val epochDay = localDate.toEpochDay()
         val bucket = GreetingResolver.getTimeBucket(now.toLocalTime())
         val seed = GreetingResolver.computeSeed(epochDay, bucket)
+        val isBirthday = com.omkarnub.kanri.util.BirthdayHelper.isBirthdayToday(currentUserDob, localDate)
 
         val lastMonthSpent = calculateLastMonthSpentSameDay(state.transactions.map { it.transaction })
 
@@ -453,6 +462,7 @@ class HomeViewModel(application: Application) : AndroidViewModel(application) {
             streakDays = state.streakState.currentStreak,
             needsReviewCount = state.reviewCount,
             isFirstLaunchToday = antiRep.lastShownEpochDay != epochDay,
+            isBirthday = isBirthday,
             seed = seed,
             lastSubtitleRuleId = antiRep.lastSubtitleRuleId,
             lastShownEpochDay = antiRep.lastShownEpochDay,
