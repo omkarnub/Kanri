@@ -20,15 +20,14 @@ The settings architecture adheres to:
          - **Thistle Portico**: High-performance Canvas 2D scene with pointed Gothic arch, castle view, wisteria racemes swaying in the wind, falling petals, and luminous light shafts.
          - **Still Sunset Meadow**: 3D voxel landscape with interactive grass parting, blocky flowers, rolling hills, and a 15-keyframe photorealistic 24-hour day cycle (Golden Rose sunrise, crisp morning azure, real-life Rayleigh daylight blue, fiery sunset peak, and starry cosmic night) driven by the user's local time zone.
         - **Customise Glass Components** action row navigating to `GlassCustomizerScreen`:
-          - **Live Glass Preview Card**: Shows real-time visual feedback of blur depth, translucency, specular border reflections, and corner curvature over a high-contrast preview canvas with glowing orbs and lines in `hazeSource`.
           - **Frosted Blur (0 to 50 dp)**: Directly scales hardware backdrop blur through Haze / RenderNode without restrictive minimum clamping, allowing clean transitions from crystal clear glass (0 dp) up to silky, heavy frosted diffusion (50 dp).
-          - **Glass Tint (-1.0 to +1.0)**: Center-neutral slider (default `0.0f` = "No tint") allowing smooth adjustment to dark smoky obsidian glass (sliding left) or luminous crystalline white frost glass (sliding right), complete with quick-snap buttons (`Dark -50%`, `No tint 0%`, `Light +50%`).
-          - **Border & Edge Shine (0% to 70%)**: Controls specular edge reflection intensity from fully off (0%) up to intense luminance.
+          - **Glass Tint (-1.0 to +1.0)**: Center-neutral slider (default `0.0f` = "No tint") allowing smooth adjustment to dark smoky obsidian glass (sliding left) or luminous crystalline white frost glass (sliding right), complete with quick-snap buttons (`Dark -50%`, `No tint 0%`, `Light +50%`). Both the content cards and the floating navigation dock actively follow this tint in real time.
+          - **Border & Edge Shine (0% to 70%)**: Controls specular edge reflection intensity from fully off (0%) up to intense luminance across cards and dock.
           - **Corner Curvature (10 to 32 dp)**: Modifies corner radius dynamically across cards.
    - **App Launcher Icon**: Toggle between Dark and Light activity aliases with confirmation dialog.
 
 2. **Wallets & Currency**:
-   - Primary App Currency selection (40+ international currencies with clean currency symbol chips, avoiding emoji flags).
+   - Primary App Currency selection (40+ international currencies with standard national flag indicators and symbols).
    - Cash Opening Balance direct correction.
    - Online Opening Balance direct correction.
    - Reconfigure Wallets wizard.
@@ -97,10 +96,10 @@ The glass customization interface has been refined into a minimal, focused tool:
 
 ---
 
-## 5. Clean, Professional Visual Language (Zero Emojis)
+## 5. Clean, Professional Visual Language
 
 Kanri adheres strictly to a modern, typographic, and vector-driven design language:
-- **No Emojis**: Emojis are strictly prohibited throughout all user-facing interfaces, notifications, dialogs, widgets, avatars, and data models.
+- **No Decorative Emojis**: Emojis are eliminated from user-facing app text, dialogs, widgets, greetings, and category lists.
 - **Letter Monograms**: User avatars utilize bold uppercase letter monograms against rich gradient surfaces (`KokonutAvatarSelector`).
 - **Vector Icons**: Actions, categories, reminders, and recurrent operations use Material Symbols / vector icons (`androidx.compose.material.icons`).
-- **Currency Chips**: Regional currencies in the currency selection sheet display clean typographic symbol badges instead of emoji flag characters.
+- **Standard Currency Flags**: Currencies in the currency selection sheet and settings subtitle utilize standard regional flag indicators for clear, intuitive international currency identification.

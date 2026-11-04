@@ -64,6 +64,7 @@ import com.omkarnub.kanri.ui.common.kanriGlass
 import com.omkarnub.kanri.ui.common.rememberKanriGlassTheme
 import com.omkarnub.kanri.ui.theme.LocalKanriGlass
 import com.omkarnub.kanri.ui.theme.KanriMotion
+import com.omkarnub.kanri.ui.theme.lerpColor
 import androidx.compose.ui.graphics.Brush
 import dev.chrisbanes.haze.HazeState
 import dev.chrisbanes.haze.HazeStyle
@@ -119,17 +120,51 @@ fun KanriFloatingDock(
     ) {
         // Main Navigation Glass Pill (Capsule enclosing the 4 tabs)
         val pillModifier = if (tokens != null) {
-            val glassHazeStyle = remember(tokens.tintBlur, tokens.blurRadius, tokens.isDark) {
-                val dockBg = (if (tokens.isDark) Color(0xFF14151E) else Color(0xFFFAF9F5)).copy(
-                    alpha = if (tokens.isDark) 0.38f else 0.58f
-                )
-                val dockTint = (if (tokens.isDark) Color.White else Color(0xFF18181B)).copy(
-                    alpha = if (tokens.isDark) 0.16f else 0.25f
-                )
+            val lightness = tokens.tintLightness.coerceIn(-1.0f, 1.0f)
+            val isDarkTint = lightness < -0.04f
+            val isLightTint = lightness > 0.04f
+
+            val dockBgColor = when {
+                isDarkTint -> {
+                    val d = (-lightness).coerceIn(0f, 1f)
+                    lerpColor(Color(0xFF14151E), Color(0xFF06070A), d)
+                }
+                isLightTint -> {
+                    val l = lightness.coerceIn(0f, 1f)
+                    lerpColor(Color(0xFF14151E), Color(0xFFFAF9F6), l)
+                }
+                else -> if (tokens.isDark) Color(0xFF14151E) else Color(0xFFFAF9F5)
+            }
+            val dockBgAlpha = when {
+                isDarkTint -> {
+                    val d = (-lightness).coerceIn(0f, 1f)
+                    (0.38f + d * 0.45f).coerceIn(0.25f, 0.90f)
+                }
+                isLightTint -> {
+                    val l = lightness.coerceIn(0f, 1f)
+                    (0.38f + l * 0.45f).coerceIn(0.25f, 0.88f)
+                }
+                else -> if (tokens.isDark) 0.38f else 0.55f
+            }
+            val dockBg = dockBgColor.copy(alpha = dockBgAlpha)
+
+            val dockTint = when {
+                isDarkTint -> {
+                    val d = (-lightness).coerceIn(0f, 1f)
+                    Color.Black.copy(alpha = (0.12f + d * 0.40f).coerceIn(0.08f, 0.55f))
+                }
+                isLightTint -> {
+                    val l = lightness.coerceIn(0f, 1f)
+                    Color.White.copy(alpha = (0.15f + l * 0.38f).coerceIn(0.10f, 0.55f))
+                }
+                else -> (if (tokens.isDark) Color.White else Color(0xFF18181B)).copy(alpha = 0.12f)
+            }
+
+            val glassHazeStyle = remember(tokens.tintLightness, tokens.blurRadius, tokens.isDark, dockBg, dockTint) {
                 HazeStyle(
                     backgroundColor = dockBg,
                     tint = HazeTint(dockTint),
-                    blurRadius = tokens.blurRadius.coerceAtLeast(24.dp),
+                    blurRadius = tokens.blurRadius,
                     noiseFactor = 0.02f
                 )
             }
@@ -150,21 +185,21 @@ fun KanriFloatingDock(
                 )
                 .clip(RoundedCornerShape(32.dp))
                 .then(
-                    if (hazeState != null) {
+                    if (hazeState != null && tokens.blurRadius > 0.dp) {
                         Modifier.hazeEffect(
                             state = hazeState,
                             style = glassHazeStyle
                         )
                     } else {
-                        Modifier.background(Color.White.copy(alpha = 0.14f))
+                        Modifier.background(dockBg)
                     }
                 )
                 .border(
-                    width = 0.8.dp,
+                    width = tokens.borderWidth,
                     brush = Brush.linearGradient(
                         listOf(
-                            Color.White.copy(alpha = 0.35f),
-                            Color.White.copy(alpha = 0.08f)
+                            tokens.borderStart,
+                            tokens.borderEnd
                         )
                     ),
                     shape = RoundedCornerShape(32.dp)
@@ -283,7 +318,12 @@ private fun DockTabItem(
 
     val targetAlpha = if (isSelected) 1.0f else 0.50f
     val baseColor = if (tokens != null) {
-        tokens.textPrimary
+        if (tokens.tintLightness > 0.25f) {
+            val l = ((tokens.tintLightness - 0.25f) / 0.75f).coerceIn(0f, 1f)
+            lerpColor(tokens.textPrimary, Color(0xFF121318), l)
+        } else {
+            tokens.textPrimary
+        }
     } else {
         dockTheme.activeContentColor
     }
@@ -408,17 +448,52 @@ private fun DockAddButton(
     )
 
     val buttonModifier = if (tokens != null) {
-        val glassHazeStyle = remember(tokens.tintBlur, tokens.blurRadius, tokens.isDark) {
-            val dockBg = (if (tokens.isDark) Color(0xFF14151E) else Color(0xFFFAF9F5)).copy(
-                alpha = if (tokens.isDark) 0.40f else 0.60f
-            )
-            val dockTint = (if (tokens.isDark) Color.White else Color(0xFF18181B)).copy(
-                alpha = if (tokens.isDark) 0.18f else 0.28f
-            )
+        val lightness = tokens.tintLightness.coerceIn(-1.0f, 1.0f)
+        val isDarkTint = lightness < -0.04f
+        val isLightTint = lightness > 0.04f
+
+        val dockBgColor = when {
+            isDarkTint -> {
+                val d = (-lightness).coerceIn(0f, 1f)
+                lerpColor(Color(0xFF14151E), Color(0xFF06070A), d)
+            }
+            isLightTint -> {
+                val l = lightness.coerceIn(0f, 1f)
+                lerpColor(Color(0xFF14151E), Color(0xFFFAF9F6), l)
+            }
+            else -> if (tokens.isDark) Color(0xFF14151E) else Color(0xFFFAF9F5)
+        }
+
+        val dockBgAlpha = when {
+            isDarkTint -> {
+                val d = (-lightness).coerceIn(0f, 1f)
+                (0.40f + d * 0.45f).coerceIn(0.25f, 0.92f)
+            }
+            isLightTint -> {
+                val l = lightness.coerceIn(0f, 1f)
+                (0.40f + l * 0.45f).coerceIn(0.25f, 0.90f)
+            }
+            else -> if (tokens.isDark) 0.40f else 0.58f
+        }
+        val dockBg = dockBgColor.copy(alpha = dockBgAlpha)
+
+        val dockTint = when {
+            isDarkTint -> {
+                val d = (-lightness).coerceIn(0f, 1f)
+                Color.Black.copy(alpha = (0.12f + d * 0.40f).coerceIn(0.08f, 0.55f))
+            }
+            isLightTint -> {
+                val l = lightness.coerceIn(0f, 1f)
+                Color.White.copy(alpha = (0.16f + l * 0.38f).coerceIn(0.12f, 0.58f))
+            }
+            else -> (if (tokens.isDark) Color.White else Color(0xFF18181B)).copy(alpha = 0.15f)
+        }
+
+        val glassHazeStyle = remember(tokens.tintLightness, tokens.blurRadius, tokens.isDark, dockBg, dockTint) {
             HazeStyle(
                 backgroundColor = dockBg,
                 tint = HazeTint(dockTint),
-                blurRadius = tokens.blurRadius.coerceAtLeast(24.dp),
+                blurRadius = tokens.blurRadius,
                 noiseFactor = 0.02f
             )
         }
@@ -432,21 +507,21 @@ private fun DockAddButton(
             )
             .clip(CircleShape)
             .then(
-                if (hazeState != null) {
+                if (hazeState != null && tokens.blurRadius > 0.dp) {
                     Modifier.hazeEffect(
                         state = hazeState,
                         style = glassHazeStyle
                     )
                 } else {
-                    Modifier.background(Color.White.copy(alpha = 0.16f))
+                    Modifier.background(dockBg)
                 }
             )
             .border(
-                width = 0.8.dp,
+                width = tokens.borderWidth,
                 brush = Brush.linearGradient(
                     listOf(
-                        Color.White.copy(alpha = 0.40f),
-                        Color.White.copy(alpha = 0.10f)
+                        tokens.borderStart,
+                        tokens.borderEnd
                     )
                 ),
                 shape = CircleShape
@@ -498,8 +573,18 @@ private fun DockAddButton(
         modifier = buttonModifier,
         contentAlignment = Alignment.Center
     ) {
+        val addIconColor = if (tokens != null) {
+            if (tokens.tintLightness > 0.25f) {
+                val l = ((tokens.tintLightness - 0.25f) / 0.75f).coerceIn(0f, 1f)
+                lerpColor(tokens.accent, Color(0xFF121318), l)
+            } else {
+                tokens.accent
+            }
+        } else {
+            dockTheme.addButtonIconColor
+        }
         AddDockIcon(
-            tint = if (tokens != null) tokens.accent else dockTheme.addButtonIconColor,
+            tint = addIconColor,
             size = 28.dp,
             strokeWidth = 2.2.dp,
             modifier = Modifier.graphicsLayer { rotationZ = rotation }

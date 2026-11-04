@@ -1316,13 +1316,20 @@ fun SelectCurrencyDialog(
                                             modifier = Modifier.size(36.dp)
                                         ) {
                                             Box(contentAlignment = Alignment.Center) {
-                                                Text(
-                                                    text = currency.symbol,
-                                                    style = MaterialTheme.typography.titleMedium.copy(
-                                                        fontWeight = FontWeight.Bold,
-                                                        color = MaterialTheme.colorScheme.primary
+                                                if (currency.flag.isNotBlank()) {
+                                                    Text(
+                                                        text = currency.flag,
+                                                        fontSize = 20.sp
                                                     )
-                                                )
+                                                } else {
+                                                    Text(
+                                                        text = currency.symbol,
+                                                        style = MaterialTheme.typography.titleMedium.copy(
+                                                            fontWeight = FontWeight.Bold,
+                                                            color = MaterialTheme.colorScheme.primary
+                                                        )
+                                                    )
+                                                }
                                             }
                                         }
                                         Column {

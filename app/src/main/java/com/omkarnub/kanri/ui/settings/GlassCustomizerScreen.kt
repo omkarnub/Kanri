@@ -2,7 +2,6 @@ package com.omkarnub.kanri.ui.settings
 
 import androidx.activity.compose.BackHandler
 import androidx.compose.foundation.BorderStroke
-import androidx.compose.foundation.Canvas
 import androidx.compose.foundation.clickable
 import androidx.compose.foundation.layout.Arrangement
 import androidx.compose.foundation.layout.Box
@@ -49,8 +48,6 @@ import androidx.compose.runtime.setValue
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.draw.clip
-import androidx.compose.ui.geometry.Offset
-import androidx.compose.ui.graphics.Brush
 import androidx.compose.ui.graphics.Color
 import androidx.compose.ui.graphics.vector.ImageVector
 import androidx.compose.ui.platform.LocalContext
@@ -67,8 +64,6 @@ import com.omkarnub.kanri.ui.theme.LocalKanriGlass
 import com.omkarnub.kanri.ui.theme.Panchang
 import com.omkarnub.kanri.ui.theme.ThemePreferences
 import com.omkarnub.kanri.util.rememberKanriHaptics
-import dev.chrisbanes.haze.HazeState
-import dev.chrisbanes.haze.hazeSource
 import kotlin.math.roundToInt
 
 @OptIn(ExperimentalMaterial3Api::class)
@@ -140,11 +135,6 @@ fun GlassCustomizerScreen(
                 contentPadding = PaddingValues(start = 20.dp, end = 20.dp, top = 8.dp, bottom = 40.dp),
                 verticalArrangement = Arrangement.spacedBy(16.dp)
             ) {
-                // Interactive Real-Time Live Preview Card
-                item {
-                    LiveGlassPreviewCard(config = config)
-                }
-
                 item {
                     Text(
                         text = "Adjust the sliders below to fine-tune blur depth, translucency tint, specular edge reflections, and corner roundness.",
@@ -328,173 +318,6 @@ fun GlassCustomizerScreen(
 }
 
 @Composable
-private fun LiveGlassPreviewCard(config: GlassCustomization) {
-    val previewHazeState = remember { HazeState() }
-
-    Box(
-        modifier = Modifier
-            .fillMaxWidth()
-            .clip(RoundedCornerShape(config.cornerRadiusDp.dp))
-    ) {
-        // High-contrast, vibrant preview pattern specifically placed in hazeSource
-        // This gives Haze unmistakable shapes, glowing gradient circles, and cross lines to blur!
-        Box(
-            modifier = Modifier
-                .matchParentSize()
-                .hazeSource(previewHazeState)
-        ) {
-            PreviewBackdropPattern()
-        }
-
-        // Live glass card with hazeState = previewHazeState
-        KanriGlassCard(
-            level = GlassLevel.Blur,
-            shape = RoundedCornerShape(config.cornerRadiusDp.dp),
-            hazeState = previewHazeState,
-            modifier = Modifier.fillMaxWidth()
-        ) {
-            Column(
-                modifier = Modifier
-                    .fillMaxWidth()
-                    .padding(20.dp),
-                verticalArrangement = Arrangement.spacedBy(14.dp)
-            ) {
-                Row(
-                    modifier = Modifier.fillMaxWidth(),
-                    horizontalArrangement = Arrangement.SpaceBetween,
-                    verticalAlignment = Alignment.CenterVertically
-                ) {
-                    Row(
-                        verticalAlignment = Alignment.CenterVertically,
-                        horizontalArrangement = Arrangement.spacedBy(8.dp)
-                    ) {
-                        Surface(
-                            shape = CircleShape,
-                            color = MaterialTheme.colorScheme.primary.copy(alpha = 0.16f),
-                            modifier = Modifier.size(28.dp)
-                        ) {
-                            Box(contentAlignment = Alignment.Center) {
-                                Icon(
-                                    imageVector = Icons.Default.AutoFixHigh,
-                                    contentDescription = null,
-                                    tint = MaterialTheme.colorScheme.primary,
-                                    modifier = Modifier.size(15.dp)
-                                )
-                            }
-                        }
-                        Text(
-                            text = "LIVE GLASS PREVIEW",
-                            style = MaterialTheme.typography.labelSmall.copy(
-                                fontFamily = Panchang,
-                                fontWeight = FontWeight.Bold,
-                                letterSpacing = 1.2.sp,
-                                fontSize = 11.sp
-                            ),
-                            color = MaterialTheme.colorScheme.primary
-                        )
-                    }
-
-                    Surface(
-                        shape = RoundedCornerShape(6.dp),
-                        color = MaterialTheme.colorScheme.primary.copy(alpha = 0.12f)
-                    ) {
-                        Text(
-                            text = if (config.blurRadiusDp <= 0f) "Clear Glass" else "Frosted ${config.blurRadiusDp.roundToInt()}dp",
-                            style = MaterialTheme.typography.labelSmall.copy(fontWeight = FontWeight.Bold),
-                            color = MaterialTheme.colorScheme.primary,
-                            modifier = Modifier.padding(horizontal = 8.dp, vertical = 3.dp)
-                        )
-                    }
-                }
-
-                Column(verticalArrangement = Arrangement.spacedBy(4.dp)) {
-                    Text(
-                        text = "TOTAL BALANCE",
-                        style = MaterialTheme.typography.labelSmall.copy(
-                            fontFamily = Panchang,
-                            fontWeight = FontWeight.Bold,
-                            letterSpacing = 1.sp,
-                            fontSize = 10.sp
-                        ),
-                        color = MaterialTheme.colorScheme.onSurfaceVariant
-                    )
-                    Text(
-                        text = "₹ 2,45,800.00",
-                        style = MaterialTheme.typography.headlineMedium.copy(
-                            fontFamily = Panchang,
-                            fontWeight = FontWeight.Bold,
-                            letterSpacing = (-0.5).sp
-                        ),
-                        color = MaterialTheme.colorScheme.onSurface
-                    )
-                }
-
-                Row(
-                    modifier = Modifier.fillMaxWidth(),
-                    horizontalArrangement = Arrangement.spacedBy(8.dp)
-                ) {
-                    GlassPreviewStatChip(
-                        label = "Blur",
-                        value = "${config.blurRadiusDp.roundToInt()} dp",
-                        modifier = Modifier.weight(1f)
-                    )
-                    GlassPreviewStatChip(
-                        label = "Tint",
-                        value = when {
-                            kotlin.math.abs(config.tintLightness) <= 0.04f -> "None"
-                            config.tintLightness < -0.04f -> "Dark ${(-config.tintLightness * 100).roundToInt()}%"
-                            else -> "Light ${(config.tintLightness * 100).roundToInt()}%"
-                        },
-                        modifier = Modifier.weight(1f)
-                    )
-                    GlassPreviewStatChip(
-                        label = "Edge",
-                        value = "${(config.borderOpacity * 100).roundToInt()}%",
-                        modifier = Modifier.weight(1f)
-                    )
-                    GlassPreviewStatChip(
-                        label = "Radius",
-                        value = "${config.cornerRadiusDp.roundToInt()} dp",
-                        modifier = Modifier.weight(1f)
-                    )
-                }
-            }
-        }
-    }
-}
-
-@Composable
-private fun GlassPreviewStatChip(
-    label: String,
-    value: String,
-    modifier: Modifier = Modifier
-) {
-    Surface(
-        shape = RoundedCornerShape(10.dp),
-        color = MaterialTheme.colorScheme.surfaceVariant.copy(alpha = 0.35f),
-        modifier = modifier
-    ) {
-        Column(
-            modifier = Modifier.padding(vertical = 6.dp, horizontal = 4.dp),
-            horizontalAlignment = Alignment.CenterHorizontally
-        ) {
-            Text(
-                text = label,
-                style = MaterialTheme.typography.labelSmall,
-                color = MaterialTheme.colorScheme.onSurfaceVariant,
-                fontSize = 10.sp
-            )
-            Text(
-                text = value,
-                style = MaterialTheme.typography.labelMedium.copy(fontWeight = FontWeight.Bold),
-                color = MaterialTheme.colorScheme.onSurface,
-                fontSize = 11.5.sp
-            )
-        }
-    }
-}
-
-@Composable
 private fun GlassSliderControlCard(
     title: String,
     subtitle: String,
@@ -640,71 +463,5 @@ private fun QuickTintOptionButton(
                 color = if (isSelected) MaterialTheme.colorScheme.primary else MaterialTheme.colorScheme.onSurfaceVariant
             )
         }
-    }
-}
-
-@Composable
-private fun PreviewBackdropPattern(modifier: Modifier = Modifier) {
-    Canvas(modifier = modifier.fillMaxSize()) {
-        val w = size.width
-        val h = size.height
-
-        // 1. Deep atmospheric background base
-        drawRect(color = Color(0xFF090A10))
-
-        // 2. High-saturation glowing radial gradient orbs
-        // Violet-Indigo upper-left
-        drawCircle(
-            brush = Brush.radialGradient(
-                colors = listOf(Color(0xFF7C3AED), Color(0xFF4338CA).copy(alpha = 0.6f), Color.Transparent),
-                center = Offset(w * 0.20f, h * 0.25f),
-                radius = w * 0.55f
-            )
-        )
-        // Neon Rose-Pink upper-right
-        drawCircle(
-            brush = Brush.radialGradient(
-                colors = listOf(Color(0xFFF43F5E), Color(0xFFBE185D).copy(alpha = 0.6f), Color.Transparent),
-                center = Offset(w * 0.82f, h * 0.35f),
-                radius = w * 0.55f
-            )
-        )
-        // Emerald Green bottom-center
-        drawCircle(
-            brush = Brush.radialGradient(
-                colors = listOf(Color(0xFF10B981), Color(0xFF059669).copy(alpha = 0.5f), Color.Transparent),
-                center = Offset(w * 0.50f, h * 0.88f),
-                radius = w * 0.50f
-            )
-        )
-        // Warm Amber bottom-left
-        drawCircle(
-            brush = Brush.radialGradient(
-                colors = listOf(Color(0xFFF59E0B), Color(0xFFD97706).copy(alpha = 0.4f), Color.Transparent),
-                center = Offset(w * 0.10f, h * 0.85f),
-                radius = w * 0.40f
-            )
-        )
-
-        // 3. Crisp geometric accent lines to provide clear edge contrasts for the blur lens
-        val accentAlpha = 0.55f
-        drawLine(
-            color = Color.White.copy(alpha = accentAlpha),
-            start = Offset(w * 0.08f, h * 0.18f),
-            end = Offset(w * 0.92f, h * 0.82f),
-            strokeWidth = 3.5f
-        )
-        drawLine(
-            color = Color.White.copy(alpha = accentAlpha),
-            start = Offset(w * 0.92f, h * 0.18f),
-            end = Offset(w * 0.08f, h * 0.82f),
-            strokeWidth = 3.5f
-        )
-        drawLine(
-            color = Color(0xFF38BDF8).copy(alpha = accentAlpha),
-            start = Offset(w * 0.15f, h * 0.50f),
-            end = Offset(w * 0.85f, h * 0.50f),
-            strokeWidth = 2.5f
-        )
     }
 }

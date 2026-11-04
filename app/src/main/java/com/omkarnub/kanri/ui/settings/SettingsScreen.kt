@@ -878,9 +878,10 @@ fun SettingsScreen(
             // =================================================================
             SettingsGroup(title = "WALLETS & CURRENCY") {
                 // Primary Currency
+                val currencyFlag = if (currentCurrency.flag.isNotBlank()) "${currentCurrency.flag} " else ""
                 SettingsRow(
                     title = "Primary Currency",
-                    subtitle = "${currentCurrency.displayName} (${currentCurrency.symbol} ${currentCurrency.code})",
+                    subtitle = "$currencyFlag${currentCurrency.displayName} (${currentCurrency.symbol} ${currentCurrency.code})",
                     icon = Icons.Default.Paid,
                     onClick = { showCurrencyDialog = true }
                 )

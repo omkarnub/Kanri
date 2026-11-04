@@ -534,6 +534,29 @@ fun getKanriGlassTheme(
             val blur = tokens.blurRadius
             val strongBlur = tokens.blurRadius * 1.35f
             val isBlurZero = blur <= 0.dp
+            val lightness = tokens.tintLightness.coerceIn(-1.0f, 1.0f)
+            val dockBgColor = when {
+                lightness < -0.04f -> {
+                    val d = (-lightness).coerceIn(0f, 1f)
+                    lerpColor(Color(0xFF14151F), Color(0xFF06070A), d)
+                }
+                lightness > 0.04f -> {
+                    val l = lightness.coerceIn(0f, 1f)
+                    lerpColor(Color(0xFF14151F), Color(0xFFFAF9F6), l)
+                }
+                else -> if (tokens.isDark) Color(0xFF14151F) else Color(0xFFFAF9F5)
+            }
+            val dockBgAlpha = when {
+                lightness < -0.04f -> {
+                    val d = (-lightness).coerceIn(0f, 1f)
+                    (0.38f + d * 0.45f).coerceIn(0.25f, 0.90f)
+                }
+                lightness > 0.04f -> {
+                    val l = lightness.coerceIn(0f, 1f)
+                    (0.38f + l * 0.45f).coerceIn(0.25f, 0.88f)
+                }
+                else -> if (tokens.isDark) 0.38f else 0.55f
+            }
             KanriGlassTheme(
                 glassBorder = BorderStroke(
                     tokens.borderWidth,
@@ -545,17 +568,13 @@ fun getKanriGlassTheme(
                 shadowColor = tokens.shadow,
                 shadowElevation = 8.dp,
                 hazeStyle = HazeStyle(
-                    backgroundColor = (if (tokens.isDark) Color(0xFF14151F) else Color(0xFFFAF9F5)).copy(
-                        alpha = if (tokens.isDark) 0.38f else 0.55f
-                    ),
+                    backgroundColor = dockBgColor.copy(alpha = dockBgAlpha),
                     tint = HazeTint(tokens.tintBlur),
                     blurRadius = if (isBlurZero) 0.dp else blur,
                     noiseFactor = if (isBlurZero) 0f else 0.02f
                 ),
                 popupHazeStyle = HazeStyle(
-                    backgroundColor = (if (tokens.isDark) Color(0xFF14151F) else Color(0xFFFAF9F5)).copy(
-                        alpha = if (tokens.isDark) 0.75f else 0.88f
-                    ),
+                    backgroundColor = dockBgColor.copy(alpha = (dockBgAlpha * 1.5f).coerceIn(0.65f, 0.95f)),
                     tint = HazeTint(tokens.tintStrong),
                     blurRadius = if (isBlurZero) 0.dp else strongBlur,
                     noiseFactor = if (isBlurZero) 0f else 0.035f

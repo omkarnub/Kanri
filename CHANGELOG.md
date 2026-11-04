@@ -5,6 +5,22 @@ All notable changes to Kanri will be documented in this file.
 The format is based on [Keep a Changelog](https://keepachangelog.com/en/1.0.0/),
 and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0.html).
 
+## [1.4.2] - 2026-11-04
+
+### Fixed
+- **Floating Navigation Dock Tint and Blur Responsiveness**:
+  - Connected the navigation dock capsule and floating Add (+) button directly to `tokens.tintLightness` in `KanriFloatingDock.kt` and `KanriGlass.kt`.
+  - The dock now smoothly reflects the customizer's glass tint: dark smoky obsidian when sliding left, neutral crystal clear glass at center (0.0f), and bright crystalline frost when sliding right.
+  - Dock borders dynamically follow `tokens.borderStart` and `tokens.borderEnd` specular edge reflectance.
+  - Tab icon and label colors smoothly transition to dark charcoal `Color(0xFF121318)` at high frost lightness levels for crisp readability and contrast.
+  - Removed restrictive 24 dp minimum clamp on dock blur, allowing seamless scaling down to 0 dp (crystal-clear dock glass).
+- **Streamlined Glass Customization Screen**:
+  - Removed the bulky live preview card, preview stat chips, and mock backdrop pattern from `GlassCustomizerScreen.kt`.
+  - Customizer screen now features a clean, minimal interface that directly previews changes on the live app backdrop and running UI cards.
+- **Restored Standard National Currency Flags**:
+  - Re-enabled standard national flag indicators in `AppCurrency.kt`, `SettingsScreen.kt`, and `SettingsComponents.kt` (`SelectCurrencyDialog`) so regional currencies display their customary flags.
+- Bumped application version to `1.4.2` (Build 13).
+
 ## [1.4.1] - 2026-11-04
 
 ### Fixed
