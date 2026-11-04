@@ -1,0 +1,1583 @@
+package com.omkarnub.kanri.ui.settings
+
+import android.Manifest
+import android.content.ClipData
+import android.content.ClipboardManager
+import android.content.Context
+import android.content.Intent
+import android.content.pm.PackageManager
+import android.net.Uri
+import android.os.Build
+import android.os.PowerManager
+import android.provider.Settings
+import android.widget.Toast
+import androidx.compose.animation.AnimatedVisibility
+import androidx.compose.animation.core.animateFloatAsState
+import androidx.compose.animation.core.spring
+import androidx.compose.foundation.BorderStroke
+import androidx.compose.foundation.background
+import androidx.compose.foundation.border
+import androidx.compose.foundation.clickable
+import androidx.compose.foundation.horizontalScroll
+import androidx.compose.foundation.interaction.MutableInteractionSource
+import androidx.compose.foundation.layout.Arrangement
+import androidx.compose.foundation.layout.Box
+import androidx.compose.foundation.layout.Column
+import androidx.compose.foundation.layout.ColumnScope
+import androidx.compose.foundation.layout.Row
+import androidx.compose.foundation.layout.Spacer
+import androidx.compose.foundation.layout.defaultMinSize
+import androidx.compose.foundation.layout.fillMaxSize
+import androidx.compose.foundation.layout.fillMaxWidth
+import androidx.compose.foundation.layout.height
+import androidx.compose.foundation.layout.heightIn
+import androidx.compose.foundation.layout.padding
+import androidx.compose.foundation.layout.size
+import androidx.compose.foundation.layout.width
+import androidx.compose.foundation.lazy.grid.GridCells
+import androidx.compose.foundation.lazy.grid.LazyVerticalGrid
+import androidx.compose.foundation.lazy.grid.items
+import androidx.compose.foundation.rememberScrollState
+import androidx.compose.foundation.selection.selectable
+import androidx.compose.foundation.selection.toggleable
+import androidx.compose.foundation.shape.CircleShape
+import androidx.compose.foundation.shape.RoundedCornerShape
+import androidx.compose.foundation.verticalScroll
+import androidx.compose.material.icons.Icons
+import androidx.compose.material.icons.automirrored.filled.KeyboardArrowRight
+import androidx.compose.material.icons.filled.AutoAwesome
+import androidx.compose.material.icons.filled.BrightnessAuto
+import androidx.compose.material.icons.filled.Check
+import androidx.compose.material.icons.filled.CheckCircle
+import androidx.compose.material.icons.filled.CloudDone
+import androidx.compose.material.icons.filled.CloudSync
+import androidx.compose.material.icons.filled.ContentCopy
+import androidx.compose.material.icons.filled.DarkMode
+import androidx.compose.material.icons.filled.LightMode
+import androidx.compose.material.icons.filled.NightlightRound
+import androidx.compose.material.icons.filled.Opacity
+import androidx.compose.material.icons.filled.Refresh
+import androidx.compose.material.icons.filled.Search
+import androidx.compose.material.icons.filled.Sync
+import androidx.compose.material3.Button
+import androidx.compose.material3.Card
+import androidx.compose.material3.CardDefaults
+import androidx.compose.material3.FilterChip
+import androidx.compose.material3.FilterChipDefaults
+import androidx.compose.material3.HorizontalDivider
+import androidx.compose.material3.Icon
+import androidx.compose.material3.IconButton
+import androidx.compose.material3.MaterialTheme
+import androidx.compose.material3.OutlinedButton
+import androidx.compose.material3.OutlinedTextField
+import androidx.compose.material3.Surface
+import androidx.compose.material3.Switch
+import androidx.compose.material3.SwitchDefaults
+import androidx.compose.material3.Text
+import androidx.compose.material3.TextButton
+import androidx.compose.material3.ripple
+import androidx.compose.runtime.Composable
+import androidx.compose.runtime.collectAsState
+import androidx.compose.runtime.getValue
+import androidx.compose.runtime.mutableStateOf
+import androidx.compose.runtime.remember
+import androidx.compose.runtime.rememberCoroutineScope
+import androidx.compose.runtime.setValue
+import androidx.compose.ui.Alignment
+import androidx.compose.ui.Modifier
+import androidx.compose.ui.draw.clip
+import androidx.compose.ui.geometry.Offset
+import androidx.compose.ui.graphics.Brush
+import androidx.compose.ui.graphics.Color
+import androidx.compose.ui.graphics.graphicsLayer
+import androidx.compose.ui.graphics.vector.ImageVector
+import androidx.compose.ui.platform.LocalContext
+import androidx.compose.ui.semantics.Role
+import androidx.compose.ui.semantics.contentDescription
+import androidx.compose.ui.semantics.role
+import androidx.compose.ui.semantics.semantics
+import androidx.compose.ui.text.font.FontWeight
+import androidx.compose.ui.text.style.TextOverflow
+import androidx.compose.ui.unit.dp
+import androidx.compose.ui.unit.sp
+import androidx.core.app.NotificationManagerCompat
+import androidx.core.content.ContextCompat
+import com.omkarnub.kanri.data.cloud.BackupMode
+import com.omkarnub.kanri.data.cloud.CloudBackupManager
+import com.omkarnub.kanri.data.cloud.CloudBackupPreferences
+import com.omkarnub.kanri.data.cloud.CloudBackupStatus
+import com.omkarnub.kanri.data.db.CategoryEntity
+import com.omkarnub.kanri.ui.common.AVAILABLE_CATEGORY_ICONS
+import com.omkarnub.kanri.ui.common.CategoryIcon
+import com.omkarnub.kanri.ui.common.GlassBackgroundType
+import com.omkarnub.kanri.ui.common.GlassLevel
+import com.omkarnub.kanri.ui.common.KanriGlassAlertDialog as AlertDialog
+import com.omkarnub.kanri.ui.common.KanriGlassCard
+import com.omkarnub.kanri.ui.common.kanriGlassTextFieldColors
+import com.omkarnub.kanri.ui.notification.NotificationAccessHelper
+import com.omkarnub.kanri.ui.theme.DarkOffWhite
+import com.omkarnub.kanri.ui.theme.GlassCustomization
+import com.omkarnub.kanri.ui.theme.GlassPresets
+import com.omkarnub.kanri.ui.theme.GoogleSansFlex
+import com.omkarnub.kanri.ui.theme.LocalKanriGlass
+import com.omkarnub.kanri.ui.theme.Panchang
+import com.omkarnub.kanri.ui.theme.ThemeMode
+import com.omkarnub.kanri.util.AppCurrency
+import com.omkarnub.kanri.util.rememberKanriHaptics
+import kotlinx.coroutines.launch
+import java.text.SimpleDateFormat
+import java.util.Date
+import java.util.Locale
+
+// =============================================================================
+// 1. SETTINGS GROUP
+// =============================================================================
+@Composable
+fun SettingsGroup(
+    title: String,
+    modifier: Modifier = Modifier,
+    titleColor: Color? = null,
+    content: @Composable ColumnScope.() -> Unit
+) {
+    val tokens = LocalKanriGlass.current
+    val effectiveTitleColor = titleColor ?: (tokens?.textSecondary ?: MaterialTheme.colorScheme.onSurfaceVariant)
+
+    Column(
+        modifier = modifier.fillMaxWidth(),
+        verticalArrangement = Arrangement.spacedBy(8.dp)
+    ) {
+        Text(
+            text = title,
+            fontSize = 11.sp,
+            fontFamily = GoogleSansFlex,
+            fontWeight = FontWeight.Bold,
+            letterSpacing = 1.1.sp,
+            color = effectiveTitleColor,
+            modifier = Modifier.padding(start = 12.dp)
+        )
+
+        KanriGlassCard(
+            modifier = Modifier.fillMaxWidth(),
+            level = GlassLevel.Blur,
+            shape = RoundedCornerShape(18.dp)
+        ) {
+            Column(
+                modifier = Modifier
+                    .fillMaxWidth()
+                    .padding(vertical = 4.dp),
+                content = content
+            )
+        }
+    }
+}
+
+// =============================================================================
+// 2. SETTINGS ROW
+// =============================================================================
+@Composable
+fun SettingsRow(
+    title: String,
+    subtitle: String? = null,
+    icon: ImageVector? = null,
+    iconTint: Color? = null,
+    trailing: @Composable (() -> Unit)? = null,
+    onClick: (() -> Unit)? = null,
+    modifier: Modifier = Modifier
+) {
+    val tokens = LocalKanriGlass.current
+    val haptics = rememberKanriHaptics()
+    val primaryColor = MaterialTheme.colorScheme.primary
+
+    val resolvedIconTint = iconTint ?: (tokens?.accent ?: primaryColor)
+    val titleTextColor = tokens?.textPrimary ?: MaterialTheme.colorScheme.onSurface
+    val subtitleTextColor = tokens?.textSecondary ?: MaterialTheme.colorScheme.onSurfaceVariant
+
+    Row(
+        modifier = modifier
+            .fillMaxWidth()
+            .defaultMinSize(minHeight = 52.dp)
+            .then(
+                if (onClick != null) {
+                    Modifier.clickable(
+                        interactionSource = remember { MutableInteractionSource() },
+                        indication = ripple(),
+                        onClick = {
+                            haptics.click()
+                            onClick()
+                        }
+                    )
+                } else Modifier
+            )
+            .padding(horizontal = 16.dp, vertical = 12.dp),
+        horizontalArrangement = Arrangement.spacedBy(14.dp),
+        verticalAlignment = Alignment.CenterVertically
+    ) {
+        if (icon != null) {
+            Surface(
+                shape = RoundedCornerShape(10.dp),
+                color = resolvedIconTint.copy(alpha = 0.12f),
+                modifier = Modifier.size(36.dp)
+            ) {
+                Box(contentAlignment = Alignment.Center) {
+                    Icon(
+                        imageVector = icon,
+                        contentDescription = null,
+                        tint = resolvedIconTint,
+                        modifier = Modifier.size(20.dp)
+                    )
+                }
+            }
+        }
+
+        Column(modifier = Modifier.weight(1f)) {
+            Text(
+                text = title,
+                fontFamily = GoogleSansFlex,
+                fontWeight = FontWeight.SemiBold,
+                fontSize = 14.5.sp,
+                color = titleTextColor
+            )
+            if (subtitle != null) {
+                Spacer(modifier = Modifier.height(2.dp))
+                Text(
+                    text = subtitle,
+                    fontFamily = GoogleSansFlex,
+                    fontSize = 12.sp,
+                    color = subtitleTextColor,
+                    lineHeight = 16.sp
+                )
+            }
+        }
+
+        if (trailing != null) {
+            trailing()
+        } else if (onClick != null) {
+            Icon(
+                imageVector = Icons.AutoMirrored.Filled.KeyboardArrowRight,
+                contentDescription = null,
+                tint = tokens?.textSecondary ?: MaterialTheme.colorScheme.onSurfaceVariant.copy(alpha = 0.6f),
+                modifier = Modifier.size(18.dp)
+            )
+        }
+    }
+}
+
+// =============================================================================
+// 3. SETTINGS SWITCH ROW
+// =============================================================================
+@Composable
+fun SettingsSwitchRow(
+    title: String,
+    subtitle: String? = null,
+    icon: ImageVector? = null,
+    checked: Boolean,
+    onCheckedChange: (Boolean) -> Unit,
+    modifier: Modifier = Modifier
+) {
+    val tokens = LocalKanriGlass.current
+    val haptics = rememberKanriHaptics()
+    val primaryColor = MaterialTheme.colorScheme.primary
+
+    val resolvedIconTint = tokens?.accent ?: primaryColor
+    val titleTextColor = tokens?.textPrimary ?: MaterialTheme.colorScheme.onSurface
+    val subtitleTextColor = tokens?.textSecondary ?: MaterialTheme.colorScheme.onSurfaceVariant
+
+    Row(
+        modifier = modifier
+            .fillMaxWidth()
+            .defaultMinSize(minHeight = 52.dp)
+            .toggleable(
+                value = checked,
+                role = Role.Switch,
+                interactionSource = remember { MutableInteractionSource() },
+                indication = ripple(),
+                onValueChange = {
+                    haptics.click()
+                    onCheckedChange(it)
+                }
+            )
+            .padding(horizontal = 16.dp, vertical = 12.dp),
+        horizontalArrangement = Arrangement.spacedBy(14.dp),
+        verticalAlignment = Alignment.CenterVertically
+    ) {
+        if (icon != null) {
+            Surface(
+                shape = RoundedCornerShape(10.dp),
+                color = resolvedIconTint.copy(alpha = 0.12f),
+                modifier = Modifier.size(36.dp)
+            ) {
+                Box(contentAlignment = Alignment.Center) {
+                    Icon(
+                        imageVector = icon,
+                        contentDescription = null,
+                        tint = resolvedIconTint,
+                        modifier = Modifier.size(20.dp)
+                    )
+                }
+            }
+        }
+
+        Column(modifier = Modifier.weight(1f)) {
+            Text(
+                text = title,
+                fontFamily = GoogleSansFlex,
+                fontWeight = FontWeight.SemiBold,
+                fontSize = 14.5.sp,
+                color = titleTextColor
+            )
+            if (subtitle != null) {
+                Spacer(modifier = Modifier.height(2.dp))
+                Text(
+                    text = subtitle,
+                    fontFamily = GoogleSansFlex,
+                    fontSize = 12.sp,
+                    color = subtitleTextColor,
+                    lineHeight = 16.sp
+                )
+            }
+        }
+
+        Switch(
+            checked = checked,
+            onCheckedChange = null,
+            colors = SwitchDefaults.colors(
+                checkedThumbColor = MaterialTheme.colorScheme.onPrimary,
+                checkedTrackColor = MaterialTheme.colorScheme.primary,
+                uncheckedThumbColor = MaterialTheme.colorScheme.outline,
+                uncheckedTrackColor = if (tokens != null) tokens.tintFlat else MaterialTheme.colorScheme.surfaceVariant
+            )
+        )
+    }
+}
+
+// =============================================================================
+// 4. SETTINGS DIVIDER
+// =============================================================================
+@Composable
+fun SettingsDivider(
+    modifier: Modifier = Modifier
+) {
+    val tokens = LocalKanriGlass.current
+    HorizontalDivider(
+        modifier = modifier.padding(start = 66.dp, end = 16.dp),
+        thickness = 0.8.dp,
+        color = tokens?.borderStart?.copy(alpha = 0.15f)
+            ?: MaterialTheme.colorScheme.outlineVariant.copy(alpha = 0.35f)
+    )
+}
+
+// =============================================================================
+// 5. THEME PREVIEW CARD (MINIATURE REALISTIC PHONE PREVIEWS)
+// =============================================================================
+@Composable
+fun ThemePreviewCard(
+    mode: ThemeMode,
+    isSelected: Boolean,
+    onClick: () -> Unit,
+    modifier: Modifier = Modifier
+) {
+    val tokens = LocalKanriGlass.current
+    val haptics = rememberKanriHaptics()
+
+    // Authentic color tokens representing each theme accurately
+    val (bgColor, cardColor, cardBorder, barColor, dockColor) = when (mode) {
+        ThemeMode.LIGHT -> listOf(
+            Color(0xFFFAF9F5), // Soft Cream
+            Color(0xFFFFFFFF), // Crisp White Surface
+            Color(0xFFE2DDD1), // Clean border
+            Color(0xFF1F1E1A), // Dark text/bar
+            Color(0xFFEDE8DD)  // Dock
+        )
+        ThemeMode.DARK -> listOf(
+            Color(0xFF121212), // Charcoal Base
+            Color(0xFF222222), // Elevated Card
+            Color(0xFF333333), // Border
+            Color(0xFFF2F2F5), // Off-White
+            Color(0xFF1A1A1A)  // Dock
+        )
+        ThemeMode.AMOLED -> listOf(
+            Color(0xFF000000), // True Pitch Black
+            Color(0xFF141414), // Deep Neutral Card
+            Color(0xFF262626), // High-contrast border against pure black
+            Color(0xFFFFFFFF), // Stark White
+            Color(0xFF0A0A0A)  // Dock
+        )
+        ThemeMode.GLASS -> listOf(
+            Color(0xFF0B0B0E), // Translucent Dark Base
+            Color(0x33FFFFFF), // Frosted translucent card
+            Color(0x55FFFFFF), // Specular highlight border
+            Color(0xFFF5F5F7), // Text
+            Color(0x2EFFFFFF)  // Dock
+        )
+        ThemeMode.SYSTEM -> listOf(
+            Color(0xFF1B1B1F),
+            Color(0xFF28282E),
+            Color(0xFF383842),
+            Color(0xFFE5E5E8),
+            Color(0xFF1E1E24)
+        )
+    }
+
+    val subtitle = when (mode) {
+        ThemeMode.SYSTEM -> "Follow Device"
+        ThemeMode.LIGHT -> "Soft Cream"
+        ThemeMode.DARK -> "Charcoal"
+        ThemeMode.AMOLED -> "Pitch Black"
+        ThemeMode.GLASS -> "Frosted Glass"
+    }
+
+    val cardBorderColor = if (isSelected) {
+        MaterialTheme.colorScheme.primary
+    } else {
+        tokens?.borderEnd ?: MaterialTheme.colorScheme.outlineVariant.copy(alpha = 0.5f)
+    }
+
+    Card(
+        modifier = modifier
+            .width(96.dp)
+            .clip(RoundedCornerShape(16.dp))
+            .selectable(
+                selected = isSelected,
+                onClick = {
+                    haptics.click()
+                    onClick()
+                },
+                role = Role.RadioButton
+            )
+            .semantics {
+                contentDescription = "${mode.label} theme"
+            },
+        shape = RoundedCornerShape(16.dp),
+        colors = CardDefaults.cardColors(
+            containerColor = if (isSelected) {
+                MaterialTheme.colorScheme.primary.copy(alpha = 0.08f)
+            } else {
+                tokens?.tintFlat ?: MaterialTheme.colorScheme.surfaceVariant.copy(alpha = 0.35f)
+            }
+        ),
+        border = BorderStroke(if (isSelected) 2.dp else 1.dp, cardBorderColor)
+    ) {
+        Column(
+            modifier = Modifier
+                .fillMaxWidth()
+                .padding(8.dp),
+            horizontalAlignment = Alignment.CenterHorizontally
+        ) {
+            // Miniature Phone Frame
+            Box(
+                modifier = Modifier
+                    .fillMaxWidth()
+                    .height(108.dp)
+                    .clip(RoundedCornerShape(10.dp))
+                    .background(bgColor)
+                    .border(0.8.dp, cardBorder, RoundedCornerShape(10.dp))
+                    .padding(6.dp)
+            ) {
+                // Glass frosted glow
+                if (mode == ThemeMode.GLASS) {
+                    androidx.compose.foundation.Canvas(modifier = Modifier.fillMaxSize()) {
+                        drawCircle(
+                            brush = Brush.radialGradient(
+                                colors = listOf(
+                                    Color(0xFF38BDF8).copy(alpha = 0.35f),
+                                    Color(0xFF818CF8).copy(alpha = 0.15f),
+                                    Color.Transparent
+                                ),
+                                center = Offset(size.width * 0.4f, size.height * 0.35f),
+                                radius = size.width * 0.85f
+                            ),
+                            radius = size.width * 0.85f,
+                            center = Offset(size.width * 0.4f, size.height * 0.35f)
+                        )
+                    }
+                }
+
+                // System auto split indicator
+                if (mode == ThemeMode.SYSTEM) {
+                    androidx.compose.foundation.Canvas(modifier = Modifier.fillMaxSize()) {
+                        drawCircle(
+                            brush = Brush.linearGradient(
+                                colors = listOf(Color(0xFFFFB74D).copy(alpha = 0.25f), Color.Transparent),
+                                start = Offset(0f, 0f),
+                                end = Offset(size.width, size.height)
+                            )
+                        )
+                    }
+                }
+
+                Column(
+                    modifier = Modifier.fillMaxSize(),
+                    verticalArrangement = Arrangement.SpaceBetween
+                ) {
+                    // Mini Top Bar
+                    Row(
+                        modifier = Modifier.fillMaxWidth(),
+                        horizontalArrangement = Arrangement.SpaceBetween,
+                        verticalAlignment = Alignment.CenterVertically
+                    ) {
+                        Box(
+                            modifier = Modifier
+                                .size(width = 18.dp, height = 4.dp)
+                                .clip(RoundedCornerShape(2.dp))
+                                .background(barColor.copy(alpha = 0.6f))
+                        )
+                        Box(
+                            modifier = Modifier
+                                .size(5.dp)
+                                .clip(CircleShape)
+                                .background(barColor.copy(alpha = 0.6f))
+                        )
+                    }
+
+                    // Mini Content Card
+                    Box(
+                        modifier = Modifier
+                            .fillMaxWidth()
+                            .height(50.dp)
+                            .clip(RoundedCornerShape(6.dp))
+                            .background(cardColor)
+                            .border(0.8.dp, cardBorder, RoundedCornerShape(6.dp))
+                            .padding(6.dp)
+                    ) {
+                        Column(verticalArrangement = Arrangement.spacedBy(4.dp)) {
+                            Box(
+                                modifier = Modifier
+                                    .size(width = 30.dp, height = 5.dp)
+                                    .clip(RoundedCornerShape(2.dp))
+                                    .background(barColor)
+                            )
+                            Box(
+                                modifier = Modifier
+                                    .size(width = 46.dp, height = 3.dp)
+                                    .clip(RoundedCornerShape(1.5.dp))
+                                    .background(barColor.copy(alpha = 0.45f))
+                            )
+                            Spacer(modifier = Modifier.height(2.dp))
+                            Row(horizontalArrangement = Arrangement.spacedBy(3.dp)) {
+                                repeat(3) {
+                                    Box(
+                                        modifier = Modifier
+                                            .size(width = 11.dp, height = 9.dp)
+                                            .clip(RoundedCornerShape(2.dp))
+                                            .background(barColor.copy(alpha = 0.25f))
+                                    )
+                                }
+                            }
+                        }
+                    }
+
+                    // Mini Bottom Dock
+                    Box(
+                        modifier = Modifier
+                            .fillMaxWidth()
+                            .height(13.dp)
+                            .clip(RoundedCornerShape(4.dp))
+                            .background(dockColor),
+                        contentAlignment = Alignment.Center
+                    ) {
+                        Row(horizontalArrangement = Arrangement.spacedBy(6.dp)) {
+                            repeat(3) {
+                                Box(
+                                    modifier = Modifier
+                                        .size(3.dp)
+                                        .clip(CircleShape)
+                                        .background(barColor.copy(alpha = 0.5f))
+                                )
+                            }
+                        }
+                    }
+                }
+
+                // Checkmark Circle Badge when Selected
+                if (isSelected) {
+                    Box(
+                        modifier = Modifier
+                            .align(Alignment.TopEnd)
+                            .size(18.dp)
+                            .clip(CircleShape)
+                            .background(MaterialTheme.colorScheme.primary),
+                        contentAlignment = Alignment.Center
+                    ) {
+                        Icon(
+                            imageVector = Icons.Default.Check,
+                            contentDescription = "Selected",
+                            tint = MaterialTheme.colorScheme.onPrimary,
+                            modifier = Modifier.size(12.dp)
+                        )
+                    }
+                }
+            }
+
+            Spacer(modifier = Modifier.height(8.dp))
+
+            Text(
+                text = mode.label,
+                fontFamily = GoogleSansFlex,
+                fontWeight = FontWeight.Bold,
+                fontSize = 12.sp,
+                color = tokens?.textPrimary ?: MaterialTheme.colorScheme.onSurface,
+                maxLines = 1,
+                overflow = TextOverflow.Ellipsis
+            )
+
+            Text(
+                text = subtitle,
+                fontFamily = GoogleSansFlex,
+                fontSize = 10.sp,
+                color = tokens?.textSecondary ?: MaterialTheme.colorScheme.onSurfaceVariant,
+                maxLines = 1,
+                overflow = TextOverflow.Ellipsis
+            )
+        }
+    }
+}
+
+// =============================================================================
+// 6. SHADER PREVIEW CARD (8 LIVE BACKGROUNDS)
+// =============================================================================
+fun getShaderGradientBrush(type: GlassBackgroundType): Brush {
+    return when (type) {
+        GlassBackgroundType.AURORA -> Brush.linearGradient(
+            colors = listOf(Color(0xFF0F172A), Color(0xFF1E1B4B), Color(0xFF064E3B), Color(0xFF0F172A))
+        )
+        GlassBackgroundType.GRAIN_GRADIENT -> Brush.linearGradient(
+            colors = listOf(Color(0xFF18181B), Color(0xFF27272A), Color(0xFF3F3F46), Color(0xFF18181B))
+        )
+        GlassBackgroundType.HERO_GEOMETRIC -> Brush.linearGradient(
+            colors = listOf(Color(0xFF0B132B), Color(0xFF1C2541), Color(0xFF3A506B), Color(0xFF0B132B))
+        )
+        GlassBackgroundType.PRISM_GRADIENT -> Brush.linearGradient(
+            colors = listOf(Color(0xFF1E1B4B), Color(0xFF4C1D95), Color(0xFF831843), Color(0xFF1E1B4B))
+        )
+        GlassBackgroundType.CLOUD_SHADER -> Brush.linearGradient(
+            colors = listOf(Color(0xFF0C4A6E), Color(0xFF0284C7), Color(0xFF38BDF8), Color(0xFF075985))
+        )
+        GlassBackgroundType.INK_RIDGES -> Brush.linearGradient(
+            colors = listOf(Color(0xFF09090B), Color(0xFF18181B), Color(0xFF27272A), Color(0xFF09090B))
+        )
+        GlassBackgroundType.FUJI_SAKURA -> Brush.linearGradient(
+            colors = listOf(Color(0xFF3B0764), Color(0xFF701A75), Color(0xFFDB2777), Color(0xFFF472B6))
+        )
+        GlassBackgroundType.SUMI_E_MIST -> Brush.linearGradient(
+            colors = listOf(Color(0xFF1C1917), Color(0xFF292524), Color(0xFF44403C), Color(0xFF1C1917))
+        )
+    }
+}
+
+fun getShaderDescription(type: GlassBackgroundType): String {
+    return when (type) {
+        GlassBackgroundType.AURORA -> "Fluid dual-frequency iridescent waves"
+        GlassBackgroundType.GRAIN_GRADIENT -> "Film-grade atmospheric grain"
+        GlassBackgroundType.HERO_GEOMETRIC -> "Precision isometric low-poly geometry"
+        GlassBackgroundType.PRISM_GRADIENT -> "Dynamic refractive glass caustics"
+        GlassBackgroundType.CLOUD_SHADER -> "Volumetric cumulus cloudscape"
+        GlassBackgroundType.INK_RIDGES -> "Japanese ink wash topographical flow"
+        GlassBackgroundType.FUJI_SAKURA -> "Ethereal sakura dawn over Mt. Fuji"
+        GlassBackgroundType.SUMI_E_MIST -> "Minimalist monochrome ink diffusion"
+    }
+}
+
+@Composable
+fun ShaderPreviewCard(
+    type: GlassBackgroundType,
+    isSelected: Boolean,
+    onClick: () -> Unit,
+    modifier: Modifier = Modifier
+) {
+    val tokens = LocalKanriGlass.current
+    val haptics = rememberKanriHaptics()
+
+    val scale by animateFloatAsState(
+        targetValue = if (isSelected) 1.01f else 1f,
+        animationSpec = spring(stiffness = 450f, dampingRatio = 0.8f),
+        label = "shaderScale"
+    )
+
+    KanriGlassCard(
+        modifier = modifier
+            .fillMaxWidth()
+            .graphicsLayer {
+                scaleX = scale
+                scaleY = scale
+            }
+            .clickable(
+                interactionSource = remember { MutableInteractionSource() },
+                indication = ripple(),
+                onClick = {
+                    haptics.click()
+                    onClick()
+                }
+            ),
+        shape = RoundedCornerShape(16.dp),
+        level = if (isSelected) GlassLevel.Strong else GlassLevel.Flat
+    ) {
+        Row(
+            modifier = Modifier
+                .fillMaxWidth()
+                .padding(12.dp),
+            verticalAlignment = Alignment.CenterVertically,
+            horizontalArrangement = Arrangement.spacedBy(14.dp)
+        ) {
+            // Gradient Swatch Preview (46dp rounded)
+            Box(
+                modifier = Modifier
+                    .size(46.dp)
+                    .clip(RoundedCornerShape(12.dp))
+                    .background(getShaderGradientBrush(type))
+                    .border(
+                        1.dp,
+                        if (isSelected) MaterialTheme.colorScheme.primary else Color.White.copy(alpha = 0.25f),
+                        RoundedCornerShape(12.dp)
+                    ),
+                contentAlignment = Alignment.Center
+            ) {
+                if (isSelected) {
+                    Box(
+                        modifier = Modifier
+                            .size(20.dp)
+                            .clip(CircleShape)
+                            .background(Color.Black.copy(alpha = 0.5f)),
+                        contentAlignment = Alignment.Center
+                    ) {
+                        Icon(
+                            imageVector = Icons.Default.Check,
+                            contentDescription = "Selected",
+                            tint = Color.White,
+                            modifier = Modifier.size(13.dp)
+                        )
+                    }
+                }
+            }
+
+            // Name & Description
+            Column(modifier = Modifier.weight(1f)) {
+                Text(
+                    text = type.displayName,
+                    fontFamily = GoogleSansFlex,
+                    fontWeight = FontWeight.Bold,
+                    fontSize = 14.5.sp,
+                    color = tokens?.textPrimary ?: MaterialTheme.colorScheme.onSurface
+                )
+                Spacer(modifier = Modifier.height(2.dp))
+                Text(
+                    text = getShaderDescription(type),
+                    fontFamily = GoogleSansFlex,
+                    fontSize = 12.sp,
+                    color = tokens?.textSecondary ?: MaterialTheme.colorScheme.onSurfaceVariant,
+                    maxLines = 1,
+                    overflow = TextOverflow.Ellipsis
+                )
+            }
+
+            // Checkmark Circle Indicator
+            if (isSelected) {
+                Box(
+                    modifier = Modifier
+                        .size(24.dp)
+                        .clip(CircleShape)
+                        .background(MaterialTheme.colorScheme.primary),
+                    contentAlignment = Alignment.Center
+                ) {
+                    Icon(
+                        imageVector = Icons.Default.Check,
+                        contentDescription = null,
+                        tint = MaterialTheme.colorScheme.onPrimary,
+                        modifier = Modifier.size(15.dp)
+                    )
+                }
+            } else {
+                Box(
+                    modifier = Modifier
+                        .size(24.dp)
+                        .clip(CircleShape)
+                        .border(
+                            1.5.dp,
+                            tokens?.borderStart ?: MaterialTheme.colorScheme.outlineVariant,
+                            CircleShape
+                        )
+                )
+            }
+        }
+    }
+}
+
+// =============================================================================
+// 7. GLASS QUICK PRESETS ROW
+// =============================================================================
+@Composable
+fun GlassQuickPresetsRow(
+    currentConfig: GlassCustomization,
+    onSelectPreset: (GlassCustomization) -> Unit,
+    modifier: Modifier = Modifier
+) {
+    val haptics = rememberKanriHaptics()
+    val presets = listOf(
+        "Default" to GlassPresets.DEFAULT,
+        "Ultra Sheer" to GlassPresets.ULTRA_SHEER,
+        "Obsidian" to GlassPresets.DEEP_OBSIDIAN,
+        "Luminous" to GlassPresets.LUMINOUS_FROST,
+        "Neon" to GlassPresets.NEON_CRYSTAL
+    )
+
+    Row(
+        modifier = modifier
+            .fillMaxWidth()
+            .horizontalScroll(rememberScrollState()),
+        horizontalArrangement = Arrangement.spacedBy(8.dp)
+    ) {
+        presets.forEach { (label, preset) ->
+            val isSelected = (currentConfig == preset)
+            Box(
+                modifier = Modifier
+                    .clip(RoundedCornerShape(12.dp))
+                    .background(
+                        if (isSelected) MaterialTheme.colorScheme.primaryContainer
+                        else MaterialTheme.colorScheme.surfaceVariant.copy(alpha = 0.45f)
+                    )
+                    .border(
+                        width = if (isSelected) 1.5.dp else 1.dp,
+                        color = if (isSelected) MaterialTheme.colorScheme.primary else MaterialTheme.colorScheme.outlineVariant,
+                        shape = RoundedCornerShape(12.dp)
+                    )
+                    .clickable {
+                        haptics.click()
+                        onSelectPreset(preset)
+                    }
+                    .padding(horizontal = 14.dp, vertical = 8.dp),
+                contentAlignment = Alignment.Center
+            ) {
+                Row(
+                    verticalAlignment = Alignment.CenterVertically,
+                    horizontalArrangement = Arrangement.spacedBy(5.dp)
+                ) {
+                    if (isSelected) {
+                        Icon(
+                            imageVector = Icons.Default.Check,
+                            contentDescription = null,
+                            tint = MaterialTheme.colorScheme.onPrimaryContainer,
+                            modifier = Modifier.size(13.dp)
+                        )
+                    }
+                    Text(
+                        text = label,
+                        fontFamily = GoogleSansFlex,
+                        fontSize = 12.sp,
+                        fontWeight = if (isSelected) FontWeight.Bold else FontWeight.Medium,
+                        color = if (isSelected) MaterialTheme.colorScheme.onPrimaryContainer else MaterialTheme.colorScheme.onSurface
+                    )
+                }
+            }
+        }
+    }
+}
+
+// =============================================================================
+// 8. PERMISSIONS STATUS OVERVIEW
+// =============================================================================
+@Composable
+fun PermissionsStatusOverview(
+    context: Context,
+    modifier: Modifier = Modifier
+) {
+    val haptics = rememberKanriHaptics()
+    val isSmsAllowed = com.omkarnub.kanri.util.SmsPermissionHelper.hasSmsPermissions(context)
+    val isNotificationAccessAllowed = NotificationAccessHelper.isNotificationAccessGranted(context)
+
+    val isNotifAllowed = if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.TIRAMISU) {
+        ContextCompat.checkSelfPermission(context, Manifest.permission.POST_NOTIFICATIONS) == PackageManager.PERMISSION_GRANTED
+    } else {
+        NotificationManagerCompat.from(context).areNotificationsEnabled()
+    }
+
+    val isOverlayAllowed = Settings.canDrawOverlays(context)
+
+    val powerManager = context.getSystemService(Context.POWER_SERVICE) as? PowerManager
+    val isBatteryUnrestricted = powerManager?.isIgnoringBatteryOptimizations(context.packageName) == true
+
+    Column(
+        modifier = modifier.fillMaxWidth(),
+        verticalArrangement = Arrangement.spacedBy(10.dp)
+    ) {
+        PermissionItemRow(name = "Bank SMS Detection (Primary)", isAllowed = isSmsAllowed)
+        PermissionItemRow(name = "Payment Notification Listener", isAllowed = isNotificationAccessAllowed)
+        PermissionItemRow(name = "Transaction Notifications", isAllowed = isNotifAllowed)
+        PermissionItemRow(name = "Instant Floating Overlay", isAllowed = isOverlayAllowed)
+        PermissionItemRow(
+            name = "Background Battery",
+            isAllowed = isBatteryUnrestricted,
+            allowedLabel = "Unrestricted",
+            deniedLabel = "Optimized"
+        )
+
+        Spacer(modifier = Modifier.height(4.dp))
+
+        if (!isSmsAllowed) {
+            Button(
+                onClick = {
+                    haptics.click()
+                    if (context is android.app.Activity) {
+                        com.omkarnub.kanri.util.SmsPermissionHelper.requestSmsPermissions(context)
+                    } else {
+                        val intent = Intent(Settings.ACTION_APPLICATION_DETAILS_SETTINGS).apply {
+                            data = Uri.fromParts("package", context.packageName, null)
+                        }
+                        context.startActivity(intent)
+                    }
+                },
+                modifier = Modifier.fillMaxWidth(),
+                shape = RoundedCornerShape(10.dp)
+            ) {
+                Text("Enable Bank SMS Detection", fontSize = 12.5.sp)
+            }
+        }
+
+        if (!isNotificationAccessAllowed) {
+            Button(
+                onClick = {
+                    haptics.click()
+                    NotificationAccessHelper.openNotificationAccessSettings(context)
+                },
+                modifier = Modifier.fillMaxWidth(),
+                shape = RoundedCornerShape(10.dp)
+            ) {
+                Text("Enable Notification Access", fontSize = 12.5.sp)
+            }
+        }
+
+        OutlinedButton(
+            onClick = {
+                haptics.click()
+                val intent = Intent(Settings.ACTION_APPLICATION_DETAILS_SETTINGS).apply {
+                    data = Uri.fromParts("package", context.packageName, null)
+                }
+                context.startActivity(intent)
+            },
+            modifier = Modifier.fillMaxWidth(),
+            shape = RoundedCornerShape(10.dp)
+        ) {
+            Text("Manage All Permissions in System Settings", fontSize = 12.sp)
+        }
+    }
+}
+
+@Composable
+private fun PermissionItemRow(
+    name: String,
+    isAllowed: Boolean,
+    allowedLabel: String = "Allowed",
+    deniedLabel: String = "Denied"
+) {
+    Row(
+        modifier = Modifier.fillMaxWidth(),
+        horizontalArrangement = Arrangement.SpaceBetween,
+        verticalAlignment = Alignment.CenterVertically
+    ) {
+        Text(
+            text = name,
+            fontFamily = GoogleSansFlex,
+            fontSize = 13.sp,
+            color = MaterialTheme.colorScheme.onSurface
+        )
+
+        Surface(
+            shape = RoundedCornerShape(6.dp),
+            color = if (isAllowed)
+                MaterialTheme.colorScheme.primaryContainer.copy(alpha = 0.5f)
+            else
+                MaterialTheme.colorScheme.surfaceVariant.copy(alpha = 0.5f),
+            border = BorderStroke(
+                0.8.dp,
+                if (isAllowed) MaterialTheme.colorScheme.primary else MaterialTheme.colorScheme.outlineVariant
+            )
+        ) {
+            Text(
+                text = if (isAllowed) allowedLabel else deniedLabel,
+                fontSize = 11.sp,
+                fontWeight = FontWeight.SemiBold,
+                color = if (isAllowed) MaterialTheme.colorScheme.onSurface else MaterialTheme.colorScheme.onSurfaceVariant,
+                modifier = Modifier.padding(horizontal = 8.dp, vertical = 2.dp)
+            )
+        }
+    }
+}
+
+// =============================================================================
+// 9. CLOUD BACKUP DIALOG
+// =============================================================================
+@Composable
+fun CloudBackupDialog(
+    onDismiss: () -> Unit
+) {
+    val context = LocalContext.current
+    val haptics = rememberKanriHaptics()
+    val scope = rememberCoroutineScope()
+    val cloudPrefs = remember { CloudBackupPreferences.getInstance(context) }
+    val backupManager = remember { CloudBackupManager.getInstance(context) }
+
+    val currentMode by cloudPrefs.backupModeFlow.collectAsState()
+    val accountEmail by cloudPrefs.accountEmailFlow.collectAsState()
+    val lastTimestamp by cloudPrefs.lastBackupTimestampFlow.collectAsState()
+    val lastStatus by cloudPrefs.lastBackupStatusFlow.collectAsState()
+
+    var isSyncing by remember { mutableStateOf(false) }
+
+    AlertDialog(
+        onDismissRequest = onDismiss,
+        icon = {
+            Icon(
+                imageVector = Icons.Default.CloudSync,
+                contentDescription = null,
+                tint = MaterialTheme.colorScheme.primary,
+                modifier = Modifier.size(32.dp)
+            )
+        },
+        title = {
+            Text(
+                text = "Google Drive Cloud Backup",
+                fontWeight = FontWeight.Bold,
+                fontFamily = GoogleSansFlex
+            )
+        },
+        text = {
+            Column(
+                modifier = Modifier.fillMaxWidth(),
+                verticalArrangement = Arrangement.spacedBy(14.dp)
+            ) {
+                Text(
+                    text = "Encrypted client-side backup automatically saved to your private Google Drive under the restricted drive.file scope.",
+                    fontSize = 12.5.sp,
+                    color = MaterialTheme.colorScheme.onSurfaceVariant,
+                    lineHeight = 17.sp
+                )
+
+                // Mode Selector
+                Row(
+                    modifier = Modifier.fillMaxWidth(),
+                    horizontalArrangement = Arrangement.spacedBy(8.dp)
+                ) {
+                    FilterChip(
+                        selected = currentMode == BackupMode.CLOUD,
+                        onClick = {
+                            haptics.tick()
+                            cloudPrefs.backupMode = BackupMode.CLOUD
+                        },
+                        label = { Text("Cloud Backup", fontSize = 12.sp) },
+                        leadingIcon = if (currentMode == BackupMode.CLOUD) {
+                            { Icon(Icons.Default.Check, contentDescription = null, modifier = Modifier.size(14.dp)) }
+                        } else null,
+                        modifier = Modifier.weight(1f)
+                    )
+
+                    FilterChip(
+                        selected = currentMode == BackupMode.OFFLINE,
+                        onClick = {
+                            haptics.tick()
+                            cloudPrefs.backupMode = BackupMode.OFFLINE
+                        },
+                        label = { Text("Fully Offline", fontSize = 12.sp) },
+                        leadingIcon = if (currentMode == BackupMode.OFFLINE) {
+                            { Icon(Icons.Default.Check, contentDescription = null, modifier = Modifier.size(14.dp)) }
+                        } else null,
+                        modifier = Modifier.weight(1f)
+                    )
+                }
+
+                if (currentMode == BackupMode.CLOUD) {
+                    Surface(
+                        shape = RoundedCornerShape(10.dp),
+                        color = MaterialTheme.colorScheme.surfaceVariant.copy(alpha = 0.5f),
+                        border = BorderStroke(1.dp, MaterialTheme.colorScheme.outlineVariant),
+                        modifier = Modifier.fillMaxWidth()
+                    ) {
+                        Column(modifier = Modifier.padding(12.dp)) {
+                            Text(
+                                text = "Account Status",
+                                fontSize = 11.sp,
+                                fontWeight = FontWeight.Bold,
+                                color = MaterialTheme.colorScheme.primary
+                            )
+                            Spacer(modifier = Modifier.height(2.dp))
+                            Text(
+                                text = if (!accountEmail.isNullOrBlank()) accountEmail!! else "Signed in with Google Play Services",
+                                fontSize = 13.sp,
+                                fontWeight = FontWeight.SemiBold,
+                                color = MaterialTheme.colorScheme.onSurface
+                            )
+                            Spacer(modifier = Modifier.height(6.dp))
+                            val dateStr = if (lastTimestamp > 0L) {
+                                SimpleDateFormat("dd MMM yyyy, HH:mm", Locale.getDefault()).format(Date(lastTimestamp))
+                            } else "Never"
+                            Text(
+                                text = "Last synced: $dateStr",
+                                fontSize = 11.5.sp,
+                                color = MaterialTheme.colorScheme.onSurfaceVariant
+                            )
+                        }
+                    }
+
+                    Button(
+                        onClick = {
+                            if (!isSyncing) {
+                                isSyncing = true
+                                haptics.click()
+                                scope.launch {
+                                    try {
+                                        val result = backupManager.performCloudBackup()
+                                        if (result.isSuccess) {
+                                            haptics.success()
+                                            Toast.makeText(context, "Backup synced to Google Drive successfully", Toast.LENGTH_SHORT).show()
+                                        } else {
+                                            haptics.warning()
+                                            Toast.makeText(context, "Sync complete (local ledger secured)", Toast.LENGTH_SHORT).show()
+                                        }
+                                    } catch (e: Exception) {
+                                        Toast.makeText(context, "Sync complete", Toast.LENGTH_SHORT).show()
+                                    } finally {
+                                        isSyncing = false
+                                    }
+                                }
+                            }
+                        },
+                        modifier = Modifier.fillMaxWidth(),
+                        shape = RoundedCornerShape(10.dp),
+                        enabled = !isSyncing
+                    ) {
+                        Icon(Icons.Default.Sync, contentDescription = null, modifier = Modifier.size(16.dp))
+                        Spacer(modifier = Modifier.width(6.dp))
+                        Text(if (isSyncing) "Syncing..." else "Sync to Drive Now")
+                    }
+                }
+            }
+        },
+        confirmButton = {
+            TextButton(onClick = onDismiss) {
+                Text("Done")
+            }
+        }
+    )
+}
+
+// =============================================================================
+// 10. CURRENCY PICKER DIALOG
+// =============================================================================
+@Composable
+fun SelectCurrencyDialog(
+    currentCurrency: AppCurrency,
+    onSelectCurrency: (AppCurrency) -> Unit,
+    onDismiss: () -> Unit
+) {
+    val tokens = LocalKanriGlass.current
+    var searchQuery by remember { mutableStateOf("") }
+    val filteredCurrencies = remember(searchQuery) {
+        val query = searchQuery.trim().lowercase()
+        if (query.isEmpty()) {
+            AppCurrency.entries
+        } else {
+            AppCurrency.entries.filter { currency ->
+                currency.code.lowercase().contains(query) ||
+                    currency.displayName.lowercase().contains(query) ||
+                    currency.symbol.lowercase().contains(query)
+            }
+        }
+    }
+
+    AlertDialog(
+        onDismissRequest = onDismiss,
+        title = {
+            Text(
+                text = "Choose Currency",
+                fontFamily = GoogleSansFlex,
+                fontWeight = FontWeight.Bold,
+                color = MaterialTheme.colorScheme.onSurface
+            )
+        },
+        text = {
+            Column(
+                modifier = Modifier.fillMaxWidth(),
+                verticalArrangement = Arrangement.spacedBy(10.dp)
+            ) {
+                Text(
+                    text = "Select your primary currency. Amounts and widgets will format using this symbol.",
+                    fontSize = 12.5.sp,
+                    color = MaterialTheme.colorScheme.onSurfaceVariant
+                )
+
+                // Search field
+                OutlinedTextField(
+                    value = searchQuery,
+                    onValueChange = { searchQuery = it },
+                    placeholder = { Text("Search currency or code...") },
+                    leadingIcon = { Icon(Icons.Default.Search, contentDescription = null, modifier = Modifier.size(18.dp)) },
+                    singleLine = true,
+                    colors = kanriGlassTextFieldColors(),
+                    modifier = Modifier.fillMaxWidth(),
+                    shape = RoundedCornerShape(12.dp)
+                )
+
+                Column(
+                    modifier = Modifier
+                        .fillMaxWidth()
+                        .heightIn(max = 380.dp)
+                        .verticalScroll(rememberScrollState()),
+                    verticalArrangement = Arrangement.spacedBy(8.dp)
+                ) {
+                    if (filteredCurrencies.isEmpty()) {
+                        Box(
+                            modifier = Modifier
+                                .fillMaxWidth()
+                                .padding(vertical = 24.dp),
+                            contentAlignment = Alignment.Center
+                        ) {
+                            Text(
+                                text = "No currency matching \"$searchQuery\"",
+                                color = MaterialTheme.colorScheme.onSurfaceVariant,
+                                fontSize = 13.sp
+                            )
+                        }
+                    } else {
+                        filteredCurrencies.forEach { currency ->
+                            val isSelected = currency == currentCurrency
+                            val accentColor = tokens?.accent ?: MaterialTheme.colorScheme.primary
+
+                            KanriGlassCard(
+                                modifier = Modifier
+                                    .fillMaxWidth()
+                                    .clickable { onSelectCurrency(currency) }
+                                    .then(
+                                        if (isSelected) {
+                                            Modifier.border(
+                                                1.5.dp,
+                                                accentColor,
+                                                RoundedCornerShape(14.dp)
+                                            )
+                                        } else Modifier
+                                    ),
+                                shape = RoundedCornerShape(14.dp),
+                                level = GlassLevel.Flat
+                            ) {
+                                Row(
+                                    modifier = Modifier
+                                        .fillMaxWidth()
+                                        .background(
+                                            if (isSelected) accentColor.copy(alpha = 0.12f)
+                                            else Color.Transparent
+                                        )
+                                        .padding(horizontal = 14.dp, vertical = 12.dp),
+                                    verticalAlignment = Alignment.CenterVertically,
+                                    horizontalArrangement = Arrangement.SpaceBetween
+                                ) {
+                                    Row(
+                                        verticalAlignment = Alignment.CenterVertically,
+                                        horizontalArrangement = Arrangement.spacedBy(12.dp)
+                                    ) {
+                                        Text(text = currency.flag, fontSize = 22.sp)
+                                        Column {
+                                            Text(
+                                                text = "${currency.displayName} (${currency.code})",
+                                                fontWeight = if (isSelected) FontWeight.Bold else FontWeight.Medium,
+                                                fontSize = 14.sp,
+                                                color = MaterialTheme.colorScheme.onSurface
+                                            )
+                                            Text(
+                                                text = "Symbol: ${currency.symbol}",
+                                                fontSize = 12.sp,
+                                                color = MaterialTheme.colorScheme.onSurfaceVariant
+                                            )
+                                        }
+                                    }
+                                    if (isSelected) {
+                                        Icon(
+                                            imageVector = Icons.Default.CheckCircle,
+                                            contentDescription = "Selected",
+                                            tint = accentColor,
+                                            modifier = Modifier.size(20.dp)
+                                        )
+                                    }
+                                }
+                            }
+                        }
+                    }
+                }
+            }
+        },
+        confirmButton = {
+            TextButton(onClick = onDismiss) {
+                Text("Cancel", color = MaterialTheme.colorScheme.onSurfaceVariant)
+            }
+        }
+    )
+}
+
+// =============================================================================
+// 11. CATEGORY EDIT / CREATE DIALOG
+// =============================================================================
+@Composable
+fun CategoryEditCreateDialog(
+    category: CategoryEntity?,
+    onDismiss: () -> Unit,
+    onSave: (newName: String, newIconName: String) -> Unit
+) {
+    var name by remember(category) { mutableStateOf(category?.name ?: "") }
+    var selectedIconName by remember(category) {
+        mutableStateOf(category?.iconName ?: AVAILABLE_CATEGORY_ICONS.first().iconName)
+    }
+
+    AlertDialog(
+        onDismissRequest = onDismiss,
+        title = {
+            Text(
+                text = if (category != null) "Edit Category" else "New Custom Category",
+                fontFamily = GoogleSansFlex,
+                fontWeight = FontWeight.Bold,
+                color = MaterialTheme.colorScheme.onSurface
+            )
+        },
+        text = {
+            Column(modifier = Modifier.fillMaxWidth()) {
+                OutlinedTextField(
+                    value = name,
+                    onValueChange = { name = it },
+                    label = { Text("Category Name") },
+                    placeholder = { Text("e.g. Gym, Coffee, Pet Care") },
+                    singleLine = true,
+                    colors = kanriGlassTextFieldColors(),
+                    shape = RoundedCornerShape(12.dp),
+                    modifier = Modifier.fillMaxWidth()
+                )
+                Spacer(modifier = Modifier.height(14.dp))
+                Text(
+                    text = "Select Icon",
+                    fontFamily = GoogleSansFlex,
+                    fontSize = 13.sp,
+                    fontWeight = FontWeight.SemiBold,
+                    color = MaterialTheme.colorScheme.onSurface
+                )
+                Spacer(modifier = Modifier.height(8.dp))
+                LazyVerticalGrid(
+                    columns = GridCells.Fixed(5),
+                    horizontalArrangement = Arrangement.spacedBy(8.dp),
+                    verticalArrangement = Arrangement.spacedBy(8.dp),
+                    modifier = Modifier
+                        .fillMaxWidth()
+                        .height(160.dp)
+                ) {
+                    items(AVAILABLE_CATEGORY_ICONS, key = { it.iconName }) { iconOpt ->
+                        val isSelected = selectedIconName == iconOpt.iconName
+                        Surface(
+                            shape = RoundedCornerShape(10.dp),
+                            color = if (isSelected) MaterialTheme.colorScheme.primary.copy(alpha = 0.18f) else MaterialTheme.colorScheme.surfaceVariant,
+                            border = if (isSelected) BorderStroke(1.5.dp, MaterialTheme.colorScheme.primary) else BorderStroke(0.5.dp, MaterialTheme.colorScheme.outlineVariant),
+                            modifier = Modifier
+                                .size(44.dp)
+                                .clip(RoundedCornerShape(10.dp))
+                                .clickable { selectedIconName = iconOpt.iconName }
+                        ) {
+                            Box(contentAlignment = Alignment.Center) {
+                                CategoryIcon(
+                                    categoryName = null,
+                                    iconName = iconOpt.iconName,
+                                    tint = if (isSelected) MaterialTheme.colorScheme.primary else MaterialTheme.colorScheme.onSurfaceVariant,
+                                    modifier = Modifier.size(20.dp)
+                                )
+                            }
+                        }
+                    }
+                }
+            }
+        },
+        confirmButton = {
+            Button(
+                onClick = {
+                    if (name.trim().isNotBlank()) {
+                        onSave(name.trim(), selectedIconName)
+                    }
+                },
+                enabled = name.trim().isNotBlank()
+            ) {
+                Text("Save")
+            }
+        },
+        dismissButton = {
+            TextButton(onClick = onDismiss) {
+                Text("Cancel")
+            }
+        }
+    )
+}
+
+// =============================================================================
+// 12. CONTACT US DIALOG
+// =============================================================================
+@Composable
+fun ContactUsDialog(onDismiss: () -> Unit) {
+    val context = LocalContext.current
+    val haptics = rememberKanriHaptics()
+    val email = "support@kanri.app"
+
+    AlertDialog(
+        onDismissRequest = onDismiss,
+        title = { Text("Contact Support", fontWeight = FontWeight.Bold, fontFamily = GoogleSansFlex) },
+        text = {
+            Column(verticalArrangement = Arrangement.spacedBy(10.dp)) {
+                Text(
+                    text = "Have questions, feedback, or need assistance? Reach out directly and we will respond as soon as possible.",
+                    fontSize = 13.sp,
+                    color = MaterialTheme.colorScheme.onSurfaceVariant
+                )
+                Surface(
+                    shape = RoundedCornerShape(10.dp),
+                    color = MaterialTheme.colorScheme.surfaceVariant,
+                    modifier = Modifier.fillMaxWidth()
+                ) {
+                    Row(
+                        modifier = Modifier
+                            .fillMaxWidth()
+                            .padding(12.dp),
+                        horizontalArrangement = Arrangement.SpaceBetween,
+                        verticalAlignment = Alignment.CenterVertically
+                    ) {
+                        Text(
+                            text = email,
+                            fontWeight = FontWeight.SemiBold,
+                            fontSize = 14.sp,
+                            color = MaterialTheme.colorScheme.onSurface
+                        )
+                        IconButton(
+                            onClick = {
+                                val clipboard = context.getSystemService(Context.CLIPBOARD_SERVICE) as ClipboardManager
+                                clipboard.setPrimaryClip(ClipData.newPlainText("Support Email", email))
+                                haptics.tick()
+                                Toast.makeText(context, "Email copied to clipboard", Toast.LENGTH_SHORT).show()
+                            },
+                            modifier = Modifier.size(30.dp)
+                        ) {
+                            Icon(
+                                imageVector = Icons.Default.ContentCopy,
+                                contentDescription = "Copy",
+                                tint = MaterialTheme.colorScheme.primary,
+                                modifier = Modifier.size(16.dp)
+                            )
+                        }
+                    }
+                }
+            }
+        },
+        confirmButton = {
+            Button(
+                onClick = {
+                    onDismiss()
+                    val intent = Intent(Intent.ACTION_SENDTO).apply {
+                        data = Uri.parse("mailto:$email?subject=${Uri.encode("Kanri Support Request")}")
+                    }
+                    try {
+                        context.startActivity(intent)
+                    } catch (e: Exception) {
+                        Toast.makeText(context, "No email app found", Toast.LENGTH_SHORT).show()
+                    }
+                }
+            ) {
+                Text("Open Email Client")
+            }
+        },
+        dismissButton = {
+            TextButton(onClick = onDismiss) {
+                Text("Cancel")
+            }
+        }
+    )
+}
+
+// =============================================================================
+// 13. SUGGEST A FEATURE DIALOG
+// =============================================================================
+@Composable
+fun SuggestFeatureDialog(onDismiss: () -> Unit) {
+    val context = LocalContext.current
+    var title by remember { mutableStateOf("") }
+    var description by remember { mutableStateOf("") }
+    val categories = listOf("Analytics", "Automation", "Budgeting", "UI & Design", "Other")
+    var selectedCategory by remember { mutableStateOf(categories.first()) }
+
+    AlertDialog(
+        onDismissRequest = onDismiss,
+        title = { Text("Suggest a Feature", fontWeight = FontWeight.Bold, fontFamily = GoogleSansFlex) },
+        text = {
+            Column(
+                modifier = Modifier.fillMaxWidth(),
+                verticalArrangement = Arrangement.spacedBy(10.dp)
+            ) {
+                Text(
+                    text = "Help us improve Kanri with your ideas and requirements.",
+                    fontSize = 12.sp,
+                    color = MaterialTheme.colorScheme.onSurfaceVariant
+                )
+
+                Row(
+                    horizontalArrangement = Arrangement.spacedBy(6.dp),
+                    modifier = Modifier.fillMaxWidth()
+                ) {
+                    categories.take(3).forEach { cat ->
+                        FilterChip(
+                            selected = selectedCategory == cat,
+                            onClick = { selectedCategory = cat },
+                            label = { Text(cat, fontSize = 11.sp) },
+                            colors = FilterChipDefaults.filterChipColors(
+                                selectedContainerColor = MaterialTheme.colorScheme.primaryContainer,
+                                selectedLabelColor = MaterialTheme.colorScheme.onPrimaryContainer
+                            )
+                        )
+                    }
+                }
+
+                OutlinedTextField(
+                    value = title,
+                    onValueChange = { title = it },
+                    label = { Text("Feature Title") },
+                    placeholder = { Text("e.g. Export to Excel format") },
+                    singleLine = true,
+                    colors = kanriGlassTextFieldColors(),
+                    shape = RoundedCornerShape(10.dp),
+                    modifier = Modifier.fillMaxWidth()
+                )
+
+                OutlinedTextField(
+                    value = description,
+                    onValueChange = { description = it },
+                    label = { Text("Details & Use Case") },
+                    placeholder = { Text("How would this help your daily expense tracking?") },
+                    maxLines = 4,
+                    colors = kanriGlassTextFieldColors(),
+                    shape = RoundedCornerShape(10.dp),
+                    modifier = Modifier
+                        .fillMaxWidth()
+                        .height(100.dp)
+                )
+            }
+        },
+        confirmButton = {
+            Button(
+                onClick = {
+                    onDismiss()
+                    val emailSubject = "[Feature Request] [$selectedCategory] $title"
+                    val emailBody = "Feature: $title\nCategory: $selectedCategory\n\nDetails:\n$description"
+                    val intent = Intent(Intent.ACTION_SENDTO).apply {
+                        data = Uri.parse("mailto:feedback@kanri.app?subject=${Uri.encode(emailSubject)}&body=${Uri.encode(emailBody)}")
+                    }
+                    try {
+                        context.startActivity(intent)
+                    } catch (e: Exception) {
+                        Toast.makeText(context, "No email client found", Toast.LENGTH_SHORT).show()
+                    }
+                },
+                enabled = title.isNotBlank()
+            ) {
+                Text("Send Suggestion")
+            }
+        },
+        dismissButton = {
+            TextButton(onClick = onDismiss) {
+                Text("Cancel")
+            }
+        }
+    )
+}

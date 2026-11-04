@@ -76,6 +76,9 @@ fun GlassShaderBackground(
         lifecycleOwner.lifecycle.addObserver(observer)
         onDispose {
             lifecycleOwner.lifecycle.removeObserver(observer)
+            webViewInstance?.stopLoading()
+            webViewInstance?.destroy()
+            webViewInstance = null
         }
     }
 
@@ -112,6 +115,10 @@ fun GlassShaderBackground(
             if (webView.url != targetUrl) {
                 webView.loadUrl(targetUrl)
             }
+        },
+        onRelease = { webView ->
+            webView.stopLoading()
+            webView.destroy()
         },
         modifier = modifier.fillMaxSize()
     )

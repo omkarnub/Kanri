@@ -1,122 +1,79 @@
 package com.omkarnub.kanri.ui.settings
 
-import android.Manifest
 import android.app.Activity
-import android.content.ClipData
-import android.content.ClipboardManager
 import android.content.Context
 import android.content.Intent
-import android.content.pm.PackageManager
 import android.net.Uri
-import android.os.Build
-import android.os.PowerManager
-import android.provider.Settings
 import android.widget.Toast
+import androidx.activity.compose.rememberLauncherForActivityResult
+import androidx.activity.result.contract.ActivityResultContracts
+import androidx.compose.animation.AnimatedVisibility
+import androidx.compose.animation.expandVertically
+import androidx.compose.animation.fadeIn
+import androidx.compose.animation.fadeOut
+import androidx.compose.animation.shrinkVertically
 import androidx.compose.foundation.BorderStroke
 import androidx.compose.foundation.background
-import androidx.compose.foundation.border
 import androidx.compose.foundation.clickable
-import androidx.compose.ui.geometry.Offset
-import androidx.compose.ui.graphics.Brush
-import com.omkarnub.kanri.ui.theme.LocalKanriGlass
-import com.omkarnub.kanri.ui.common.GlassLevel
-import com.omkarnub.kanri.ui.common.KanriGlassCard
-import com.omkarnub.kanri.ui.common.kanriGlassTextFieldColors
-import com.omkarnub.kanri.ui.common.kanriPrimaryButtonColors
+import androidx.compose.foundation.horizontalScroll
 import androidx.compose.foundation.layout.Arrangement
 import androidx.compose.foundation.layout.Box
 import androidx.compose.foundation.layout.Column
-import androidx.compose.foundation.layout.ColumnScope
 import androidx.compose.foundation.layout.Row
 import androidx.compose.foundation.layout.Spacer
 import androidx.compose.foundation.layout.fillMaxSize
 import androidx.compose.foundation.layout.fillMaxWidth
 import androidx.compose.foundation.layout.height
-import androidx.compose.foundation.layout.heightIn
 import androidx.compose.foundation.layout.padding
 import androidx.compose.foundation.layout.size
 import androidx.compose.foundation.layout.width
-import androidx.compose.foundation.lazy.grid.GridCells
-import androidx.compose.foundation.lazy.grid.LazyVerticalGrid
-import androidx.compose.foundation.lazy.grid.items
 import androidx.compose.foundation.rememberScrollState
 import androidx.compose.foundation.shape.CircleShape
 import androidx.compose.foundation.shape.RoundedCornerShape
 import androidx.compose.foundation.verticalScroll
-import androidx.compose.foundation.selection.toggleable
-import androidx.compose.ui.semantics.Role
-import androidx.compose.material.icons.filled.Visibility
-import androidx.compose.material.icons.filled.VisibilityOff
 import androidx.compose.material.icons.Icons
-import androidx.compose.foundation.horizontalScroll
-import com.omkarnub.kanri.ui.theme.GoogleSansFlex
-import com.omkarnub.kanri.util.CurrencyUtils
-import androidx.compose.material.icons.filled.Palette
-import androidx.compose.material.icons.filled.Category
-import androidx.compose.material.icons.filled.CloudSync
-import androidx.compose.material.icons.filled.Info
-import androidx.compose.material.icons.filled.SupportAgent
-import androidx.compose.material.icons.filled.BlurOn
-import androidx.compose.material.icons.filled.Payments
-import androidx.compose.material.icons.filled.AccountBalance
-import androidx.compose.material.icons.filled.Policy
-import androidx.compose.material.icons.filled.Replay
-import androidx.compose.material.icons.filled.BugReport
-import androidx.compose.material.icons.filled.Lightbulb
-import androidx.compose.material.icons.filled.FileDownload
 import androidx.compose.material.icons.automirrored.filled.ArrowBack
-import androidx.compose.material.icons.automirrored.filled.KeyboardArrowRight
+import androidx.compose.material.icons.filled.AccountBalance
+import androidx.compose.material.icons.filled.AccountBalanceWallet
 import androidx.compose.material.icons.filled.Add
-import androidx.compose.material.icons.filled.Apps
 import androidx.compose.material.icons.filled.AutoAwesome
 import androidx.compose.material.icons.filled.AutoFixHigh
-import androidx.compose.material.icons.filled.Check
-import androidx.compose.material.icons.filled.CheckCircle
+import androidx.compose.material.icons.filled.BlurOn
+import androidx.compose.material.icons.filled.BugReport
+import androidx.compose.material.icons.filled.CloudDownload
+import androidx.compose.material.icons.filled.CloudSync
+import androidx.compose.material.icons.filled.CloudUpload
 import androidx.compose.material.icons.filled.ColorLens
-import androidx.compose.material.icons.filled.ContentCopy
 import androidx.compose.material.icons.filled.Delete
 import androidx.compose.material.icons.filled.DeleteForever
 import androidx.compose.material.icons.filled.Edit
 import androidx.compose.material.icons.filled.Email
-import androidx.compose.material.icons.filled.HealthAndSafety
+import androidx.compose.material.icons.filled.FileDownload
+import androidx.compose.material.icons.filled.Info
+import androidx.compose.material.icons.filled.Lightbulb
 import androidx.compose.material.icons.filled.Lock
-import androidx.compose.material.icons.filled.ChevronRight
+import androidx.compose.material.icons.filled.Opacity
 import androidx.compose.material.icons.filled.Paid
+import androidx.compose.material.icons.filled.Payments
+import androidx.compose.material.icons.filled.Policy
 import androidx.compose.material.icons.filled.PowerSettingsNew
 import androidx.compose.material.icons.filled.Refresh
-import androidx.compose.material.icons.filled.AccountBalanceWallet
+import androidx.compose.material.icons.filled.Replay
 import androidx.compose.material.icons.filled.Security
 import androidx.compose.material.icons.filled.Shield
 import androidx.compose.material.icons.filled.Tune
+import androidx.compose.material.icons.filled.Visibility
+import androidx.compose.material.icons.filled.VisibilityOff
 import androidx.compose.material.icons.filled.Warning
-import androidx.compose.material.icons.filled.SystemUpdate
-import com.omkarnub.kanri.BuildConfig
-import com.omkarnub.kanri.util.AppCurrency
-import com.omkarnub.kanri.util.CurrencyPreferences
-import com.omkarnub.kanri.ui.wallet.WalletSetupDialog
-import com.omkarnub.kanri.ui.wallet.CorrectBalanceDialog
-import com.omkarnub.kanri.data.wallet.WalletRepository
-import com.omkarnub.kanri.data.wallet.WalletPreferences
-import com.omkarnub.kanri.data.wallet.AtmWithdrawalMode
-import com.omkarnub.kanri.ui.notification.NotificationAccessHelper
-import com.omkarnub.kanri.ui.common.KanriGlassAlertDialog as AlertDialog
 import androidx.compose.material3.Button
 import androidx.compose.material3.ButtonDefaults
-import androidx.compose.material3.Card
-import androidx.compose.material3.CardDefaults
 import androidx.compose.material3.ExperimentalMaterial3Api
-import androidx.compose.material3.FilterChip
-import androidx.compose.material3.FilterChipDefaults
-import androidx.compose.material3.HorizontalDivider
 import androidx.compose.material3.Icon
 import androidx.compose.material3.IconButton
 import androidx.compose.material3.MaterialTheme
-import androidx.compose.material3.OutlinedButton
 import androidx.compose.material3.OutlinedTextField
 import androidx.compose.material3.Scaffold
 import androidx.compose.material3.Surface
-import androidx.compose.material3.Switch
-import androidx.compose.material3.SwitchDefaults
 import androidx.compose.material3.Text
 import androidx.compose.material3.TextButton
 import androidx.compose.material3.TopAppBar
@@ -131,31 +88,45 @@ import androidx.compose.runtime.saveable.rememberSaveable
 import androidx.compose.runtime.setValue
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
-import androidx.compose.ui.draw.clip
 import androidx.compose.ui.graphics.Color
-import androidx.compose.ui.graphics.vector.ImageVector
 import androidx.compose.ui.platform.LocalContext
-import androidx.compose.ui.res.painterResource
 import androidx.compose.ui.text.font.FontWeight
-import androidx.compose.ui.text.style.TextOverflow
+import androidx.compose.ui.tooling.preview.Preview
 import androidx.compose.ui.unit.dp
 import androidx.compose.ui.unit.sp
-import androidx.core.app.NotificationManagerCompat
-import androidx.core.content.ContextCompat
-import com.omkarnub.kanri.R
-import com.omkarnub.kanri.data.crash.CrashLogger
+import com.omkarnub.kanri.BuildConfig
+import com.omkarnub.kanri.data.backup.BackupRepository
+import com.omkarnub.kanri.data.cloud.BackupMode
+import com.omkarnub.kanri.data.cloud.CloudBackupPreferences
 import com.omkarnub.kanri.data.db.CategoryEntity
 import com.omkarnub.kanri.data.db.KanriDatabase
+import com.omkarnub.kanri.data.export.ExportScheduler
 import com.omkarnub.kanri.data.reset.FactoryResetManager
 import com.omkarnub.kanri.data.security.SecurityPreferences
-import com.omkarnub.kanri.ui.common.AVAILABLE_CATEGORY_ICONS
-import com.omkarnub.kanri.ui.common.CategoryIcon
+import com.omkarnub.kanri.data.update.AppUpdateInfo
+import com.omkarnub.kanri.data.update.AppUpdateManager
+import com.omkarnub.kanri.data.wallet.AtmWithdrawalMode
+import com.omkarnub.kanri.data.wallet.WalletPreferences
+import com.omkarnub.kanri.data.wallet.WalletRepository
 import com.omkarnub.kanri.ui.common.GlassBackgroundType
+import com.omkarnub.kanri.ui.common.KanriGlassAlertDialog as AlertDialog
+import com.omkarnub.kanri.ui.common.kanriGlassTextFieldColors
+import com.omkarnub.kanri.ui.common.kanriPrimaryButtonColors
+import com.omkarnub.kanri.ui.export.ExportStatementSheet
 import com.omkarnub.kanri.ui.home.isCustomCategory
 import com.omkarnub.kanri.ui.theme.AppIconManager
 import com.omkarnub.kanri.ui.theme.AppIconStyle
+import com.omkarnub.kanri.ui.theme.GlassCapabilities
+import com.omkarnub.kanri.ui.theme.GoogleSansFlex
+import com.omkarnub.kanri.ui.theme.KanriTheme
+import com.omkarnub.kanri.ui.theme.LocalKanriGlass
 import com.omkarnub.kanri.ui.theme.ThemeMode
 import com.omkarnub.kanri.ui.theme.ThemePreferences
+import com.omkarnub.kanri.ui.update.AppUpdateDialog
+import com.omkarnub.kanri.ui.wallet.CorrectBalanceDialog
+import com.omkarnub.kanri.ui.wallet.WalletSetupDialog
+import com.omkarnub.kanri.util.CurrencyPreferences
+import com.omkarnub.kanri.util.CurrencyUtils
 import com.omkarnub.kanri.util.rememberKanriHaptics
 import kotlinx.coroutines.launch
 import java.text.SimpleDateFormat
@@ -173,56 +144,25 @@ fun SettingsScreen(
     val context = LocalContext.current
     val scope = rememberCoroutineScope()
     val haptics = rememberKanriHaptics()
+    val tokens = LocalKanriGlass.current
 
-    // 1. App Lock & Security Preferences
-    val securityPrefs = remember { SecurityPreferences.getInstance(context) }
-    var isLockEnabled by remember { mutableStateOf(securityPrefs.isLockEnabled) }
-
-    // 4 & 5. Theme & App Icon Preferences
+    // -------------------------------------------------------------------------
+    // Preferences & State Holders
+    // -------------------------------------------------------------------------
     val themePrefs = remember { ThemePreferences.getInstance(context) }
     val currentThemeMode by themePrefs.themeModeFlow.collectAsState()
     val isDynamicEnabled by themePrefs.dynamicColorFlow.collectAsState()
+    val isReduceTransparency by themePrefs.reduceTransparencyFlow.collectAsState()
     val currentIconStyle by themePrefs.appIconStyleFlow.collectAsState()
     val currentGlassBg by themePrefs.glassBackgroundFlow.collectAsState()
-    var pendingIconStyle by remember { mutableStateOf<AppIconStyle?>(null) }
-    var showIconRestartDialog by remember { mutableStateOf(false) }
+    val glassCustomization by themePrefs.glassCustomizationFlow.collectAsState()
+
+    val securityPrefs = remember { SecurityPreferences.getInstance(context) }
+    var isLockEnabled by remember { mutableStateOf(securityPrefs.isLockEnabled) }
 
     val currencyPrefs = remember { CurrencyPreferences.getInstance(context) }
     val currentCurrency by currencyPrefs.currencyFlow.collectAsState()
-    var showCurrencyDialog by remember { mutableStateOf(false) }
 
-    // 6. Custom Categories
-    val db = remember { KanriDatabase.getDatabase(context) }
-    val allCategories by db.categoryDao().getAllCategories().collectAsState(initial = emptyList())
-    val customCategories = remember(allCategories) {
-        allCategories.filter { isCustomCategory(it) }
-    }
-    var categoryToEdit by remember { mutableStateOf<CategoryEntity?>(null) }
-    var categoryToDelete by remember { mutableStateOf<CategoryEntity?>(null) }
-    var showCreateCategoryDialog by remember { mutableStateOf(false) }
-
-    // Smart Merchant Rules Screen
-    var showMerchantRulesScreen by remember { mutableStateOf(false) }
-    val merchantRules by db.categoryDao().getAllMappingsFlow().collectAsState(initial = emptyList())
-
-    // Dialog state handlers
-    var showResetDialog by remember { mutableStateOf(false) }
-    var resetConfirmationInput by remember { mutableStateOf("") }
-    var isResetting by remember { mutableStateOf(false) }
-
-    var showCrashLogsDialog by remember { mutableStateOf(false) }
-    var showSuggestFeatureDialog by remember { mutableStateOf(false) }
-    var showKillAppDialog by remember { mutableStateOf(false) }
-    var showContactDialog by remember { mutableStateOf(false) }
-    var showPrivacyPolicyDialog by remember { mutableStateOf(false) }
-
-    val appUpdateManager = remember { com.omkarnub.kanri.data.update.AppUpdateManager.getInstance(context) }
-    var isCheckingForUpdates by remember { mutableStateOf(false) }
-    var activeUpdateDialogInfo by remember { mutableStateOf<com.omkarnub.kanri.data.update.AppUpdateInfo?>(null) }
-
-
-
-    // Wallets & Balances
     val walletRepo = remember { WalletRepository(context) }
     val walletPrefs = remember { WalletPreferences.getInstance(context) }
     val isWalletConfigured by walletRepo.isConfigured().collectAsState(initial = false)
@@ -230,27 +170,100 @@ fun SettingsScreen(
     val atmMode by walletPrefs.atmWithdrawalModeFlow.collectAsState()
     val isBalanceSpoilerEnabled by walletPrefs.isBalanceSpoilerEnabledFlow.collectAsState()
 
+    val cloudPrefs = remember { CloudBackupPreferences.getInstance(context) }
+    val cloudBackupMode by cloudPrefs.backupModeFlow.collectAsState()
+
+    val exportSchedule by ExportScheduler.scheduleFlow.collectAsState()
+    val isAutoMonthly = (exportSchedule == ExportScheduler.ExportSchedule.MONTHLY)
+
+    val db = remember { KanriDatabase.getDatabase(context) }
+    val allCategories by db.categoryDao().getAllCategories().collectAsState(initial = emptyList())
+    val customCategories = remember(allCategories) { allCategories.filter { isCustomCategory(it) } }
+    val merchantRules by db.categoryDao().getAllMappingsFlow().collectAsState(initial = emptyList())
+
+    val backupRepository = remember { BackupRepository(context) }
+    val appUpdateManager = remember { AppUpdateManager.getInstance(context) }
+
+    // -------------------------------------------------------------------------
+    // Sub-Screen & Dialog States
+    // -------------------------------------------------------------------------
+    var showGlassCustomizerScreen by rememberSaveable { mutableStateOf(false) }
+    var showMerchantRulesScreen by rememberSaveable { mutableStateOf(false) }
+
+    var showCurrencyDialog by remember { mutableStateOf(false) }
+    var showCloudBackupDialog by remember { mutableStateOf(false) }
+    var showExportStatementSheet by remember { mutableStateOf(false) }
+    var showPrivacyPolicyDialog by remember { mutableStateOf(false) }
+    var showCrashLogsDialog by remember { mutableStateOf(false) }
+    var showSuggestFeatureDialog by remember { mutableStateOf(false) }
+    var showContactDialog by remember { mutableStateOf(false) }
+
+    var pendingIconStyle by remember { mutableStateOf<AppIconStyle?>(null) }
+    var showIconRestartDialog by remember { mutableStateOf(false) }
+
+    var categoryToEdit by remember { mutableStateOf<CategoryEntity?>(null) }
+    var categoryToDelete by remember { mutableStateOf<CategoryEntity?>(null) }
+    var showCreateCategoryDialog by remember { mutableStateOf(false) }
+
     var showWalletSetupDialog by remember { mutableStateOf(false) }
     var walletToCorrect by remember { mutableStateOf<String?>(null) }
     var showResetWalletsDialog by remember { mutableStateOf(false) }
 
+    var showKillAppDialog by remember { mutableStateOf(false) }
+    var showResetDialog by remember { mutableStateOf(false) }
+    var resetConfirmationInput by remember { mutableStateOf("") }
+    var isResetting by remember { mutableStateOf(false) }
 
+    var isCheckingForUpdates by remember { mutableStateOf(false) }
+    var activeUpdateDialogInfo by remember { mutableStateOf<AppUpdateInfo?>(null) }
 
-    var showThemesWindow by rememberSaveable { mutableStateOf(false) }
-    var showGlassCustomizerScreen by rememberSaveable { mutableStateOf(false) }
+    // Direct Offline Backup Export & Restore
+    var showExportBackupDialog by remember { mutableStateOf(false) }
+    var exportPassphraseInput by remember { mutableStateOf("") }
+    var pendingExportPassphrase by remember { mutableStateOf<String?>(null) }
 
-    if (showThemesWindow) {
-        ThemesCustomizationScreen(
-            onBack = { showThemesWindow = false },
-            onOpenGlassCustomizer = {
-                showThemesWindow = false
-                showGlassCustomizerScreen = true
-            },
-            modifier = modifier
-        )
-        return
+    var pendingRestoreUri by remember { mutableStateOf<Uri?>(null) }
+    var isPendingRestoreEncrypted by remember { mutableStateOf(false) }
+    var restorePassphraseInput by remember { mutableStateOf("") }
+    var restoreReplaceExisting by remember { mutableStateOf(false) }
+
+    // Launcher for exporting offline backup JSON
+    val exportDataLauncher = rememberLauncherForActivityResult(
+        contract = ActivityResultContracts.CreateDocument("application/json")
+    ) { uri ->
+        if (uri != null) {
+            scope.launch {
+                val pass = pendingExportPassphrase
+                val result = backupRepository.exportBackupToUri(uri, pass)
+                result.onSuccess {
+                    haptics.success()
+                    val msg = if (pass != null) "Encrypted backup exported" else "Offline backup exported"
+                    Toast.makeText(context, msg, Toast.LENGTH_SHORT).show()
+                }.onFailure {
+                    haptics.warning()
+                    Toast.makeText(context, "Export failed: ${it.localizedMessage}", Toast.LENGTH_SHORT).show()
+                }
+            }
+        }
     }
 
+    // Launcher for selecting an existing backup to restore
+    val importDataLauncher = rememberLauncherForActivityResult(
+        contract = ActivityResultContracts.OpenDocument()
+    ) { uri ->
+        if (uri != null) {
+            pendingRestoreUri = uri
+            scope.launch {
+                isPendingRestoreEncrypted = backupRepository.isBackupFileEncrypted(uri)
+                restorePassphraseInput = ""
+                restoreReplaceExisting = false
+            }
+        }
+    }
+
+    // -------------------------------------------------------------------------
+    // Sub-Screen Overlays
+    // -------------------------------------------------------------------------
     if (showGlassCustomizerScreen) {
         GlassCustomizerScreen(
             onBack = { showGlassCustomizerScreen = false },
@@ -267,10 +280,9 @@ fun SettingsScreen(
         return
     }
 
-    // =========================================================================
-    // MODALS & DIALOGS
-    // =========================================================================
-
+    // -------------------------------------------------------------------------
+    // Dialogs & Sheets
+    // -------------------------------------------------------------------------
     if (showCurrencyDialog) {
         SelectCurrencyDialog(
             currentCurrency = currentCurrency,
@@ -283,88 +295,30 @@ fun SettingsScreen(
         )
     }
 
+    if (showCloudBackupDialog) {
+        CloudBackupDialog(onDismiss = { showCloudBackupDialog = false })
+    }
+
+    if (showExportStatementSheet) {
+        ExportStatementSheet(onDismiss = { showExportStatementSheet = false })
+    }
+
     if (showPrivacyPolicyDialog) {
         PrivacyPolicyDialog(onDismiss = { showPrivacyPolicyDialog = false })
     }
 
-    // 2] Reset App Confirmation Dialog
-    if (showResetDialog) {
-        AlertDialog(
-            onDismissRequest = { if (!isResetting) showResetDialog = false },
-            icon = {
-                Icon(
-                    imageVector = Icons.Default.Warning,
-                    contentDescription = null,
-                    tint = MaterialTheme.colorScheme.error,
-                    modifier = Modifier.size(36.dp)
-                )
-            },
-            title = {
-                Text(
-                    text = "Reset Application Data?",
-                    fontWeight = FontWeight.Bold,
-                    color = MaterialTheme.colorScheme.error
-                )
-            },
-            text = {
-                Column {
-                    Text(
-                        text = "This will permanently delete ALL transactions, categories, budgets, and savings goals. Encryption keys will be rotated and Kanri will restart into the setup walkthrough.",
-                        fontSize = 13.sp,
-                        color = MaterialTheme.colorScheme.onSurfaceVariant
-                    )
-                    Spacer(modifier = Modifier.height(14.dp))
-                    Text(
-                        text = "Type \"DELETE\" below to confirm:",
-                        fontSize = 12.sp,
-                        fontWeight = FontWeight.Bold,
-                        color = MaterialTheme.colorScheme.onSurface
-                    )
-                    Spacer(modifier = Modifier.height(8.dp))
-                    OutlinedTextField(
-                        value = resetConfirmationInput,
-                        onValueChange = { resetConfirmationInput = it },
-                        placeholder = { Text("DELETE") },
-                        singleLine = true,
-                        modifier = Modifier.fillMaxWidth()
-                    )
-                }
-            },
-            confirmButton = {
-                Button(
-                    onClick = {
-                        if (resetConfirmationInput.trim() == "DELETE") {
-                            haptics.warning()
-                            isResetting = true
-                            scope.launch {
-                                FactoryResetManager.executeFactoryReset(context)
-                                isResetting = false
-                                showResetDialog = false
-                                Toast.makeText(context, "Kanri has been reset to factory defaults.", Toast.LENGTH_LONG).show()
-                                onReplayOnboarding()
-                            }
-                        } else {
-                            Toast.makeText(context, "Please type DELETE to confirm reset", Toast.LENGTH_SHORT).show()
-                        }
-                    },
-                    colors = ButtonDefaults.buttonColors(containerColor = MaterialTheme.colorScheme.error),
-                    enabled = resetConfirmationInput.trim() == "DELETE" && !isResetting
-                ) {
-                    Text(if (isResetting) "Resetting..." else "Permanently Wipe")
-                }
-            },
-            dismissButton = {
-                TextButton(
-                    onClick = { showResetDialog = false },
-                    enabled = !isResetting
-                ) {
-                    Text("Cancel")
-                }
-            }
-        )
+    if (showCrashLogsDialog) {
+        CrashLogsDialog(onDismiss = { showCrashLogsDialog = false })
     }
 
-    // 5] App Icon Restart Dialog
+    if (showSuggestFeatureDialog) {
+        SuggestFeatureDialog(onDismiss = { showSuggestFeatureDialog = false })
+    }
+
+    if (showContactDialog) {
+        ContactUsDialog(onDismiss = { showContactDialog = false })
+    }
+
     if (showIconRestartDialog && pendingIconStyle != null) {
         val targetStyle = pendingIconStyle!!
         AlertDialog(
@@ -373,11 +327,12 @@ fun SettingsScreen(
                 pendingIconStyle = null
             },
             icon = { Icon(Icons.Default.Refresh, contentDescription = null, tint = MaterialTheme.colorScheme.primary) },
-            title = { Text("Restart App?", fontWeight = FontWeight.Bold) },
+            title = { Text("Restart App?", fontWeight = FontWeight.Bold, fontFamily = GoogleSansFlex) },
             text = {
                 Text(
-                    "Switching launcher icon to ${targetStyle.label} requires restarting Kanri so the home screen updates.\n\nWould you like to restart now?",
-                    color = MaterialTheme.colorScheme.onSurface
+                    text = "Switching launcher icon to ${targetStyle.label} requires restarting Kanri so the home screen updates.\n\nRestart now?",
+                    color = MaterialTheme.colorScheme.onSurface,
+                    fontSize = 13.5.sp
                 )
             },
             confirmButton = {
@@ -404,7 +359,6 @@ fun SettingsScreen(
         )
     }
 
-    // 6] Category Edit / Create Dialogs
     if (categoryToEdit != null) {
         CategoryEditCreateDialog(
             category = categoryToEdit,
@@ -413,9 +367,7 @@ fun SettingsScreen(
                 val target = categoryToEdit!!
                 categoryToEdit = null
                 scope.launch {
-                    db.categoryDao().updateCategory(
-                        target.copy(name = newName, iconName = newIcon)
-                    )
+                    db.categoryDao().updateCategory(target.copy(name = newName, iconName = newIcon))
                     Toast.makeText(context, "Category updated", Toast.LENGTH_SHORT).show()
                 }
             }
@@ -459,12 +411,13 @@ fun SettingsScreen(
                 Text(
                     text = "Delete '${cat.name}'?",
                     fontWeight = FontWeight.Bold,
+                    fontFamily = GoogleSansFlex,
                     color = MaterialTheme.colorScheme.error
                 )
             },
             text = {
                 Text(
-                    text = "Are you sure you want to delete this category? Any transactions currently assigned to '${cat.name}' will be moved to 'Other'.",
+                    text = "Are you sure you want to delete this category? Any transactions currently assigned to '${cat.name}' will be safely reassigned to 'Other'.",
                     color = MaterialTheme.colorScheme.onSurfaceVariant,
                     fontSize = 13.sp
                 )
@@ -498,22 +451,201 @@ fun SettingsScreen(
         )
     }
 
-    // 7] Consumer Grade Crash Logs Dialog
-    if (showCrashLogsDialog) {
-        ConsumerCrashLogsDialog(onDismiss = { showCrashLogsDialog = false })
+    if (showWalletSetupDialog) {
+        WalletSetupDialog(
+            initialCash = balances?.cash ?: 0.0,
+            initialOnline = balances?.online ?: 0.0,
+            initialAtmMode = atmMode,
+            isInitialSetup = !isWalletConfigured,
+            onDismiss = { showWalletSetupDialog = false },
+            onConfirm = { cash, online, mode ->
+                scope.launch {
+                    walletRepo.setup(cash, online, mode)
+                    showWalletSetupDialog = false
+                    Toast.makeText(context, "Wallet opening balances configured", Toast.LENGTH_SHORT).show()
+                }
+            }
+        )
     }
 
-    // 8] Contact Us Dialog
-    if (showContactDialog) {
-        ContactUsDialog(onDismiss = { showContactDialog = false })
+    if (walletToCorrect != null) {
+        val targetWallet = walletToCorrect!!
+        val currentBal = if (targetWallet == "CASH") balances?.cash ?: 0.0 else balances?.online ?: 0.0
+        CorrectBalanceDialog(
+            wallet = targetWallet,
+            currentBalance = currentBal,
+            onDismiss = { walletToCorrect = null },
+            onConfirm = { desired ->
+                scope.launch {
+                    walletRepo.correct(targetWallet, desired)
+                    walletToCorrect = null
+                    Toast.makeText(context, "Balance corrected successfully", Toast.LENGTH_SHORT).show()
+                }
+            }
+        )
     }
 
-    // 9] Suggest a Feature Dialog
-    if (showSuggestFeatureDialog) {
-        SuggestFeatureDialog(onDismiss = { showSuggestFeatureDialog = false })
+    if (showResetWalletsDialog) {
+        AlertDialog(
+            onDismissRequest = { showResetWalletsDialog = false },
+            icon = { Icon(Icons.Default.Refresh, contentDescription = null, tint = MaterialTheme.colorScheme.error) },
+            title = { Text("Reset Opening Balances?", fontWeight = FontWeight.Bold, fontFamily = GoogleSansFlex) },
+            text = {
+                Text("This will clear your Cash and Online opening balances and return to the unconfigured state. None of your recorded transactions will be deleted.")
+            },
+            confirmButton = {
+                Button(
+                    onClick = {
+                        haptics.warning()
+                        scope.launch {
+                            walletRepo.reset()
+                            showResetWalletsDialog = false
+                            Toast.makeText(context, "Opening balances cleared", Toast.LENGTH_SHORT).show()
+                        }
+                    },
+                    colors = ButtonDefaults.buttonColors(containerColor = MaterialTheme.colorScheme.error)
+                ) {
+                    Text("Reset")
+                }
+            },
+            dismissButton = {
+                TextButton(onClick = { showResetWalletsDialog = false }) {
+                    Text("Cancel")
+                }
+            }
+        )
     }
 
-    // 10] Kill App Confirmation Dialog
+    // Direct Export Dialog
+    if (showExportBackupDialog) {
+        AlertDialog(
+            onDismissRequest = { showExportBackupDialog = false },
+            icon = { Icon(Icons.Default.CloudUpload, contentDescription = null, tint = MaterialTheme.colorScheme.primary, modifier = Modifier.size(32.dp)) },
+            title = { Text("Export Offline Backup", fontWeight = FontWeight.Bold, fontFamily = GoogleSansFlex) },
+            text = {
+                Column {
+                    Text(
+                        text = "Set an optional passphrase to encrypt your backup file with AES-GCM. Leave blank to export as plain JSON.",
+                        fontSize = 13.sp,
+                        color = MaterialTheme.colorScheme.onSurfaceVariant
+                    )
+                    Spacer(modifier = Modifier.height(12.dp))
+                    OutlinedTextField(
+                        value = exportPassphraseInput,
+                        onValueChange = { exportPassphraseInput = it },
+                        label = { Text("Passphrase (optional)") },
+                        singleLine = true,
+                        colors = kanriGlassTextFieldColors(),
+                        modifier = Modifier.fillMaxWidth()
+                    )
+                }
+            },
+            confirmButton = {
+                Button(
+                    onClick = {
+                        showExportBackupDialog = false
+                        pendingExportPassphrase = exportPassphraseInput.trim().ifEmpty { null }
+                        val timestamp = SimpleDateFormat("yyyyMMdd_HHmm", Locale.getDefault()).format(Date())
+                        exportDataLauncher.launch("kanri_backup_$timestamp.json")
+                    },
+                    colors = kanriPrimaryButtonColors()
+                ) {
+                    Text("Choose Destination")
+                }
+            },
+            dismissButton = {
+                TextButton(onClick = { showExportBackupDialog = false }) {
+                    Text("Cancel")
+                }
+            }
+        )
+    }
+
+    // Direct Restore Dialog
+    if (pendingRestoreUri != null) {
+        val targetUri = pendingRestoreUri!!
+        AlertDialog(
+            onDismissRequest = { pendingRestoreUri = null },
+            icon = { Icon(Icons.Default.CloudDownload, contentDescription = null, tint = MaterialTheme.colorScheme.primary, modifier = Modifier.size(32.dp)) },
+            title = {
+                Text(
+                    text = if (isPendingRestoreEncrypted) "Restore Encrypted Backup" else "Restore Backup File",
+                    fontWeight = FontWeight.Bold,
+                    fontFamily = GoogleSansFlex
+                )
+            },
+            text = {
+                Column {
+                    Text(
+                        text = if (isPendingRestoreEncrypted)
+                            "This backup is protected with AES-GCM encryption. Enter the passphrase used during export to decrypt."
+                        else
+                            "Restoring will import all transactions and categories. Existing local records will be merged safely.",
+                        fontSize = 13.sp,
+                        color = MaterialTheme.colorScheme.onSurfaceVariant
+                    )
+                    if (isPendingRestoreEncrypted) {
+                        Spacer(modifier = Modifier.height(12.dp))
+                        OutlinedTextField(
+                            value = restorePassphraseInput,
+                            onValueChange = { restorePassphraseInput = it },
+                            label = { Text("Passphrase") },
+                            singleLine = true,
+                            colors = kanriGlassTextFieldColors(),
+                            modifier = Modifier.fillMaxWidth()
+                        )
+                    }
+                    Spacer(modifier = Modifier.height(12.dp))
+                    Row(
+                        verticalAlignment = Alignment.CenterVertically,
+                        modifier = Modifier.clickable { restoreReplaceExisting = !restoreReplaceExisting }
+                    ) {
+                        androidx.compose.material3.Checkbox(
+                            checked = restoreReplaceExisting,
+                            onCheckedChange = { restoreReplaceExisting = it }
+                        )
+                        Spacer(modifier = Modifier.width(6.dp))
+                        Text(
+                            text = "Replace all existing local data",
+                            fontSize = 12.sp,
+                            color = if (restoreReplaceExisting) MaterialTheme.colorScheme.error else MaterialTheme.colorScheme.onSurfaceVariant
+                        )
+                    }
+                }
+            },
+            confirmButton = {
+                Button(
+                    onClick = {
+                        pendingRestoreUri = null
+                        scope.launch {
+                            val pass = restorePassphraseInput.trim().ifEmpty { null }
+                            val result = backupRepository.restoreBackupFromUri(
+                                uri = targetUri,
+                                passphrase = pass,
+                                clearExisting = restoreReplaceExisting
+                            )
+                            result.onSuccess { stats ->
+                                haptics.success()
+                                Toast.makeText(context, "Restored ${stats.transactionCount} transactions successfully", Toast.LENGTH_SHORT).show()
+                            }.onFailure { err ->
+                                haptics.warning()
+                                Toast.makeText(context, "Restore failed: ${err.localizedMessage}", Toast.LENGTH_SHORT).show()
+                            }
+                        }
+                    },
+                    colors = kanriPrimaryButtonColors()
+                ) {
+                    Text("Restore")
+                }
+            },
+            dismissButton = {
+                TextButton(onClick = { pendingRestoreUri = null }) {
+                    Text("Cancel")
+                }
+            }
+        )
+    }
+
     if (showKillAppDialog) {
         AlertDialog(
             onDismissRequest = { showKillAppDialog = false },
@@ -526,11 +658,11 @@ fun SettingsScreen(
                 )
             },
             title = {
-                Text("Force Close App?", fontWeight = FontWeight.Bold, color = MaterialTheme.colorScheme.error)
+                Text("Force Close App?", fontWeight = FontWeight.Bold, fontFamily = GoogleSansFlex, color = MaterialTheme.colorScheme.error)
             },
             text = {
                 Text(
-                    "Kanri will terminate immediately and close background runtime memory.",
+                    text = "Kanri will terminate immediately and release background runtime memory.",
                     fontSize = 13.sp,
                     color = MaterialTheme.colorScheme.onSurfaceVariant
                 )
@@ -556,67 +688,79 @@ fun SettingsScreen(
         )
     }
 
-
-    // Wallets & Balances Dialogs
-    if (showWalletSetupDialog) {
-        WalletSetupDialog(
-            initialCash = balances?.cash ?: 0.0,
-            initialOnline = balances?.online ?: 0.0,
-            initialAtmMode = atmMode,
-            isInitialSetup = !isWalletConfigured,
-            onDismiss = { showWalletSetupDialog = false },
-            onConfirm = { cash, online, mode ->
-                scope.launch {
-                    walletRepo.setup(cash, online, mode)
-                    showWalletSetupDialog = false
-                    Toast.makeText(context, "Wallet balances updated", Toast.LENGTH_SHORT).show()
-                }
-            }
-        )
-    }
-
-    if (walletToCorrect != null) {
-        val targetWallet = walletToCorrect!!
-        val currentBal = if (targetWallet == "CASH") balances?.cash ?: 0.0 else balances?.online ?: 0.0
-        CorrectBalanceDialog(
-            wallet = targetWallet,
-            currentBalance = currentBal,
-            onDismiss = { walletToCorrect = null },
-            onConfirm = { desired ->
-                scope.launch {
-                    walletRepo.correct(targetWallet, desired)
-                    walletToCorrect = null
-                    Toast.makeText(context, "Balance corrected", Toast.LENGTH_SHORT).show()
-                }
-            }
-        )
-    }
-
-    if (showResetWalletsDialog) {
+    if (showResetDialog) {
         AlertDialog(
-            onDismissRequest = { showResetWalletsDialog = false },
-            icon = { Icon(Icons.Default.Refresh, contentDescription = null, tint = MaterialTheme.colorScheme.error) },
-            title = { Text("Reset Balances?", fontWeight = FontWeight.Bold) },
+            onDismissRequest = { if (!isResetting) showResetDialog = false },
+            icon = {
+                Icon(
+                    imageVector = Icons.Default.Warning,
+                    contentDescription = null,
+                    tint = MaterialTheme.colorScheme.error,
+                    modifier = Modifier.size(36.dp)
+                )
+            },
+            title = {
+                Text(
+                    text = "Factory Reset Kanri?",
+                    fontWeight = FontWeight.Bold,
+                    fontFamily = GoogleSansFlex,
+                    color = MaterialTheme.colorScheme.error
+                )
+            },
             text = {
-                Text("This will clear your Cash and Online opening balances and return to unconfigured state. None of your transactions will be deleted.")
+                Column {
+                    Text(
+                        text = "This will permanently wipe ALL transactions, categories, budgets, and savings goals. Database encryption keys will be rotated and Kanri will restart into the fresh setup walkthrough.",
+                        fontSize = 13.sp,
+                        color = MaterialTheme.colorScheme.onSurfaceVariant,
+                        lineHeight = 18.sp
+                    )
+                    Spacer(modifier = Modifier.height(14.dp))
+                    Text(
+                        text = "Type \"DELETE\" below to confirm wipe:",
+                        fontSize = 12.sp,
+                        fontWeight = FontWeight.Bold,
+                        color = MaterialTheme.colorScheme.onSurface
+                    )
+                    Spacer(modifier = Modifier.height(8.dp))
+                    OutlinedTextField(
+                        value = resetConfirmationInput,
+                        onValueChange = { resetConfirmationInput = it },
+                        placeholder = { Text("DELETE") },
+                        singleLine = true,
+                        colors = kanriGlassTextFieldColors(),
+                        modifier = Modifier.fillMaxWidth()
+                    )
+                }
             },
             confirmButton = {
                 Button(
                     onClick = {
-                        haptics.warning()
-                        scope.launch {
-                            walletRepo.reset()
-                            showResetWalletsDialog = false
-                            Toast.makeText(context, "Wallet balances reset", Toast.LENGTH_SHORT).show()
+                        if (resetConfirmationInput.trim() == "DELETE") {
+                            haptics.warning()
+                            isResetting = true
+                            scope.launch {
+                                FactoryResetManager.executeFactoryReset(context)
+                                isResetting = false
+                                showResetDialog = false
+                                Toast.makeText(context, "Kanri has been reset to factory defaults.", Toast.LENGTH_LONG).show()
+                                onReplayOnboarding()
+                            }
+                        } else {
+                            Toast.makeText(context, "Please type DELETE to confirm reset", Toast.LENGTH_SHORT).show()
                         }
                     },
-                    colors = ButtonDefaults.buttonColors(containerColor = MaterialTheme.colorScheme.error)
+                    colors = ButtonDefaults.buttonColors(containerColor = MaterialTheme.colorScheme.error),
+                    enabled = resetConfirmationInput.trim() == "DELETE" && !isResetting
                 ) {
-                    Text("Reset")
+                    Text(if (isResetting) "Resetting..." else "Permanently Wipe")
                 }
             },
             dismissButton = {
-                TextButton(onClick = { showResetWalletsDialog = false }) {
+                TextButton(
+                    onClick = { showResetDialog = false },
+                    enabled = !isResetting
+                ) {
                     Text("Cancel")
                 }
             }
@@ -624,14 +768,15 @@ fun SettingsScreen(
     }
 
     if (activeUpdateDialogInfo != null) {
-        com.omkarnub.kanri.ui.update.AppUpdateDialog(
+        AppUpdateDialog(
             updateInfo = activeUpdateDialogInfo!!,
             onDismiss = { activeUpdateDialogInfo = null }
         )
     }
 
-    val tokens = LocalKanriGlass.current
-
+    // -------------------------------------------------------------------------
+    // Main Settings Scaffold
+    // -------------------------------------------------------------------------
     Scaffold(
         modifier = modifier.fillMaxSize(),
         containerColor = if (tokens != null) Color.Transparent else MaterialTheme.colorScheme.background,
@@ -649,6 +794,7 @@ fun SettingsScreen(
                         Text(
                             text = "Preferences & App Management",
                             fontSize = 11.5.sp,
+                            fontFamily = GoogleSansFlex,
                             color = tokens?.textSecondary ?: MaterialTheme.colorScheme.onSurfaceVariant
                         )
                     }
@@ -678,50 +824,223 @@ fun SettingsScreen(
             verticalArrangement = Arrangement.spacedBy(20.dp)
         ) {
             // =================================================================
-            // 1. APPEARANCE & THEME
+            // 1. APPEARANCE & THEME (HIGHEST PRIORITY)
             // =================================================================
             SettingsGroup(title = "APPEARANCE & THEME") {
-                // Themes & Live Backgrounds Screen Row
-                SettingsRow(
-                    title = "Themes & Live Backgrounds",
-                    subtitle = "${currentThemeMode.label}  •  ${currentGlassBg.displayName}",
-                    icon = Icons.Default.Palette,
-                    trailing = {
-                        Row(verticalAlignment = Alignment.CenterVertically) {
-                            Text(
-                                text = currentThemeMode.label,
-                                fontSize = 12.5.sp,
-                                fontFamily = GoogleSansFlex,
-                                fontWeight = FontWeight.SemiBold,
-                                color = MaterialTheme.colorScheme.primary
-                            )
-                            Spacer(modifier = Modifier.width(6.dp))
-                            Icon(
-                                imageVector = Icons.AutoMirrored.Filled.KeyboardArrowRight,
-                                contentDescription = null,
-                                tint = tokens?.textSecondary ?: MaterialTheme.colorScheme.onSurfaceVariant
+                // Single Proper Theme Selector with 5 realistic preview cards
+                Column(
+                    modifier = Modifier
+                        .fillMaxWidth()
+                        .padding(horizontal = 14.dp, vertical = 10.dp)
+                ) {
+                    Text(
+                        text = "THEME MODE",
+                        fontFamily = GoogleSansFlex,
+                        fontWeight = FontWeight.Bold,
+                        fontSize = 11.sp,
+                        letterSpacing = 1.sp,
+                        color = tokens?.textSecondary ?: MaterialTheme.colorScheme.onSurfaceVariant
+                    )
+                    Spacer(modifier = Modifier.height(10.dp))
+
+                    Row(
+                        modifier = Modifier
+                            .fillMaxWidth()
+                            .horizontalScroll(rememberScrollState()),
+                        horizontalArrangement = Arrangement.spacedBy(10.dp)
+                    ) {
+                        listOf(
+                            ThemeMode.SYSTEM,
+                            ThemeMode.LIGHT,
+                            ThemeMode.DARK,
+                            ThemeMode.AMOLED,
+                            ThemeMode.GLASS
+                        ).forEach { mode ->
+                            val isSelected = (currentThemeMode == mode)
+                            ThemePreviewCard(
+                                mode = mode,
+                                isSelected = isSelected,
+                                onClick = {
+                                    themePrefs.themeMode = mode
+                                }
                             )
                         }
-                    },
-                    onClick = { showThemesWindow = true }
+                    }
+                }
+
+                // =============================================================
+                // GLASS CUSTOMIZATION (ONLY COMPOSED WHEN GLASS IS SELECTED)
+                // =============================================================
+                AnimatedVisibility(
+                    visible = (currentThemeMode == ThemeMode.GLASS),
+                    enter = fadeIn() + expandVertically(),
+                    exit = fadeOut() + shrinkVertically()
+                ) {
+                    Column(modifier = Modifier.fillMaxWidth()) {
+                        SettingsDivider()
+
+                        // Capability warning if device limits blur
+                        val isBlurCapable = GlassCapabilities.isBlurSupported(context, isReduceTransparency)
+                        if (!isBlurCapable) {
+                            Surface(
+                                shape = RoundedCornerShape(12.dp),
+                                color = MaterialTheme.colorScheme.surfaceVariant.copy(alpha = 0.6f),
+                                border = BorderStroke(1.dp, MaterialTheme.colorScheme.outlineVariant),
+                                modifier = Modifier
+                                    .fillMaxWidth()
+                                    .padding(horizontal = 14.dp, vertical = 8.dp)
+                            ) {
+                                Row(
+                                    modifier = Modifier.padding(12.dp),
+                                    verticalAlignment = Alignment.CenterVertically,
+                                    horizontalArrangement = Arrangement.spacedBy(10.dp)
+                                ) {
+                                    Icon(
+                                        imageVector = Icons.Default.Info,
+                                        contentDescription = null,
+                                        tint = MaterialTheme.colorScheme.primary,
+                                        modifier = Modifier.size(20.dp)
+                                    )
+                                    Text(
+                                        text = if (isReduceTransparency) "Transparency is manually reduced."
+                                        else "Real-time blur is adapted for battery/performance on this device.",
+                                        fontSize = 12.sp,
+                                        color = MaterialTheme.colorScheme.onSurfaceVariant,
+                                        lineHeight = 16.sp
+                                    )
+                                }
+                            }
+                            SettingsDivider()
+                        }
+
+                        // Live Shaders Background Picker
+                        Column(
+                            modifier = Modifier
+                                .fillMaxWidth()
+                                .padding(horizontal = 14.dp, vertical = 10.dp)
+                        ) {
+                            Row(
+                                modifier = Modifier.fillMaxWidth(),
+                                horizontalArrangement = Arrangement.SpaceBetween,
+                                verticalAlignment = Alignment.CenterVertically
+                            ) {
+                                Text(
+                                    text = "LIVE SHADER BACKGROUNDS",
+                                    fontFamily = GoogleSansFlex,
+                                    fontWeight = FontWeight.Bold,
+                                    fontSize = 11.sp,
+                                    letterSpacing = 1.sp,
+                                    color = tokens?.textSecondary ?: MaterialTheme.colorScheme.onSurfaceVariant
+                                )
+                                Text(
+                                    text = currentGlassBg.displayName,
+                                    fontFamily = GoogleSansFlex,
+                                    fontWeight = FontWeight.SemiBold,
+                                    fontSize = 11.5.sp,
+                                    color = MaterialTheme.colorScheme.primary
+                                )
+                            }
+                            Spacer(modifier = Modifier.height(10.dp))
+
+                            Column(verticalArrangement = Arrangement.spacedBy(8.dp)) {
+                                GlassBackgroundType.entries.forEach { bgType ->
+                                    val isSelected = (currentGlassBg == bgType)
+                                    ShaderPreviewCard(
+                                        type = bgType,
+                                        isSelected = isSelected,
+                                        onClick = {
+                                            themePrefs.glassBackground = bgType
+                                        }
+                                    )
+                                }
+                            }
+                        }
+
+                        SettingsDivider()
+
+                        // Glass Surface Customizer entry with quick presets
+                        Column(
+                            modifier = Modifier
+                                .fillMaxWidth()
+                                .padding(horizontal = 14.dp, vertical = 10.dp)
+                        ) {
+                            Text(
+                                text = "GLASS SURFACE ENGINE",
+                                fontFamily = GoogleSansFlex,
+                                fontWeight = FontWeight.Bold,
+                                fontSize = 11.sp,
+                                letterSpacing = 1.sp,
+                                color = tokens?.textSecondary ?: MaterialTheme.colorScheme.onSurfaceVariant
+                            )
+                            Spacer(modifier = Modifier.height(8.dp))
+                            GlassQuickPresetsRow(
+                                currentConfig = glassCustomization,
+                                onSelectPreset = { preset ->
+                                    themePrefs.glassCustomization = preset
+                                }
+                            )
+                        }
+
+                        SettingsRow(
+                            title = "Fine-tune Glass Surface Engine",
+                            subtitle = "Adjust blur radius, surface opacity, rim shine & specular light",
+                            icon = Icons.Default.BlurOn,
+                            onClick = { showGlassCustomizerScreen = true }
+                        )
+
+                        SettingsDivider()
+
+                        // Reduce Transparency Toggle
+                        SettingsSwitchRow(
+                            title = "Reduce Transparency",
+                            subtitle = "Substitute frosted blur with solid matte surfaces",
+                            icon = Icons.Default.Opacity,
+                            checked = isReduceTransparency,
+                            onCheckedChange = { themePrefs.isReduceTransparency = it }
+                        )
+                    }
+                }
+
+                SettingsDivider()
+
+                // Dynamic Colors Row (Android 12+)
+                SettingsSwitchRow(
+                    title = "Dynamic Colors",
+                    subtitle = "Extract tint palette from system wallpaper (Android 12+)",
+                    icon = Icons.Default.AutoAwesome,
+                    checked = isDynamicEnabled,
+                    onCheckedChange = { themePrefs.isDynamicColor = it }
                 )
 
                 SettingsDivider()
 
-                // Glass Surface Customizer
+                // App Launcher Icon
                 SettingsRow(
-                    title = "Glass Surface Engine",
-                    subtitle = "Fine-tune blur radius, noise & translucency",
-                    icon = Icons.Default.BlurOn,
-                    onClick = { showGlassCustomizerScreen = true }
+                    title = "App Launcher Icon",
+                    subtitle = "Currently using ${currentIconStyle.label} icon",
+                    icon = Icons.Default.ColorLens,
+                    trailing = {
+                        Text(
+                            text = currentIconStyle.label,
+                            fontFamily = GoogleSansFlex,
+                            fontWeight = FontWeight.Bold,
+                            fontSize = 13.sp,
+                            color = MaterialTheme.colorScheme.primary
+                        )
+                    },
+                    onClick = {
+                        val nextStyle = if (currentIconStyle == AppIconStyle.DARK) AppIconStyle.LIGHT else AppIconStyle.DARK
+                        pendingIconStyle = nextStyle
+                        showIconRestartDialog = true
+                    }
                 )
             }
 
             // =================================================================
-            // 2. WALLETS & BALANCES
+            // 2. WALLETS & CURRENCY
             // =================================================================
-            SettingsGroup(title = "WALLETS & BALANCES") {
-                // Currency Selector
+            SettingsGroup(title = "WALLETS & CURRENCY") {
+                // Primary Currency
                 SettingsRow(
                     title = "Primary Currency",
                     subtitle = "${currentCurrency.flag} ${currentCurrency.displayName} (${currentCurrency.symbol} ${currentCurrency.code})",
@@ -763,17 +1082,6 @@ fun SettingsScreen(
                         )
                     },
                     onClick = { walletToCorrect = "ONLINE" }
-                )
-
-                SettingsDivider()
-
-                // Hide Balances (Privacy Mask)
-                SettingsSwitchRow(
-                    title = "Hide Balances",
-                    subtitle = "Obfuscate wallet balances until tapped or revealed",
-                    icon = if (isBalanceSpoilerEnabled) Icons.Default.VisibilityOff else Icons.Default.Visibility,
-                    checked = isBalanceSpoilerEnabled,
-                    onCheckedChange = { walletPrefs.isBalanceSpoilerEnabled = it }
                 )
 
                 SettingsDivider()
@@ -838,6 +1146,17 @@ fun SettingsScreen(
 
                 SettingsDivider()
 
+                // Hide Balances (Privacy Mask)
+                SettingsSwitchRow(
+                    title = "Hide Balances",
+                    subtitle = "Obfuscate wallet balances until tapped or revealed",
+                    icon = if (isBalanceSpoilerEnabled) Icons.Default.VisibilityOff else Icons.Default.Visibility,
+                    checked = isBalanceSpoilerEnabled,
+                    onCheckedChange = { walletPrefs.isBalanceSpoilerEnabled = it }
+                )
+
+                SettingsDivider()
+
                 // Privacy Policy
                 SettingsRow(
                     title = "Privacy Policy",
@@ -848,9 +1167,9 @@ fun SettingsScreen(
             }
 
             // =================================================================
-            // 4. CATEGORIES & AUTOMATIONS
+            // 4. RULES & CATEGORIES
             // =================================================================
-            SettingsGroup(title = "CATEGORIES & AUTOMATIONS") {
+            SettingsGroup(title = "RULES & CATEGORIES") {
                 // Smart Merchant Rules
                 SettingsRow(
                     title = "Smart Merchant Rules",
@@ -977,39 +1296,78 @@ fun SettingsScreen(
             }
 
             // =================================================================
-            // 6. BACKUP & CLOUD SYNC
+            // 6. DATA & BACKUP
             // =================================================================
-            SettingsGroup(title = "BACKUP & DATA MANAGEMENT") {
+            SettingsGroup(title = "DATA & BACKUP") {
+                // Google Drive Cloud Backup
                 SettingsRow(
                     title = "Google Drive Cloud Backup",
-                    subtitle = "Automatic background cloud sync with your private Drive",
+                    subtitle = if (cloudBackupMode == BackupMode.CLOUD) "Active • Automatic encrypted backup to Google Drive" else "Offline • Tap to configure cloud backup",
                     icon = Icons.Default.CloudSync,
                     trailing = {
                         Text(
-                            text = "Sync",
+                            text = if (cloudBackupMode == BackupMode.CLOUD) "Connected" else "Configure",
                             fontSize = 12.sp,
                             fontWeight = FontWeight.SemiBold,
                             color = MaterialTheme.colorScheme.primary
                         )
                     },
-                    onClick = {
-                        Toast.makeText(context, "Google Drive sync is enabled and up-to-date", Toast.LENGTH_SHORT).show()
-                    }
+                    onClick = { showCloudBackupDialog = true }
                 )
 
                 SettingsDivider()
 
+                // Generate Statement
                 SettingsRow(
-                    title = "Export Transactions Statement",
-                    subtitle = "Export CSV or encrypted JSON statements from Profile tab",
+                    title = "Generate Statement (PDF / CSV)",
+                    subtitle = "Export detailed spending report with category breakdowns",
                     icon = Icons.Default.FileDownload,
+                    onClick = { showExportStatementSheet = true }
+                )
+
+                SettingsDivider()
+
+                // Export Offline Backup
+                SettingsRow(
+                    title = "Export Offline Backup",
+                    subtitle = "Save an encrypted JSON backup file directly to your device",
+                    icon = Icons.Default.CloudUpload,
                     onClick = {
-                        Toast.makeText(context, "Head to the Profile tab to export statements", Toast.LENGTH_SHORT).show()
+                        exportPassphraseInput = ""
+                        showExportBackupDialog = true
                     }
                 )
 
                 SettingsDivider()
 
+                // Restore Offline Backup
+                SettingsRow(
+                    title = "Restore Backup File",
+                    subtitle = "Restore database and categories from an existing backup file",
+                    icon = Icons.Default.CloudDownload,
+                    onClick = {
+                        importDataLauncher.launch(arrayOf("application/json", "*/*"))
+                    }
+                )
+
+                SettingsDivider()
+
+                // Monthly Automated Statement
+                SettingsSwitchRow(
+                    title = "Monthly Automated Statement",
+                    subtitle = "Automatically compile financial statement on the 1st of each month",
+                    icon = Icons.Default.Refresh,
+                    checked = isAutoMonthly,
+                    onCheckedChange = { checked ->
+                        val newSched = if (checked) ExportScheduler.ExportSchedule.MONTHLY else ExportScheduler.ExportSchedule.OFF
+                        ExportScheduler.setSchedule(context, newSched)
+                        Toast.makeText(context, if (checked) "Monthly automated statement scheduled" else "Automated statement disabled", Toast.LENGTH_SHORT).show()
+                    }
+                )
+
+                SettingsDivider()
+
+                // Replay Intro Walkthrough
                 SettingsRow(
                     title = "Replay Intro Walkthrough",
                     subtitle = "Restart the onboarding slides and feature tour",
@@ -1064,7 +1422,7 @@ fun SettingsScreen(
 
                 SettingsRow(
                     title = "App Health & Crash Logs",
-                    subtitle = "Inspect recorded error logs and system health",
+                    subtitle = "Inspect recorded error logs and system health diagnostics",
                     icon = Icons.Default.BugReport,
                     onClick = { showCrashLogsDialog = true }
                 )
@@ -1082,7 +1440,7 @@ fun SettingsScreen(
 
                 SettingsRow(
                     title = "Contact Support",
-                    subtitle = "Send developer an email query",
+                    subtitle = "Send developer an email query or feedback",
                     icon = Icons.Default.Email,
                     onClick = { showContactDialog = true }
                 )
@@ -1094,7 +1452,7 @@ fun SettingsScreen(
             SettingsGroup(title = "DANGER ZONE", titleColor = MaterialTheme.colorScheme.error) {
                 SettingsRow(
                     title = "Reset Opening Balances",
-                    subtitle = "Clear Cash & Online balances without deleting transactions",
+                    subtitle = "Clear Cash & Online opening balances without deleting transactions",
                     icon = Icons.Default.Refresh,
                     iconTint = MaterialTheme.colorScheme.error,
                     onClick = { showResetWalletsDialog = true }
@@ -1127,1199 +1485,36 @@ fun SettingsScreen(
 }
 
 // =============================================================================
-// REUSABLE FROSTED SETTINGS COMPONENTS
+// COMPOSE PREVIEWS FOR EVERY THEME
 // =============================================================================
+@Preview(name = "Settings - Light Theme", showBackground = true)
 @Composable
-private fun SettingsGroup(
-    title: String,
-    modifier: Modifier = Modifier,
-    titleColor: Color? = null,
-    content: @Composable ColumnScope.() -> Unit
-) {
-    val tokens = LocalKanriGlass.current
-    Column(
-        modifier = modifier.fillMaxWidth(),
-        verticalArrangement = Arrangement.spacedBy(8.dp)
-    ) {
-        Text(
-            text = title,
-            fontSize = 11.5.sp,
-            fontFamily = GoogleSansFlex,
-            fontWeight = FontWeight.SemiBold,
-            letterSpacing = 0.8.sp,
-            color = titleColor ?: (tokens?.textSecondary ?: MaterialTheme.colorScheme.onSurfaceVariant.copy(alpha = 0.7f)),
-            modifier = Modifier.padding(start = 12.dp)
-        )
-        KanriGlassCard(
-            modifier = Modifier.fillMaxWidth(),
-            level = GlassLevel.Blur,
-            shape = RoundedCornerShape(18.dp)
-        ) {
-            Column(
-                modifier = Modifier
-                    .fillMaxWidth()
-                    .padding(vertical = 4.dp),
-                content = content
-            )
-        }
+fun SettingsScreenPreview_Light() {
+    KanriTheme(themeMode = ThemeMode.LIGHT) {
+        SettingsScreen(onBack = {})
     }
 }
 
+@Preview(name = "Settings - Dark Theme", showBackground = true)
 @Composable
-private fun SettingsRow(
-    title: String,
-    subtitle: String? = null,
-    icon: ImageVector? = null,
-    iconTint: Color? = null,
-    trailing: @Composable (() -> Unit)? = null,
-    onClick: (() -> Unit)? = null,
-    modifier: Modifier = Modifier
-) {
-    val tokens = LocalKanriGlass.current
-    val haptics = rememberKanriHaptics()
-
-    Row(
-        modifier = modifier
-            .fillMaxWidth()
-            .clickable(enabled = onClick != null) {
-                haptics.click()
-                onClick?.invoke()
-            }
-            .padding(horizontal = 16.dp, vertical = 12.dp),
-        horizontalArrangement = Arrangement.spacedBy(14.dp),
-        verticalAlignment = Alignment.CenterVertically
-    ) {
-        if (icon != null) {
-            Surface(
-                shape = RoundedCornerShape(10.dp),
-                color = (iconTint ?: MaterialTheme.colorScheme.primary).copy(alpha = 0.12f),
-                modifier = Modifier.size(36.dp)
-            ) {
-                Box(contentAlignment = Alignment.Center) {
-                    Icon(
-                        imageVector = icon,
-                        contentDescription = null,
-                        tint = iconTint ?: MaterialTheme.colorScheme.primary,
-                        modifier = Modifier.size(20.dp)
-                    )
-                }
-            }
-        }
-
-        Column(modifier = Modifier.weight(1f)) {
-            Text(
-                text = title,
-                fontFamily = GoogleSansFlex,
-                fontWeight = FontWeight.SemiBold,
-                fontSize = 14.5.sp,
-                color = tokens?.textPrimary ?: MaterialTheme.colorScheme.onSurface
-            )
-            if (subtitle != null) {
-                Spacer(modifier = Modifier.height(2.dp))
-                Text(
-                    text = subtitle,
-                    fontSize = 12.sp,
-                    color = tokens?.textSecondary ?: MaterialTheme.colorScheme.onSurfaceVariant
-                )
-            }
-        }
-
-        if (trailing != null) {
-            trailing()
-        } else if (onClick != null) {
-            Icon(
-                imageVector = Icons.Default.ChevronRight,
-                contentDescription = null,
-                tint = tokens?.textSecondary?.copy(alpha = 0.5f) ?: MaterialTheme.colorScheme.onSurfaceVariant.copy(alpha = 0.5f),
-                modifier = Modifier.size(18.dp)
-            )
-        }
+fun SettingsScreenPreview_Dark() {
+    KanriTheme(themeMode = ThemeMode.DARK) {
+        SettingsScreen(onBack = {})
     }
 }
 
+@Preview(name = "Settings - AMOLED Theme", showBackground = true)
 @Composable
-private fun SettingsSwitchRow(
-    title: String,
-    subtitle: String? = null,
-    icon: ImageVector? = null,
-    checked: Boolean,
-    onCheckedChange: (Boolean) -> Unit,
-    modifier: Modifier = Modifier
-) {
-    val tokens = LocalKanriGlass.current
-    val haptics = rememberKanriHaptics()
-
-    Row(
-        modifier = modifier
-            .fillMaxWidth()
-            .toggleable(
-                value = checked,
-                role = Role.Switch,
-                onValueChange = {
-                    haptics.click()
-                    onCheckedChange(it)
-                }
-            )
-            .padding(horizontal = 16.dp, vertical = 12.dp),
-        horizontalArrangement = Arrangement.spacedBy(14.dp),
-        verticalAlignment = Alignment.CenterVertically
-    ) {
-        if (icon != null) {
-            Surface(
-                shape = RoundedCornerShape(10.dp),
-                color = MaterialTheme.colorScheme.primary.copy(alpha = 0.12f),
-                modifier = Modifier.size(36.dp)
-            ) {
-                Box(contentAlignment = Alignment.Center) {
-                    Icon(
-                        imageVector = icon,
-                        contentDescription = null,
-                        tint = MaterialTheme.colorScheme.primary,
-                        modifier = Modifier.size(20.dp)
-                    )
-                }
-            }
-        }
-
-        Column(modifier = Modifier.weight(1f)) {
-            Text(
-                text = title,
-                fontFamily = GoogleSansFlex,
-                fontWeight = FontWeight.SemiBold,
-                fontSize = 14.5.sp,
-                color = tokens?.textPrimary ?: MaterialTheme.colorScheme.onSurface
-            )
-            if (subtitle != null) {
-                Spacer(modifier = Modifier.height(2.dp))
-                Text(
-                    text = subtitle,
-                    fontSize = 12.sp,
-                    color = tokens?.textSecondary ?: MaterialTheme.colorScheme.onSurfaceVariant
-                )
-            }
-        }
-
-        Switch(
-            checked = checked,
-            onCheckedChange = null,
-            colors = SwitchDefaults.colors(
-                checkedThumbColor = Color.White,
-                checkedTrackColor = MaterialTheme.colorScheme.primary,
-                uncheckedThumbColor = Color.White.copy(alpha = 0.8f),
-                uncheckedTrackColor = if (tokens != null) tokens.tintFlat else MaterialTheme.colorScheme.surfaceVariant
-            )
-        )
+fun SettingsScreenPreview_Amoled() {
+    KanriTheme(themeMode = ThemeMode.AMOLED) {
+        SettingsScreen(onBack = {})
     }
 }
 
+@Preview(name = "Settings - Glass Theme", showBackground = true)
 @Composable
-private fun SettingsDivider() {
-    val tokens = LocalKanriGlass.current
-    HorizontalDivider(
-        modifier = Modifier.padding(start = 66.dp, end = 16.dp),
-        thickness = 0.8.dp,
-        color = tokens?.borderStart?.copy(alpha = 0.12f) ?: Color.White.copy(alpha = 0.08f)
-    )
-}
-
-// =============================================================================
-// PERMISSIONS STATUS OVERVIEW COMPOSABLE
-// =============================================================================
-@Composable
-private fun PermissionsStatusOverview(context: Context) {
-    val haptics = rememberKanriHaptics()
-    val isSmsAllowed = com.omkarnub.kanri.util.SmsPermissionHelper.hasSmsPermissions(context)
-    val isNotificationAccessAllowed = NotificationAccessHelper.isNotificationAccessGranted(context)
-
-    val isNotifAllowed = if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.TIRAMISU) {
-        ContextCompat.checkSelfPermission(context, Manifest.permission.POST_NOTIFICATIONS) == PackageManager.PERMISSION_GRANTED
-    } else {
-        NotificationManagerCompat.from(context).areNotificationsEnabled()
+fun SettingsScreenPreview_Glass() {
+    KanriTheme(themeMode = ThemeMode.GLASS) {
+        SettingsScreen(onBack = {})
     }
-
-    val isOverlayAllowed = Settings.canDrawOverlays(context)
-
-    val powerManager = context.getSystemService(Context.POWER_SERVICE) as? PowerManager
-    val isBatteryUnrestricted = powerManager?.isIgnoringBatteryOptimizations(context.packageName) == true
-
-    Column(verticalArrangement = Arrangement.spacedBy(8.dp)) {
-        PermissionItemRow(name = "Bank SMS Detection (Primary)", isAllowed = isSmsAllowed)
-        PermissionItemRow(name = "Payment Notification Listener (Supplementary)", isAllowed = isNotificationAccessAllowed)
-        PermissionItemRow(name = "Transaction Notifications", isAllowed = isNotifAllowed)
-        PermissionItemRow(name = "Instant Floating Overlay", isAllowed = isOverlayAllowed)
-        PermissionItemRow(name = "Background Battery", isAllowed = isBatteryUnrestricted, allowedLabel = "Unrestricted", deniedLabel = "Optimized")
-
-        Spacer(modifier = Modifier.height(4.dp))
-
-        if (!isSmsAllowed) {
-            Button(
-                onClick = {
-                    haptics.click()
-                    if (context is android.app.Activity) {
-                        com.omkarnub.kanri.util.SmsPermissionHelper.requestSmsPermissions(context)
-                    } else {
-                        val intent = Intent(Settings.ACTION_APPLICATION_DETAILS_SETTINGS).apply {
-                            data = Uri.fromParts("package", context.packageName, null)
-                        }
-                        context.startActivity(intent)
-                    }
-                },
-                modifier = Modifier.fillMaxWidth(),
-                shape = RoundedCornerShape(10.dp)
-            ) {
-                Text("Enable Bank SMS Detection", fontSize = 12.sp)
-            }
-        }
-
-        if (!isNotificationAccessAllowed) {
-            Button(
-                onClick = {
-                    haptics.click()
-                    NotificationAccessHelper.openNotificationAccessSettings(context)
-                },
-                modifier = Modifier.fillMaxWidth(),
-                shape = RoundedCornerShape(10.dp)
-            ) {
-                Text("Enable Notification Access", fontSize = 12.sp)
-            }
-        }
-
-        OutlinedButton(
-            onClick = {
-                haptics.click()
-                val intent = Intent(Settings.ACTION_APPLICATION_DETAILS_SETTINGS).apply {
-                    data = Uri.fromParts("package", context.packageName, null)
-                }
-                context.startActivity(intent)
-            },
-            modifier = Modifier.fillMaxWidth(),
-            shape = RoundedCornerShape(10.dp)
-        ) {
-            Text("Manage Permissions in System Settings", fontSize = 12.sp)
-        }
-    }
-}
-
-@Composable
-private fun PermissionItemRow(
-    name: String,
-    isAllowed: Boolean,
-    allowedLabel: String = "Allowed",
-    deniedLabel: String = "Denied"
-) {
-    Row(
-        modifier = Modifier.fillMaxWidth(),
-        horizontalArrangement = Arrangement.SpaceBetween,
-        verticalAlignment = Alignment.CenterVertically
-    ) {
-        Text(
-            text = name,
-            fontSize = 13.sp,
-            color = MaterialTheme.colorScheme.onSurface
-        )
-
-        Surface(
-            shape = RoundedCornerShape(6.dp),
-            color = if (isAllowed)
-                MaterialTheme.colorScheme.primaryContainer.copy(alpha = 0.5f)
-            else
-                MaterialTheme.colorScheme.surfaceVariant.copy(alpha = 0.5f),
-            border = BorderStroke(
-                0.8.dp,
-                if (isAllowed) MaterialTheme.colorScheme.primary else MaterialTheme.colorScheme.outlineVariant
-            )
-        ) {
-            Text(
-                text = if (isAllowed) allowedLabel else deniedLabel,
-                fontSize = 11.sp,
-                fontWeight = FontWeight.SemiBold,
-                color = if (isAllowed) MaterialTheme.colorScheme.onSurface else MaterialTheme.colorScheme.onSurfaceVariant,
-                modifier = Modifier.padding(horizontal = 8.dp, vertical = 2.dp)
-            )
-        }
-    }
-}
-
-// =============================================================================
-// THEME PREVIEW CARD COMPOSABLE
-// =============================================================================
-@Composable
-private fun ThemePreviewCard(
-    mode: ThemeMode,
-    isSelected: Boolean,
-    onClick: () -> Unit,
-    modifier: Modifier = Modifier
-) {
-    val tokens = LocalKanriGlass.current
-    // Theme palette constants for realistic previews
-    val (bgColor, cardColor, cardBorder, barColor, dockColor) = when (mode) {
-        ThemeMode.SYSTEM -> listOf(
-            Color(0xFF1B1B1F),
-            Color(0xFF26262B),
-            Color(0xFF383840),
-            Color(0xFFDDDDDD),
-            Color(0xFF1E1E24)
-        )
-        ThemeMode.DARK -> listOf(
-            Color(0xFF141414),
-            Color(0xFF222222),
-            Color(0xFF333333),
-            Color(0xFFDDDDDD),
-            Color(0xFF1A1A1A)
-        )
-        ThemeMode.AMOLED -> listOf(
-            Color(0xFF000000),
-            Color(0xFF121212),
-            Color(0xFF262626),
-            Color(0xFFFFFFFF),
-            Color(0xFF0A0A0A)
-        )
-        ThemeMode.LIGHT -> listOf(
-            Color(0xFFFBF8EE),
-            Color(0xFFFFFFFF),
-            Color(0xFFE2DDD1),
-            Color(0xFF222222),
-            Color(0xFFEDE8DD)
-        )
-        ThemeMode.GLASS -> listOf(
-            Color(0xFF0B0B0E),
-            tokens?.tintBlur ?: Color(0x26FFFFFF),
-            tokens?.borderStart ?: Color(0x47FFFFFF),
-            tokens?.textPrimary ?: Color(0xFFF5F5F7),
-            tokens?.tintFlat ?: Color(0x2EFFFFFF)
-        )
-    }
-
-    Card(
-        modifier = modifier
-            .clip(RoundedCornerShape(tokens?.cornerRadius ?: 14.dp))
-            .clickable(onClick = onClick),
-        shape = RoundedCornerShape(tokens?.cornerRadius ?: 14.dp),
-        colors = CardDefaults.cardColors(containerColor = tokens?.tintFlat ?: MaterialTheme.colorScheme.surfaceVariant.copy(alpha = 0.35f)),
-        border = BorderStroke(
-            width = if (isSelected) 1.5.dp else (tokens?.borderWidth ?: 1.dp),
-            color = if (isSelected) MaterialTheme.colorScheme.primary else (tokens?.borderEnd ?: MaterialTheme.colorScheme.outlineVariant)
-        )
-    ) {
-        Column(
-            modifier = Modifier
-                .fillMaxWidth()
-                .padding(8.dp),
-            horizontalAlignment = Alignment.CenterHorizontally
-        ) {
-            // Miniature Phone Window Preview
-            Box(
-                modifier = Modifier
-                    .fillMaxWidth()
-                    .height(105.dp)
-                    .clip(RoundedCornerShape(10.dp))
-                    .background(bgColor)
-                    .border(1.dp, cardBorder, RoundedCornerShape(10.dp))
-                    .padding(6.dp)
-            ) {
-                // If glass theme, draw a subtle frosted glow in the miniature preview
-                if (mode == ThemeMode.GLASS) {
-                    androidx.compose.foundation.Canvas(modifier = Modifier.fillMaxSize()) {
-                        drawCircle(
-                            brush = Brush.radialGradient(
-                                colors = listOf(Color.White.copy(alpha = 0.12f), Color.Transparent),
-                                center = Offset(size.width * 0.2f, size.height * 0.2f),
-                                radius = size.width * 0.8f
-                            ),
-                            radius = size.width * 0.8f,
-                            center = Offset(size.width * 0.2f, size.height * 0.2f)
-                        )
-                    }
-                }
-
-                Column(
-                    modifier = Modifier.fillMaxSize(),
-                    verticalArrangement = Arrangement.SpaceBetween
-                ) {
-                    // Mini Top Bar
-                    Row(
-                        modifier = Modifier.fillMaxWidth(),
-                        horizontalArrangement = Arrangement.SpaceBetween,
-                        verticalAlignment = Alignment.CenterVertically
-                    ) {
-                        Box(
-                            modifier = Modifier
-                                .size(width = 16.dp, height = 4.dp)
-                                .clip(RoundedCornerShape(2.dp))
-                                .background(barColor.copy(alpha = 0.5f))
-                        )
-                        Box(
-                            modifier = Modifier
-                                .size(5.dp)
-                                .clip(CircleShape)
-                                .background(barColor.copy(alpha = 0.5f))
-                        )
-                    }
-
-                    // Mini Content Card
-                    Box(
-                        modifier = Modifier
-                            .fillMaxWidth()
-                            .height(48.dp)
-                            .clip(RoundedCornerShape(6.dp))
-                            .background(cardColor)
-                            .border(0.8.dp, cardBorder, RoundedCornerShape(6.dp))
-                            .padding(6.dp)
-                    ) {
-                        Column(verticalArrangement = Arrangement.spacedBy(4.dp)) {
-                            Box(
-                                modifier = Modifier
-                                    .size(width = 28.dp, height = 5.dp)
-                                    .clip(RoundedCornerShape(2.dp))
-                                    .background(barColor)
-                            )
-                            Box(
-                                modifier = Modifier
-                                    .size(width = 44.dp, height = 3.dp)
-                                    .clip(RoundedCornerShape(1.5.dp))
-                                    .background(barColor.copy(alpha = 0.4f))
-                            )
-                            Spacer(modifier = Modifier.height(1.dp))
-                            Row(horizontalArrangement = Arrangement.spacedBy(3.dp)) {
-                                repeat(3) {
-                                    Box(
-                                        modifier = Modifier
-                                            .size(width = 10.dp, height = 8.dp)
-                                            .clip(RoundedCornerShape(2.dp))
-                                            .background(barColor.copy(alpha = 0.25f))
-                                    )
-                                }
-                            }
-                        }
-                    }
-
-                    // Mini Bottom Dock
-                    Box(
-                        modifier = Modifier
-                            .fillMaxWidth()
-                            .height(12.dp)
-                            .clip(RoundedCornerShape(4.dp))
-                            .background(dockColor),
-                        contentAlignment = Alignment.Center
-                    ) {
-                        Row(horizontalArrangement = Arrangement.spacedBy(6.dp)) {
-                            repeat(3) {
-                                Box(
-                                    modifier = Modifier
-                                        .size(3.dp)
-                                        .clip(CircleShape)
-                                        .background(barColor.copy(alpha = 0.4f))
-                                )
-                            }
-                        }
-                    }
-                }
-
-                // Checkmark Circle Badge if selected
-                if (isSelected) {
-                    Box(
-                        modifier = Modifier
-                            .align(Alignment.TopEnd)
-                            .size(16.dp)
-                            .clip(CircleShape)
-                            .background(MaterialTheme.colorScheme.primary),
-                        contentAlignment = Alignment.Center
-                    ) {
-                        Icon(
-                            imageVector = Icons.Default.Check,
-                            contentDescription = null,
-                            tint = MaterialTheme.colorScheme.onPrimary,
-                            modifier = Modifier.size(11.dp)
-                        )
-                    }
-                }
-            }
-
-            Spacer(modifier = Modifier.height(8.dp))
-
-            Text(
-                text = mode.label,
-                fontWeight = FontWeight.Bold,
-                fontSize = 12.sp,
-                color = MaterialTheme.colorScheme.onSurface,
-                maxLines = 1,
-                overflow = TextOverflow.Ellipsis
-            )
-
-            Text(
-                text = when (mode) {
-                    ThemeMode.SYSTEM -> "System"
-                    ThemeMode.DARK -> "Charcoal"
-                    ThemeMode.AMOLED -> "Pitch Black"
-                    ThemeMode.LIGHT -> "Soft Cream"
-                    ThemeMode.GLASS -> "Frosted Glass"
-                },
-                fontSize = 10.sp,
-                color = MaterialTheme.colorScheme.onSurfaceVariant
-            )
-        }
-    }
-}
-
-// =============================================================================
-// CONSUMER CRASH LOGS DIALOG
-// =============================================================================
-@Composable
-private fun ConsumerCrashLogsDialog(onDismiss: () -> Unit) {
-    val context = LocalContext.current
-    var logs by remember { mutableStateOf(CrashLogger.getCrashLogs(context)) }
-    val haptics = rememberKanriHaptics()
-
-    AlertDialog(
-        onDismissRequest = onDismiss,
-        title = {
-            Row(
-                verticalAlignment = Alignment.CenterVertically,
-                horizontalArrangement = Arrangement.spacedBy(8.dp)
-            ) {
-                Icon(
-                    imageVector = Icons.Default.HealthAndSafety,
-                    contentDescription = null,
-                    tint = MaterialTheme.colorScheme.primary,
-                    modifier = Modifier.size(20.dp)
-                )
-                Text("App Health & Logs", fontWeight = FontWeight.Bold)
-            }
-        },
-        text = {
-            Column(
-                modifier = Modifier
-                    .fillMaxWidth()
-                    .verticalScroll(rememberScrollState()),
-                verticalArrangement = Arrangement.spacedBy(12.dp)
-            ) {
-                if (logs.isEmpty()) {
-                    Box(
-                        modifier = Modifier
-                            .fillMaxWidth()
-                            .padding(vertical = 16.dp),
-                        contentAlignment = Alignment.Center
-                    ) {
-                        Column(horizontalAlignment = Alignment.CenterHorizontally) {
-                            Icon(
-                                imageVector = Icons.Default.CheckCircle,
-                                contentDescription = null,
-                                tint = MaterialTheme.colorScheme.primary,
-                                modifier = Modifier.size(40.dp)
-                            )
-                            Spacer(modifier = Modifier.height(8.dp))
-                            Text(
-                                text = "All Systems Running Smoothly",
-                                fontWeight = FontWeight.SemiBold,
-                                fontSize = 14.sp,
-                                color = MaterialTheme.colorScheme.onSurface
-                            )
-                            Text(
-                                text = "No diagnostic errors or crash events recorded.",
-                                fontSize = 12.sp,
-                                color = MaterialTheme.colorScheme.onSurfaceVariant
-                            )
-                        }
-                    }
-                } else {
-                    Text(
-                        text = "${logs.size} stability reports stored locally:",
-                        fontSize = 12.sp,
-                        color = MaterialTheme.colorScheme.onSurfaceVariant
-                    )
-
-                    logs.forEach { logFile ->
-                        Card(
-                            modifier = Modifier.fillMaxWidth(),
-                            shape = RoundedCornerShape(10.dp),
-                            colors = CardDefaults.cardColors(containerColor = MaterialTheme.colorScheme.surfaceVariant.copy(alpha = 0.5f))
-                        ) {
-                            Row(
-                                modifier = Modifier
-                                    .fillMaxWidth()
-                                    .padding(10.dp),
-                                horizontalArrangement = Arrangement.SpaceBetween,
-                                verticalAlignment = Alignment.CenterVertically
-                            ) {
-                                Column {
-                                    val currentLocale = androidx.compose.ui.platform.LocalConfiguration.current.locales[0]
-                                    val dateStr = SimpleDateFormat("dd MMM yyyy, HH:mm", currentLocale)
-                                        .format(Date(logFile.lastModified()))
-                                    Text(
-                                        text = "Diagnostic Report",
-                                        fontWeight = FontWeight.Medium,
-                                        fontSize = 13.sp,
-                                        color = MaterialTheme.colorScheme.onSurface
-                                    )
-                                    Text(
-                                        text = dateStr,
-                                        fontSize = 11.sp,
-                                        color = MaterialTheme.colorScheme.onSurfaceVariant
-                                    )
-                                }
-                            }
-                        }
-                    }
-                }
-            }
-        },
-        confirmButton = {
-            if (logs.isNotEmpty()) {
-                TextButton(
-                    onClick = {
-                        haptics.tick()
-                        CrashLogger.clearAllLogs(context)
-                        logs = emptyList()
-                        Toast.makeText(context, "Diagnostic logs cleared", Toast.LENGTH_SHORT).show()
-                    }
-                ) {
-                    Text("Clear Logs")
-                }
-            } else {
-                TextButton(onClick = onDismiss) {
-                    Text("Done")
-                }
-            }
-        },
-        dismissButton = {
-            if (logs.isNotEmpty()) {
-                TextButton(onClick = onDismiss) {
-                    Text("Close")
-                }
-            }
-        }
-    )
-}
-
-// =============================================================================
-// CONTACT US DIALOG
-// =============================================================================
-@Composable
-private fun ContactUsDialog(onDismiss: () -> Unit) {
-    val context = LocalContext.current
-    val haptics = rememberKanriHaptics()
-    val email = "support@kanri.app"
-
-    AlertDialog(
-        onDismissRequest = onDismiss,
-        title = { Text("Contact Support", fontWeight = FontWeight.Bold) },
-        text = {
-            Column(verticalArrangement = Arrangement.spacedBy(10.dp)) {
-                Text(
-                    text = "Have questions, feedback, or need assistance? Reach out directly and we will respond as soon as possible.",
-                    fontSize = 13.sp,
-                    color = MaterialTheme.colorScheme.onSurfaceVariant
-                )
-                Surface(
-                    shape = RoundedCornerShape(10.dp),
-                    color = MaterialTheme.colorScheme.surfaceVariant,
-                    modifier = Modifier.fillMaxWidth()
-                ) {
-                    Row(
-                        modifier = Modifier
-                            .fillMaxWidth()
-                            .padding(12.dp),
-                        horizontalArrangement = Arrangement.SpaceBetween,
-                        verticalAlignment = Alignment.CenterVertically
-                    ) {
-                        Text(
-                            text = email,
-                            fontWeight = FontWeight.SemiBold,
-                            fontSize = 14.sp,
-                            color = MaterialTheme.colorScheme.onSurface
-                        )
-                        IconButton(
-                            onClick = {
-                                val clipboard = context.getSystemService(Context.CLIPBOARD_SERVICE) as ClipboardManager
-                                clipboard.setPrimaryClip(ClipData.newPlainText("Support Email", email))
-                                haptics.tick()
-                                Toast.makeText(context, "Email copied to clipboard", Toast.LENGTH_SHORT).show()
-                            },
-                            modifier = Modifier.size(30.dp)
-                        ) {
-                            Icon(
-                                imageVector = Icons.Default.ContentCopy,
-                                contentDescription = "Copy",
-                                tint = MaterialTheme.colorScheme.primary,
-                                modifier = Modifier.size(16.dp)
-                            )
-                        }
-                    }
-                }
-            }
-        },
-        confirmButton = {
-            Button(
-                onClick = {
-                    onDismiss()
-                    val intent = Intent(Intent.ACTION_SENDTO).apply {
-                        data = Uri.parse("mailto:$email?subject=${Uri.encode("Kanri Support Request")}")
-                    }
-                    try {
-                        context.startActivity(intent)
-                    } catch (e: Exception) {
-                        Toast.makeText(context, "No email app found", Toast.LENGTH_SHORT).show()
-                    }
-                }
-            ) {
-                Text("Open Email Client")
-            }
-        },
-        dismissButton = {
-            TextButton(onClick = onDismiss) {
-                Text("Cancel")
-            }
-        }
-    )
-}
-
-// =============================================================================
-// SUGGEST A FEATURE DIALOG
-// =============================================================================
-@Composable
-private fun SuggestFeatureDialog(onDismiss: () -> Unit) {
-    val context = LocalContext.current
-    var title by remember { mutableStateOf("") }
-    var description by remember { mutableStateOf("") }
-    val categories = listOf("Analytics", "Automation", "Budgeting", "UI & Design", "Other")
-    var selectedCategory by remember { mutableStateOf(categories.first()) }
-
-    AlertDialog(
-        onDismissRequest = onDismiss,
-        title = { Text("Suggest a Feature", fontWeight = FontWeight.Bold) },
-        text = {
-            Column(
-                modifier = Modifier.fillMaxWidth(),
-                verticalArrangement = Arrangement.spacedBy(10.dp)
-            ) {
-                Text(
-                    text = "Help us improve Kanri with your ideas and requirements.",
-                    fontSize = 12.sp,
-                    color = MaterialTheme.colorScheme.onSurfaceVariant
-                )
-
-                Row(
-                    horizontalArrangement = Arrangement.spacedBy(6.dp),
-                    modifier = Modifier.fillMaxWidth()
-                ) {
-                    categories.take(3).forEach { cat ->
-                        FilterChip(
-                            selected = selectedCategory == cat,
-                            onClick = { selectedCategory = cat },
-                            label = { Text(cat, fontSize = 11.sp) },
-                            colors = FilterChipDefaults.filterChipColors(
-                                selectedContainerColor = MaterialTheme.colorScheme.primaryContainer,
-                                selectedLabelColor = MaterialTheme.colorScheme.onPrimaryContainer
-                            )
-                        )
-                    }
-                }
-
-                OutlinedTextField(
-                    value = title,
-                    onValueChange = { title = it },
-                    label = { Text("Feature Title") },
-                    placeholder = { Text("e.g. Export to Excel format") },
-                    singleLine = true,
-                    colors = kanriGlassTextFieldColors(),
-                    shape = RoundedCornerShape(10.dp),
-                    modifier = Modifier.fillMaxWidth()
-                )
-
-                OutlinedTextField(
-                    value = description,
-                    onValueChange = { description = it },
-                    label = { Text("Details & Use Case") },
-                    placeholder = { Text("How would this help your daily expense tracking?") },
-                    maxLines = 4,
-                    colors = kanriGlassTextFieldColors(),
-                    shape = RoundedCornerShape(10.dp),
-                    modifier = Modifier
-                        .fillMaxWidth()
-                        .height(100.dp)
-                )
-            }
-        },
-        confirmButton = {
-            Button(
-                onClick = {
-                    onDismiss()
-                    val emailSubject = "[Feature Request] [$selectedCategory] $title"
-                    val emailBody = "Feature: $title\nCategory: $selectedCategory\n\nDetails:\n$description"
-                    val intent = Intent(Intent.ACTION_SENDTO).apply {
-                        data = Uri.parse("mailto:feedback@kanri.app?subject=${Uri.encode(emailSubject)}&body=${Uri.encode(emailBody)}")
-                    }
-                    try {
-                        context.startActivity(intent)
-                    } catch (e: Exception) {
-                        Toast.makeText(context, "No email client found", Toast.LENGTH_SHORT).show()
-                    }
-                },
-                enabled = title.isNotBlank()
-            ) {
-                Text("Send Suggestion")
-            }
-        },
-        dismissButton = {
-            TextButton(onClick = onDismiss) {
-                Text("Cancel")
-            }
-        }
-    )
-}
-
-// =============================================================================
-// REUSABLE SETTINGS HELPERS
-// =============================================================================
-@Composable
-private fun SettingsSectionCard(
-    modifier: Modifier = Modifier,
-    onClick: (() -> Unit)? = null,
-    content: @Composable ColumnScope.() -> Unit
-) {
-    val tokens = LocalKanriGlass.current
-    if (tokens != null) {
-        KanriGlassCard(
-            modifier = modifier.fillMaxWidth(),
-            level = GlassLevel.Blur,
-            shape = RoundedCornerShape(tokens.cornerRadius),
-            onClick = onClick
-        ) {
-            Column(modifier = Modifier.padding(16.dp), content = content)
-        }
-    } else {
-        Card(
-            modifier = modifier
-                .fillMaxWidth()
-                .then(if (onClick != null) Modifier.clickable(onClick = onClick) else Modifier),
-            shape = RoundedCornerShape(18.dp),
-            colors = CardDefaults.cardColors(containerColor = MaterialTheme.colorScheme.surface),
-            border = BorderStroke(1.dp, MaterialTheme.colorScheme.outlineVariant)
-        ) {
-            Column(modifier = Modifier.padding(16.dp), content = content)
-        }
-    }
-}
-
-@Composable
-private fun SettingsSectionHeader(title: String, icon: ImageVector) {
-    val tokens = LocalKanriGlass.current
-    val headerColor = tokens?.textSecondary ?: MaterialTheme.colorScheme.primary
-    Row(
-        verticalAlignment = Alignment.CenterVertically,
-        modifier = Modifier.padding(start = 4.dp, top = 4.dp)
-    ) {
-        Icon(
-            imageVector = icon,
-            contentDescription = null,
-            tint = headerColor,
-            modifier = Modifier.size(16.dp)
-        )
-        Spacer(modifier = Modifier.width(6.dp))
-        Text(
-            text = title,
-            style = MaterialTheme.typography.labelSmall.copy(
-                color = headerColor,
-                letterSpacing = 1.2.sp,
-                fontWeight = FontWeight.Bold
-            )
-        )
-    }
-}
-
-@Composable
-private fun SettingsRow(
-    icon: ImageVector,
-    title: String,
-    subtitle: String,
-    tint: Color = MaterialTheme.colorScheme.onSurface,
-    onClick: () -> Unit
-) {
-    val tokens = LocalKanriGlass.current
-    val haptics = rememberKanriHaptics()
-    val effectiveTint = if (tint == MaterialTheme.colorScheme.onSurface && tokens != null) {
-        tokens.textPrimary
-    } else tint
-    val subtitleColor = tokens?.textSecondary ?: MaterialTheme.colorScheme.onSurfaceVariant
-    val arrowColor = tokens?.textTertiary ?: MaterialTheme.colorScheme.onSurfaceVariant
-
-    Row(
-        modifier = Modifier
-            .fillMaxWidth()
-            .clickable(onClick = {
-                haptics.click()
-                onClick()
-            })
-            .padding(vertical = 4.dp),
-        horizontalArrangement = Arrangement.SpaceBetween,
-        verticalAlignment = Alignment.CenterVertically
-    ) {
-        Row(
-            verticalAlignment = Alignment.CenterVertically,
-            modifier = Modifier.weight(1f)
-        ) {
-            Icon(
-                imageVector = icon,
-                contentDescription = null,
-                tint = effectiveTint,
-                modifier = Modifier.size(20.dp)
-            )
-            Spacer(modifier = Modifier.width(12.dp))
-            Column {
-                Text(
-                    text = title,
-                    fontWeight = FontWeight.SemiBold,
-                    fontSize = 14.sp,
-                    color = effectiveTint
-                )
-                Text(
-                    text = subtitle,
-                    fontSize = 11.sp,
-                    color = subtitleColor
-                )
-            }
-        }
-        Icon(
-            imageVector = Icons.AutoMirrored.Filled.KeyboardArrowRight,
-            contentDescription = null,
-            tint = arrowColor,
-            modifier = Modifier.size(18.dp)
-        )
-    }
-}
-
-@Composable
-private fun CategoryEditCreateDialog(
-    category: CategoryEntity?,
-    onDismiss: () -> Unit,
-    onSave: (newName: String, newIconName: String) -> Unit
-) {
-    var name by remember(category) { mutableStateOf(category?.name ?: "") }
-    var selectedIconName by remember(category) {
-        mutableStateOf(category?.iconName ?: AVAILABLE_CATEGORY_ICONS.first().iconName)
-    }
-
-    AlertDialog(
-        onDismissRequest = onDismiss,
-        title = {
-            Text(
-                text = if (category != null) "Edit Category" else "New Custom Category",
-                fontWeight = FontWeight.Bold,
-                color = MaterialTheme.colorScheme.onSurface
-            )
-        },
-        text = {
-            Column(modifier = Modifier.fillMaxWidth()) {
-                OutlinedTextField(
-                    value = name,
-                    onValueChange = { name = it },
-                    label = { Text("Category Name") },
-                    placeholder = { Text("e.g. Gym, Coffee, Pet Care") },
-                    singleLine = true,
-                    colors = kanriGlassTextFieldColors(),
-                    shape = RoundedCornerShape(12.dp),
-                    modifier = Modifier.fillMaxWidth()
-                )
-                Spacer(modifier = Modifier.height(14.dp))
-                Text(
-                    text = "Select Icon",
-                    style = MaterialTheme.typography.titleSmall,
-                    fontWeight = FontWeight.SemiBold,
-                    color = MaterialTheme.colorScheme.onSurface
-                )
-                Spacer(modifier = Modifier.height(8.dp))
-                LazyVerticalGrid(
-                    columns = GridCells.Fixed(5),
-                    horizontalArrangement = Arrangement.spacedBy(8.dp),
-                    verticalArrangement = Arrangement.spacedBy(8.dp),
-                    modifier = Modifier
-                        .fillMaxWidth()
-                        .height(150.dp)
-                ) {
-                    items(AVAILABLE_CATEGORY_ICONS, key = { it.iconName }) { iconOpt ->
-                        val isSelected = selectedIconName == iconOpt.iconName
-                        Surface(
-                            shape = RoundedCornerShape(10.dp),
-                            color = if (isSelected) MaterialTheme.colorScheme.primary.copy(alpha = 0.18f) else MaterialTheme.colorScheme.surfaceVariant,
-                            border = if (isSelected) BorderStroke(1.5.dp, MaterialTheme.colorScheme.primary) else BorderStroke(0.5.dp, MaterialTheme.colorScheme.outlineVariant),
-                            modifier = Modifier
-                                .size(44.dp)
-                                .clip(RoundedCornerShape(10.dp))
-                                .clickable { selectedIconName = iconOpt.iconName }
-                        ) {
-                            Box(contentAlignment = Alignment.Center) {
-                                CategoryIcon(
-                                    categoryName = null,
-                                    iconName = iconOpt.iconName,
-                                    tint = if (isSelected) MaterialTheme.colorScheme.primary else MaterialTheme.colorScheme.onSurfaceVariant,
-                                    modifier = Modifier.size(20.dp)
-                                )
-                            }
-                        }
-                    }
-                }
-            }
-        },
-        confirmButton = {
-            Button(
-                onClick = {
-                    if (name.trim().isNotBlank()) {
-                        onSave(name.trim(), selectedIconName)
-                    }
-                },
-                enabled = name.trim().isNotBlank()
-            ) {
-                Text("Save")
-            }
-        },
-        dismissButton = {
-            TextButton(onClick = onDismiss) {
-                Text("Cancel")
-            }
-        }
-    )
-}
-
-@Composable
-private fun SelectCurrencyDialog(
-    currentCurrency: AppCurrency,
-    onSelectCurrency: (AppCurrency) -> Unit,
-    onDismiss: () -> Unit
-) {
-    val tokens = LocalKanriGlass.current
-    var searchQuery by remember { mutableStateOf("") }
-    val filteredCurrencies = remember(searchQuery) {
-        val query = searchQuery.trim().lowercase()
-        if (query.isEmpty()) {
-            AppCurrency.entries
-        } else {
-            AppCurrency.entries.filter { currency ->
-                currency.code.lowercase().contains(query) ||
-                    currency.displayName.lowercase().contains(query) ||
-                    currency.symbol.lowercase().contains(query)
-            }
-        }
-    }
-
-    AlertDialog(
-        onDismissRequest = onDismiss,
-        title = {
-            Text(
-                text = "Choose Currency",
-                fontWeight = FontWeight.Bold,
-                color = MaterialTheme.colorScheme.onSurface
-            )
-        },
-        text = {
-            Column(
-                modifier = Modifier.fillMaxWidth(),
-                verticalArrangement = Arrangement.spacedBy(10.dp)
-            ) {
-                Text(
-                    text = "Select your primary currency. Amounts and widgets will format using this currency.",
-                    fontSize = 12.5.sp,
-                    color = MaterialTheme.colorScheme.onSurfaceVariant
-                )
-
-                // Search field
-                OutlinedTextField(
-                    value = searchQuery,
-                    onValueChange = { searchQuery = it },
-                    placeholder = { Text("Search currency or code...") },
-                    singleLine = true,
-                    colors = kanriGlassTextFieldColors(),
-                    modifier = Modifier.fillMaxWidth(),
-                    shape = RoundedCornerShape(12.dp)
-                )
-
-                Column(
-                    modifier = Modifier
-                        .fillMaxWidth()
-                        .heightIn(max = 380.dp)
-                        .verticalScroll(rememberScrollState()),
-                    verticalArrangement = Arrangement.spacedBy(8.dp)
-                ) {
-                    if (filteredCurrencies.isEmpty()) {
-                        Box(
-                            modifier = Modifier
-                                .fillMaxWidth()
-                                .padding(vertical = 24.dp),
-                            contentAlignment = Alignment.Center
-                        ) {
-                            Text(
-                                text = "No currency matching \"$searchQuery\"",
-                                color = MaterialTheme.colorScheme.onSurfaceVariant,
-                                fontSize = 13.sp
-                            )
-                        }
-                    } else {
-                        filteredCurrencies.forEach { currency ->
-                            val isSelected = currency == currentCurrency
-                            KanriGlassCard(
-                                modifier = Modifier
-                                    .fillMaxWidth()
-                                    .clickable { onSelectCurrency(currency) }
-                                    .then(
-                                        if (isSelected) {
-                                            Modifier.border(
-                                                1.5.dp,
-                                                tokens?.accent ?: MaterialTheme.colorScheme.onSurface,
-                                                RoundedCornerShape(14.dp)
-                                            )
-                                        } else Modifier
-                                    ),
-                                shape = RoundedCornerShape(14.dp),
-                                level = GlassLevel.Flat
-                            ) {
-                                Row(
-                                    modifier = Modifier
-                                        .fillMaxWidth()
-                                        .background(
-                                            if (isSelected) (tokens?.accent ?: MaterialTheme.colorScheme.onSurface).copy(alpha = 0.12f)
-                                            else Color.Transparent
-                                        )
-                                        .padding(horizontal = 14.dp, vertical = 12.dp),
-                                    verticalAlignment = Alignment.CenterVertically,
-                                    horizontalArrangement = Arrangement.SpaceBetween
-                                ) {
-                                    Row(
-                                        verticalAlignment = Alignment.CenterVertically,
-                                        horizontalArrangement = Arrangement.spacedBy(10.dp)
-                                    ) {
-                                        Text(text = currency.flag, fontSize = 20.sp)
-                                        Column {
-                                            Text(
-                                                text = "${currency.displayName} (${currency.code})",
-                                                fontWeight = if (isSelected) FontWeight.Bold else FontWeight.Medium,
-                                                fontSize = 14.sp,
-                                                color = MaterialTheme.colorScheme.onSurface
-                                            )
-                                            Text(
-                                                text = "Symbol: ${currency.symbol}",
-                                                fontSize = 12.sp,
-                                                color = MaterialTheme.colorScheme.onSurfaceVariant
-                                            )
-                                        }
-                                    }
-                                    if (isSelected) {
-                                        Icon(
-                                            imageVector = Icons.Default.CheckCircle,
-                                            contentDescription = "Selected",
-                                            tint = tokens?.accent ?: MaterialTheme.colorScheme.onSurface,
-                                            modifier = Modifier.size(20.dp)
-                                        )
-                                    }
-                                }
-                            }
-                        }
-                    }
-                }
-            }
-        },
-        confirmButton = {
-            TextButton(onClick = onDismiss) {
-                Text("Cancel", color = MaterialTheme.colorScheme.onSurfaceVariant)
-            }
-        }
-    )
 }
