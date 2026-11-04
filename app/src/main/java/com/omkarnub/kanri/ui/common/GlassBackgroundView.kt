@@ -24,7 +24,7 @@ import androidx.lifecycle.compose.LocalLifecycleOwner
 import com.omkarnub.kanri.ui.theme.GlassCapabilities
 
 enum class GlassBackgroundType(val id: String, val displayName: String, val fileName: String) {
-    AURORA("aurora", "Gradient Aura", "aurora.html"),
+    AURORA("aurora", "Gemini Aurora", "aurora.html"),
     GRAIN_GRADIENT("grain_gradient", "Grain Gradient", "grain_gradient.html"),
     HERO_GEOMETRIC("hero_geometric", "Hero Geometric", "hero_geometric.html"),
     PRISM_GRADIENT("prism_gradient", "Prism Swirl", "prism_gradient.html"),

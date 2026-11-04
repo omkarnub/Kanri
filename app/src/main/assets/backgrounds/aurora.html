@@ -9,7 +9,7 @@
       width: 100%;
       height: 100%;
       overflow: hidden;
-      background: #090714;
+      background: #07090e;
       pointer-events: none;
       user-select: none;
       touch-action: none;
@@ -21,17 +21,17 @@
       width: 100vw;
       height: 100vh;
       overflow: hidden;
-      background: radial-gradient(ellipse at 50% 40%, #150f28 0%, #080611 100%);
+      background: radial-gradient(ellipse at 50% 32%, #0d1224 0%, #080a14 55%, #040509 100%);
     }
 
     .blur-wrapper {
       position: absolute;
-      inset: -30%;
-      width: 160%;
-      height: 160%;
-      filter: blur(80px);
-      -webkit-filter: blur(80px);
-      transform: translateZ(0);
+      inset: -25%;
+      width: 150%;
+      height: 150%;
+      filter: blur(85px);
+      -webkit-filter: blur(85px);
+      transform: translate3d(0, 0, 0);
       will-change: transform;
     }
 
@@ -42,141 +42,163 @@
       will-change: transform;
     }
 
-    /* 1. Violet -> Fuchsia -> Rose with color-matched zero-alpha termination (no grey fringing) */
-    .orb-1 {
-      top: 10%;
-      left: 5%;
-      width: 90vw;
-      height: 90vw;
-      background: radial-gradient(circle at center,
-        rgba(139, 92, 246, 0.85) 0%,
-        rgba(192, 132, 252, 0.70) 25%,
-        rgba(236, 72, 153, 0.55) 50%,
-        rgba(244, 63, 94, 0.25) 75%,
-        rgba(244, 63, 94, 0.0) 100%
+    /* 1. Gemini Electric Blue & Radiant Cyan Spark (Google Blue core) */
+    .orb-cyan-blue {
+      top: 8%;
+      left: -6%;
+      width: 96vw;
+      height: 96vw;
+      background: radial-gradient(ellipse at 45% 45%,
+        rgba(0, 229, 255, 0.92) 0%,
+        rgba(26, 115, 232, 0.85) 26%,
+        rgba(66, 133, 244, 0.60) 52%,
+        rgba(37, 99, 235, 0.22) 75%,
+        rgba(37, 99, 235, 0.0) 100%
       );
-      animation: moveVertical 28s ease-in-out infinite;
+      animation: geminiDrift1 26s ease-in-out infinite alternate;
     }
 
-    /* 2. Cyan -> Azure -> Indigo */
-    .orb-2 {
-      top: 20%;
-      right: 0%;
-      width: 95vw;
-      height: 95vw;
-      background: radial-gradient(circle at center,
-        rgba(6, 182, 212, 0.85) 0%,
-        rgba(59, 130, 246, 0.70) 30%,
-        rgba(99, 102, 241, 0.50) 60%,
-        rgba(67, 56, 202, 0.20) 80%,
-        rgba(67, 56, 202, 0.0) 100%
+    /* 2. Gemini Radiant Violet & Vivid Fuchsia / Magenta Aurora Ribbon */
+    .orb-violet-pink {
+      top: 14%;
+      right: -10%;
+      width: 102vw;
+      height: 102vw;
+      background: radial-gradient(ellipse at 55% 50%,
+        rgba(255, 46, 147, 0.88) 0%,
+        rgba(217, 70, 239, 0.78) 25%,
+        rgba(168, 85, 247, 0.58) 50%,
+        rgba(124, 58, 237, 0.25) 75%,
+        rgba(124, 58, 237, 0.0) 100%
       );
-      transform-origin: calc(50% - 160px);
-      animation: moveInCircle 22s reverse infinite;
+      transform-origin: 45% 55%;
+      animation: geminiOrbit 32s linear infinite reverse;
     }
 
-    /* 3. Emerald -> Mint -> Turquoise */
-    .orb-3 {
-      top: 40%;
-      left: 10%;
-      width: 88vw;
+    /* 3. Gemini Neural Core — Incandescent Spark Pulsar (Thinking / Live Core) */
+    .orb-neural-core {
+      top: 28%;
+      left: 18%;
+      width: 76vw;
+      height: 76vw;
+      background: radial-gradient(circle at center,
+        rgba(240, 249, 255, 0.95) 0%,
+        rgba(186, 230, 253, 0.75) 20%,
+        rgba(56, 189, 248, 0.48) 42%,
+        rgba(99, 102, 241, 0.20) 70%,
+        rgba(99, 102, 241, 0.0) 100%
+      );
+      animation: geminiPulse 14s ease-in-out infinite alternate;
+    }
+
+    /* 4. Google Live Sunset Ribbon — Coral Red & Amber Gold (Warm Horizon Accent) */
+    .orb-coral-amber {
+      bottom: 5%;
+      left: 6%;
+      width: 92vw;
       height: 88vw;
+      background: radial-gradient(ellipse at 45% 55%,
+        rgba(251, 188, 4, 0.82) 0%,
+        rgba(249, 115, 22, 0.65) 26%,
+        rgba(234, 67, 53, 0.48) 52%,
+        rgba(225, 29, 72, 0.18) 76%,
+        rgba(225, 29, 72, 0.0) 100%
+      );
+      animation: geminiDrift2 30s ease-in-out infinite alternate;
+    }
+
+    /* 5. Google Emerald Shimmer — Jade / Mint Flow Ribbon (Perimeter Accent) */
+    .orb-emerald-teal {
+      top: 48%;
+      right: 4%;
+      width: 82vw;
+      height: 82vw;
       background: radial-gradient(circle at center,
-        rgba(16, 185, 129, 0.80) 0%,
-        rgba(52, 211, 153, 0.65) 28%,
-        rgba(20, 184, 166, 0.45) 55%,
-        rgba(6, 182, 212, 0.20) 78%,
+        rgba(52, 168, 83, 0.75) 0%,
+        rgba(16, 185, 129, 0.52) 30%,
+        rgba(6, 182, 212, 0.30) 60%,
         rgba(6, 182, 212, 0.0) 100%
       );
-      transform-origin: calc(50% + 160px);
-      animation: moveInCircle 36s linear infinite;
+      transform-origin: calc(50% + 140px) calc(50% - 90px);
+      animation: geminiOrbit 38s linear infinite;
     }
 
-    /* 4. Amber -> Apricot -> Coral */
-    .orb-4 {
-      top: 2%;
-      left: 20%;
-      width: 85vw;
-      height: 85vw;
+    /* 6. Gemini Cosmic Indigo Atmospheric Veil (Seamless Diffuse Body) */
+    .orb-atmosphere {
+      top: 16%;
+      left: 10%;
+      width: 108vw;
+      height: 108vw;
       background: radial-gradient(circle at center,
-        rgba(245, 158, 11, 0.75) 0%,
-        rgba(251, 146, 60, 0.60) 28%,
-        rgba(251, 113, 133, 0.40) 58%,
-        rgba(244, 63, 94, 0.18) 80%,
-        rgba(244, 63, 94, 0.0) 100%
+        rgba(99, 102, 241, 0.42) 0%,
+        rgba(139, 92, 246, 0.32) 35%,
+        rgba(236, 72, 153, 0.18) 65%,
+        rgba(236, 72, 153, 0.0) 100%
       );
-      animation: moveHorizontal 38s ease-in-out infinite;
+      animation: geminiDriftVertical 34s ease-in-out infinite alternate;
     }
 
-    /* 5. Deep Ultraviolet -> Electric Orchid -> Sunset Coral */
-    .orb-5 {
-      bottom: 2%;
-      right: 10%;
-      width: 90vw;
-      height: 90vw;
-      background: radial-gradient(circle at center,
-        rgba(147, 51, 234, 0.80) 0%,
-        rgba(168, 85, 247, 0.60) 32%,
-        rgba(244, 63, 94, 0.40) 62%,
-        rgba(251, 113, 133, 0.18) 82%,
-        rgba(251, 113, 133, 0.0) 100%
-      );
-      transform-origin: calc(50% - 130px);
-      animation: moveInCircle 24s ease-in-out infinite;
-    }
-
-    /* 6. Ambient Central Diffusion (Silky multi-chromatic connector) */
-    .orb-ambient {
-      top: 25%;
-      left: 15%;
-      width: 85vw;
-      height: 85vw;
-      background: radial-gradient(circle at center,
-        rgba(168, 85, 247, 0.45) 0%,
-        rgba(6, 182, 212, 0.35) 35%,
-        rgba(245, 158, 11, 0.20) 65%,
-        rgba(245, 158, 11, 0.0) 100%
-      );
-      animation: moveVertical 32s ease-in-out infinite alternate;
-    }
-
-    @keyframes moveHorizontal {
+    @keyframes geminiDrift1 {
       0% {
-        transform: translateX(-35%) translateY(-8%);
+        transform: translate3d(-18%, -10%, 0) scale(1.0);
       }
       50% {
-        transform: translateX(35%) translateY(8%);
+        transform: translate3d(18%, 14%, 0) scale(1.10);
       }
       100% {
-        transform: translateX(-35%) translateY(-8%);
+        transform: translate3d(-18%, -10%, 0) scale(1.0);
       }
     }
 
-    @keyframes moveInCircle {
+    @keyframes geminiOrbit {
       0% {
         transform: rotate(0deg);
-      }
-      50% {
-        transform: rotate(180deg);
       }
       100% {
         transform: rotate(360deg);
       }
     }
 
-    @keyframes moveVertical {
+    @keyframes geminiPulse {
       0% {
-        transform: translateY(-35%);
+        transform: scale(0.88) translate3d(-6%, -4%, 0);
+        opacity: 0.85;
       }
       50% {
-        transform: translateY(35%);
+        transform: scale(1.16) translate3d(8%, 6%, 0);
+        opacity: 1.0;
       }
       100% {
-        transform: translateY(-35%);
+        transform: scale(0.88) translate3d(-6%, -4%, 0);
+        opacity: 0.85;
       }
     }
 
-    /* Micro-fine analogue grain for smooth organic dithering */
+    @keyframes geminiDrift2 {
+      0% {
+        transform: translate3d(22%, 8%, 0) scale(1.05);
+      }
+      50% {
+        transform: translate3d(-18%, -10%, 0) scale(0.96);
+      }
+      100% {
+        transform: translate3d(22%, 8%, 0) scale(1.05);
+      }
+    }
+
+    @keyframes geminiDriftVertical {
+      0% {
+        transform: translateY(-22%) scale(0.98);
+      }
+      50% {
+        transform: translateY(22%) scale(1.05);
+      }
+      100% {
+        transform: translateY(-22%) scale(0.98);
+      }
+    }
+
+    /* Micro-fine analogue grain for smooth organic dithering (prevents 8-bit OLED banding) */
     .noise-overlay {
       position: absolute;
       inset: 0;
@@ -188,12 +210,12 @@
 <body>
   <div class="gradient-container">
     <div class="blur-wrapper">
-      <div class="orb orb-1"></div>
-      <div class="orb orb-2"></div>
-      <div class="orb orb-3"></div>
-      <div class="orb orb-4"></div>
-      <div class="orb orb-5"></div>
-      <div class="orb orb-ambient"></div>
+      <div class="orb orb-cyan-blue"></div>
+      <div class="orb orb-violet-pink"></div>
+      <div class="orb orb-atmosphere"></div>
+      <div class="orb orb-neural-core"></div>
+      <div class="orb orb-coral-amber"></div>
+      <div class="orb orb-emerald-teal"></div>
     </div>
     <div class="noise-overlay"></div>
   </div>

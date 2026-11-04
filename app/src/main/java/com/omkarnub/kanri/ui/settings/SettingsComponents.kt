@@ -643,7 +643,14 @@ fun ThemePreviewCard(
 fun getShaderGradientBrush(type: GlassBackgroundType): Brush {
     return when (type) {
         GlassBackgroundType.AURORA -> Brush.linearGradient(
-            colors = listOf(Color(0xFF0F172A), Color(0xFF1E1B4B), Color(0xFF064E3B), Color(0xFF0F172A))
+            colors = listOf(
+                Color(0xFF07090E),
+                Color(0xFF1A73E8),
+                Color(0xFF00E5FF),
+                Color(0xFF7C3AED),
+                Color(0xFFD946EF),
+                Color(0xFF07090E)
+            )
         )
         GlassBackgroundType.GRAIN_GRADIENT -> Brush.linearGradient(
             colors = listOf(Color(0xFF18181B), Color(0xFF27272A), Color(0xFF3F3F46), Color(0xFF18181B))
@@ -671,7 +678,7 @@ fun getShaderGradientBrush(type: GlassBackgroundType): Brush {
 
 fun getShaderDescription(type: GlassBackgroundType): String {
     return when (type) {
-        GlassBackgroundType.AURORA -> "Fluid dual-frequency iridescent waves"
+        GlassBackgroundType.AURORA -> "Gemini mobile neural aurora with cyan, cobalt & fuchsia ribbons"
         GlassBackgroundType.GRAIN_GRADIENT -> "Film-grade atmospheric grain"
         GlassBackgroundType.HERO_GEOMETRIC -> "Precision isometric low-poly geometry"
         GlassBackgroundType.PRISM_GRADIENT -> "Dynamic refractive glass caustics"

@@ -1130,7 +1130,7 @@ Behind all frosted surfaces runs a 3-layer visual backdrop composition:
 ##### 8 Dynamic Background Shaders (`GlassBackgroundType`)
 Users can choose between 8 hardware-accelerated animated backgrounds loaded from `android_asset/backgrounds/`:
 
-1. **Gradient Aura (`aurora.html`)**: Swirling organic gradient fields with slow harmonic oscillations.
+1. **Gemini Aurora (`aurora.html`)**: Mobile Google Gemini neural aurora effect featuring glowing electric blue, radiant cyan, violet, and fuchsia ribbons with warm coral/amber accents and an incandescent living core.
 2. **Grain Gradient (`grain_gradient.html`)**: Diffuse multi-point color blurs with heavy organic analogue noise.
 3. **Hero Geometric (`hero_geometric.html`)**: Futuristic isometric geometric planes and floating translucent polygons.
 4. **Prism Swirl (`prism_gradient.html`)**: High-saturation chromatic dispersion swirls with fluid motion.

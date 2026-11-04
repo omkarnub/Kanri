@@ -16,7 +16,7 @@ The settings architecture adheres to:
    - **Themes Sub-Window** (`ThemeSettingsScreen`):
      - Visual phone preview cards for `System`, `Light`, `Dark`, `AMOLED`, and `Glass`.
      - When `Glass` is selected:
-       - **Live Shader Backgrounds**: 8 animated WebGL shaders displayed **side by side in 2 columns** (`Aurora`, `Grain Gradient`, `Hero Geometric`, `Prism Gradient`, `Cloud Shader`, `Ink Ridges`, `Fuji Sakura`, `Sumi-e Mist`).
+       - **Live Shader Backgrounds**: 8 animated WebGL shaders displayed **side by side in 2 columns** (`Gemini Aurora`, `Grain Gradient`, `Hero Geometric`, `Prism Gradient`, `Cloud Shader`, `Ink Ridges`, `Fuji Sakura`, `Sumi-e Mist`).
        - **Customise Glass Components** action row navigating to `GlassCustomizerScreen`.
    - **App Launcher Icon**: Toggle between Dark and Light activity aliases with confirmation dialog.
 
