@@ -5,6 +5,17 @@ All notable changes to Kanri will be documented in this file.
 The format is based on [Keep a Changelog](https://keepachangelog.com/en/1.0.0/),
 and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0.html).
 
+## [1.2.2] - 2026-11-04
+
+### Changed
+- **Gemini Aurora Multi-Color Fluid Orbs with In-Place Chromatic Morphing**:
+  - Restored the iconic multi-color ambient spatial distribution across the entire screen so all 3 colors are visible and actively mixing simultaneously at all times.
+  - Positioned distinct floating, rotating Gaussian orbs across the screen:
+    - **Cycle 1**: Lime (`#7cff67`) on the top-left, Turquoise (`#22d3c5`) on the top-right and center, and Electric Violet (`#8f5cff`) anchoring the bottom and ambient diffusion.
+    - **Smooth Transition**: Each orb smoothly morphs in-place over a 4–5s window into **Cycle 2**: Coral (`#ff8a5c`), Pink (`#ff5c8a`), and Violet (`#8a5cff`).
+    - Continually cycles seamlessly without ever collapsing to a single tint or losing the multi-colored glass aura.
+- Bumped application version to `1.2.2` (Build 7).
+
 ## [1.2.1] - 2026-11-04
 
 ### Changed
