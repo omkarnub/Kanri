@@ -47,6 +47,11 @@ enum class WalletFilter(val displayName: String) {
     TRANSFERS("Transfers")
 }
 
+enum class SearchFilterSheetTab {
+    FILTERS,
+    SORT
+}
+
 data class SearchUiState(
     val query: String = "",
     val typeFilter: TransactionTypeFilter = TransactionTypeFilter.ALL,

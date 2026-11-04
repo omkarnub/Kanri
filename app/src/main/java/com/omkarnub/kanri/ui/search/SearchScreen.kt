@@ -13,6 +13,7 @@ import androidx.compose.foundation.layout.Column
 import androidx.compose.foundation.layout.PaddingValues
 import androidx.compose.foundation.layout.Row
 import androidx.compose.foundation.layout.Spacer
+import androidx.compose.foundation.layout.fillMaxHeight
 import androidx.compose.foundation.layout.fillMaxSize
 import androidx.compose.foundation.layout.fillMaxWidth
 import androidx.compose.foundation.layout.height
@@ -28,10 +29,12 @@ import androidx.compose.foundation.text.KeyboardActions
 import androidx.compose.foundation.text.KeyboardOptions
 import androidx.compose.material.icons.Icons
 import androidx.compose.material.icons.automirrored.filled.ArrowBack
+import androidx.compose.material.icons.automirrored.filled.Sort
 import androidx.compose.material.icons.filled.Close
 import androidx.compose.material.icons.filled.Search
 import androidx.compose.material.icons.filled.SearchOff
 import androidx.compose.material.icons.filled.Tune
+import androidx.compose.ui.text.style.TextAlign
 import androidx.compose.material3.Badge
 import androidx.compose.material3.BadgedBox
 import androidx.compose.material3.Card
@@ -91,6 +94,7 @@ fun SearchScreen(
 ) {
     val uiState by viewModel.uiState.collectAsState()
     var showFilterSheet by remember { mutableStateOf(false) }
+    var filterSheetInitialTab by remember { mutableStateOf(SearchFilterSheetTab.FILTERS) }
     var selectedTransactionForCategory by remember { mutableStateOf<TransactionWithCategory?>(null) }
     var lendingEntryForTransaction by remember { mutableStateOf<TransactionWithCategory?>(null) }
     val haptics = rememberKanriHaptics()
@@ -186,6 +190,7 @@ fun SearchScreen(
                 actions = {
                     IconButton(onClick = {
                         haptics.click()
+                        filterSheetInitialTab = SearchFilterSheetTab.FILTERS
                         showFilterSheet = true
                     }) {
                         if (uiState.activeFilterCount > 0) {
@@ -228,8 +233,9 @@ fun SearchScreen(
             // Quick Filter Chips Bar
             QuickFilterChipsRow(
                 uiState = uiState,
-                onOpenFilterSheet = {
+                onOpenFilterSheet = { tab ->
                     haptics.click()
+                    filterSheetInitialTab = tab
                     showFilterSheet = true
                 },
                 onToggleType = {
@@ -335,6 +341,7 @@ fun SearchScreen(
     if (showFilterSheet) {
         SearchFilterSheet(
             uiState = uiState,
+            initialTab = filterSheetInitialTab,
             onDismiss = { showFilterSheet = false },
             onTypeSelect = { viewModel.setTypeFilter(it) },
             onDatePresetSelect = { viewModel.setDatePreset(it) },
@@ -376,11 +383,13 @@ fun SearchScreen(
 @Composable
 private fun QuickFilterChipsRow(
     uiState: SearchUiState,
-    onOpenFilterSheet: () -> Unit,
+    onOpenFilterSheet: (SearchFilterSheetTab) -> Unit,
     onToggleType: () -> Unit,
     onToggleWallet: () -> Unit,
     onClearAll: () -> Unit
 ) {
+    val haptics = rememberKanriHaptics()
+
     Row(
         modifier = Modifier
             .fillMaxWidth()
@@ -389,175 +398,252 @@ private fun QuickFilterChipsRow(
         horizontalArrangement = Arrangement.spacedBy(8.dp),
         verticalAlignment = Alignment.CenterVertically
     ) {
-        // Quick Filters Button
-        Surface(
-            modifier = Modifier.clickable(onClick = onOpenFilterSheet),
-            shape = RoundedCornerShape(8.dp),
-            color = if (uiState.activeFilterCount > 0) MaterialTheme.colorScheme.primaryContainer else MaterialTheme.colorScheme.surfaceVariant,
-            border = BorderStroke(
-                1.dp,
-                if (uiState.activeFilterCount > 0) MaterialTheme.colorScheme.primary else MaterialTheme.colorScheme.outlineVariant
-            )
+        // 1. Quick Filters Button
+        val isFilterActive = uiState.activeFilterCount > 0
+        KanriGlassCard(
+            modifier = Modifier.height(36.dp),
+            shape = RoundedCornerShape(10.dp),
+            level = if (isFilterActive) GlassLevel.Strong else GlassLevel.Flat,
+            onClick = {
+                onOpenFilterSheet(SearchFilterSheetTab.FILTERS)
+            }
         ) {
-            Row(
-                modifier = Modifier.padding(horizontal = 10.dp, vertical = 6.dp),
-                verticalAlignment = Alignment.CenterVertically
+            Box(
+                modifier = Modifier
+                    .fillMaxHeight()
+                    .padding(horizontal = 12.dp),
+                contentAlignment = Alignment.Center
             ) {
-                Icon(
-                    imageVector = Icons.Default.Tune,
-                    contentDescription = null,
-                    tint = if (uiState.activeFilterCount > 0) MaterialTheme.colorScheme.primary else MaterialTheme.colorScheme.onSurfaceVariant,
-                    modifier = Modifier.size(14.dp)
-                )
-                Spacer(modifier = Modifier.width(6.dp))
-                Text(
-                    text = if (uiState.activeFilterCount > 0) "Filters (${uiState.activeFilterCount})" else "Filters",
-                    style = MaterialTheme.typography.labelMedium,
-                    fontWeight = FontWeight.SemiBold,
-                    color = if (uiState.activeFilterCount > 0) MaterialTheme.colorScheme.primary else MaterialTheme.colorScheme.onSurface
-                )
+                Row(
+                    verticalAlignment = Alignment.CenterVertically,
+                    horizontalArrangement = Arrangement.Center
+                ) {
+                    Icon(
+                        imageVector = Icons.Default.Tune,
+                        contentDescription = "Filters",
+                        tint = if (isFilterActive) MaterialTheme.colorScheme.primary else MaterialTheme.colorScheme.onSurfaceVariant,
+                        modifier = Modifier.size(15.dp)
+                    )
+                    Spacer(modifier = Modifier.width(6.dp))
+                    Text(
+                        text = if (isFilterActive) "Filters (${uiState.activeFilterCount})" else "Filters",
+                        style = MaterialTheme.typography.labelMedium,
+                        fontWeight = FontWeight.SemiBold,
+                        color = if (isFilterActive) MaterialTheme.colorScheme.primary else MaterialTheme.colorScheme.onSurface,
+                        textAlign = TextAlign.Center
+                    )
+                }
             }
         }
 
-        // Type Filter Chip
+        // 2. Direct Sort Order Launcher (1-tap fast access to sort!)
+        val isSortCustom = uiState.sortOption != SortOption.DATE_DESC
+        KanriGlassCard(
+            modifier = Modifier.height(36.dp),
+            shape = RoundedCornerShape(10.dp),
+            level = if (isSortCustom) GlassLevel.Strong else GlassLevel.Flat,
+            onClick = {
+                onOpenFilterSheet(SearchFilterSheetTab.SORT)
+            }
+        ) {
+            Box(
+                modifier = Modifier
+                    .fillMaxHeight()
+                    .padding(horizontal = 12.dp),
+                contentAlignment = Alignment.Center
+            ) {
+                Row(
+                    verticalAlignment = Alignment.CenterVertically,
+                    horizontalArrangement = Arrangement.Center
+                ) {
+                    Icon(
+                        imageVector = Icons.AutoMirrored.Filled.Sort,
+                        contentDescription = "Sort",
+                        tint = if (isSortCustom) MaterialTheme.colorScheme.primary else MaterialTheme.colorScheme.onSurfaceVariant,
+                        modifier = Modifier.size(15.dp)
+                    )
+                    Spacer(modifier = Modifier.width(6.dp))
+                    Text(
+                        text = when (uiState.sortOption) {
+                            SortOption.DATE_DESC -> "Sort: Newest"
+                            SortOption.DATE_ASC -> "Sort: Oldest"
+                            SortOption.AMOUNT_DESC -> "Sort: Highest"
+                            SortOption.AMOUNT_ASC -> "Sort: Lowest"
+                        },
+                        style = MaterialTheme.typography.labelMedium,
+                        fontWeight = FontWeight.SemiBold,
+                        color = if (isSortCustom) MaterialTheme.colorScheme.primary else MaterialTheme.colorScheme.onSurface,
+                        textAlign = TextAlign.Center
+                    )
+                }
+            }
+        }
+
+        // 3. Type Filter Chip
         val isTypeActive = uiState.typeFilter != TransactionTypeFilter.ALL
-        FilterChip(
-            selected = isTypeActive,
-            onClick = onToggleType,
-            label = {
+        KanriGlassCard(
+            modifier = Modifier.height(36.dp),
+            shape = RoundedCornerShape(10.dp),
+            level = if (isTypeActive) GlassLevel.Strong else GlassLevel.Flat,
+            onClick = onToggleType
+        ) {
+            Box(
+                modifier = Modifier
+                    .fillMaxHeight()
+                    .padding(horizontal = 12.dp),
+                contentAlignment = Alignment.Center
+            ) {
                 Text(
                     text = when (uiState.typeFilter) {
                         TransactionTypeFilter.ALL -> "Type: All"
                         TransactionTypeFilter.DEBIT -> "Spent Only"
                         TransactionTypeFilter.CREDIT -> "Received Only"
-                    }
+                    },
+                    style = MaterialTheme.typography.labelMedium,
+                    fontWeight = if (isTypeActive) FontWeight.Bold else FontWeight.Medium,
+                    color = if (isTypeActive) MaterialTheme.colorScheme.primary else MaterialTheme.colorScheme.onSurfaceVariant,
+                    textAlign = TextAlign.Center
                 )
-            },
-            colors = FilterChipDefaults.filterChipColors(
-                selectedContainerColor = MaterialTheme.colorScheme.primary,
-                selectedLabelColor = MaterialTheme.colorScheme.onPrimary,
-                containerColor = MaterialTheme.colorScheme.surfaceVariant,
-                labelColor = MaterialTheme.colorScheme.onSurfaceVariant
-            ),
-            border = FilterChipDefaults.filterChipBorder(
-                enabled = true,
-                selected = isTypeActive,
-                borderColor = MaterialTheme.colorScheme.outlineVariant,
-                selectedBorderColor = MaterialTheme.colorScheme.primary
-            )
-        )
+            }
+        }
 
-        // Wallet Filter Chip
+        // 4. Wallet Filter Chip
         val isWalletActive = uiState.walletFilter != WalletFilter.ALL
-        FilterChip(
-            selected = isWalletActive,
-            onClick = onToggleWallet,
-            label = {
+        KanriGlassCard(
+            modifier = Modifier.height(36.dp),
+            shape = RoundedCornerShape(10.dp),
+            level = if (isWalletActive) GlassLevel.Strong else GlassLevel.Flat,
+            onClick = onToggleWallet
+        ) {
+            Box(
+                modifier = Modifier
+                    .fillMaxHeight()
+                    .padding(horizontal = 12.dp),
+                contentAlignment = Alignment.Center
+            ) {
                 Text(
                     text = when (uiState.walletFilter) {
                         WalletFilter.ALL -> "Wallet: All"
                         WalletFilter.CASH -> "Cash"
                         WalletFilter.ONLINE -> "Online"
                         WalletFilter.TRANSFERS -> "Transfers"
-                    }
+                    },
+                    style = MaterialTheme.typography.labelMedium,
+                    fontWeight = if (isWalletActive) FontWeight.Bold else FontWeight.Medium,
+                    color = if (isWalletActive) MaterialTheme.colorScheme.primary else MaterialTheme.colorScheme.onSurfaceVariant,
+                    textAlign = TextAlign.Center
                 )
-            },
-            colors = FilterChipDefaults.filterChipColors(
-                selectedContainerColor = MaterialTheme.colorScheme.primary,
-                selectedLabelColor = MaterialTheme.colorScheme.onPrimary,
-                containerColor = MaterialTheme.colorScheme.surfaceVariant,
-                labelColor = MaterialTheme.colorScheme.onSurfaceVariant
-            ),
-            border = FilterChipDefaults.filterChipBorder(
-                enabled = true,
-                selected = isWalletActive,
-                borderColor = MaterialTheme.colorScheme.outlineVariant,
-                selectedBorderColor = MaterialTheme.colorScheme.primary
-            )
-        )
+            }
+        }
 
-        // Date Preset Chip
+        // 5. Date Preset Chip
         if (uiState.datePreset != DateRangePreset.ALL_TIME) {
-            FilterChip(
-                selected = true,
-                onClick = onOpenFilterSheet,
-                label = { Text(uiState.datePreset.displayName) },
-                colors = FilterChipDefaults.filterChipColors(
-                    selectedContainerColor = MaterialTheme.colorScheme.primary,
-                    selectedLabelColor = MaterialTheme.colorScheme.onPrimary
-                ),
-                border = FilterChipDefaults.filterChipBorder(
-                    enabled = true,
-                    selected = true,
-                    borderColor = MaterialTheme.colorScheme.primary,
-                    selectedBorderColor = MaterialTheme.colorScheme.primary
-                )
-            )
-        }
-
-        // Category Filter Chip
-        if (uiState.selectedCategoryIds.isNotEmpty()) {
-            FilterChip(
-                selected = true,
-                onClick = onOpenFilterSheet,
-                label = { Text("Categories (${uiState.selectedCategoryIds.size})") },
-                colors = FilterChipDefaults.filterChipColors(
-                    selectedContainerColor = MaterialTheme.colorScheme.primary,
-                    selectedLabelColor = MaterialTheme.colorScheme.onPrimary
-                ),
-                border = FilterChipDefaults.filterChipBorder(
-                    enabled = true,
-                    selected = true,
-                    borderColor = MaterialTheme.colorScheme.primary,
-                    selectedBorderColor = MaterialTheme.colorScheme.primary
-                )
-            )
-        }
-
-        // Amount Filter Chip
-        if (uiState.amountPreset != AmountRangePreset.ALL) {
-            FilterChip(
-                selected = true,
-                onClick = onOpenFilterSheet,
-                label = { Text(uiState.amountPreset.displayName) },
-                colors = FilterChipDefaults.filterChipColors(
-                    selectedContainerColor = MaterialTheme.colorScheme.primary,
-                    selectedLabelColor = MaterialTheme.colorScheme.onPrimary
-                ),
-                border = FilterChipDefaults.filterChipBorder(
-                    enabled = true,
-                    selected = true,
-                    borderColor = MaterialTheme.colorScheme.primary,
-                    selectedBorderColor = MaterialTheme.colorScheme.primary
-                )
-            )
-        }
-
-        // Clear All Chip
-        if (uiState.activeFilterCount > 0 || uiState.query.isNotEmpty()) {
-            Surface(
-                modifier = Modifier.clickable(onClick = onClearAll),
-                shape = RoundedCornerShape(8.dp),
-                color = MaterialTheme.colorScheme.surfaceVariant,
-                border = BorderStroke(1.dp, MaterialTheme.colorScheme.outlineVariant)
+            KanriGlassCard(
+                modifier = Modifier.height(36.dp),
+                shape = RoundedCornerShape(10.dp),
+                level = GlassLevel.Strong,
+                onClick = { onOpenFilterSheet(SearchFilterSheetTab.FILTERS) }
             ) {
-                Row(
-                    modifier = Modifier.padding(horizontal = 8.dp, vertical = 6.dp),
-                    verticalAlignment = Alignment.CenterVertically
+                Box(
+                    modifier = Modifier
+                        .fillMaxHeight()
+                        .padding(horizontal = 12.dp),
+                    contentAlignment = Alignment.Center
                 ) {
-                    Icon(
-                        Icons.Default.Close,
-                        contentDescription = "Clear all",
-                        tint = MaterialTheme.colorScheme.onSurfaceVariant,
-                        modifier = Modifier.size(12.dp)
-                    )
-                    Spacer(modifier = Modifier.width(4.dp))
                     Text(
-                        text = "Reset",
-                        style = MaterialTheme.typography.labelSmall,
-                        color = MaterialTheme.colorScheme.onSurface,
-                        fontWeight = FontWeight.Bold
+                        text = uiState.datePreset.displayName,
+                        style = MaterialTheme.typography.labelMedium,
+                        fontWeight = FontWeight.Bold,
+                        color = MaterialTheme.colorScheme.primary,
+                        textAlign = TextAlign.Center
                     )
+                }
+            }
+        }
+
+        // 6. Category Filter Chip
+        if (uiState.selectedCategoryIds.isNotEmpty()) {
+            KanriGlassCard(
+                modifier = Modifier.height(36.dp),
+                shape = RoundedCornerShape(10.dp),
+                level = GlassLevel.Strong,
+                onClick = { onOpenFilterSheet(SearchFilterSheetTab.FILTERS) }
+            ) {
+                Box(
+                    modifier = Modifier
+                        .fillMaxHeight()
+                        .padding(horizontal = 12.dp),
+                    contentAlignment = Alignment.Center
+                ) {
+                    Text(
+                        text = "Categories (${uiState.selectedCategoryIds.size})",
+                        style = MaterialTheme.typography.labelMedium,
+                        fontWeight = FontWeight.Bold,
+                        color = MaterialTheme.colorScheme.primary,
+                        textAlign = TextAlign.Center
+                    )
+                }
+            }
+        }
+
+        // 7. Amount Filter Chip
+        if (uiState.amountPreset != AmountRangePreset.ALL) {
+            KanriGlassCard(
+                modifier = Modifier.height(36.dp),
+                shape = RoundedCornerShape(10.dp),
+                level = GlassLevel.Strong,
+                onClick = { onOpenFilterSheet(SearchFilterSheetTab.FILTERS) }
+            ) {
+                Box(
+                    modifier = Modifier
+                        .fillMaxHeight()
+                        .padding(horizontal = 12.dp),
+                    contentAlignment = Alignment.Center
+                ) {
+                    Text(
+                        text = uiState.amountPreset.displayName,
+                        style = MaterialTheme.typography.labelMedium,
+                        fontWeight = FontWeight.Bold,
+                        color = MaterialTheme.colorScheme.primary,
+                        textAlign = TextAlign.Center
+                    )
+                }
+            }
+        }
+
+        // 8. Clear / Reset All Chip
+        if (uiState.activeFilterCount > 0 || uiState.query.isNotEmpty() || isSortCustom) {
+            KanriGlassCard(
+                modifier = Modifier.height(36.dp),
+                shape = RoundedCornerShape(10.dp),
+                level = GlassLevel.Flat,
+                onClick = onClearAll
+            ) {
+                Box(
+                    modifier = Modifier
+                        .fillMaxHeight()
+                        .padding(horizontal = 10.dp),
+                    contentAlignment = Alignment.Center
+                ) {
+                    Row(
+                        verticalAlignment = Alignment.CenterVertically,
+                        horizontalArrangement = Arrangement.Center
+                    ) {
+                        Icon(
+                            imageVector = Icons.Default.Close,
+                            contentDescription = "Clear all",
+                            tint = MaterialTheme.colorScheme.onSurfaceVariant,
+                            modifier = Modifier.size(13.dp)
+                        )
+                        Spacer(modifier = Modifier.width(4.dp))
+                        Text(
+                            text = "Reset",
+                            style = MaterialTheme.typography.labelSmall,
+                            color = MaterialTheme.colorScheme.onSurface,
+                            fontWeight = FontWeight.Bold,
+                            textAlign = TextAlign.Center
+                        )
+                    }
                 }
             }
         }

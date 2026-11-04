@@ -107,11 +107,9 @@ import com.omkarnub.kanri.ui.common.KanriGlassDatePickerDialog
 import com.omkarnub.kanri.ui.common.KanriGlassDialog
 import com.omkarnub.kanri.ui.common.KanriGlassPill
 import com.omkarnub.kanri.ui.common.KanriModalBottomSheet
-import com.omkarnub.kanri.ui.common.LocalHazeState
 import com.omkarnub.kanri.ui.common.kanriPrimaryButtonColors
 import androidx.compose.ui.graphics.Color
 import com.omkarnub.kanri.ui.theme.LocalKanriGlass
-import dev.chrisbanes.haze.hazeEffect
 import com.omkarnub.kanri.ui.theme.ExpenseRed
 import com.omkarnub.kanri.ui.theme.IncomeGreen
 import com.omkarnub.kanri.util.CurrencyUtils
@@ -154,24 +152,9 @@ fun TransactionDetailScreen(
     var showCategoryPickerSheet by remember { mutableStateOf(false) }
 
     val tokens = LocalKanriGlass.current
-    val effectiveHaze = LocalHazeState.current
 
     val screenBgModifier = if (tokens != null) {
-        if (effectiveHaze != null) {
-            Modifier
-                .hazeEffect(
-                    state = effectiveHaze,
-                    style = dev.chrisbanes.haze.HazeStyle(
-                        backgroundColor = if (tokens.isDark) Color(0xFF0C0D12).copy(alpha = 0.92f) else Color(0xFFF7F5F0).copy(alpha = 0.94f),
-                        tint = dev.chrisbanes.haze.HazeTint(if (tokens.isDark) Color(0xFF000000).copy(alpha = 0.45f) else Color.White.copy(alpha = 0.40f)),
-                        blurRadius = 36.dp,
-                        noiseFactor = 0.04f
-                    )
-                )
-                .background(if (tokens.isDark) Color(0xFF0C0D12).copy(alpha = 0.94f) else Color(0xFFF7F5F0).copy(alpha = 0.95f))
-        } else {
-            Modifier.background(if (tokens.isDark) Color(0xFF0C0D12).copy(alpha = 0.98f) else Color(0xFFF7F5F0).copy(alpha = 0.98f))
-        }
+        Modifier.background(Color.Transparent)
     } else {
         Modifier.background(MaterialTheme.colorScheme.background)
     }
