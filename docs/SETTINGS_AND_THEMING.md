@@ -16,7 +16,9 @@ The settings architecture adheres to:
    - **Themes Sub-Window** (`ThemeSettingsScreen`):
      - Visual phone preview cards for `System`, `Light`, `Dark`, `AMOLED`, and `Glass`.
      - When `Glass` is selected:
-       - **Live Shader Backgrounds**: 8 animated WebGL shaders displayed **side by side in 2 columns** (`Gemini Aurora`, `Grain Gradient`, `Hero Geometric`, `Prism Gradient`, `Cloud Shader`, `Ink Ridges`, `Fuji Sakura`, `Sumi-e Mist`).
+       - **Live Shader Backgrounds**: 10 animated WebGL / Canvas backgrounds displayed **side by side in 2 columns** (`Gemini Aurora`, `Grain Gradient`, `Hero Geometric`, `Prism Swirl`, `Cloudscape`, `Ink Ridges`, `Fuji & Sakura`, `Sumi-e Mist`, `Thistle Portico`, `Still Sunset Meadow`).
+         - **Thistle Portico**: High-performance Canvas 2D scene with pointed Gothic arch, castle view, wisteria racemes swaying in the wind, falling petals, and luminous light shafts.
+         - **Still Sunset Meadow**: 3D voxel landscape with interactive grass parting, blocky flowers, rolling hills, and a dynamic real-world day/sunset/night cycle driven by the user's local time zone.
        - **Customise Glass Components** action row navigating to `GlassCustomizerScreen`.
    - **App Launcher Icon**: Toggle between Dark and Light activity aliases with confirmation dialog.
 

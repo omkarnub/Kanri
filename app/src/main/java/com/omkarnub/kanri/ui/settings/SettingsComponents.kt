@@ -638,7 +638,7 @@ fun ThemePreviewCard(
 }
 
 // =============================================================================
-// 6. SHADER PREVIEW CARD (8 LIVE BACKGROUNDS)
+// 6. SHADER PREVIEW CARD (10 LIVE BACKGROUNDS)
 // =============================================================================
 fun getShaderGradientBrush(type: GlassBackgroundType): Brush {
     return when (type) {
@@ -674,6 +674,12 @@ fun getShaderGradientBrush(type: GlassBackgroundType): Brush {
         GlassBackgroundType.SUMI_E_MIST -> Brush.linearGradient(
             colors = listOf(Color(0xFF1C1917), Color(0xFF292524), Color(0xFF44403C), Color(0xFF1C1917))
         )
+        GlassBackgroundType.THISTLE_PORTICO -> Brush.linearGradient(
+            colors = listOf(Color(0xFF5E3AAE), Color(0xFF8A5CC1), Color(0xFFD4A9E2), Color(0xFFF3D0EB), Color(0xFFEEE6F8))
+        )
+        GlassBackgroundType.SUNSET_MEADOW -> Brush.linearGradient(
+            colors = listOf(Color(0xFFE2A8AE), Color(0xFFF8A68E), Color(0xFFFFCB8C), Color(0xFF8AAA18), Color(0xFF172604))
+        )
     }
 }
 
@@ -687,6 +693,8 @@ fun getShaderDescription(type: GlassBackgroundType): String {
         GlassBackgroundType.INK_RIDGES -> "Japanese ink wash topographical flow"
         GlassBackgroundType.FUJI_SAKURA -> "Ethereal sakura dawn over Mt. Fuji"
         GlassBackgroundType.SUMI_E_MIST -> "Minimalist monochrome ink diffusion"
+        GlassBackgroundType.THISTLE_PORTICO -> "Gothic stone portico in wisteria bloom with castle vista & drifting petals"
+        GlassBackgroundType.SUNSET_MEADOW -> "3D voxel meadow with interactive grass, voxel flora & dynamic day/sunset/night cycle"
     }
 }
 

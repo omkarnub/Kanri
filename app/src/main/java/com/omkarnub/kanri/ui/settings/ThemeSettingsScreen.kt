@@ -222,12 +222,13 @@ fun ThemeSettingsScreen(
                             )
                         }
 
-                        // 8 Shader cards side by side (2 columns)
+                        // 10 Shader cards side by side (2 columns)
                         val shaderPairs: List<Pair<GlassBackgroundType, GlassBackgroundType>> = listOf(
                             GlassBackgroundType.AURORA to GlassBackgroundType.GRAIN_GRADIENT,
                             GlassBackgroundType.HERO_GEOMETRIC to GlassBackgroundType.PRISM_GRADIENT,
                             GlassBackgroundType.CLOUD_SHADER to GlassBackgroundType.INK_RIDGES,
-                            GlassBackgroundType.FUJI_SAKURA to GlassBackgroundType.SUMI_E_MIST
+                            GlassBackgroundType.FUJI_SAKURA to GlassBackgroundType.SUMI_E_MIST,
+                            GlassBackgroundType.THISTLE_PORTICO to GlassBackgroundType.SUNSET_MEADOW
                         )
 
                         Column(verticalArrangement = Arrangement.spacedBy(10.dp)) {

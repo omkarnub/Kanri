@@ -1,0 +1,2653 @@
+<!DOCTYPE html>
+<html>
+<head>
+  <meta charset="utf-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1, user-scalable=no">
+  <style>
+    * { margin: 0; padding: 0; box-sizing: border-box; }
+    html, body {
+      width: 100%;
+      height: 100%;
+      overflow: hidden;
+      background: #EEE6F8;
+      pointer-events: none;
+      user-select: none;
+      touch-action: none;
+    }
+    #root {
+      position: absolute;
+      inset: 0;
+      width: 100vw;
+      height: 100vh;
+      overflow: hidden;
+      background: #EEE6F8;
+    }
+    #stage {
+      position: absolute;
+      inset: 0;
+      width: 100%;
+      height: 100%;
+      display: block;
+    }
+  </style>
+</head>
+<body>
+<div id="root">
+  <canvas id="stage"></canvas>
+</div>
+<script>
+var __defProp = Object.defineProperty;
+var __defNormalProp = (obj, key, value) => key in obj ? __defProp(obj, key, { enumerable: true, configurable: true, writable: true, value }) : obj[key] = value;
+var __publicField = (obj, key, value) => __defNormalProp(obj, typeof key !== "symbol" ? key + "" : key, value);
+(function() {
+  const DEFAULT_PLACEMENT = { x: 0, y: 0, angle: 0, tilt: 0 };
+  const DEFAULT_POINTER = { reach: 5, strength: 5, burst: true };
+  const DEFAULT_CLOUDS = { speed: 3, direction: "right" };
+  const DEFAULT_ADVANCED = {
+    seed: 7,
+    hueShift: 0,
+    lightColor: "#FFF8EF",
+    glow: 55,
+    haze: 50,
+    rays: 30,
+    motes: 36,
+    swayAngle: 3.5,
+    petalColor: "#F3D0EB"
+  };
+  const GROUND = "#EEE6F8";
+  const DEFAULTS = {
+    bloom: 5,
+    petals: 5,
+    petalSize: 14,
+    speed: 7.9,
+    breeze: 6.7,
+    windDirection: "left"
+  };
+  const REF_W = 1200;
+  const REF_H = 900;
+  const REF_ASPECT = REF_W / REF_H;
+  const INF = 1e5;
+  const TAU = Math.PI * 2;
+  const DEG = Math.PI / 180;
+  const LIGHT_X = 620;
+  const LIGHT_Y = 360;
+  const FAR = { x0: 320, y0: 20, x1: 940, y1: 770 };
+  const A_CX = 620;
+  const A_CY = 359;
+  const A_R = 296;
+  const A_OFF = 38;
+  const A_SPRING = 300;
+  const FLOOR_Y = 828;
+  const STEPS = [
+    [722, 727, 744, 190, 905],
+    [744, 751, 772, 172, 932],
+    [772, 780, 802, 155, 962],
+    [802, 810, 830, 136, 994]
+  ];
+  const LEFT_MASS = [
+    [-INF, -INF],
+    [620, -INF],
+    [620, 22],
+    [560, 26],
+    [507, 36],
+    [440, 50],
+    [406, 58],
+    [360, 88],
+    [330, 120],
+    [302, 168],
+    [285, 195],
+    [240, 212],
+    [200, 200],
+    [178, 236],
+    [152, 298],
+    [132, 360],
+    [118, 430],
+    [108, 500],
+    [98, 560],
+    [88, 622],
+    [76, 700],
+    [66, 800],
+    [50, 900],
+    [40, 1100],
+    [30, INF],
+    [-INF, INF]
+  ];
+  const RIGHT_MASS = [
+    [620, -INF],
+    [INF, -INF],
+    [INF, 540],
+    [1240, 535],
+    [1185, 520],
+    [1160, 470],
+    [1145, 420],
+    [1100, 398],
+    [1088, 340],
+    [1060, 305],
+    [1030, 290],
+    [1018, 250],
+    [1012, 150],
+    [980, 118],
+    [930, 100],
+    [870, 92],
+    [820, 78],
+    [770, 58],
+    [720, 38],
+    [670, 26],
+    [620, 22]
+  ];
+  const SPILL_R = [
+    [835, 180],
+    [900, 160],
+    [990, 168],
+    [1016, 220],
+    [1010, 282],
+    [950, 284],
+    [880, 280],
+    [840, 250]
+  ];
+  const BUSH_L = [
+    [-INF, 860],
+    [-20, 840],
+    [10, 780],
+    [40, 700],
+    [70, 642],
+    [106, 608],
+    [150, 598],
+    [200, 600],
+    [236, 618],
+    [262, 648],
+    [284, 690],
+    [292, 734],
+    [278, 774],
+    [240, 804],
+    [190, 822],
+    [120, 836],
+    [60, 862],
+    [30, 1e3],
+    [60, 1150],
+    [40, 1400],
+    [70, INF],
+    [-INF, INF]
+  ];
+  const BUSH_R = [
+    [968, 450],
+    [995, 420],
+    [1022, 426],
+    [1050, 446],
+    [1080, 472],
+    [1112, 502],
+    [1150, 534],
+    [1200, 556],
+    [1260, 540],
+    [INF, 520],
+    [INF, INF],
+    [1180, INF],
+    [1210, 1400],
+    [1200, 1150],
+    [1225, 1e3],
+    [1196, 858],
+    [1150, 840],
+    [1090, 826],
+    [1050, 798],
+    [990, 772],
+    [936, 748],
+    [916, 708],
+    [926, 640],
+    [944, 560],
+    [956, 500]
+  ];
+  const PINK_L = [
+    [364, 616],
+    [384, 596],
+    [410, 604],
+    [436, 590],
+    [470, 612],
+    [500, 632],
+    [522, 668],
+    [508, 702],
+    [380, 708],
+    [364, 690]
+  ];
+  const PINK_R = [
+    [688, 640],
+    [706, 606],
+    [736, 596],
+    [756, 572],
+    [790, 584],
+    [826, 570],
+    [866, 590],
+    [892, 626],
+    [900, 700],
+    [820, 720],
+    [720, 708],
+    [692, 690]
+  ];
+  const GAPS = [
+    [-170, 230, 520, 30],
+    [-470, 260, 500, 28],
+    [-780, 230, 520, 30],
+    [1390, 330, 520, 30],
+    [1690, 300, 500, 28],
+    [1990, 330, 520, 30]
+  ];
+  function gapDist(x, y) {
+    let d = INF;
+    for (const [cx, y0, y1, hw] of GAPS) {
+      const dx = Math.abs(x - cx) - hw, dy = Math.max(y0 - y, y - y1);
+      d = Math.min(d, dx > 0 || dy > 0 ? Math.hypot(Math.max(dx, 0), Math.max(dy, 0)) : Math.max(dx, dy));
+    }
+    return d;
+  }
+  const RACEMES = [
+    [553, 64, 72, 14, 0],
+    [567, 70, 46, 10, 3],
+    [690, 22, 82, 16, 3],
+    [712, 30, 58, 12, 0],
+    [292, 186, 122, 22, 0],
+    [268, 202, 96, 18, 3],
+    [313, 172, 70, 14, 0],
+    [248, 208, 60, 12, 1],
+    [143, 236, 96, 18, 0],
+    [159, 250, 60, 12, 3],
+    [112, 468, 74, 13, 3],
+    [98, 546, 56, 11, 0],
+    [778, 106, 166, 26, 0],
+    [801, 116, 110, 18, 3],
+    [757, 90, 80, 14, 0],
+    [930, 286, 96, 16, 3],
+    [947, 292, 62, 12, 0],
+    [1045, 140, 130, 22, 0],
+    [1063, 150, 90, 16, 3],
+    [988, 160, 90, 16, 1],
+    [1112, 300, 104, 18, 0]
+  ];
+  const clamp = (x, a = 0, b = 1) => x < a ? a : x > b ? b : x;
+  const lerp = (a, b, t) => a + (b - a) * t;
+  function hex(h) {
+    const n = parseInt(h.slice(1), 16);
+    return [n >> 16 & 255, n >> 8 & 255, n & 255];
+  }
+  function parseColor(c, fb) {
+    if (typeof c !== "string") return fb;
+    const s = c.trim();
+    if (/^#[0-9a-f]{3}$/i.test(s)) return [0, 1, 2].map((i) => parseInt(s[i + 1] + s[i + 1], 16));
+    if (/^#[0-9a-f]{6}([0-9a-f]{2})?$/i.test(s)) return hex(s.slice(0, 7));
+    const m = s.match(/rgba?\(([^)]+)\)/i);
+    if (m) {
+      const p = m[1].split(/[ ,/]+/).filter(Boolean).map(parseFloat);
+      if (p.length >= 3 && p.slice(0, 3).every(Number.isFinite)) return [p[0], p[1], p[2]];
+    }
+    return fb;
+  }
+  const css = (c, a = 1) => `rgba(${c[0] | 0},${c[1] | 0},${c[2] | 0},${a})`;
+  const mix = (a, b, t) => [lerp(a[0], b[0], t), lerp(a[1], b[1], t), lerp(a[2], b[2], t)];
+  function hueTurn(c, deg) {
+    if (!deg) return c;
+    const [r, g, b] = c;
+    const y = 0.299 * r + 0.587 * g + 0.114 * b;
+    const i = 0.596 * r - 0.274 * g - 0.322 * b;
+    const q = 0.211 * r - 0.523 * g + 0.312 * b;
+    const ca = Math.cos(deg * DEG), sa = Math.sin(deg * DEG);
+    const i2 = i * ca - q * sa, q2 = i * sa + q * ca;
+    return [
+      clamp(y + 0.956 * i2 + 0.621 * q2, 0, 255),
+      clamp(y - 0.272 * i2 - 0.647 * q2, 0, 255),
+      clamp(y - 1.106 * i2 + 1.703 * q2, 0, 255)
+    ];
+  }
+  const BASE = {
+    sky0: "#FEFDF9",
+    sky1: "#FBEDF5",
+    sky2: "#EEE7FB",
+    sky3: "#E2E3FB",
+    cloudBelly: "#EBC0E1",
+    cloudBody: "#F5D3EC",
+    cloudCrown: "#FCEAF5",
+    cloudPale: "#FCF0F6",
+    castleBody: "#E1E2FB",
+    castleLit: "#F3F2FE",
+    castleShade: "#C9CBF4",
+    spire: "#A9A3E6",
+    spireLit: "#C9C4F3",
+    castleWin: "#BDBBEC",
+    ground: "#D8DCFA",
+    groundLow: "#CED2F7",
+    wall: "#D3D7FA",
+    wallTop: "#E8EAFD",
+    tree: "#CDD1F6",
+    treeLit: "#DEE1FB",
+    stone: "#A99EDB",
+    stoneDark: "#968AD1",
+    stoneLit: "#BAADE0",
+    rimLit: "#CAB3E1",
+    ringFace: "#A49BD9",
+    ringMold: "#C7B5E1",
+    ringOuter: "#B5ADDD",
+    capL: "#A9A0DA",
+    capLTop: "#C5BCE3",
+    capLSide: "#D7C0DE",
+    shaftL: "#B7A9D9",
+    panelL: "#BAA9DC",
+    panelLine: "#9C90D0",
+    panelLit: "#CBBDE6",
+    sideL: "#DEC6E0",
+    plinthL: "#BFB0E1",
+    plinthLTop: "#D2C4EA",
+    capR: "#C6BBE0",
+    capRSide: "#E5D2E8",
+    shaftR: "#C9B6DC",
+    panelR: "#C0AEDB",
+    sideR: "#E6CFE6",
+    plinthR: "#D3C3E6",
+    plinthRSide: "#F6E9F0",
+    backR: "#F1E6FA",
+    landing: "#FCF5F4",
+    landingShade: "#D6C8EA",
+    tread: "#ECE0F2",
+    treadLit: "#FFF8F7",
+    riser: "#CBB9E3",
+    riserLit: "#DCCBEA",
+    riserCool: "#B4AAE4",
+    stepSide: "#A59ADC",
+    floor: "#C6B5E3",
+    floorLit: "#F9E9E9",
+    floorCool: "#B4A6E4",
+    seam: "#AA9ADB",
+    seamLit: "#FFF9F5",
+    shadow: "#8F7FD0",
+    stem: "#6A4AAE",
+    star: "#F7F4FF"
+  };
+  const RAMPS = [
+    ["#5E3AAE", "#7352BF", "#8462C3", "#9A7ED2", "#B094DC", "#CDB4E6", "#E8D3EF"],
+    ["#6F67CA", "#8377D2", "#9383D5", "#A69CDA", "#B8ABDE", "#CCBFE8", "#E0D6F2"],
+    ["#5F5BC8", "#6D6AD2", "#7E7DDB", "#9190E3", "#A4A4EA", "#BCBEF1", "#D7D9F8"],
+    ["#8A5CC1", "#A877CF", "#C291DA", "#D4A9E2", "#DFBDE9", "#EED3EF", "#F8E8F4"]
+  ];
+  const F_PURPLE = 0;
+  const F_LAV = 1;
+  const F_BLUE = 2;
+  const F_PINK = 3;
+  function makePalette(hue) {
+    const c = {};
+    for (const k of Object.keys(BASE)) c[k] = hueTurn(hex(BASE[k]), hue);
+    const rampRGB = RAMPS.map((r) => r.map((h) => hueTurn(hex(h), hue)));
+    return { c, rampRGB, ramp: rampRGB.map((r) => r.map((x) => css(x))) };
+  }
+  function rng(seed) {
+    let a = seed | 0;
+    return () => {
+      a = a + 1831565813 | 0;
+      let t = Math.imul(a ^ a >>> 15, 1 | a);
+      t = t + Math.imul(t ^ t >>> 7, 61 | t) ^ t;
+      return ((t ^ t >>> 14) >>> 0) / 4294967296;
+    };
+  }
+  function hash3(i, j, s) {
+    let h = Math.imul(i, 374761393) + Math.imul(j, 668265263) + Math.imul(s, 1442695041) | 0;
+    h = Math.imul(h ^ h >>> 13, 1274126177);
+    return h ^ h >>> 16;
+  }
+  function inPoly(p, x, y) {
+    let ins = false;
+    for (let i = 0, j = p.length - 1; i < p.length; j = i++) {
+      const [xi, yi] = p[i], [xj, yj] = p[j];
+      if (yi > y !== yj > y && x < (xj - xi) * (y - yi) / (yj - yi) + xi) ins = !ins;
+    }
+    return ins;
+  }
+  function edgeDist(p, x, y) {
+    let d = INF;
+    for (let i = 0, j = p.length - 1; i < p.length; j = i++) {
+      const [ax, ay] = p[j], [bx, by] = p[i];
+      const dx = bx - ax, dy = by - ay;
+      const t = clamp(((x - ax) * dx + (y - ay) * dy) / (dx * dx + dy * dy || 1));
+      d = Math.min(d, Math.hypot(x - ax - t * dx, y - ay - t * dy));
+    }
+    return d;
+  }
+  function mergeGroup(def, v) {
+    const out = { ...def };
+    if (v && typeof v === "object") {
+      for (const k of Object.keys(def)) {
+        const x = v[k];
+        if (typeof x === typeof def[k] && (typeof x !== "number" || Number.isFinite(x))) out[k] = x;
+      }
+    }
+    return out;
+  }
+  const num = (v, fb) => typeof v === "number" && Number.isFinite(v) ? v : fb;
+  function makeCanvas(w, h) {
+    const c = document.createElement("canvas");
+    c.width = Math.max(1, Math.ceil(w));
+    c.height = Math.max(1, Math.ceil(h));
+    return c;
+  }
+  function newLayer(box, res) {
+    const cv = makeCanvas((box.x1 - box.x0) * res, (box.y1 - box.y0) * res);
+    const g = cv.getContext("2d");
+    g.setTransform(res, 0, 0, res, -box.x0 * res, -box.y0 * res);
+    return [{ cv, box, res }, g];
+  }
+  function softDisc(g, x, y, r, c, a, soft) {
+    const gr = g.createRadialGradient(x, y, r * (1 - soft), x, y, r);
+    gr.addColorStop(0, css(c, a));
+    gr.addColorStop(1, css(c, 0));
+    g.fillStyle = gr;
+    g.beginPath();
+    g.arc(x, y, r, 0, TAU);
+    g.fill();
+  }
+  function rect(g, c, x0, y0, x1, y1, a = 1) {
+    g.fillStyle = css(c, a);
+    g.fillRect(x0, y0, x1 - x0, y1 - y0);
+  }
+  function poly(g, c, pts, a = 1) {
+    g.fillStyle = css(c, a);
+    g.beginPath();
+    g.moveTo(pts[0], pts[1]);
+    for (let i = 2; i < pts.length; i += 2) g.lineTo(pts[i], pts[i + 1]);
+    g.closePath();
+    g.fill();
+  }
+  function floret(p, x, y, r, a) {
+    const pr = r * 0.5, d = r * 0.5;
+    for (let k = 0; k < 4; k++) {
+      const px = x + Math.cos(a + k * Math.PI / 2) * d, py = y + Math.sin(a + k * Math.PI / 2) * d;
+      p.moveTo(px + pr, py);
+      p.arc(px, py, pr, 0, TAU);
+    }
+  }
+  function leaf(p, x, y, len, wid, ang) {
+    const c = Math.cos(ang), s = Math.sin(ang);
+    const tx = x + c * len, ty = y + s * len;
+    const mx = x + c * len * 0.45, my = y + s * len * 0.45;
+    p.moveTo(x, y);
+    p.quadraticCurveTo(mx - s * wid, my + c * wid, tx, ty);
+    p.quadraticCurveTo(mx + s * wid, my - c * wid, x, y);
+  }
+  function petalPath(p, x, y, s, a, notch) {
+    const c = Math.cos(a), sn = Math.sin(a);
+    const P = (u, v) => [x + (u * c - v * sn) * s, y + (u * sn + v * c) * s];
+    p.moveTo(...P(0, 0.5));
+    p.bezierCurveTo(...P(0.14, 0.42), ...P(0.42, 0.14), ...P(0.42, -0.12));
+    p.bezierCurveTo(...P(0.43, -0.36), ...P(0.3, -0.52), ...P(0.15, -0.5));
+    if (notch) {
+      p.lineTo(...P(0, -0.38));
+      p.lineTo(...P(-0.15, -0.5));
+    } else p.quadraticCurveTo(...P(0, -0.55), ...P(-0.15, -0.5));
+    p.bezierCurveTo(...P(-0.3, -0.52), ...P(-0.43, -0.36), ...P(-0.42, -0.12));
+    p.bezierCurveTo(...P(-0.42, 0.14), ...P(-0.14, 0.42), ...P(0, 0.5));
+  }
+  function paintSky(g, P, light, glowK) {
+    const { x0, y0, x1, y1 } = FAR;
+    const lg = g.createLinearGradient(0, y0, 0, y1);
+    lg.addColorStop(0, css(P.c.sky0));
+    lg.addColorStop(0.5, css(P.c.sky0));
+    lg.addColorStop(0.66, css(P.c.sky1));
+    lg.addColorStop(0.76, css(P.c.sky2));
+    lg.addColorStop(1, css(P.c.sky3));
+    g.fillStyle = lg;
+    g.fillRect(x0, y0, x1 - x0, y1 - y0);
+    softDisc(g, 850, 380, 170, P.c.sky1, 0.5, 0.9);
+    softDisc(g, 615, 215, 340, light, 0.95 * glowK, 0.75);
+  }
+  function blurFill(g, path, c, a, blur, res) {
+    const off = 2e4;
+    g.save();
+    g.shadowColor = css(c, a);
+    g.shadowBlur = blur * res;
+    g.shadowOffsetX = off * res;
+    g.translate(-off, 0);
+    g.fillStyle = "#000";
+    g.fill(path);
+    g.restore();
+  }
+  const CLOUD_X0 = 280;
+  const CLOUD_PER = 1e3;
+  const CLOUD_BOX = { x0: CLOUD_X0, y0: FAR.y0, x1: CLOUD_X0 + CLOUD_PER, y1: 660 };
+  const CLOUDS_NEAR = [
+    [445, 420, 240, 250, 0.9],
+    [430, 540, 220, 100, 0.8],
+    [395, 300, 120, 120, 0.55],
+    [810, 420, 210, 180, 0.6],
+    [890, 505, 220, 120, 0.75],
+    [690, 545, 200, 70, 0.45],
+    [1080, 400, 230, 200, 0.7],
+    [1210, 500, 200, 130, 0.65]
+  ];
+  const CLOUDS_FAR = [
+    [470, 170, 220, 140, 0.5],
+    [620, 120, 240, 110, 0.35],
+    [790, 230, 230, 170, 0.45],
+    [990, 170, 260, 130, 0.4],
+    [1170, 260, 220, 150, 0.4]
+  ];
+  function paintCloudStrip(g, P, list, far, seed, res) {
+    const C = P.c;
+    const body = far ? mix(C.cloudPale, C.cloudBody, 0.5) : C.cloudBody;
+    const belly = far ? mix(C.cloudPale, C.cloudBelly, 0.45) : C.cloudBelly;
+    const crown = far ? C.sky0 : C.cloudCrown;
+    g.save();
+    g.beginPath();
+    g.rect(CLOUD_BOX.x0, CLOUD_BOX.y0, CLOUD_PER, CLOUD_BOX.y1 - CLOUD_BOX.y0);
+    g.clip();
+    list.forEach(([cx, cy, w, h, a], ci) => {
+      const R = rng(seed * 131 + ci * 17 + (far ? 7 : 0));
+      const B = new Path2D(), U = new Path2D(), K = new Path2D();
+      for (let k = 0, n = 5 + (R() * 4 | 0); k < n; k++) {
+        const bx = cx + (R() - 0.5) * w * 0.8, by = cy + (R() - 0.5) * h * 0.65;
+        const r = Math.min(w, h) * (0.18 + R() * 0.2);
+        const sd = R() * 1e6 | 0;
+        ragged(B, bx, by, r * (1.2 + R() * 0.5), r, (R() - 0.5) * 0.6, 0.55, sd);
+        if (by > cy - h * 0.05) ragged(U, bx + r * 0.1, by + r * 0.3, r * 1.1, r * 0.7, 0, 0.5, sd + 1);
+        if (by < cy + h * 0.1) ragged(K, bx - r * 0.2, by - r * 0.28, r * 0.8, r * 0.55, 0, 0.5, sd + 2);
+      }
+      for (const wrap of [-CLOUD_PER, 0, CLOUD_PER]) {
+        if (cx + wrap + w < CLOUD_BOX.x0 || cx + wrap - w > CLOUD_BOX.x1) continue;
+        g.save();
+        g.translate(wrap, 0);
+        blurFill(g, B, body, a * (far ? 0.32 : 0.9), 6, res);
+        blurFill(g, U, belly, a * (far ? 0.25 : 0.5), 8, res);
+        blurFill(g, K, crown, a * 0.8, 7, res);
+        g.restore();
+      }
+    });
+    g.restore();
+  }
+  const wash = (P, depth) => (c) => mix(c, P.c.sky0, 0.1 + depth * 0.5);
+  function cylinder(g, x0, x1, k, P) {
+    const gr = g.createLinearGradient(x0, 0, x1, 0);
+    gr.addColorStop(0, css(k(P.c.castleShade)));
+    gr.addColorStop(0.3, css(k(P.c.castleBody)));
+    gr.addColorStop(0.64, css(k(P.c.castleLit)));
+    gr.addColorStop(0.9, css(k(P.c.castleBody)));
+    gr.addColorStop(1, css(k(P.c.castleShade)));
+    return gr;
+  }
+  function roundTower(g, P, cx, w, top, base, depth, rings, seed) {
+    const k = wash(P, depth);
+    g.fillStyle = cylinder(g, cx - w / 2, cx + w / 2, k, P);
+    g.fillRect(cx - w / 2, top, w, base - top);
+    const R = rng(seed);
+    g.save();
+    g.beginPath();
+    g.rect(cx - w / 2, top, w, base - top);
+    g.clip();
+    const lt = new Path2D(), dk = new Path2D();
+    for (let i = 0; i < 5; i++)
+      ragged(R() < 0.5 ? lt : dk, cx + (R() - 0.5) * w, lerp(top, base, R()), w * (0.2 + R() * 0.25), 12 + R() * 22, 0, 0.5, R() * 1e6 | 0);
+    g.fillStyle = css(k(P.c.castleLit), 0.35);
+    g.fill(lt);
+    g.fillStyle = css(k(P.c.castleShade), 0.3);
+    g.fill(dk);
+    g.restore();
+    for (const y of rings) {
+      const W = w * 1.16;
+      g.fillStyle = cylinder(g, cx - W / 2, cx + W / 2, k, P);
+      g.fillRect(cx - W / 2, y, W, 8);
+      g.fillStyle = css(k(P.c.castleLit), 0.95);
+      g.beginPath();
+      g.ellipse(cx, y, W / 2, 2.4, 0, Math.PI, TAU);
+      g.fill();
+      g.fillStyle = css(k(P.c.castleShade), 0.35);
+      g.beginPath();
+      for (let x = cx - W / 2 + 3; x < cx + W / 2 - 2; x += 5) {
+        g.moveTo(x + 1.7, y + 8);
+        g.arc(x, y + 8, 1.7, 0, Math.PI);
+      }
+      g.fill();
+    }
+    g.fillStyle = css(k(P.c.castleWin), 0.35);
+    g.beginPath();
+    for (const [ox, oy] of [
+      [-0.14, 22],
+      [0.16, 22],
+      [0.02, 64]
+    ]) {
+      const x = cx + w * ox, y = top + oy;
+      if (y > base - 20) continue;
+      g.moveTo(x - 1.6, y + 9);
+      g.lineTo(x - 1.6, y);
+      g.arc(x, y, 1.6, Math.PI, 0);
+      g.lineTo(x + 1.6, y + 9);
+    }
+    g.fill();
+  }
+  function coneRoof(g, P, cx, w, baseY, apexY, depth) {
+    const k = wash(P, depth);
+    const W = w * 1.16, h = baseY - apexY;
+    const p = new Path2D();
+    p.moveTo(cx - W / 2, baseY);
+    p.quadraticCurveTo(cx - W * 0.09, baseY - h * 0.3, cx, apexY);
+    p.quadraticCurveTo(cx + W * 0.09, baseY - h * 0.3, cx + W / 2, baseY);
+    p.quadraticCurveTo(cx, baseY + W * 0.08, cx - W / 2, baseY);
+    const gr = g.createLinearGradient(cx - W / 2, 0, cx + W / 2, 0);
+    gr.addColorStop(0, css(k(P.c.spire)));
+    gr.addColorStop(0.5, css(k(P.c.spire)));
+    gr.addColorStop(0.56, css(k(P.c.spireLit)));
+    gr.addColorStop(1, css(k(mix(P.c.spireLit, P.c.spire, 0.4))));
+    g.fillStyle = gr;
+    g.fill(p);
+    g.save();
+    g.clip(p);
+    const vg = g.createLinearGradient(0, apexY, 0, baseY);
+    vg.addColorStop(0, css(k(P.c.sky0), 0.25));
+    vg.addColorStop(0.6, css(k(P.c.sky0), 0));
+    g.fillStyle = vg;
+    g.fillRect(cx - W, apexY, W * 2, h + W);
+    g.fillStyle = css(k(P.c.castleLit), 0.22);
+    g.beginPath();
+    g.moveTo(cx, apexY);
+    g.quadraticCurveTo(cx + W * 0.05, baseY - h * 0.3, cx + W * 0.12, baseY + 2);
+    g.lineTo(cx + W * 0.04, baseY + 3);
+    g.quadraticCurveTo(cx + W * 0.01, baseY - h * 0.3, cx, apexY);
+    g.fill();
+    g.restore();
+  }
+  function pinnacle(g, P, x, base, h, w, depth) {
+    const k = wash(P, depth);
+    poly(g, k(P.c.spire), [x - w / 2, base, x, base - h, x + w / 2, base]);
+    poly(g, k(P.c.spireLit), [x, base - h, x + w / 2, base, x + w * 0.1, base]);
+  }
+  function treeClump(g, x, y, w, h, P, R) {
+    const n = Math.max(3, Math.round(w / 30));
+    const body = new Path2D(), lit = new Path2D();
+    for (let i = 0; i < n; i++) {
+      const u = (i + 0.5) / n;
+      const r = w / n * (0.8 + R() * 0.5) + h * 0.1;
+      const cx = x + (u - 0.5) * w + (R() - 0.5) * 10, cy = y - h * Math.sin(Math.PI * u) * (0.55 + R() * 0.4) + r * 0.6;
+      ragged(body, cx, cy, r * 1.1, r, R() * 0.6, 0.45, R() * 1e6 | 0);
+      ragged(lit, cx - r * 0.2, cy - r * 0.3, r * 0.55, r * 0.4, 0, 0.5, R() * 1e6 | 0);
+    }
+    body.rect(x - w / 2, y - 4, w, 40);
+    g.fillStyle = css(P.c.tree, 0.9);
+    g.fill(body);
+    g.fillStyle = css(P.c.treeLit, 0.55);
+    g.fill(lit);
+  }
+  function paintCastle(g, P, hazeK, seed) {
+    const R = rng(seed * 7 + 3);
+    const gg = g.createLinearGradient(0, 540, 0, FAR.y1);
+    gg.addColorStop(0, css(P.c.ground));
+    gg.addColorStop(1, css(P.c.groundLow));
+    g.fillStyle = gg;
+    g.fillRect(FAR.x0, 546, FAR.x1 - FAR.x0, FAR.y1 - 546);
+    for (const [cx, w, top, base, apex, depth] of [
+      [868, 30, 372, 560, 318, 0.85],
+      [612, 24, 318, 540, 262, 0.75],
+      [575, 22, 386, 540, 334, 0.8],
+      [786, 28, 322, 540, 246, 0.6],
+      [838, 26, 400, 560, 352, 0.7]
+    ]) {
+      roundTower(g, P, cx, w, top, base, depth, [top], seed + cx);
+      coneRoof(g, P, cx, w, top, apex, depth);
+    }
+    const km = wash(P, 0.4);
+    g.fillStyle = cylinder(g, 590, 770, km, P);
+    g.fillRect(590, 396, 180, 170);
+    for (const [x, h] of [
+      [690, 44],
+      [702, 58],
+      [714, 40],
+      [726, 52],
+      [680, 30]
+    ])
+      pinnacle(g, P, x, 330, h, 7, 0.45);
+    roundTower(g, P, 704, 34, 330, 540, 0.45, [330], seed + 9);
+    coneRoof(g, P, 704, 34, 330, 268, 0.45);
+    poly(g, km(P.c.spire), [590, 470, 610, 426, 630, 470]);
+    poly(g, km(P.c.spireLit), [610, 426, 630, 470, 612, 470]);
+    roundTower(g, P, 652, 64, 398, 566, 0.15, [398], seed + 1);
+    roundTower(g, P, 652, 50, 268, 400, 0.1, [268, 300], seed + 2);
+    coneRoof(g, P, 652, 50, 268, 150, 0.08);
+    roundTower(g, P, 556, 40, 404, 590, 0.12, [404, 436], seed + 3);
+    coneRoof(g, P, 556, 40, 404, 274, 0.1);
+    roundTower(g, P, 740, 46, 410, 590, 0.12, [410, 442], seed + 4);
+    coneRoof(g, P, 740, 46, 410, 272, 0.1);
+    g.strokeStyle = css(P.c.castleShade);
+    g.lineWidth = 1.4;
+    g.beginPath();
+    g.moveTo(726, 300);
+    g.lineTo(726, 232);
+    g.stroke();
+    g.fillStyle = css(P.c.spireLit);
+    g.beginPath();
+    g.moveTo(727, 233);
+    g.quadraticCurveTo(742, 232, 756, 241);
+    g.quadraticCurveTo(742, 244, 727, 250);
+    g.fill();
+    g.globalCompositeOperation = "source-atop";
+    const fl = new Path2D();
+    for (let i = 0; i < 160; i++) {
+      const x = 530 + R() * 280, y = 380 + Math.pow(R(), 0.6) * 190;
+      const r = 1 + R() * 1.6;
+      fl.moveTo(x + r, y);
+      fl.arc(x, y, r, 0, TAU);
+    }
+    g.fillStyle = css(P.rampRGB[F_PINK][5], 0.7);
+    g.fill(fl);
+    g.globalCompositeOperation = "source-over";
+    treeClump(g, 650, 540, 150, 70, P, R);
+    treeClump(g, 820, 565, 210, 175, P, R);
+    treeClump(g, 520, 560, 90, 40, P, R);
+    g.globalCompositeOperation = "source-atop";
+    const hz = g.createLinearGradient(0, 230, 0, 580);
+    hz.addColorStop(0, css(P.c.sky0, 0.2 * hazeK));
+    hz.addColorStop(0.5, css(P.c.sky2, 0.55 * hazeK));
+    hz.addColorStop(1, css(P.c.ground, 0.95 * hazeK));
+    g.fillStyle = hz;
+    g.fillRect(FAR.x0, FAR.y0, FAR.x1 - FAR.x0, 560);
+    g.globalCompositeOperation = "source-over";
+    g.fillStyle = css(P.c.wall);
+    g.beginPath();
+    g.moveTo(330, 536);
+    g.quadraticCurveTo(480, 540, 645, 582);
+    g.lineTo(645, 612);
+    g.quadraticCurveTo(480, 572, 330, 566);
+    g.closePath();
+    g.fill();
+    g.strokeStyle = css(P.c.wallTop);
+    g.lineWidth = 4;
+    g.beginPath();
+    g.moveTo(330, 537);
+    g.quadraticCurveTo(480, 541, 645, 583);
+    g.stroke();
+    g.globalCompositeOperation = "source-atop";
+    softDisc(g, 640, 260, 300, P.c.sky0, 0.22 * hazeK, 0.8);
+    g.globalCompositeOperation = "source-over";
+    rect(g, P.c.sky2, FAR.x0, FAR.y0, FAR.x1, FAR.y1, 0.08 * hazeK);
+  }
+  function arcAt(d) {
+    const r = A_R + d;
+    const h = Math.sqrt(Math.max(0, r * r - A_OFF * A_OFF));
+    const sy = A_SPRING - A_CY;
+    const sx = Math.sqrt(Math.max(0, r * r - sy * sy));
+    return {
+      r,
+      cxL: A_CX + A_OFF,
+      cxR: A_CX - A_OFF,
+      xL: A_CX + A_OFF - sx,
+      xR: A_CX - A_OFF + sx,
+      aS: Math.atan2(sy, -sx),
+      aA: Math.atan2(-h, -A_OFF),
+      bA: Math.atan2(-h, A_OFF),
+      bS: Math.atan2(sy, sx)
+    };
+  }
+  function ringPath(d0, d1) {
+    const o = arcAt(d1), i = arcAt(d0);
+    const p = new Path2D();
+    p.arc(o.cxL, A_CY, o.r, o.aS, o.aA, false);
+    p.arc(o.cxR, A_CY, o.r, o.bA, o.bS, false);
+    p.arc(i.cxR, A_CY, i.r, i.bS, i.bA, true);
+    p.arc(i.cxL, A_CY, i.r, i.aA, i.aS, true);
+    p.closePath();
+    return p;
+  }
+  function openingPath() {
+    const a = arcAt(0);
+    const p = new Path2D();
+    p.moveTo(a.xL, 760);
+    p.lineTo(a.xL, A_SPRING);
+    p.arc(a.cxL, A_CY, a.r, a.aS, a.aA, false);
+    p.arc(a.cxR, A_CY, a.r, a.bA, a.bS, false);
+    p.lineTo(a.xR, 760);
+    p.closePath();
+    return p;
+  }
+  function paintWallRing(g, P, box, seed) {
+    const C = P.c;
+    rect(g, P.rampRGB[F_PURPLE][2], box.x0, box.y0, box.x1, Math.min(box.y1, FLOOR_Y));
+    rect(g, C.stone, 90, box.y0, 1150, 350);
+    for (const [x, w, c] of [
+      [182, 22, C.stoneLit],
+      [214, 4, C.stoneDark],
+      [238, 3, C.stoneDark],
+      [262, 10, C.stoneLit],
+      [918, 30, C.stoneLit],
+      [972, 4, C.stoneDark],
+      [996, 3, C.stoneDark],
+      [1012, 16, C.stoneLit]
+    ])
+      rect(g, c, x, box.y0, x + w, 300);
+    const R = rng(seed * 5 + 1);
+    g.fillStyle = css(C.stoneDark, 0.55);
+    g.beginPath();
+    for (let i = 0; i < 26; i++) {
+      const left = i < 13;
+      const x = left ? 175 + R() * 130 : 905 + R() * 110;
+      const y = left ? 120 + R() * 150 : 110 + R() * 180;
+      const r = 6 + R() * 14;
+      g.moveTo(x + r, y);
+      g.ellipse(x, y, r, r * 0.7, R() * 3, 0, TAU);
+    }
+    g.fill();
+    g.globalCompositeOperation = "destination-out";
+    g.fillStyle = "#000";
+    g.fill(openingPath());
+    g.globalCompositeOperation = "source-over";
+    const skyGap = (x0, y0, x1, y1) => {
+      const sg = g.createLinearGradient(0, y0, 0, y1);
+      sg.addColorStop(0, css(C.sky0));
+      sg.addColorStop(0.55, css(C.sky0));
+      sg.addColorStop(0.8, css(mix(C.sky0, C.sky1, 0.6)));
+      sg.addColorStop(1, css(mix(C.sky1, C.sky2, 0.5)));
+      g.fillStyle = sg;
+      g.fillRect(x0, y0, x1 - x0, y1 - y0);
+      g.save();
+      g.beginPath();
+      g.rect(x0, y0, x1 - x0, y1 - y0);
+      g.clip();
+      const cy = y0 + (y1 - y0) * 0.5;
+      softDisc(g, x0 + (x1 - x0) * 0.35, cy, 46, C.cloudBody, 0.75, 0.6);
+      softDisc(g, x0 + (x1 - x0) * 0.8, cy + 24, 36, C.cloudBody, 0.6, 0.6);
+      softDisc(g, x0 + (x1 - x0) * 0.5, cy - 14, 28, C.cloudCrown, 0.7, 0.5);
+      g.restore();
+    };
+    skyGap(100, 200, 186, 740);
+    const br = g.createLinearGradient(1062, 0, 1200, 0);
+    br.addColorStop(0, css(mix(C.backR, C.sky0, 0.3)));
+    br.addColorStop(0.6, css(C.backR));
+    br.addColorStop(1, css(mix(C.backR, C.stone, 0.3)));
+    g.fillStyle = br;
+    g.fillRect(1062, 300, 138, 440);
+    for (const [cx, y0, y1, hw] of GAPS) skyGap(cx - hw - 10, y0 - 30, cx + hw + 10, y1 + 30);
+    const bands = [
+      [0, 18, C.rimLit],
+      [18, 58, C.ringFace],
+      [58, 86, C.ringMold],
+      [86, 112, C.ringOuter]
+    ];
+    for (const [d0, d1, c] of bands) {
+      g.fillStyle = css(c);
+      g.fill(ringPath(d0, d1));
+    }
+    for (const [d, w, c, a] of [
+      [17, 2.2, C.stoneDark, 0.8],
+      [57, 2, C.stoneDark, 0.7],
+      [85, 1.6, C.stoneDark, 0.6],
+      [0, 2, C.sky0, 0.55],
+      [59, 2.4, C.sky0, 0.35]
+    ]) {
+      g.fillStyle = css(c, a);
+      g.fill(ringPath(d, d + w));
+    }
+  }
+  function paintFloor(g, P, box, light, glowK, seed) {
+    const C = P.c;
+    rect(g, C.floor, box.x0, 650, box.x1, FLOOR_Y);
+    rect(g, C.floor, box.x0, FLOOR_Y, box.x1, box.y1);
+    g.save();
+    g.translate(760, 905);
+    g.scale(1, 0.42);
+    const fl = g.createRadialGradient(0, 0, 0, 0, 0, 430);
+    fl.addColorStop(0, css(C.floorLit));
+    fl.addColorStop(0.55, css(C.floorLit, 0.85));
+    fl.addColorStop(1, css(C.floorLit, 0));
+    g.fillStyle = fl;
+    g.fillRect(-900, -900, 1800, 1800);
+    g.restore();
+    const fc = g.createLinearGradient(box.x0, 0, 420, 0);
+    fc.addColorStop(0, css(C.floorCool, 0.9));
+    fc.addColorStop(Math.max(0, Math.min(0.99, (60 - box.x0) / (420 - box.x0))), css(C.floorCool, 0.75));
+    fc.addColorStop(1, css(C.floorCool, 0));
+    g.fillStyle = fc;
+    g.fillRect(box.x0, FLOOR_Y, 420 - box.x0, box.y1 - FLOOR_Y);
+    g.lineWidth = 1.3;
+    const rows = [];
+    for (let y = FLOOR_Y + 22, gap = 34; y < box.y1; y += gap, gap *= 1.45) rows.push(y);
+    g.strokeStyle = css(C.seam, 0.22);
+    g.beginPath();
+    for (const y of rows) {
+      g.moveTo(box.x0, y);
+      g.lineTo(box.x1, y);
+    }
+    for (let x = -3e3; x < 4200; x += 190) {
+      const vx = 620, vy = 560;
+      const t0 = (FLOOR_Y - vy) / (box.y1 - vy);
+      g.moveTo(lerp(vx, x, t0), FLOOR_Y);
+      g.lineTo(x, box.y1);
+    }
+    g.stroke();
+    g.strokeStyle = css(C.seamLit, 0.35);
+    g.beginPath();
+    for (const y of rows) {
+      g.moveTo(480, y + 1.3);
+      g.lineTo(1100, y + 1.3);
+    }
+    g.stroke();
+    rect(g, C.landing, 176, 652, 1004, 722);
+    const ls = g.createLinearGradient(176, 0, 470, 0);
+    ls.addColorStop(0, css(C.landingShade));
+    ls.addColorStop(1, css(C.landingShade, 0));
+    g.fillStyle = ls;
+    g.fillRect(176, 652, 300, 70);
+    for (const [top, rise, bot, x0, x1] of STEPS) {
+      rect(g, C.tread, x0, top, x1, rise);
+      rect(g, C.riser, x0, rise, x1, bot);
+      const rc = g.createLinearGradient(x0, 0, x0 + 300, 0);
+      rc.addColorStop(0, css(C.riserCool));
+      rc.addColorStop(1, css(C.riserCool, 0));
+      g.fillStyle = rc;
+      g.fillRect(x0, rise, 300, bot - rise);
+      const lit = g.createLinearGradient(380, 0, 900, 0);
+      lit.addColorStop(0, css(C.treadLit, 0));
+      lit.addColorStop(0.35, css(C.treadLit, 0.95));
+      lit.addColorStop(0.8, css(C.treadLit, 0.95));
+      lit.addColorStop(1, css(C.treadLit, 0));
+      g.fillStyle = lit;
+      g.fillRect(380, top, 520, rise - top);
+      const rl = g.createLinearGradient(430, 0, 880, 0);
+      rl.addColorStop(0, css(C.riserLit, 0));
+      rl.addColorStop(0.5, css(C.riserLit, 0.75));
+      rl.addColorStop(1, css(C.riserLit, 0));
+      g.fillStyle = rl;
+      g.fillRect(430, rise, 450, bot - rise);
+      poly(g, C.stepSide, [x1, top, x1 + 7, top + 3, x1 + 7, bot, x1, bot]);
+    }
+    g.save();
+    g.translate(650, 686);
+    g.scale(1, 0.2);
+    const pool = g.createRadialGradient(0, 0, 0, 0, 0, 340);
+    pool.addColorStop(0, css(light, 0.8 * glowK));
+    pool.addColorStop(0.6, css(light, 0.3 * glowK));
+    pool.addColorStop(1, css(light, 0));
+    g.fillStyle = pool;
+    g.fillRect(-500, -600, 1e3, 1200);
+    g.restore();
+    const R = rng(seed * 11 + 2);
+    g.fillStyle = css(C.shadow, 0.16);
+    g.beginPath();
+    for (let i = 0; i < 46; i++) {
+      const left = i < 30;
+      const x = left ? 150 + R() * 320 : 860 + R() * 260;
+      const y = 700 + R() * 200;
+      const r = 8 + R() * 22;
+      g.moveTo(x + r, y);
+      g.ellipse(x, y, r, r * 0.45, 0, 0, TAU);
+    }
+    g.fill();
+  }
+  function paintPillars(g, P) {
+    const C = P.c;
+    rect(g, C.capL, 167, 297, 330, 320);
+    rect(g, C.capLSide, 330, 297, 392, 320);
+    rect(g, C.capLTop, 167, 297, 392, 300);
+    rect(g, mix(C.capL, C.stoneDark, 0.3), 178, 320, 322, 345);
+    rect(g, mix(C.capLSide, C.stone, 0.25), 322, 320, 380, 345);
+    rect(g, C.panelLine, 178, 330, 380, 333, 0.5);
+    rect(g, C.panelLine, 185, 345, 362, 353);
+    rect(g, C.shaftL, 185, 353, 307, 655);
+    rect(g, C.sideL, 307, 353, 370, 655);
+    rect(g, mix(C.sideL, C.stone, 0.35), 307, 353, 313, 655);
+    for (const [x0, x1] of [
+      [196, 238],
+      [250, 296]
+    ]) {
+      rect(g, C.panelL, x0, 372, x1, 640);
+      rect(g, C.panelLine, x0, 372, x1, 377);
+      rect(g, C.panelLine, x0, 372, x0 + 3, 640);
+      rect(g, C.panelLit, x1 - 2, 372, x1, 640);
+      rect(g, C.panelLit, x0, 637, x1, 640);
+    }
+    rect(g, C.plinthLTop, 179, 655, 312, 668);
+    rect(g, mix(C.sideL, C.sky0, 0.2), 312, 655, 394, 668);
+    rect(g, C.plinthL, 185, 668, 307, 716);
+    rect(g, C.sideL, 307, 668, 392, 716);
+    rect(g, C.panelLine, 185, 668, 392, 671, 0.6);
+    rect(g, C.capRSide, 878, 296, 940, 320);
+    rect(g, C.capR, 940, 296, 1084, 320);
+    rect(g, mix(C.capRSide, C.sky0, 0.4), 878, 296, 1084, 299);
+    rect(g, mix(C.capRSide, C.stone, 0.2), 886, 320, 946, 345);
+    rect(g, mix(C.capR, C.stoneDark, 0.25), 946, 320, 1072, 345);
+    rect(g, C.panelLine, 905, 345, 1062, 353, 0.8);
+    rect(g, mix(C.sideR, C.sky0, 0.75), 872, 345, 905, 660);
+    rect(g, C.sideR, 905, 353, 948, 660);
+    rect(g, C.shaftR, 948, 353, 1062, 660);
+    rect(g, mix(C.shaftR, C.stone, 0.3), 948, 353, 953, 660);
+    for (const [x0, x1] of [
+      [962, 1004],
+      [1016, 1052]
+    ]) {
+      rect(g, C.panelR, x0, 372, x1, 646);
+      rect(g, mix(C.panelR, C.stoneDark, 0.35), x0, 372, x1, 377);
+      rect(g, mix(C.panelR, C.stoneDark, 0.35), x0, 372, x0 + 3, 646);
+    }
+    rect(g, C.plinthRSide, 848, 656, 948, 668);
+    rect(g, mix(C.plinthR, C.sky0, 0.2), 948, 656, 1070, 668);
+    rect(g, C.plinthRSide, 850, 668, 948, 730);
+    rect(g, C.plinthR, 948, 668, 1068, 730);
+    rect(g, mix(C.plinthR, C.stone, 0.3), 850, 668, 1068, 671, 0.7);
+  }
+  function ragged(p, cx, cy, rx, ry, rot, rough, seed) {
+    const n = 22, c = Math.cos(rot), s = Math.sin(rot);
+    const X = [], Y = [];
+    for (let k = 0; k < n; k++) {
+      const a = k / n * TAU;
+      const r = 1 + rough * vnoise(Math.cos(a) * 1.7 + 40, Math.sin(a) * 1.7 + 40, 1, seed);
+      const ux = Math.cos(a) * rx * r, uy = Math.sin(a) * ry * r;
+      X.push(cx + ux * c - uy * s);
+      Y.push(cy + ux * s + uy * c);
+    }
+    p.moveTo((X[0] + X[1]) / 2, (Y[0] + Y[1]) / 2);
+    for (let k = 1; k <= n; k++) {
+      const i = k % n, j = (k + 1) % n;
+      p.quadraticCurveTo(X[i], Y[i], (X[i] + X[j]) / 2, (Y[i] + Y[j]) / 2);
+    }
+    p.closePath();
+  }
+  function leafyShade(p, pts, R, size) {
+    p.moveTo(pts[0], pts[1]);
+    for (let i = 2; i < pts.length; i += 2) p.lineTo(pts[i], pts[i + 1]);
+    p.closePath();
+    const n = pts.length / 2;
+    for (let i = 0; i < n; i++) {
+      const ax = pts[i * 2], ay = pts[i * 2 + 1], bx = pts[(i + 1) % n * 2], by = pts[(i + 1) % n * 2 + 1];
+      const L = Math.hypot(bx - ax, by - ay);
+      if (L < 1) continue;
+      const nx = (by - ay) / L, ny = -(bx - ax) / L;
+      for (let d = R() * size; d < L; d += size * (0.7 + R() * 0.8)) {
+        const x = ax + (bx - ax) * d / L, y = ay + (by - ay) * d / L;
+        if (R() < 0.35) {
+          const len = size * (1.1 + R() * 1.2);
+          const a = Math.atan2(ny, nx) + (R() - 0.5) * 1.4;
+          leaf(p, x - nx * size * 0.3, y - ny * size * 0.3, len, len * 0.3, a);
+        } else {
+          const r = size * (0.35 + R() * 0.55);
+          const o = (R() - 0.3) * size * 0.7;
+          p.moveTo(x + nx * o + r, y + ny * o);
+          p.arc(x + nx * o, y + ny * o, r, 0, TAU);
+        }
+      }
+    }
+  }
+  function paintStoneDetail(g, P, light, seed, res) {
+    const C = P.c;
+    const R = rng(seed * 29 + 7);
+    const shade = C.shadow;
+    const warm = mix(C.sideL, light, 0.6);
+    const clipRect = (x0, y0, x1, y1, fn) => {
+      g.save();
+      g.beginPath();
+      g.rect(x0, y0, x1 - x0, y1 - y0);
+      g.clip();
+      fn();
+      g.restore();
+    };
+    const vgrad = (x0, y0, x1, y1, top, ta, bot, ba) => {
+      const gr = g.createLinearGradient(0, y0, 0, y1);
+      gr.addColorStop(0, css(top, ta));
+      gr.addColorStop(0.45, css(top, 0));
+      gr.addColorStop(0.6, css(bot, 0));
+      gr.addColorStop(1, css(bot, ba));
+      g.fillStyle = gr;
+      g.fillRect(x0, y0, x1 - x0, y1 - y0);
+    };
+    const mottle = (x0, y0, x1, y1, base, n, a) => {
+      const lit = new Path2D(), dim = new Path2D();
+      const w = x1 - x0;
+      for (let i = 0; i < n; i++) {
+        const rx = w * (0.15 + R() * 0.3);
+        const ry = rx * (0.8 + R() * 1.8);
+        ragged(R() < 0.55 ? lit : dim, lerp(x0, x1, R()), lerp(y0, y1, R()), rx, ry, (R() - 0.5) * 0.6, 0.5, R() * 1e6 | 0);
+      }
+      g.fillStyle = css(mix(base, C.sky0, 0.4), a * 0.7);
+      g.fill(lit);
+      g.fillStyle = css(mix(base, C.stoneDark, 0.55), a * 0.7);
+      g.fill(dim);
+    };
+    const flecks = (x0, y0, x1, y1, n) => {
+      const dk = new Path2D();
+      for (let i = 0; i < n / 2; i++) {
+        const x = lerp(x0, x1, R()), y = lerp(y0, y1, R()), r = 0.5 + R() * 0.7;
+        dk.moveTo(x + r, y);
+        dk.ellipse(x, y, r, r * (0.5 + R() * 0.5), R() * 3, 0, TAU);
+      }
+      g.fillStyle = css(C.stoneDark, 0.25);
+      g.fill(dk);
+    };
+    const bevel = (x0, y0, x1, y1, lightA) => {
+      g.fillStyle = css(C.panelLine, 0.6);
+      g.fillRect(x0, y0, x1 - x0, 4);
+      g.fillRect(x0, y0, 3, y1 - y0);
+      g.fillStyle = css(C.sky0, lightA);
+      g.fillRect(x1 - 2, y0 + 4, 2, y1 - y0 - 4);
+      g.fillRect(x0 + 3, y1 - 2, x1 - x0 - 3, 2);
+    };
+    const contact = (x0, y, x1, h, a) => {
+      const gr = g.createLinearGradient(0, y, 0, y + h);
+      gr.addColorStop(0, css(shade, a));
+      gr.addColorStop(1, css(shade, 0));
+      g.fillStyle = gr;
+      g.fillRect(x0, y, x1 - x0, h);
+    };
+    const cast = (pts, a, size) => {
+      const p = new Path2D();
+      leafyShade(p, pts, R, size);
+      blurFill(g, p, shade, a, 1.6, res);
+    };
+    clipRect(185, 353, 307, 655, () => {
+      vgrad(185, 353, 307, 655, C.stoneDark, 0.3, warm, 0.28);
+      mottle(185, 360, 307, 650, C.shaftL, 12, 0.32);
+      cast([150, 300, 330, 300, 307, 372, 268, 418, 240, 470, 214, 528, 196, 590, 150, 640], 0.46, 13);
+      bevel(196, 372, 238, 640, 0.5);
+      bevel(250, 372, 296, 640, 0.5);
+      flecks(185, 353, 307, 655, 40);
+    });
+    clipRect(307, 353, 370, 655, () => {
+      vgrad(307, 353, 370, 655, C.stone, 0.32, warm, 0.5);
+      mottle(307, 360, 370, 650, C.sideL, 5, 0.28);
+      contact(307, 353, 370, 22, 0.4);
+      flecks(307, 353, 370, 655, 12);
+      g.fillStyle = css(light, 0.75);
+      g.fillRect(364, 353, 6, 302);
+    });
+    clipRect(167, 297, 330, 320, () => {
+      const p = new Path2D();
+      ragged(p, 232, 315, 86, 7, 0.01, 0.55, seed + 11);
+      ragged(p, 300, 313, 30, 5, -0.03, 0.5, seed + 12);
+      g.fillStyle = css(shade, 0.4);
+      g.fill(p);
+      mottle(167, 298, 330, 318, C.capL, 4, 0.25);
+    });
+    clipRect(330, 290, 400, 320, () => {
+      vgrad(330, 297, 392, 320, C.capLSide, 0, light, 0.35);
+      poly(g, mix(C.capLTop, light, 0.45), [330, 297, 336, 291, 398, 291, 392, 297]);
+      poly(g, mix(C.capLSide, light, 0.55), [380, 297, 392, 297, 398, 291, 398, 314, 392, 320, 384, 320]);
+    });
+    clipRect(178, 320, 380, 345, () => {
+      contact(178, 320, 380, 8, 0.55);
+      mottle(178, 322, 380, 345, C.capL, 5, 0.22);
+    });
+    clipRect(179, 655, 394, 716, () => {
+      contact(179, 668, 394, 6, 0.35);
+      mottle(185, 668, 392, 716, C.plinthL, 4, 0.25);
+      vgrad(179, 655, 394, 716, C.stone, 0, warm, 0.35);
+      poly(g, mix(C.sideL, light, 0.5), [384, 655, 394, 658, 394, 668, 386, 668]);
+      flecks(179, 655, 394, 716, 10);
+    });
+    clipRect(872, 345, 905, 660, () => {
+      const gr = g.createLinearGradient(0, 345, 0, 660);
+      gr.addColorStop(0, css(C.sideR, 0.85));
+      gr.addColorStop(0.35, css(C.sideR, 0));
+      g.fillStyle = gr;
+      g.fillRect(872, 345, 33, 315);
+      contact(872, 345, 905, 14, 0.25);
+      g.fillStyle = css(C.stone, 0.35);
+      g.fillRect(901, 345, 4, 315);
+    });
+    clipRect(905, 353, 948, 660, () => {
+      vgrad(905, 353, 948, 660, C.stone, 0.4, warm, 0.35);
+      contact(905, 353, 948, 24, 0.45);
+      mottle(905, 360, 948, 650, C.sideR, 5, 0.25);
+      flecks(905, 353, 948, 660, 12);
+    });
+    clipRect(948, 353, 1062, 660, () => {
+      vgrad(948, 353, 1062, 660, C.stoneDark, 0.35, warm, 0.25);
+      mottle(948, 360, 1062, 650, C.shaftR, 10, 0.3);
+      bevel(962, 372, 1004, 646, 0.45);
+      bevel(1016, 372, 1052, 646, 0.45);
+      cast([930, 300, 1090, 300, 1090, 470, 1050, 452, 1018, 488, 986, 456, 962, 478, 930, 440], 0.42, 12);
+      flecks(948, 353, 1062, 660, 30);
+    });
+    clipRect(878, 296, 1084, 345, () => {
+      contact(878, 320, 1084, 8, 0.5);
+      mottle(878, 298, 1084, 344, C.capR, 7, 0.22);
+      poly(g, mix(C.capRSide, light, 0.6), [878, 299, 886, 296, 886, 320, 880, 320]);
+    });
+    clipRect(848, 656, 1070, 730, () => {
+      contact(848, 668, 1070, 6, 0.3);
+      mottle(850, 668, 1068, 730, C.plinthR, 5, 0.22);
+      vgrad(848, 656, 1070, 730, C.stone, 0, warm, 0.3);
+    });
+  }
+  function paintRingDetail(g, P, seed, res) {
+    const C = P.c;
+    const R = rng(seed * 31 + 3);
+    g.save();
+    g.clip(ringPath(0, 112));
+    const lit = new Path2D(), dim = new Path2D();
+    for (let i = 0; i < 26; i++) {
+      const left = R() < 0.5;
+      const isLit = R() < 0.65;
+      const d = isLit ? 62 + R() * 46 : 22 + R() * 34;
+      const o = arcAt(d);
+      const a = left ? lerp(o.aS, o.aA, R()) : lerp(o.bA, o.bS, R());
+      const cx = left ? o.cxL : o.cxR;
+      const x = cx + Math.cos(a) * o.r, y = A_CY + Math.sin(a) * o.r;
+      ragged(isLit ? lit : dim, x, y, 24 + R() * 46, 5 + R() * 8, a + Math.PI / 2, 0.55, R() * 1e6 | 0);
+    }
+    g.fillStyle = css(C.sky0, 0.3);
+    g.fill(lit);
+    g.fillStyle = css(C.stoneDark, 0.25);
+    g.fill(dim);
+    const sh = new Path2D();
+    for (let i = 0; i < 40; i++) {
+      const left = R() < 0.5;
+      const o = arcAt(70 + R() * 42);
+      const u = Math.pow(R(), 1.6);
+      const a = left ? lerp(o.aA, o.aS, u * 0.7) : lerp(o.bA, o.bS, u * 0.7);
+      const cx = left ? o.cxL : o.cxR;
+      const x = cx + Math.cos(a) * o.r, y = A_CY + Math.sin(a) * o.r;
+      if (R() < 0.4) leaf(sh, x, y, 14 + R() * 12, 4 + R() * 2, R() * TAU);
+      else ragged(sh, x, y, 8 + R() * 16, 5 + R() * 9, R() * 3, 0.5, R() * 1e6 | 0);
+    }
+    blurFill(g, sh, C.shadow, 0.38, 1.6, res);
+    const gr = g.createLinearGradient(0, 80, 0, 300);
+    gr.addColorStop(0, css(C.sky0, 0));
+    gr.addColorStop(1, css(C.sky0, 0.35));
+    g.fillStyle = gr;
+    g.fill(ringPath(0, 14));
+    g.restore();
+  }
+  function paintGroundShade(g, P, res) {
+    const C = P.c;
+    const p = new Path2D();
+    p.moveTo(185, 712);
+    p.lineTo(392, 712);
+    p.lineTo(330, 742);
+    p.lineTo(200, 790);
+    p.lineTo(120, 790);
+    p.closePath();
+    p.moveTo(850, 726);
+    p.lineTo(1068, 726);
+    p.lineTo(1130, 790);
+    p.lineTo(990, 790);
+    p.lineTo(905, 748);
+    p.closePath();
+    blurFill(g, p, C.shadow, 0.26, 9, res);
+    const b = new Path2D();
+    b.moveTo(230, 640);
+    b.lineTo(330, 700);
+    b.lineTo(390, 790);
+    b.lineTo(330, 880);
+    b.lineTo(120, 900);
+    b.lineTo(100, 700);
+    b.closePath();
+    blurFill(g, b, C.shadow, 0.3, 14, res);
+    const c = new Path2D();
+    c.moveTo(920, 700);
+    c.lineTo(1e3, 770);
+    c.lineTo(960, 800);
+    c.lineTo(880, 790);
+    c.closePath();
+    blurFill(g, c, C.shadow, 0.22, 10, res);
+    const q = new Path2D();
+    q.ellipse(288, 716, 112, 5, 0, 0, TAU);
+    q.ellipse(958, 730, 116, 5, 0, 0, TAU);
+    blurFill(g, q, C.shadow, 0.45, 4, res);
+  }
+  function paintFloorPetals(g, P, petal, seed, box) {
+    const R = rng(seed * 17 + 9);
+    const cols = [
+      petal,
+      P.rampRGB[F_PINK][4],
+      P.rampRGB[F_LAV][4],
+      P.rampRGB[F_LAV][3],
+      P.rampRGB[F_PURPLE][4],
+      P.rampRGB[F_PURPLE][3],
+      P.rampRGB[F_LAV][5]
+    ];
+    const paths = cols.map(() => new Path2D());
+    const drop = (x, y, s, pale = false) => {
+      const k = pale ? [0, 1, 2, 6][R() * 4 | 0] : R() * cols.length | 0;
+      const p = paths[k];
+      const a = (R() - 0.5) * 1.2;
+      p.moveTo(x + Math.cos(a) * s * 0.5, y + Math.sin(a) * s * 0.5);
+      p.ellipse(x, y, s * 0.5, s * (0.2 + R() * 0.1), a, 0, TAU);
+    };
+    for (let i = 0; i < 170; i++) {
+      const u = Math.pow(R(), 1.6);
+      drop(lerp(300, 0, u) + (R() - 0.5) * 60, 800 + R() * 110, 10 + R() * 9);
+    }
+    for (let i = 0; i < 160; i++) {
+      const u = Math.pow(R(), 1.6);
+      drop(lerp(860, 1200, u) + (R() - 0.5) * 60, 785 + R() * 120, 10 + R() * 9, true);
+    }
+    for (let i = 0; i < 18; i++) drop(260 + R() * 760, 700 + R() * 210, 8 + R() * 6);
+    if (box.y1 > 920) {
+      const n = Math.min(400, Math.round((box.y1 - 920) * (box.x1 - box.x0) / 9e3));
+      for (let i = 0; i < n; i++) drop(lerp(box.x0, box.x1, R()), 920 + R() * (box.y1 - 920), 9 + R() * 8);
+    }
+    paths.forEach((p, i) => {
+      g.fillStyle = css(cols[i], 0.92);
+      g.fill(p);
+    });
+  }
+  function lightPass(g, box, light, glowK, cool, cx, cy, r, k, coolTo = 330) {
+    g.globalCompositeOperation = "source-atop";
+    const lg = g.createRadialGradient(cx, cy, 0, cx, cy, r);
+    lg.addColorStop(0, css(light, k * glowK));
+    lg.addColorStop(1, css(light, 0));
+    g.fillStyle = lg;
+    g.fillRect(box.x0, box.y0, box.x1 - box.x0, box.y1 - box.y0);
+    const x0 = Math.min(box.x0, -100);
+    const cl = g.createLinearGradient(x0, 0, coolTo, 0);
+    cl.addColorStop(0, css(cool, 0.22));
+    cl.addColorStop(clamp((-100 - x0) / (coolTo - x0), 0, 0.99), css(cool, 0.2));
+    cl.addColorStop(1, css(cool, 0));
+    g.fillStyle = cl;
+    g.fillRect(box.x0, box.y0, coolTo - box.x0, box.y1 - box.y0);
+    g.globalCompositeOperation = "source-over";
+  }
+  const nearLight = (x, y) => clamp(1 - Math.hypot((x - LIGHT_X) * 0.85, y - LIGHT_Y) / 720);
+  function vnoise(x, y, size, seed) {
+    const fx = x / size, fy = y / size;
+    const i = Math.floor(fx), j = Math.floor(fy);
+    const u = fx - i, v = fy - j;
+    const su = u * u * (3 - 2 * u), sv = v * v * (3 - 2 * v);
+    const h = (a, b) => (hash3(a, b, seed) >>> 0) / 4294967296 * 2 - 1;
+    return lerp(lerp(h(i, j), h(i + 1, j), su), lerp(h(i, j + 1), h(i + 1, j + 1), su), sv);
+  }
+  class Inks {
+    constructor() {
+      __publicField(this, "m", /* @__PURE__ */ new Map());
+    }
+    at(fam, tone) {
+      const k = fam * 8 + clamp(Math.round(tone), 0, 6);
+      let p = this.m.get(k);
+      if (!p) this.m.set(k, p = new Path2D());
+      return p;
+    }
+    fill(g, P) {
+      for (const k of [...this.m.keys()].sort((a, b) => (a & 7) - (b & 7))) {
+        g.fillStyle = P.ramp[k >> 3][k & 7];
+        g.fill(this.m.get(k));
+      }
+      this.m.clear();
+    }
+  }
+  function cells(region, box, cell, seed, fn) {
+    let x0 = INF, y0 = INF, x1 = -INF, y1 = -INF;
+    for (const [x, y] of region) {
+      x0 = Math.min(x0, x);
+      y0 = Math.min(y0, y);
+      x1 = Math.max(x1, x);
+      y1 = Math.max(y1, y);
+    }
+    const pad = cell * 2;
+    const i0 = Math.floor(Math.max(x0, box.x0 - pad) / cell), i1 = Math.ceil(Math.min(x1, box.x1 + pad) / cell);
+    const j0 = Math.floor(Math.max(y0, box.y0 - pad) / cell), j1 = Math.ceil(Math.min(y1, box.y1 + pad) / cell);
+    for (let j = j0; j <= j1; j++) {
+      for (let i = i0; i <= i1; i++) {
+        const R = rng(hash3(i, j, seed));
+        const x = (i + 0.15 + R() * 0.7) * cell, y = (j + 0.15 + R() * 0.7) * cell;
+        if (!inPoly(region, x, y)) continue;
+        const n = vnoise(x, y, 60, seed) * 14;
+        const gd = gapDist(x, y) + n;
+        if (gd < 0) continue;
+        fn(x, y, R, Math.min(edgeDist(region, x, y) + n, gd));
+      }
+    }
+  }
+  function floretJ(p, x, y, r, a, R) {
+    for (let k = 0; k < 4; k++) {
+      const ang = a + k * Math.PI / 2 + (R() - 0.5) * 0.5;
+      const d = r * (0.4 + R() * 0.15), pr = r * (0.42 + R() * 0.16);
+      const px = x + Math.cos(ang) * d, py = y + Math.sin(ang) * d;
+      p.moveTo(px + pr, py);
+      p.ellipse(px, py, pr, pr * (0.8 + R() * 0.2), ang, 0, TAU);
+    }
+  }
+  function broadLeaf(p, x, y, len, wid, ang) {
+    const c = Math.cos(ang), s = Math.sin(ang);
+    const tx = x + c * len, ty = y + s * len;
+    p.moveTo(x, y);
+    p.bezierCurveTo(x + c * len * 0.1 - s * wid * 1.15, y + s * len * 0.1 + c * wid * 1.15, x + c * len * 0.72 - s * wid * 0.9, y + s * len * 0.72 + c * wid * 0.9, tx, ty);
+    p.bezierCurveTo(x + c * len * 0.72 + s * wid * 0.9, y + s * len * 0.72 - c * wid * 0.9, x + c * len * 0.1 + s * wid * 1.15, y + s * len * 0.1 - c * wid * 1.15, x, y);
+  }
+  function foliageSteps(steps, gOf, P, region, box, seed, dens, st) {
+    const S = st.scale;
+    const ink = new Inks();
+    const dm = st.dome;
+    const dlx = dm ? (LIGHT_X - dm[0]) / Math.hypot(LIGHT_X - dm[0], LIGHT_Y - dm[1]) : 0, dly = dm ? (LIGHT_Y - dm[1]) / Math.hypot(LIGHT_X - dm[0], LIGHT_Y - dm[1]) : 0;
+    const domeT = (x, y) => dm ? dm[4] * clamp((x - dm[0]) / dm[2] * dlx + (y - dm[1]) / dm[3] * dly, -1.2, 1.2) : 0;
+    const tone = (x, y) => 2.7 + st.lift + domeT(x, y) + nearLight(x, y) * 1.6 + vnoise(x, y, 110, seed + 9) * 0.75 - clamp((170 - y) / 190) * 1.6 - clamp((260 - x) / 260) * clamp((300 - y) / 300) * 1.1;
+    const deep = (d) => (st.inner ?? 0) * clamp((d - 25) / 150);
+    const darkFam = (x, y) => {
+      const f = st.fam(x, y);
+      return f === F_BLUE || f === F_PINK ? f : F_PURPLE;
+    };
+    if (st.ground) {
+      steps.push(() => {
+        cells(region, box, 22 * S, seed + 1, (x, y, R, d) => {
+          const r = Math.min(22 * S * (0.95 + R() * 0.35), Math.max(3, d * 0.8 + 3 * S));
+          const p = ink.at(st.fam(x, y), tone(x, y) - deep(d) + (R() - 0.5) * 0.15);
+          p.moveTo(x + r, y);
+          p.arc(x, y, r, 0, TAU);
+        });
+        ink.fill(gOf(), P);
+        cells(region, box, 24 * S, seed + 2, (x, y, R, d) => {
+          if (R() > 0.8) return;
+          const len = Math.min((18 + R() * 16) * S, Math.max(6, d + 10 * S));
+          const a = R() * TAU;
+          broadLeaf(ink.at(st.fam(x, y), tone(x, y) - deep(d) + (R() < 0.55 ? 0.9 : -0.9)), x - Math.cos(a) * len * 0.5, y - Math.sin(a) * len * 0.5, len, len * 0.42, a);
+        });
+        ink.fill(gOf(), P);
+      });
+    }
+    steps.push(() => {
+      cells(region, box, 48 * S / Math.sqrt(dens), seed + 3, (x, y, R, d) => {
+        if (!st.ground || R() > 0.6 * (st.dark ?? 1) * (1 - nearLight(x, y) * 0.55)) return;
+        const fam = darkFam(x, y);
+        const p = ink.at(fam, tone(x, y) - 1.7 - R() * 0.5);
+        const Rc = Math.min((12 + R() * 14) * S, Math.max(6, d * 0.85));
+        for (let k = 0, n = 2 + (R() * 3 | 0); k < n; k++) {
+          const a = R() * TAU, dd = Math.sqrt(R()) * Rc * 0.7;
+          floretJ(p, x + Math.cos(a) * dd, y + Math.sin(a) * dd, (8 + R() * 7) * S, R() * TAU, R);
+        }
+        p.moveTo(x + Rc * 0.35, y);
+        p.arc(x, y, Rc * 0.35, 0, TAU);
+        for (let k = 0, n = 2 + (R() * 3 | 0); k < n; k++) {
+          const a = R() * TAU, len = (14 + R() * 12) * S;
+          leaf(p, x + Math.cos(a) * Rc * 0.3, y + Math.sin(a) * Rc * 0.3, len, len * 0.3, a);
+        }
+      });
+      ink.fill(gOf(), P);
+    });
+    steps.push(() => {
+      if (!st.ground) return;
+      const n = region.length;
+      for (let i = 0; i < n; i++) {
+        const [ax, ay] = region[i], [bx, by] = region[(i + 1) % n];
+        if (Math.max(Math.abs(ax), Math.abs(ay), Math.abs(bx), Math.abs(by)) > 5e3) continue;
+        const L = Math.hypot(bx - ax, by - ay);
+        if (L < 1) continue;
+        let nx = (by - ay) / L, ny = -(bx - ax) / L;
+        if (inPoly(region, (ax + bx) / 2 + nx * 4, (ay + by) / 2 + ny * 4)) {
+          nx = -nx;
+          ny = -ny;
+        }
+        for (let t = 0; t < L; t += 9 * S) {
+          const x = ax + (bx - ax) * t / L, y = ay + (by - ay) * t / L;
+          if (x < box.x0 - 40 || x > box.x1 + 40 || y < box.y0 - 40 || y > box.y1 + 40) continue;
+          if (gapDist(x, y) < 0) continue;
+          const R = rng(hash3(x | 0, y | 0, seed + 13));
+          if (R() < 0.25) continue;
+          const root = (2 + R() * 9) * S;
+          const px = x - nx * root, py = y - ny * root;
+          const a = Math.atan2(ny, nx) + (R() - 0.5) * 1.7;
+          const len = (12 + R() * 18) * S;
+          const r = R();
+          if (r < 0.55) leaf(ink.at(darkFam(x, y), tone(x, y) - 1.5 + R() * 0.8), px, py, len, len * (0.24 + R() * 0.1), a);
+          else if (r < 0.88) broadLeaf(ink.at(st.fam(x, y), tone(x, y) - 0.4 + R() * 0.8), px, py, len * 0.85, len * 0.36, a);
+          else floretJ(ink.at(st.bloomFam(x, y), 4.2 + nearLight(x, y) * 1.3), x + nx * 3 * S, y + ny * 3 * S, (5 + R() * 4) * S, R() * TAU, R);
+        }
+        if (st.rosette)
+          for (let t = 12 * S; t < L; t += 26 * S) {
+            const x = ax + (bx - ax) * t / L, y = ay + (by - ay) * t / L;
+            if (x < box.x0 - 40 || x > box.x1 + 40 || y < box.y0 - 40 || y > box.y1 + 40) continue;
+            const R = rng(hash3(x | 0, y | 0, seed + 17));
+            if (R() < 0.2) continue;
+            const cx = x - nx * 7 * S, cy = y - ny * 7 * S;
+            const base = Math.atan2(ny, nx) + (R() - 0.5) * 0.5;
+            const k = 5 + (R() * 3 | 0);
+            const p = ink.at(st.fam(x, y), tone(x, y) - 0.45 + R() * 0.4);
+            for (let j = 0; j < k; j++) {
+              const a = base + (j / (k - 1) - 0.5) * 2.7 + (R() - 0.5) * 0.25;
+              const len = (13 + R() * 10) * S * (1 - Math.abs(j / (k - 1) - 0.5) * 0.5);
+              leaf(p, cx, cy, len, len * 0.27, a);
+            }
+          }
+      }
+      ink.fill(gOf(), P);
+    });
+    steps.push(() => {
+      cells(region, box, 56 * S / Math.sqrt(dens), seed + 4, (x, y, R, d) => {
+        const nl = nearLight(x, y);
+        const rim = (st.rim ?? 0) * clamp(1 - d / (45 * S));
+        if (R() > st.bloomP * (0.2 + nl * 1.05) * (1 + rim)) return;
+        const fam = st.bloomFam(x, y);
+        const top = clamp(4 + st.lift * 0.5 + nl * 1.3 + rim * 0.35 + domeT(x, y) * 0.6 + (R() - 0.5) * 0.6 - deep(d) * 0.6, 3.4, 5.8);
+        const Rc = Math.min((18 + R() * 22) * S, Math.max(8, d + 8 * S));
+        let lx = LIGHT_X - x, ly = LIGHT_Y - y;
+        const ld = Math.hypot(lx, ly) || 1;
+        lx /= ld;
+        ly /= ld;
+        const lobes = 2 + (R() * 3 | 0);
+        const under = ink.at(fam, top - 1.2), body = ink.at(fam, top), lit = ink.at(fam, top + 0.9);
+        for (let k = 0; k < lobes; k++) {
+          const a = R() * TAU;
+          const cx = x + Math.cos(a) * Rc * 0.4, cy = y + Math.sin(a) * Rc * 0.4, lr = Rc * (0.5 + R() * 0.25);
+          const fr0 = (4.4 + R() * 1.6) * S * (st.headSize ?? 1);
+          const n = Math.round((lr / fr0) ** 2 * 1.5);
+          for (let i = 0; i < n; i++) {
+            const b = R() * TAU, dd = Math.sqrt(R()) * lr;
+            const fx = cx + Math.cos(b) * dd, fy = cy + Math.sin(b) * dd;
+            const fr = fr0 * (0.8 + R() * 0.45), rot = R() * TAU;
+            floret(under, fx + fr * 0.25, fy + fr * 0.45, fr * 1.1, rot);
+            floret(body, fx, fy, fr, rot);
+            const facing = (Math.cos(b) * lx + Math.sin(b) * ly) * (dd / lr) - Math.sin(b) * 0.4;
+            if (facing > 0.25 && R() < 0.6) floret(lit, fx - fr * 0.1, fy - fr * 0.15, fr * 0.72, rot + 0.4);
+          }
+        }
+      });
+      ink.fill(gOf(), P);
+    });
+    steps.push(() => {
+      const g = gOf();
+      cells(region, box, 58 * S, seed + 5, (x, y, R, d) => {
+        if (!st.ground) return;
+        const nl = nearLight(x, y);
+        if (R() < 0.12 + nl * 0.3) {
+          const fam = R() < 0.6 ? st.bloomFam(x, y) : st.fam(x, y);
+          const r = Math.min((8 + R() * 8) * S, Math.max(6, d + 8));
+          floretJ(ink.at(fam, 4 + st.lift * 0.5 + nl * 1.3 + R() * 0.8), x, y, r, R() * TAU, R);
+        }
+        if (R() < 0.4) {
+          const fam = darkFam(x, y);
+          const a = R() * TAU, len = (16 + R() * 12) * S;
+          broadLeaf(ink.at(fam, tone(x, y) - 1.8 + R() * 0.6), x, y, len, len * 0.36, a);
+        }
+      });
+      cells(region, box, 20 * S, seed + 7, (x, y, R, d) => {
+        if (!st.ground || d > 16 * S || R() > 0.55) return;
+        const a = R() * TAU;
+        if (R() < 0.6) {
+          const len = (14 + R() * 14) * S;
+          leaf(ink.at(darkFam(x, y), tone(x, y) - 1.4 + R()), x, y, len, len * (0.26 + R() * 0.1), a);
+        } else {
+          const r = (5 + R() * 4) * S;
+          floretJ(ink.at(st.bloomFam(x, y), 4.3 + nearLight(x, y) * 1.2), x + Math.cos(a) * 10 * S, y + Math.sin(a) * 10 * S, r, R() * TAU, R);
+        }
+      });
+      ink.fill(g, P);
+      if (st.hangP > 0) {
+        cells(region, box, 34, seed + 6, (x, y, R) => {
+          const edge = !inPoly(region, x, y + 46);
+          if (R() > st.hangP * (edge ? 1 : 0.07 * dens)) return;
+          const fam = R() < 0.12 + nearLight(x, y) * 0.3 ? F_PINK : F_PURPLE;
+          paintRaceme(g, P, x, y + 6, (edge ? 46 : 34) + R() * 70, 11 + R() * 10, fam, hash3(x | 0, y | 0, seed));
+        });
+      }
+    });
+  }
+  function paintRaceme(g, P, x, y, L, w, fam, seed, seg = -1) {
+    const R = rng(seed);
+    const ramp = P.ramp[fam];
+    const tipRamp = P.ramp[F_PINK];
+    const n = Math.round(L / 2.4);
+    const paths = [new Path2D(), new Path2D(), new Path2D(), new Path2D(), new Path2D(), new Path2D()];
+    const cols = [ramp[2], ramp[3], ramp[4], ramp[5], tipRamp[5], tipRamp[6]];
+    const phase = R() * TAU;
+    if (seg <= 0) {
+      g.strokeStyle = css(P.c.stem, 0.9);
+      g.lineWidth = 1.4;
+      g.beginPath();
+      g.moveTo(x, y);
+      g.lineTo(x + Math.sin(phase) * w * 0.1, y + L * (seg === 0 ? 0.36 : 0.9));
+      g.stroke();
+      const lp = new Path2D();
+      for (let k = 0; k < 2; k++) {
+        const a = Math.PI * 0.5 + (k ? 0.9 : -0.9) + (R() - 0.5) * 0.3;
+        leaf(lp, x, y + 3, w * 0.9, w * 0.26, a);
+      }
+      g.fillStyle = P.ramp[F_PURPLE][1];
+      g.fill(lp);
+    }
+    for (let i = 0; i < n; i++) {
+      const t = i / n;
+      const wd = w * Math.pow(Math.sin(Math.PI * (0.12 + 0.88 * t)), 0.6) * (1 - 0.55 * t) + 2;
+      const k = Math.max(1, Math.round(wd / 7));
+      for (let j = 0; j < k; j++) {
+        const ox = (R() - 0.5) * wd + Math.sin(t * 5 + phase) * w * 0.12;
+        const oy = t * L + (R() - 0.5) * 3;
+        const sz = 2.2 + 3 * (1 - t) * (0.8 + R() * 0.5);
+        const tone = clamp(Math.round(t * 3.6 + (R() - 0.45) * 1.6), 0, 5);
+        if (seg >= 0 && Math.min(2, Math.floor(t * 3)) !== seg) continue;
+        if (t > 0.8 && R() < 0.6) {
+          paths[tone].moveTo(x + ox + sz * 0.6, y + oy);
+          paths[tone].ellipse(x + ox, y + oy, sz * 0.6, sz * 0.75, 0, 0, TAU);
+        } else floret(paths[tone], x + ox, y + oy, sz, R() * TAU);
+      }
+    }
+    paths.forEach((p, i) => {
+      g.fillStyle = cols[i];
+      g.fill(p);
+    });
+  }
+  function paintSpray(g, P, x0, y0, x1, y1, w, fam, seed, lift = 0) {
+    const R = rng(seed);
+    const ramp = P.ramp[fam];
+    const mx = (x0 + x1) / 2 + (R() - 0.5) * w * 0.4, my = (y0 + y1) / 2;
+    const at = (t2) => {
+      const u = 1 - t2;
+      return [u * u * x0 + 2 * u * t2 * mx + t2 * t2 * x1, u * u * y0 + 2 * u * t2 * my + t2 * t2 * y1];
+    };
+    const L = Math.hypot(x1 - x0, y1 - y0);
+    const side = Math.sign(LIGHT_X - (x0 + x1) / 2) || 1;
+    g.strokeStyle = css(P.c.stem, 0.55);
+    g.lineWidth = 1.3;
+    g.beginPath();
+    g.moveTo(x0, y0);
+    g.quadraticCurveTo(mx, my, x1, y1);
+    g.stroke();
+    const lv = [new Path2D(), new Path2D()];
+    for (let k = 0; k < 6; k++) {
+      const [lx, ly] = at(R() * 0.18);
+      const out = k % 2 ? -1 : 1;
+      const a = -Math.PI / 2 + out * (0.6 + R() * 0.9);
+      const len = 12 + R() * 10;
+      leaf(lv[k < 3 ? 0 : 1], lx, ly, len, len * 0.28, a);
+    }
+    g.fillStyle = P.ramp[F_PURPLE][2];
+    g.fill(lv[0]);
+    g.fillStyle = P.ramp[fam === F_PINK ? F_PURPLE : fam][3];
+    g.fill(lv[1]);
+    const sh = new Path2D(), hi = new Path2D();
+    const body = [new Path2D(), new Path2D(), new Path2D()];
+    let t = 0.1;
+    while (t < 1) {
+      const r = 3 + 4 * (1 - t);
+      const wd = w * Math.pow(1 - t, 0.75) * (0.55 + 0.45 * Math.min(1, (t - 0.1) * 4)) + r * 1.4;
+      const [cx, cy] = at(t);
+      const m = Math.max(1, Math.round(wd / (r * 1.9)));
+      for (let k = 0; k < m; k++) {
+        const u = m === 1 ? 0 : k / (m - 1) - 0.5;
+        const fx = cx + u * (wd - r) + (R() - 0.5) * r * 0.6, fy = cy + (R() - 0.5) * r * 0.7 + Math.abs(u) * r * 0.9;
+        const fr = r * (0.85 + R() * 0.3), rot = R() * TAU;
+        floret(sh, fx + r * 0.25, fy + r * 0.35, fr * 1.08, rot);
+        const lit = u * side > 0.12;
+        floret(body[clamp((lit ? 1 : 0) + (t > 0.62 ? 1 : 0), 0, 2)], fx, fy, fr, rot);
+        if (lit && R() < 0.45) floret(hi, fx - side * fr * 0.15, fy - fr * 0.2, fr * 0.6, rot + 0.5);
+      }
+      t += r * 1.5 / L;
+    }
+    g.fillStyle = ramp[1 + lift];
+    g.fill(sh);
+    body.forEach((b, i) => {
+      g.fillStyle = ramp[2 + lift + i];
+      g.fill(b);
+    });
+    g.fillStyle = ramp[Math.min(6, 5 + lift)];
+    g.fill(hi);
+  }
+  function blossom(p, x, y, r, a) {
+    for (let k = 0; k < 4; k++) {
+      const ang = a + k * Math.PI / 2;
+      const px = x + Math.cos(ang) * r * 0.5, py = y + Math.sin(ang) * r * 0.5;
+      p.moveTo(px + Math.cos(ang) * r * 0.52, py + Math.sin(ang) * r * 0.52);
+      p.ellipse(px, py, r * 0.52, r * 0.36, ang, 0, TAU);
+    }
+  }
+  function paintHeads(g, P, heads, seed) {
+    const R = rng(seed);
+    const kinds = [
+      [F_LAV, 4, 6],
+      [F_PINK, 3, 5],
+      [F_PURPLE, 0, 1]
+    ];
+    const sh = kinds.map(() => new Path2D()), body = kinds.map(() => new Path2D());
+    for (const [x, y, r, kind] of heads) {
+      const a0 = R() * TAU;
+      for (let k = 0; k < 3; k++) {
+        const a = a0 + k * 2.1 + (R() - 0.5) * 0.4, d = r * (0.95 + R() * 0.25);
+        const fx = x + Math.cos(a) * d, fy = y + Math.sin(a) * d * 0.8;
+        const fr = r * (0.7 + R() * 0.35), rot = R() * TAU;
+        blossom(sh[kind], fx + fr * 0.1, fy + fr * 0.16, fr * 1.06, rot);
+        blossom(body[kind], fx, fy, fr, rot);
+      }
+    }
+    kinds.forEach(([fam, si, bi], i) => {
+      g.fillStyle = P.ramp[fam][si];
+      g.fill(sh[i]);
+      g.fillStyle = P.ramp[fam][bi];
+      g.fill(body[i]);
+    });
+  }
+  function lilacLobe(paths, cx, cy, lr, fr, side, R) {
+    const n = Math.round((lr / fr) ** 2 * 1.7);
+    for (let i = 0; i < n; i++) {
+      const a = R() * TAU, d = Math.sqrt(R()) * lr;
+      const x = cx + Math.cos(a) * d, y = cy + Math.sin(a) * d;
+      const r = fr * (0.75 + R() * 0.5), rot = R() * TAU;
+      floret(paths[0], x - side * r * 0.3, y + r * 0.45, r * 1.1, rot);
+      const f = (Math.cos(a) * side * 0.8 - Math.sin(a) * 0.6) * (d / lr);
+      floret(paths[f > 0.35 ? 2 : 1], x, y, r, rot);
+      if (f > 0.55 && R() < 0.5) floret(paths[3], x + side * r * 0.1, y - r * 0.15, r * 0.6, rot + 0.5);
+    }
+  }
+  function paintPanicle(g, P, x0, y0, x1, y1, w, fam, seed) {
+    const R = rng(seed);
+    const side = Math.sign(LIGHT_X - (x0 + x1) / 2) || 1;
+    const paths = [new Path2D(), new Path2D(), new Path2D(), new Path2D()];
+    const n = 6 + (R() * 3 | 0);
+    for (let k = 0; k < n; k++) {
+      const t = k / (n - 1);
+      const lr = w / 2 * Math.pow(1 - t * 0.85, 0.8) * (0.85 + R() * 0.3);
+      const cx = lerp(x0, x1, t) + (R() - 0.5) * w * 0.35, cy = lerp(y0, y1, t) + (R() - 0.5) * 6;
+      lilacLobe(paths, cx, cy, lr, 3.2 + 1.4 * (1 - t), side, R);
+    }
+    const ramp = P.ramp[fam];
+    [3, 4, 5, 6].forEach((ti, i) => {
+      g.fillStyle = ramp[ti];
+      g.fill(paths[i]);
+    });
+  }
+  function paintLilacHeads(g, P, heads, fam, seed) {
+    const R = rng(seed);
+    const paths = [new Path2D(), new Path2D(), new Path2D(), new Path2D()];
+    for (const [x, y, r] of heads) {
+      const side = Math.sign(LIGHT_X - x) || 1;
+      for (let k = 0, n = 4 + (R() * 3 | 0); k < n; k++) {
+        const a = R() * TAU, d = k ? r * (0.35 + R() * 0.3) : 0;
+        lilacLobe(paths, x + Math.cos(a) * d, y + Math.sin(a) * d * 0.8, r * (0.45 + R() * 0.2), 4, side, R);
+      }
+    }
+    const ramp = P.ramp[fam];
+    [3, 4, 5, 6].forEach((ti, i) => {
+      g.fillStyle = ramp[ti];
+      g.fill(paths[i]);
+    });
+  }
+  function paintStars(g, P, box, seed) {
+    const R = rng(seed * 23 + 4);
+    const p = new Path2D(), eye = new Path2D();
+    const n = Math.round(46 + Math.max(0, box.x1 - 1200) * 0.08);
+    for (let i = 0; i < n; i++) {
+      const x = 1100 + R() * Math.max(110, box.x1 - 1100), y = 690 + R() * 150;
+      if (!inPoly(BUSH_R, x, y)) continue;
+      const r = 5 + R() * 4, a = R() * TAU;
+      for (let k = 0; k < 5; k++) {
+        const ang = a + k * TAU / 5;
+        leaf(p, x, y, r, r * 0.42, ang);
+      }
+      eye.moveTo(x + r * 0.2, y);
+      eye.arc(x, y, r * 0.2, 0, TAU);
+    }
+    g.fillStyle = css(P.c.star);
+    g.fill(p);
+    g.fillStyle = P.ramp[F_BLUE][4];
+    g.fill(eye);
+  }
+  function racemeSprites(P, L, w, fam, seed, res) {
+    const out = [];
+    for (let s = 0; s < 3; s++) {
+      const top = s * L / 3 - 6, bot = (s + 1) * L / 3 + 8;
+      const pw = w + 16;
+      const cv = makeCanvas(pw * res, (bot - top) * res);
+      const g = cv.getContext("2d");
+      g.setTransform(res, 0, 0, res, pw / 2 * res, -top * res);
+      paintRaceme(g, P, 0, 0, L, w, fam, seed, s);
+      out.push({ cv, ox: -pw / 2, oy: top - s * L / 3, w: pw, h: bot - top });
+    }
+    return out;
+  }
+  function petalSprite(c, edge, notch, size, res) {
+    const s = size * 1.1;
+    const cv = makeCanvas(s * res, s * res);
+    const g = cv.getContext("2d");
+    g.setTransform(res, 0, 0, res, s / 2 * res, s / 2 * res);
+    const p = new Path2D();
+    petalPath(p, 0, 0, size, 0, notch);
+    const gr = g.createLinearGradient(0, -size / 2, 0, size / 2);
+    gr.addColorStop(0, css(mix(c, edge, 0.35)));
+    gr.addColorStop(0.6, css(c));
+    gr.addColorStop(1, css(mix(c, [255, 255, 255], 0.35)));
+    g.fillStyle = gr;
+    g.fill(p);
+    return { cv, ox: -s / 2, oy: -s / 2, w: s, h: s };
+  }
+  function glowSprite(c, res) {
+    const r = 8;
+    const cv = makeCanvas(r * 2 * res, r * 2 * res);
+    const g = cv.getContext("2d");
+    g.setTransform(res, 0, 0, res, r * res, r * res);
+    softDisc(g, 0, 0, r, c, 1, 1);
+    softDisc(g, 0, 0, r * 0.28, [255, 255, 255], 1, 0.5);
+    return { cv, ox: -r, oy: -r, w: r * 2, h: r * 2 };
+  }
+  function shaftSprite(c) {
+    const cv = makeCanvas(64, 256);
+    const g = cv.getContext("2d");
+    const across = g.createLinearGradient(0, 0, 64, 0);
+    across.addColorStop(0, css(c, 0));
+    across.addColorStop(0.5, css(c, 1));
+    across.addColorStop(1, css(c, 0));
+    g.fillStyle = across;
+    g.fillRect(0, 0, 64, 256);
+    g.globalCompositeOperation = "destination-in";
+    const along = g.createLinearGradient(0, 0, 0, 256);
+    along.addColorStop(0, "rgba(0,0,0,0)");
+    along.addColorStop(0.18, "rgba(0,0,0,1)");
+    along.addColorStop(0.7, "rgba(0,0,0,0.6)");
+    along.addColorStop(1, "rgba(0,0,0,0)");
+    g.fillStyle = along;
+    g.fillRect(0, 0, 64, 256);
+    return cv;
+  }
+  function softwareRenderer() {
+    try {
+      const gl = document.createElement("canvas").getContext("webgl");
+      if (!gl) return true;
+      const ext = gl.getExtension("WEBGL_debug_renderer_info");
+      const name = String(gl.getParameter(ext ? ext.UNMASKED_RENDERER_WEBGL : gl.RENDERER));
+      const lose = gl.getExtension("WEBGL_lose_context");
+      if (lose) lose.loseContext();
+      return /swiftshader|llvmpipe|software|basic render/i.test(name);
+    } catch {
+      return false;
+    }
+  }
+  function sameVals(a, b) {
+    for (const k of Object.keys(a)) {
+      const x = a[k], y = b[k];
+      if (x && typeof x === "object" && y && typeof y === "object") {
+        for (const kk of Object.keys(x)) if (x[kk] !== y[kk]) return false;
+      } else if (x !== y) return false;
+    }
+    return true;
+  }
+  const PETAL_MAX = 72;
+  const BURST = 18;
+  const BURST_POOL = BURST * 4;
+  const vals = {
+    bloom: 5,
+    petals: 5,
+    petalSize: 14,
+    speed: 7.9,
+    breeze: 6.7,
+    windDirection: "left",
+    clouds: { speed: 6.1, direction: "right" },
+    placement: { x: 0, y: 0, angle: 0, tilt: 0 },
+    pointer: { reach: 5, strength: 5, burst: true },
+    advanced: {
+      seed: 99,
+      hueShift: -49,
+      lightColor: "#FFF8EF",
+      glow: 55,
+      haze: 37,
+      rays: 30,
+      motes: 27,
+      swayAngle: 9,
+      petalColor: "#F3D0EB"
+    }
+  };
+  let dirty = true;
+  function init() {
+    const root = document.getElementById("root");
+    const canvas = document.getElementById("stage");
+    if (!root || !canvas) return;
+    const ctx = canvas.getContext("2d");
+    if (!ctx) return;
+    const reduce = !!window.matchMedia && window.matchMedia("(prefers-reduced-motion: reduce)").matches;
+    const soft = softwareRenderer();
+    let W = 0, H = 0, dpr = 1, shown = 1, quality = 1, kBuf = 1, kFull = 1, sizeDirty = true;
+    let raf = 0, onScreen = true, lastNow = -1, lastTick = -1, ticks = 0, drawn = 0, slowRun = 0, fastRun = 0, probe = 0, probeBase = 0, displayCapped = false, raiseLock = false;
+    const gaps = new Float32Array(9).fill(16.7);
+    const fgaps = new Float32Array(15).fill(16.7);
+    let gi = 0, fgi = 0;
+    let keysSeen = "", keysMoved = -1e9, pending = false;
+    let t = 0, physAcc = 0, physAwake = false;
+    const ptr = { cx: 0, cy: 0, moved: false, over: 0, wx: 0, wy: 0, pwx: 0, pwy: 0, vx: 0, vy: 0, fresh: true, tap: false };
+    let rect2 = null, rectDirty = true;
+    const NR = RACEMES.length;
+    const rTh = new Float32Array(NR), rOm = new Float32Array(NR), rPh = new Float32Array(NR);
+    for (let i = 0; i < NR; i++) rPh[i] = (hash3(i, 7, 3) >>> 0) / 4294967296 * TAU;
+    const pX = new Float32Array(PETAL_MAX + BURST_POOL), pY = new Float32Array(pX.length), pVX = new Float32Array(pX.length), pVY = new Float32Array(pX.length), pRot = new Float32Array(pX.length), pSpin = new Float32Array(pX.length), pFl = new Float32Array(pX.length), pFs = new Float32Array(pX.length), pZ = new Float32Array(pX.length), pK = new Uint8Array(pX.length), pLand = new Float32Array(pX.length), pLife = new Float32Array(pX.length);
+    let petalsSeeded = false, burstNext = 0;
+    const pr = rng(91);
+    const MOTE_MAX = 100;
+    const mX = new Float32Array(MOTE_MAX), mY = new Float32Array(MOTE_MAX), mP = new Float32Array(MOTE_MAX), mS = new Float32Array(MOTE_MAX);
+    {
+      const R = rng(5);
+      for (let i = 0; i < MOTE_MAX; i++) {
+        mX[i] = 390 + R() * 470;
+        mY[i] = 110 + R() * 600;
+        mP[i] = R() * TAU;
+        mS[i] = 0.6 + R() * 0.9;
+      }
+    }
+    let layers = null;
+    let job = null;
+    const sizeCanvas = () => {
+      kFull = Math.min(dpr * clamp(shown, 1, 2), Math.sqrt(42e5 / Math.max(1, W * H)));
+      const k = kFull * quality;
+      const bw = Math.max(1, Math.round(W * k)), bh = Math.max(1, Math.round(H * k));
+      if (canvas.width !== bw || canvas.height !== bh) {
+        canvas.width = bw;
+        canvas.height = bh;
+      }
+      kBuf = bw / W;
+    };
+    const measure = () => {
+      const r = root.getBoundingClientRect();
+      rect2 = r;
+      rectDirty = false;
+      if (W > 0) {
+        const s = r.width / W;
+        if (Math.abs(s - shown) / shown > 0.05) {
+          shown = s;
+          sizeDirty = true;
+        }
+      }
+    };
+    const ro = new ResizeObserver((ents) => {
+      const cr = ents[0].contentRect;
+      if (!cr.width || !cr.height) return;
+      W = cr.width;
+      H = cr.height;
+      dpr = soft ? 1 : Math.min(2, window.devicePixelRatio || 1);
+      measure();
+      sizeDirty = true;
+      if (W && H) draw(0);
+      wake();
+    });
+    const io = new IntersectionObserver((ents) => {
+      onScreen = ents[ents.length - 1].isIntersecting;
+      if (onScreen) wake();
+    });
+    ro.observe(root);
+    io.observe(root);
+    const onMove = (e) => {
+      if (e.clientX === ptr.cx && e.clientY === ptr.cy && ptr.over) return;
+      ptr.cx = e.clientX;
+      ptr.cy = e.clientY;
+      ptr.moved = true;
+      if (!ptr.over) ptr.fresh = true;
+      ptr.over = 1;
+      wake();
+    };
+    const onLeave = () => {
+      ptr.over = 0;
+      wake();
+    };
+    const onDown = (e) => {
+      onMove(e);
+      ptr.tap = true;
+      wake();
+    };
+    const onUp = (e) => {
+      if (e.pointerType === "touch") ptr.over = 0;
+      wake();
+    };
+    const onScroll = () => {
+      rectDirty = true;
+    };
+    const onVis = () => wake();
+    root.addEventListener("pointermove", onMove);
+    root.addEventListener("pointerenter", onMove);
+    root.addEventListener("pointerleave", onLeave);
+    root.addEventListener("pointerdown", onDown);
+    window.addEventListener("pointerup", onUp);
+    window.addEventListener("pointercancel", onUp);
+    window.addEventListener("scroll", onScroll, { passive: true, capture: true });
+    document.addEventListener("visibilitychange", onVis);
+    const onRestored = () => {
+      layers = null;
+      job = null;
+      sizeDirty = true;
+      wake();
+    };
+    canvas.addEventListener("contextrestored", onRestored);
+    const keysOf = (v, res) => {
+      const a = v.advanced;
+      const hue = a.hueShift;
+      return {
+        far: [hue, a.haze, a.glow, a.seed, a.lightColor].join("|"),
+        arch: [hue, a.glow, a.seed, v.bloom, a.lightColor, a.petalColor].join("|"),
+        bush: [hue, a.glow, a.seed, v.bloom, a.lightColor].join("|"),
+        sprites: [hue, a.seed, v.petalSize, a.petalColor, a.lightColor, res.toFixed(3)].join("|")
+      };
+    };
+    const ensureScene = (v, box, res) => {
+      if (job) {
+        const t0 = performance.now();
+        do
+          job.steps[job.i++]();
+        while (job.i < job.steps.length && performance.now() - t0 < 10);
+        if (job.i >= job.steps.length) {
+          job.done();
+          job = null;
+        }
+        return;
+      }
+      const keys = keysOf(v, res);
+      const ks = Object.values(keys).join("#");
+      if (ks !== keysSeen) {
+        keysSeen = ks;
+        keysMoved = performance.now();
+      }
+      const L = layers;
+      const geoOk = !!L && box.x0 >= L.box.x0 && box.x1 <= L.box.x1 && box.y0 >= L.box.y0 && box.y1 <= L.box.y1 && res / L.res > 0.87 && res / L.res < 1.15;
+      const changed = (k) => !L || !geoOk || L.keys[k] !== keys[k];
+      pending = false;
+      if (L && geoOk && !Object.keys(keys).some(changed)) return;
+      if (L && geoOk && performance.now() - keysMoved < 160) {
+        pending = true;
+        return;
+      }
+      const sx = (box.x1 - box.x0) * 0.1, sy = (box.y1 - box.y0) * 0.1;
+      const bb = { x0: box.x0 - sx, y0: box.y0 - sy, x1: box.x1 + sx, y1: box.y1 + sy };
+      const bres = geoOk && L ? L.res : res;
+      const bbox = geoOk && L ? L.box : bb;
+      const adv = v.advanced;
+      const P = makePalette(adv.hueShift);
+      const light = parseColor(adv.lightColor, hex(DEFAULT_ADVANCED.lightColor));
+      const petal = parseColor(adv.petalColor, hex(DEFAULT_ADVANCED.petalColor));
+      const glowK = clamp(adv.glow / 55, 0, 2);
+      const seed = Math.round(adv.seed);
+      const dens = 0.55 + 0.09 * v.bloom;
+      const o = { ...L || {}, res: bres, box: bbox, keys };
+      const steps = [];
+      const cool = P.rampRGB[F_BLUE][0];
+      const wander = (x, y) => {
+        const n = vnoise(x, y, 260, 84);
+        return n < -0.35 ? F_BLUE : n < 0 ? F_LAV : F_PURPLE;
+      };
+      if (changed("far")) {
+        steps.push(() => {
+          const [l, g] = newLayer(FAR, bres);
+          paintSky(g, P, light, glowK);
+          o.sky = l;
+        });
+        const cres = Math.round(CLOUD_PER * bres * 0.5) / CLOUD_PER;
+        steps.push(() => {
+          const [l, g] = newLayer(CLOUD_BOX, cres);
+          paintCloudStrip(g, P, CLOUDS_FAR, true, seed, cres);
+          o.cloudsFar = l;
+        });
+        steps.push(() => {
+          const [l, g] = newLayer(CLOUD_BOX, cres);
+          paintCloudStrip(g, P, CLOUDS_NEAR, false, seed, cres);
+          o.cloudsNear = l;
+        });
+        steps.push(() => {
+          const [l, g] = newLayer(FAR, bres * 0.6);
+          paintCastle(g, P, clamp(adv.haze / 50, 0, 2), seed);
+          o.castle = l;
+        });
+      }
+      if (changed("arch")) {
+        let g = null;
+        const gOf = () => g;
+        steps.push(() => {
+          const r = newLayer(bbox, bres);
+          o.arch = r[0];
+          g = r[1];
+          paintWallRing(g, P, bbox, seed);
+          paintRingDetail(g, P, seed, bres);
+        });
+        steps.push(() => paintFloor(gOf(), P, bbox, light, glowK, seed));
+        const pink = {
+          fam: () => F_PINK,
+          bloomFam: () => F_PINK,
+          scale: 0.85,
+          lift: 1.3,
+          bloomP: 2.4,
+          ground: true,
+          hangP: 0
+        };
+        foliageSteps(steps, gOf, P, PINK_L, bbox, seed * 1e3 + 41, dens, pink);
+        foliageSteps(steps, gOf, P, PINK_R, bbox, seed * 1e3 + 43, dens, pink);
+        steps.push(() => {
+          const gg = gOf();
+          paintGroundShade(gg, P, bres);
+          paintPillars(gg, P);
+          paintStoneDetail(gg, P, light, seed, bres);
+          paintFloorPetals(gg, P, petal, seed, bbox);
+          lightPass(gg, bbox, light, glowK, cool, 640, 520, 430, 0.22, 90);
+        });
+        const leftFam = (x, y) => {
+          if (x < -60) return wander(x, y);
+          const n = x + vnoise(x, y, 150, 77) * 70;
+          return n < 40 ? F_BLUE : n < 85 ? F_LAV : F_PURPLE;
+        };
+        const rightFam = (x, y) => x > 1260 ? wander(x, y) : x + vnoise(x, y, 150, 78) * 70 > 1165 ? F_LAV : F_PURPLE;
+        foliageSteps(steps, gOf, P, LEFT_MASS, bbox, seed * 1e3 + 1, dens, {
+          fam: leftFam,
+          bloomFam: (x, y) => x < 60 && y > 300 ? F_LAV : F_PINK,
+          scale: 1.1,
+          lift: 0,
+          bloomP: 0.75,
+          ground: true,
+          hangP: 0.4,
+          rim: 1.6,
+          inner: 0.9
+        });
+        foliageSteps(steps, gOf, P, RIGHT_MASS, bbox, seed * 1e3 + 2, dens, { fam: rightFam, bloomFam: () => F_PINK, scale: 1.1, lift: 0, bloomP: 0.6, ground: true, hangP: 0.3 });
+        foliageSteps(steps, gOf, P, SPILL_R, bbox, seed * 1e3 + 3, dens, {
+          fam: (x, y) => vnoise(x, y, 70, 88) > 0.25 ? F_PURPLE : F_PINK,
+          bloomFam: () => F_PINK,
+          scale: 0.9,
+          lift: 0.4,
+          bloomP: 1.6,
+          ground: true,
+          hangP: 0.3
+        });
+      }
+      if (changed("bush")) {
+        let g = null;
+        const gOf = () => g;
+        const bb2 = { ...bbox, y0: Math.min(Math.max(bbox.y0, 350), bbox.y1 - 1) };
+        steps.push(() => {
+          const r = newLayer(bb2, bres);
+          o.bush = r[0];
+          g = r[1];
+        });
+        const blueCorner = (x, y) => x > 1300 ? wander(x, y) === F_BLUE : x + vnoise(x, y, 120, 79) * 40 > 1105 && y + vnoise(x, y, 120, 80) * 40 > 690;
+        const bushParts = [
+          [BUSH_L, 4, {
+            fam: (x, y) => x < -60 ? wander(x, y) : x + vnoise(x, y, 120, 81) * 50 < 20 && y > 680 ? F_BLUE : x + vnoise(x, y, 110, 85) * 60 > 160 ? vnoise(x, y, 90, 86) > 0.3 ? F_BLUE : F_LAV : x + vnoise(x, y, 110, 87) * 50 < 90 ? F_PURPLE : vnoise(x, y, 160, 82) > 0.4 ? F_LAV : F_PURPLE,
+            // pink-lilac heads, lavender only toward the far edge
+            bloomFam: (x) => x < 110 ? F_LAV : F_PINK,
+            scale: 1.3,
+            lift: -0.25,
+            dark: 0.8,
+            bloomP: 0.3,
+            headSize: 1.8,
+            ground: true,
+            hangP: 0,
+            dome: [150, 730, 170, 150, 1.3],
+            rosette: true
+          }],
+          [BUSH_R, 5, {
+            // pink-lilac where it meets the light, blue in the far corner
+            fam: (x, y) => blueCorner(x, y) ? F_BLUE : x + vnoise(x, y, 90, 83) * 60 < 1010 && y < 700 ? F_PINK : F_PURPLE,
+            bloomFam: (x, y) => blueCorner(x, y) ? F_BLUE : F_PINK,
+            scale: 1.35,
+            lift: -0.55,
+            bloomP: 0.3,
+            headSize: 1.5,
+            dark: 1.3,
+            ground: true,
+            hangP: 0,
+            dome: [1070, 650, 170, 200, 1.6],
+            rosette: true
+          }]
+        ];
+        for (const [poly2, sd, st] of bushParts) foliageSteps(steps, gOf, P, poly2, bbox, seed * 1e3 + sd, dens, st);
+        steps.push(() => {
+          const g2 = gOf();
+          paintSpray(g2, P, 150, 644, 156, 528, 46, F_LAV, seed * 7 + 11, 1);
+          paintHeads(
+            g2,
+            P,
+            [
+              [163, 628, 10, 1],
+              [62, 690, 11, 0],
+              [125, 684, 12, 0],
+              [210, 688, 11, 1],
+              [176, 704, 9, 2],
+              [240, 724, 9, 0],
+              [100, 738, 9, 2],
+              [167, 752, 12, 0],
+              [127, 780, 11, 0],
+              [166, 798, 10, 1],
+              [70, 808, 12, 0]
+            ],
+            seed * 7 + 13
+          );
+          paintRaceme(g2, P, 96, 632, 84, 16, F_PURPLE, seed + 21);
+          for (const [x0, y0, x1, y1, w, k] of [
+            [884, 610, 868, 446, 52, 3],
+            [1e3, 566, 994, 392, 50, 2],
+            [932, 572, 920, 474, 34, 4]
+          ])
+            paintPanicle(g2, P, x0, y0, x1, y1, w, F_PINK, seed * 7 + k);
+          paintLilacHeads(
+            g2,
+            P,
+            [
+              [915, 532, 26],
+              [968, 540, 30],
+              [1050, 598, 26],
+              [992, 652, 19],
+              [1068, 680, 23],
+              [905, 630, 20]
+            ],
+            F_PINK,
+            seed * 7 + 14
+          );
+          paintRaceme(g2, P, 938, 688, 72, 15, F_PINK, seed + 22);
+          paintStars(g2, P, bbox, seed);
+          lightPass(g2, bbox, light, glowK, cool, LIGHT_X, LIGHT_Y, 560, 0.22);
+        });
+      }
+      if (!L || L.keys.sprites !== keys.sprites || !geoOk) {
+        steps.push(() => {
+          const rs = [];
+          for (let i = 0; i < NR; i++) {
+            const [, , len, w, fam] = RACEMES[i];
+            rs.push(racemeSprites(P, len, w, fam, seed * 31 + i, bres));
+          }
+          o.racemes = rs;
+          const pc = petal;
+          const kinds = [];
+          const edge = P.rampRGB[F_PURPLE][3];
+          for (const c of [pc, mix(pc, P.rampRGB[F_LAV][4], 0.5), P.rampRGB[F_PINK][4]])
+            for (const notch of [true, false]) kinds.push(petalSprite(c, edge, notch, v.petalSize * 1.25, bres));
+          o.petals = kinds;
+          o.mote = glowSprite(light, bres);
+          o.shaft = shaftSprite(light);
+        });
+      }
+      job = {
+        steps,
+        i: 0,
+        done: () => {
+          layers = o;
+        }
+      };
+    };
+    const spawnPetal = (i, box, top) => {
+      const R = pr;
+      pX[i] = windDir > 0 ? lerp(box.x0 - 120, box.x1, R()) : lerp(box.x0, box.x1 + 120, R());
+      pY[i] = top ? box.y0 - 30 - R() * 120 : lerp(box.y0, box.y1, R());
+      pVX[i] = 0;
+      pVY[i] = 0;
+      pRot[i] = R() * TAU;
+      pSpin[i] = (R() - 0.5) * 2.4;
+      pFl[i] = R() * TAU;
+      pFs[i] = 1.4 + R() * 2.2;
+      pZ[i] = 0.75 + R() * 0.5;
+      pK[i] = R() * 6 | 0;
+      pLand[i] = 0;
+      pLife[i] = 1;
+    };
+    const wake = () => {
+      if (!raf && onScreen && !document.hidden) raf = requestAnimationFrame(frame);
+    };
+    const triggerWake = () => {
+      dirty = true;
+      wake();
+    };
+    let cloudNear = 0, cloudFar = 0, windDir = 1;
+    let animating = false, burstAlive = false;
+    const frame = (now) => {
+      raf = 0;
+      if (lastTick >= 0) gaps[gi++ % 9] = Math.min(100, now - lastTick);
+      lastTick = now;
+      if (!onScreen || document.hidden || !W || !H) {
+        lastNow = -1;
+        lastTick = -1;
+        return;
+      }
+      const dirty2 = dirty2 || sizeDirty;
+      const active = job !== null || pending || animating || physAwake || ptr.moved || ptr.tap || burstAlive;
+      if (!active && !dirty2) {
+        lastNow = -1;
+        lastTick = -1;
+        return;
+      }
+      raf = requestAnimationFrame(frame);
+      tmp9.set(gaps);
+      const period = tmp9.sort()[4];
+      const N = Math.max(1, Math.floor(16.7 / Math.max(1, period) + 0.1));
+      if (!dirty2 && ++ticks % N !== 0) return;
+      const dt = lastNow < 0 ? 0 : Math.min(0.05, (now - lastNow) / 1e3);
+      if (lastNow >= 0 && !job && !dirty2) fgaps[fgi++ % 15] = Math.min(200, now - lastNow);
+      lastNow = now;
+      draw(dt);
+      if (++drawn > 30 && !job && animating) {
+        tmp15.set(fgaps);
+        const g = tmp15.sort()[7];
+        if (probe > 0) {
+          if (++probe > 30) {
+            if (g > probeBase * 0.85) {
+              quality = Math.min(1, quality + 0.15);
+              displayCapped = true;
+              sizeDirty = true;
+            } else raiseLock = true;
+            probe = 0;
+          }
+        } else if (g > 22 && quality > 0.6 && !displayCapped) {
+          if (++slowRun > 30) {
+            probeBase = g;
+            quality = Math.max(0.6, quality - 0.15);
+            probe = 1;
+            slowRun = 0;
+            sizeDirty = true;
+          }
+        } else slowRun = 0;
+        if (probe === 0 && g < 18.5 && quality < 1 && !raiseLock) {
+          if (++fastRun > 240) {
+            quality = Math.min(1, quality + 0.15);
+            fastRun = 0;
+            sizeDirty = true;
+          }
+        } else fastRun = 0;
+      }
+    };
+    let ma = 1, mb = 0, mc = 0, md = 1, me = 0, mf = 0, ox0 = 0, oy0 = 0, snap = false, sceneCheck = true, tiltKey = "";
+    const tmp9 = new Float32Array(9), tmp15 = new Float32Array(15);
+    const vbox = { x0: 0, y0: 0, x1: 0, y1: 0 };
+    const setWorld = (ex = 0, ey = 0) => {
+      const ox = REF_W / 2 - ex, oy = REF_H / 2 - ey;
+      me = ox0 - (ma * ox + mc * oy);
+      mf = oy0 - (mb * ox + md * oy);
+      ctx.setTransform(ma, mb, mc, md, me, mf);
+    };
+    const blit = (l) => {
+      setWorld();
+      if (snap) {
+        const X = ma * l.box.x0 + me, Y = md * l.box.y0 + mf;
+        ctx.setTransform(ma, mb, mc, md, me + Math.round(X) - X, mf + Math.round(Y) - Y);
+      }
+      ctx.drawImage(l.cv, l.box.x0, l.box.y0, l.cv.width / l.res, l.cv.height / l.res);
+    };
+    const local = (x, y, a, fx) => {
+      const c = Math.cos(a), sn = Math.sin(a);
+      const la = c * fx, lb = sn * fx;
+      ctx.setTransform(ma * la + mc * lb, mb * la + md * lb, mc * c - ma * sn, md * c - mb * sn, ma * x + mc * y + me, mb * x + md * y + mf);
+    };
+    const draw = (dt) => {
+      const v = vals;
+      const adv = v.advanced;
+      if (dirty) sceneCheck = true;
+      dirty = false;
+      if (sizeDirty) {
+        sizeCanvas();
+        sizeDirty = false;
+        sceneCheck = true;
+      }
+      if (rectDirty || ptr.moved && !rect2) measure();
+      const rate = reduce ? 0 : v.speed / 5;
+      const breezeK = v.breeze / 5;
+      const pp = v.pointer;
+      const sFit = Math.min(H, W / REF_ASPECT) / REF_H;
+      const pl = v.placement;
+      const ang = clamp(pl.angle, -180, 180) * DEG;
+      const ca = Math.cos(ang), sa = Math.sin(ang);
+      const Cx = W / 2 + clamp(pl.x, -50, 50) / 100 * W, Cy = H / 2 + clamp(pl.y, -50, 50) / 100 * H;
+      const box = vbox;
+      box.x0 = box.y0 = INF;
+      box.x1 = box.y1 = -INF;
+      for (let c = 0; c < 4; c++) {
+        const x = c & 1 ? W : 0, y = c & 2 ? H : 0;
+        const dx = (x - Cx) / sFit, dy = (y - Cy) / sFit;
+        const wx = ca * dx + sa * dy + REF_W / 2, wy = -sa * dx + ca * dy + REF_H / 2;
+        box.x0 = Math.min(box.x0, wx - 4);
+        box.x1 = Math.max(box.x1, wx + 4);
+        box.y0 = Math.min(box.y0, wy - 4);
+        box.y1 = Math.max(box.y1, wy + 4);
+      }
+      const tilt = clamp(pl.tilt, -60, 60);
+      if (tilt) {
+        const g = 1 + Math.abs(Math.sin(tilt * DEG)) * 0.6;
+        const mx = (box.x0 + box.x1) / 2, my = (box.y0 + box.y1) / 2;
+        box.x0 = mx + (box.x0 - mx) * g;
+        box.x1 = mx + (box.x1 - mx) * g;
+        box.y0 = my + (box.y0 - my) * g;
+        box.y1 = my + (box.y1 - my) * g;
+      }
+      let res = sFit * kFull;
+      const area = (box.x1 - box.x0) * (box.y1 - box.y0) * 1.44 * res * res;
+      const cap = Math.max(42e5, W * H * kFull * kFull) * 1.6;
+      if (area > cap) res *= Math.sqrt(cap / area);
+      const lb = layers && layers.box;
+      if (sceneCheck || job || pending || !lb || box.x0 < lb.x0 || box.x1 > lb.x1 || box.y0 < lb.y0 || box.y1 > lb.y1) {
+        sceneCheck = false;
+        ensureScene(v, box, res);
+      }
+      const L = layers;
+      t += dt * rate;
+      const cs = clamp(v.clouds.speed, 0, 10);
+      animating = !!L && rate > 0 && (v.petals > 0 || v.breeze > 0 || adv.motes > 0 || cs > 0 || adv.rays > 0);
+      const cdir = v.clouds.direction === "left" ? -1 : 1;
+      cloudNear = (cloudNear + dt * rate * cs * 2.4 * cdir) % (CLOUD_PER * 1e3);
+      cloudFar = (cloudFar + dt * rate * cs * 1 * cdir) % (CLOUD_PER * 1e3);
+      windDir = v.windDirection === "left" ? -1 : 1;
+      if (tilt || tiltKey) {
+        const tk = tilt ? `${tilt}|${W}|${H}|${Cx}|${Cy}` : "";
+        if (tk !== tiltKey) {
+          tiltKey = tk;
+          canvas.style.transform = tilt ? `perspective(${2 * Math.max(W, H)}px) rotateX(${tilt}deg)` : "";
+          canvas.style.transformOrigin = `${Cx}px ${Cy}px`;
+        }
+      }
+      const s = sFit;
+      if (ptr.moved && rect2 && W) {
+        const k = rect2.width / W;
+        let lx = (ptr.cx - rect2.left) / k, ly = (ptr.cy - rect2.top) / k;
+        if (tilt) {
+          const p = 2 * Math.max(W, H), c = Math.cos(tilt * DEG), sn = Math.sin(tilt * DEG);
+          const Ys = ly - Cy;
+          const Y = Ys * p / (c * p + Ys * sn);
+          const f = p / (p - Y * sn);
+          lx = Cx + (lx - Cx) / f;
+          ly = Cy + Y;
+        }
+        const dx = (lx - Cx) / s, dy = (ly - Cy) / s;
+        const wx = ca * dx + sa * dy + REF_W / 2, wy = -sa * dx + ca * dy + REF_H / 2;
+        if (ptr.fresh) {
+          ptr.pwx = wx;
+          ptr.pwy = wy;
+          ptr.fresh = false;
+        }
+        ptr.wx = wx;
+        ptr.wy = wy;
+        ptr.moved = false;
+      }
+      if (dt > 0) {
+        const ivx = (ptr.wx - ptr.pwx) / dt, ivy = (ptr.wy - ptr.pwy) / dt;
+        const kk = 1 - Math.exp(-dt / 0.05);
+        ptr.vx += (clamp(ivx, -4e3, 4e3) - ptr.vx) * kk;
+        ptr.vy += (clamp(ivy, -4e3, 4e3) - ptr.vy) * kk;
+        ptr.pwx = ptr.wx;
+        ptr.pwy = ptr.wy;
+      }
+      const reachW = 40 + clamp(pp.reach, 0, 10) * 14;
+      const gain = clamp(pp.strength, 0, 10) / 5 * 1.1;
+      if (ptr.tap && L && !reduce && pp.burst) {
+        for (let i = 0; i < NR; i++) {
+          const [ax, ay, len] = RACEMES[i];
+          const d = Math.hypot(ax - ptr.wx, ay + len / 2 - ptr.wy);
+          if (d < 360) rOm[i] += (ptr.wx < ax ? -1 : 1) * (1 - d / 360) * 2.2 * gain;
+        }
+      }
+      physAcc = Math.min(physAcc + dt, 0.1);
+      const H_STEP = 1 / 120;
+      let awake = false;
+      while (physAcc >= H_STEP) {
+        physAcc -= H_STEP;
+        for (let i = 0; i < NR; i++) {
+          rOm[i] += (-36 * rTh[i] - 2.6 * rOm[i]) * H_STEP;
+          rTh[i] += rOm[i] * H_STEP;
+        }
+      }
+      if (ptr.over && !reduce && Math.abs(ptr.vx) > 5) {
+        for (let i = 0; i < NR; i++) {
+          const [ax, ay, len] = RACEMES[i];
+          const px = ptr.wx - ax, py = ptr.wy - ay;
+          const along = clamp(py / len, 0, 1);
+          const d = Math.hypot(px, py - along * len);
+          if (d > reachW) continue;
+          const w = (1 - d / reachW) ** 2;
+          rOm[i] = clamp(rOm[i] - gain * ptr.vx * w * (0.3 + along) * dt * 6 / len, -7, 7);
+        }
+      }
+      for (let i = 0; i < NR; i++) if (Math.abs(rTh[i]) > 4e-4 || Math.abs(rOm[i]) > 4e-3) awake = true;
+      if (!awake) {
+        rTh.fill(0);
+        rOm.fill(0);
+      }
+      physAwake = awake;
+      const nP = Math.round(clamp(v.petals, 0, 10) * 6);
+      if (L && !petalsSeeded) {
+        for (let i = 0; i < pX.length; i++) {
+          spawnPetal(i, box, false);
+          if (i >= nP) pLife[i] = 0;
+        }
+        petalsSeeded = true;
+      }
+      if (L && ptr.tap && pp.burst && !reduce) {
+        for (let n = 0; n < BURST; n++) {
+          const i = PETAL_MAX + burstNext++ % BURST_POOL;
+          spawnPetal(i, box, false);
+          const a = pr() * TAU, sp = 120 + pr() * 260;
+          pX[i] = ptr.wx;
+          pY[i] = ptr.wy;
+          pVX[i] = Math.cos(a) * sp;
+          pVY[i] = Math.sin(a) * sp - 80;
+        }
+      }
+      ptr.tap = false;
+      const pdt0 = dt * rate, bdt = reduce ? 0 : dt * Math.max(rate, 1);
+      burstAlive = false;
+      if (pdt0 > 0 || bdt > 0) {
+        for (let i = 0; i < pX.length; i++) {
+          const burst = i >= PETAL_MAX;
+          const pdt = burst ? bdt : pdt0;
+          if (pdt <= 0) continue;
+          const fade = 1 - Math.exp(-pdt * 1.4);
+          if (burst && pLife[i] > 0) burstAlive = true;
+          if (!burst && i >= nP) {
+            pLife[i] = 0;
+            continue;
+          }
+          if (pLife[i] <= 0) {
+            if (!burst) spawnPetal(i, box, true);
+            continue;
+          }
+          if (pLand[i] > 0) {
+            pLand[i] += pdt;
+            if (pLand[i] > 2.2) {
+              pLife[i] = 0;
+              if (!burst) spawnPetal(i, box, true);
+            }
+            continue;
+          }
+          if (burst) {
+            pLife[i] -= pdt / 6;
+            if (pLife[i] <= 0) continue;
+          }
+          const z = pZ[i];
+          const wind = windDir * breezeK * (16 + 12 * Math.sin(t * 0.45 + pY[i] * 4e-3));
+          const fall = (34 + 18 * z) * (0.6 + 0.4 * Math.sin(pFl[i] * 0.5) ** 2);
+          pVX[i] += (wind - pVX[i]) * fade;
+          pVY[i] += (fall - pVY[i]) * fade;
+          pX[i] += (pVX[i] + Math.sin(pFl[i]) * 14 * z) * pdt;
+          pY[i] += pVY[i] * pdt;
+          pRot[i] += pSpin[i] * pdt;
+          pFl[i] += pFs[i] * pdt;
+          const landY = 760 + i * 37 % 140;
+          if (pX[i] > 300 && pX[i] < 920 && pY[i] > landY && pY[i] < landY + 30 && !burst) pLand[i] = 1e-3;
+          if (pY[i] > box.y1 + 40 || pX[i] > box.x1 + 160 || pX[i] < box.x0 - 160) {
+            pLife[i] = 0;
+            if (!burst) spawnPetal(i, box, true);
+          }
+        }
+        if (ptr.over && !reduce && Math.hypot(ptr.vx, ptr.vy) > 5) {
+          const k = clamp(pp.strength, 0, 10) / 5 * 0.9;
+          for (let i = 0; i < pX.length; i++) {
+            if (pLife[i] <= 0 || pLand[i] > 0) continue;
+            const d = Math.hypot(pX[i] - ptr.wx, pY[i] - ptr.wy);
+            if (d > reachW * 1.2) continue;
+            const w = (1 - d / (reachW * 1.2)) ** 2;
+            pVX[i] += ptr.vx * w * k * Math.min(1, dt * 12);
+            pVY[i] += ptr.vy * w * k * Math.min(1, dt * 12);
+            pSpin[i] += (pr() - 0.5) * w * 2;
+          }
+        }
+      }
+      ctx.setTransform(1, 0, 0, 1, 0, 0);
+      ctx.globalCompositeOperation = "source-over";
+      ctx.globalAlpha = 1;
+      ctx.clearRect(0, 0, canvas.width, canvas.height);
+      if (!L) return;
+      ctx.imageSmoothingEnabled = true;
+      ctx.imageSmoothingQuality = "high";
+      const kb = kBuf * s;
+      ma = kb * ca;
+      mb = kb * sa;
+      mc = -kb * sa;
+      md = kb * ca;
+      ox0 = Cx * kBuf;
+      oy0 = Cy * kBuf;
+      snap = !ang;
+      blit(L.sky);
+      for (const [l, off] of [
+        [L.cloudsFar, cloudFar],
+        [L.cloudsNear, cloudNear]
+      ]) {
+        if (l.pat === void 0) {
+          l.pat = ctx.createPattern(l.cv, "repeat-x");
+          if (l.pat) l.pat.setTransform(new DOMMatrix([1 / l.res, 0, 0, 1 / l.res, l.box.x0, l.box.y0]));
+        }
+        if (!l.pat) continue;
+        const o = (off % CLOUD_PER + CLOUD_PER) % CLOUD_PER;
+        setWorld(o, 0);
+        ctx.fillStyle = l.pat;
+        ctx.fillRect(box.x0 - o, l.box.y0, box.x1 - box.x0, l.cv.height / l.res);
+      }
+      blit(L.castle);
+      const rays = clamp(adv.rays / 100, 0, 1);
+      if (rays > 0) {
+        ctx.globalCompositeOperation = "screen";
+        setWorld();
+        const shaft = L.shaft;
+        for (let i = 0; i < 6; i++) {
+          const a = (-0.42 + i * 0.16) * (1 + 0.05 * Math.sin(t * 0.1 + i));
+          const len = 720, wd = 60 + i * 37 % 50;
+          const al = rays * 0.32 * (0.55 + 0.45 * Math.sin(t * (0.21 + i * 0.03) + i * 1.7));
+          if (al <= 3e-3) continue;
+          ctx.globalAlpha = al;
+          local(600 + i * 8, 70, a, 1);
+          ctx.drawImage(shaft, -wd / 2, 0, wd, len);
+        }
+        ctx.globalAlpha = 1;
+      }
+      const nm = Math.round(clamp(adv.motes, 0, 100));
+      if (nm > 0) {
+        ctx.globalCompositeOperation = "lighter";
+        setWorld();
+        const ms = L.mote;
+        for (let i = 0; i < nm; i++) {
+          const ph = mP[i] + t * 0.35 * mS[i];
+          const x = mX[i] + Math.sin(ph) * 26 + Math.sin(ph * 0.37) * 40;
+          const y = 110 + ((mY[i] - 110 - t * 9 * mS[i]) % 600 + 600) % 600;
+          const tw = 0.5 + 0.5 * Math.sin(ph * 2.3);
+          ctx.globalAlpha = (0.15 + 0.5 * tw) * clamp(Math.min(y - 110, 710 - y) / 60);
+          const sz = 0.18 + 0.22 * mS[i];
+          ctx.drawImage(ms.cv, x + ms.ox * sz, y + ms.oy * sz, ms.w * sz, ms.h * sz);
+        }
+        ctx.globalAlpha = 1;
+      }
+      ctx.globalCompositeOperation = "source-over";
+      blit(L.arch);
+      setWorld();
+      const sway = adv.swayAngle * DEG * breezeK;
+      for (let i = 0; i < NR; i++) {
+        const [ax, ay, len] = RACEMES[i];
+        const wind = sway * (0.65 * Math.sin(t * 0.9 + rPh[i]) + 0.35 * Math.sin(t * 2.1 + rPh[i] * 1.7)) * (0.7 + len / 400);
+        const th = wind - sway * 0.35 * windDir + rTh[i];
+        let x = ax, y = ay, a = 0;
+        const segs = L.racemes[i];
+        for (let s3 = 0; s3 < 3; s3++) {
+          a += th * (s3 === 0 ? 1 : 0.55);
+          const sp = segs[s3];
+          local(x, y, a, 1);
+          ctx.drawImage(sp.cv, sp.ox, sp.oy, sp.w, sp.h);
+          x += -Math.sin(a) * (len / 3);
+          y += Math.cos(a) * (len / 3);
+        }
+      }
+      blit(L.bush);
+      const ps = L.petals;
+      setWorld();
+      for (let i = 0; i < pX.length; i++) {
+        if (pLife[i] <= 0) continue;
+        const z = pZ[i];
+        const sp = ps[pK[i]];
+        const al = (pLand[i] > 0 ? clamp(1 - pLand[i] / 2.2) : 1) * (i >= PETAL_MAX ? clamp(pLife[i] * 4) : 1);
+        ctx.globalAlpha = al;
+        local(pX[i], pY[i], pRot[i], 0.25 + 0.75 * Math.abs(Math.cos(pFl[i] * 0.5)));
+        const sc = v.petalSize / (v.petalSize * 1.25) * z;
+        ctx.drawImage(sp.cv, sp.ox * sc, sp.oy * sc, sp.w * sc, sp.h * sc);
+      }
+      ctx.globalAlpha = 1;
+    };
+    wake();
+  }
+  if (document.readyState === "loading") {
+    document.addEventListener("DOMContentLoaded", init);
+  } else {
+    init();
+  }
+})();
+
+</script>
+</body>
+</html>

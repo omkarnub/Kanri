@@ -31,7 +31,9 @@ enum class GlassBackgroundType(val id: String, val displayName: String, val file
     CLOUD_SHADER("cloud_shader", "Cloudscape", "cloud_shader.html"),
     INK_RIDGES("ink_ridges", "Ink Ridges", "ink_ridges.html"),
     FUJI_SAKURA("fuji_sakura", "Fuji & Sakura", "fuji_sakura.html"),
-    SUMI_E_MIST("sumi_e_mist", "Sumi-e Mist", "sumi_e_mist.html");
+    SUMI_E_MIST("sumi_e_mist", "Sumi-e Mist", "sumi_e_mist.html"),
+    THISTLE_PORTICO("thistle_portico", "Thistle Portico", "thistle_portico.html"),
+    SUNSET_MEADOW("sunset_meadow", "Still Sunset Meadow", "sunset_meadow.html");
 
     companion object {
         fun fromId(id: String?): GlassBackgroundType {
