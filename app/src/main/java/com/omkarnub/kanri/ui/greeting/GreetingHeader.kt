@@ -25,6 +25,7 @@ import androidx.compose.ui.text.style.TextOverflow
 import androidx.compose.ui.unit.dp
 import androidx.compose.ui.unit.sp
 import com.omkarnub.kanri.ui.common.FlipFadeText
+import com.omkarnub.kanri.ui.theme.LocalIsDarkTheme
 
 /**
  * Section 3: Greeting and dynamic date / financial subtitle header.
@@ -43,10 +44,13 @@ fun GreetingHeader(
         onGreetingDisplayed(greetingResult)
     }
 
+    val isDark = LocalIsDarkTheme.current
+    val neutralColor = if (isDark) Color(0xFFE8E8ED) else Color(0xFF4C4C54)
+
     val subtitleColor = when (greetingResult.tone) {
-        Tone.Neutral -> MaterialTheme.colorScheme.onSurfaceVariant.copy(alpha = 0.85f)
-        Tone.Positive -> Color(0xFF34C759).copy(alpha = 0.85f)
-        Tone.Warning -> Color(0xFFF5A524)
+        Tone.Neutral -> neutralColor
+        Tone.Positive -> if (isDark) Color(0xFF4ADE80) else Color(0xFF16A34A)
+        Tone.Warning -> if (isDark) Color(0xFFFBBF24) else Color(0xFFD97706)
     }
 
     val isClickable = greetingResult.action != GreetingAction.None
@@ -98,7 +102,7 @@ fun GreetingHeader(
                 Text(
                     text = text,
                     style = MaterialTheme.typography.bodyMedium.copy(
-                        fontWeight = FontWeight.Normal
+                        fontWeight = FontWeight.Medium
                     ),
                     color = color,
                     maxLines = 1,

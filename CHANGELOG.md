@@ -5,6 +5,15 @@ All notable changes to Kanri will be documented in this file.
 The format is based on [Keep a Changelog](https://keepachangelog.com/en/1.0.0/),
 and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0.html).
 
+## [1.4.3] - 2026-11-04
+
+### Changed
+- **Greeting Subtitle High-Contrast Typography**:
+  - Updated greeting dynamic subtitle color in `GreetingHeader.kt` to luminous light grey (`#E8E8ED`) in dark and glass themes with medium font weight (`FontWeight.Medium`) for optimal readability against animated WebGL backdrops and frosted glass surfaces.
+- **Developer Signature Intro**:
+  - Changed developer signature introduction text from `"This app was built by"` to `"Made by"` in `HomeScreen.kt` and `SignatureText.kt`.
+- Bumped application version to `1.4.3` (Build 14).
+
 ## [1.4.2] - 2026-11-04
 
 ### Fixed

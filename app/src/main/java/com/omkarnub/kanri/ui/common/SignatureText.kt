@@ -92,7 +92,7 @@ private data class SignatureLayout(
  *
  * Features:
  * - Automatically triggers the handwriting animation whenever scrolled into view.
- * - Displays "This app was built by" directly introducing the developer signature.
+ * - Displays "Made by" directly introducing the developer signature.
  * - Dynamic Responsive Scaling: Automatically scales to fit any screen size (from 320dp to tablets).
  * - Optical Kerning Engine: Eliminates abnormal font advance gaps between '@', 'O', 'a', and cursive letters.
  * - Progressive Stroke Handwriting: Animates pen strokes across characters with staggered cubic-bezier timing.
@@ -109,7 +109,7 @@ fun SignatureAnimationText(
     color: Color? = null,
     totalDurationMs: Int = 1800,
     githubUrl: String = "https://github.com/Omkarnub",
-    label: String = "This app was built by",
+    label: String = "Made by",
     isVisible: Boolean? = null
 ) {
     val context = LocalContext.current
@@ -314,7 +314,7 @@ fun SignatureAnimationText(
             horizontalAlignment = Alignment.CenterHorizontally,
             verticalArrangement = Arrangement.spacedBy(2.dp)
         ) {
-            // "This app was built by" header
+            // "Made by" header
             Text(
                 text = label,
                 fontFamily = GoogleSansFlex,

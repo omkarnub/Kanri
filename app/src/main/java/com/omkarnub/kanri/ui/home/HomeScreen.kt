@@ -636,7 +636,7 @@ fun HomeScreen(
                     text = "@Omkarnub",
                     fontSize = 38.sp,
                     strokeWidth = 1.8.dp,
-                    label = "This app was built by",
+                    label = "Made by",
                     isVisible = isSignatureInView,
                     modifier = Modifier
                         .fillMaxWidth()
