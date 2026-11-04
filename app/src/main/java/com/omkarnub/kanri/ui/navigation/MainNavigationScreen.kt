@@ -292,6 +292,18 @@ fun MainNavigationScreen(
                                 addTransactionInitialType = "CREDIT"
                                 showAddTransactionDialog = true
                             },
+                            onAddLendBorrow = {
+                                addLendingInitialType = "LENT"
+                                addLendingInitialPerson = ""
+                                addLendingInitialAmount = 0.0
+                                addLendingInitialNotes = null
+                                showAddLendingDialog = true
+                            },
+                            onSplitExpense = {
+                                splitInitialAmount = null
+                                splitInitialDescription = null
+                                showSplitSheet = true
+                            },
                             hazeState = effectiveHazeState
                         )
 
@@ -391,23 +403,12 @@ fun MainNavigationScreen(
             )
         }
 
-        // Split Bill Full Screen Overlay with Apple Drawer curve
-        androidx.compose.animation.AnimatedVisibility(
-            visible = showSplitSheet,
-            enter = androidx.compose.animation.slideInVertically(
-                initialOffsetY = { it },
-                animationSpec = tween(340, easing = KanriMotion.EaseDrawer)
-            ) + androidx.compose.animation.fadeIn(tween(240, easing = KanriMotion.EaseOut)),
-            exit = androidx.compose.animation.slideOutVertically(
-                targetOffsetY = { it },
-                animationSpec = tween(280, easing = KanriMotion.EaseDrawer)
-            ) + androidx.compose.animation.fadeOut(tween(180, easing = KanriMotion.EaseOut))
-        ) {
+        // Split Bill Entry Dialog (Unified Pop-up Workflow)
+        if (showSplitSheet) {
             val existingPeople = remember(lendingState.records) {
                 lendingState.records.map { it.personName.trim() }.distinct().filter { it.isNotBlank() }
             }
-            SplitExpenseSheet(
-                sheetState = splitSheetState,
+            com.omkarnub.kanri.ui.lending.SplitExpenseEntryDialog(
                 onDismiss = {
                     showSplitSheet = false
                     splitInitialAmount = null
@@ -427,7 +428,8 @@ fun MainNavigationScreen(
                 },
                 existingPeople = existingPeople,
                 initialAmount = splitInitialAmount,
-                initialDescription = splitInitialDescription
+                initialDescription = splitInitialDescription,
+                hazeState = effectiveHazeState
             )
         }
 

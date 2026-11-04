@@ -90,6 +90,8 @@ fun AddExpenseIncomePopup(
     onDismiss: () -> Unit,
     onAddExpense: () -> Unit,
     onAddIncome: () -> Unit,
+    onAddLendBorrow: () -> Unit = {},
+    onSplitExpense: () -> Unit = {},
     modifier: Modifier = Modifier,
     hazeState: HazeState? = null,
     themeMode: ThemeMode? = null
@@ -192,6 +194,36 @@ fun AddExpenseIncomePopup(
                         onClick = {
                             onDismiss()
                             onAddIncome()
+                        }
+                    )
+                    PopupOptionCard(
+                        title = "Lend & Borrow",
+                        subtitle = "Lent or borrowed money",
+                        accentColor = Color(0xFF6366F1),
+                        icon = { tint -> LendBorrowFlowIcon(tint = tint, size = 24.dp) },
+                        hazeState = hazeState,
+                        tintOpacity = expenseTintOpacity,
+                        tintLightness = tintLightness,
+                        cornerRadius = cornerRadius,
+                        borderWidth = borderWidth,
+                        onClick = {
+                            onDismiss()
+                            onAddLendBorrow()
+                        }
+                    )
+                    PopupOptionCard(
+                        title = "Split Expense",
+                        subtitle = "Split a bill with friends",
+                        accentColor = Color(0xFFF59E0B),
+                        icon = { tint -> SplitBillFlowIcon(tint = tint, size = 24.dp) },
+                        hazeState = hazeState,
+                        tintOpacity = incomeTintOpacity,
+                        tintLightness = tintLightness,
+                        cornerRadius = cornerRadius,
+                        borderWidth = borderWidth,
+                        onClick = {
+                            onDismiss()
+                            onSplitExpense()
                         }
                     )
                 }
@@ -434,5 +466,59 @@ fun LendBorrowFlowIcon(
             lineTo(w * 0.40f, h * 0.78f)
         }
         drawPath(path = bottomHead, color = tint, style = Stroke(width = strokeWidth, cap = StrokeCap.Round, join = StrokeJoin.Round))
+    }
+}
+
+
+/**
+ * Custom Diverging Financial Flow (Split Bill / Split Expense SVG).
+ */
+@Composable
+fun SplitBillFlowIcon(
+    tint: Color,
+    modifier: Modifier = Modifier,
+    size: Dp = 24.dp
+) {
+    Canvas(modifier = modifier.size(size)) {
+        val strokeWidth = 2.2.dp.toPx()
+        val w = size.toPx()
+        val h = size.toPx()
+
+        // Base vertical stem rising from bottom center
+        val stem = Path().apply {
+            moveTo(w * 0.50f, h * 0.80f)
+            lineTo(w * 0.50f, h * 0.52f)
+        }
+        drawPath(path = stem, color = tint, style = Stroke(width = strokeWidth, cap = StrokeCap.Round))
+
+        // Left diverging branch
+        val leftBranch = Path().apply {
+            moveTo(w * 0.50f, h * 0.52f)
+            cubicTo(w * 0.50f, h * 0.40f, w * 0.30f, h * 0.38f, w * 0.28f, h * 0.24f)
+        }
+        drawPath(path = leftBranch, color = tint, style = Stroke(width = strokeWidth, cap = StrokeCap.Round))
+
+        // Left arrowhead
+        val leftHead = Path().apply {
+            moveTo(w * 0.20f, h * 0.34f)
+            lineTo(w * 0.28f, h * 0.24f)
+            lineTo(w * 0.38f, h * 0.30f)
+        }
+        drawPath(path = leftHead, color = tint, style = Stroke(width = strokeWidth, cap = StrokeCap.Round, join = StrokeJoin.Round))
+
+        // Right diverging branch
+        val rightBranch = Path().apply {
+            moveTo(w * 0.50f, h * 0.52f)
+            cubicTo(w * 0.50f, h * 0.40f, w * 0.70f, h * 0.38f, w * 0.72f, h * 0.24f)
+        }
+        drawPath(path = rightBranch, color = tint, style = Stroke(width = strokeWidth, cap = StrokeCap.Round))
+
+        // Right arrowhead
+        val rightHead = Path().apply {
+            moveTo(w * 0.62f, h * 0.30f)
+            lineTo(w * 0.72f, h * 0.24f)
+            lineTo(w * 0.80f, h * 0.34f)
+        }
+        drawPath(path = rightHead, color = tint, style = Stroke(width = strokeWidth, cap = StrokeCap.Round, join = StrokeJoin.Round))
     }
 }

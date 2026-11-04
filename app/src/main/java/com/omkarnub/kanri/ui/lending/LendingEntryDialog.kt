@@ -138,6 +138,8 @@ import java.util.Date
 import dev.chrisbanes.haze.hazeChild
 import java.util.Calendar
 import java.util.Locale
+import androidx.compose.ui.text.style.TextAlign
+import com.omkarnub.kanri.ui.theme.GoogleSansFlex
 import java.util.TimeZone
 
 private val SageGreen = Color(0xFF30A46C)
@@ -416,106 +418,54 @@ fun LendingEntryDialog(
                     LendingEntryStep.FILL_DETAILS -> {
                         Box(
                             modifier = Modifier
-                                .fillMaxSize()
-                                .background(pageBgColor)
-                        ) {
-            if (tokens != null) {
-                GlassBackdrop(
-                    modifier = Modifier.fillMaxSize(),
-                    tokens = tokens
-                )
-            }
-
-            Scaffold(
-                modifier = Modifier.fillMaxSize(),
-                containerColor = Color.Transparent,
-                topBar = {
-                    TopAppBar(
-                        title = {
-                            Text(
-                                text = if (isEditing) "Edit Record" else "Add Record",
-                                style = MaterialTheme.typography.titleLarge.copy(
-                                    fontWeight = FontWeight.Bold,
-                                    fontSize = 20.sp
-                                ),
-                                color = MaterialTheme.colorScheme.onSurface
-                            )
-                        },
-                        navigationIcon = {
-                            IconButton(onClick = {
-                                if (!isEditing) {
-                                    currentStep = LendingEntryStep.AMOUNT_PAD
-                                } else {
-                                    onDismiss()
-                                }
-                            }) {
-                                Icon(
-                                    imageVector = Icons.AutoMirrored.Filled.ArrowBack,
-                                    contentDescription = "Back",
-                                    tint = MaterialTheme.colorScheme.onSurface
-                                )
-                            }
-                        },
-                        colors = TopAppBarDefaults.topAppBarColors(
-                            containerColor = Color.Transparent
-                        )
-                    )
-                },
-                bottomBar = {
-                    Surface(
-                        modifier = Modifier
-                            .fillMaxWidth()
-                            .navigationBarsPadding()
-                            .imePadding(),
-                        color = if (tokens != null) {
-                            tokens.fallbackSurface.copy(alpha = 0.85f)
-                        } else {
-                            MaterialTheme.colorScheme.background
-                        },
-                        tonalElevation = 0.dp,
-                        border = BorderStroke(
-                            0.8.dp,
-                            if (tokens != null) tokens.borderStart else MaterialTheme.colorScheme.outlineVariant.copy(alpha = 0.35f)
-                        )
-                    ) {
-                        Box(
-                            modifier = Modifier
                                 .fillMaxWidth()
-                                .padding(horizontal = 20.dp, vertical = 12.dp)
+                                .imePadding()
+                                .navigationBarsPadding(),
+                            contentAlignment = Alignment.BottomCenter
                         ) {
-                            Button(
-                                onClick = {
-                                    if (isValid) {
-                                        currentStep = LendingEntryStep.SUMMARY_DRAWER
-                                    }
-                                },
-                                enabled = isValid,
-                                shape = RoundedCornerShape(16.dp),
-                                colors = kanriPrimaryButtonColors(),
+                            KanriGlassCard(
                                 modifier = Modifier
                                     .fillMaxWidth()
-                                    .height(52.dp)
+                                    .fillMaxHeight(0.92f),
+                                shape = RoundedCornerShape(topStart = 26.dp, topEnd = 26.dp, bottomStart = 0.dp, bottomEnd = 0.dp),
+                                level = GlassLevel.Strong,
+                                hazeState = hazeState
                             ) {
-                                Text(
-                                    text = if (isEditing) "Proceed to Update" else "Proceed",
-                                    style = MaterialTheme.typography.titleMedium.copy(fontWeight = FontWeight.Bold)
-                                )
-                            }
-                        }
-                    }
-                }
-            ) { innerPadding ->
-                Column(
-                    modifier = Modifier
-                        .fillMaxSize()
-                        .padding(innerPadding)
-                        .imePadding()
-                        .verticalScroll(rememberScrollState())
-                        .padding(horizontal = 20.dp, vertical = 8.dp),
-                    horizontalAlignment = Alignment.CenterHorizontally,
-                    verticalArrangement = Arrangement.spacedBy(16.dp)
-                ) {
+                                Column(
+                                    modifier = Modifier
+                                        .fillMaxWidth()
+                                        .verticalScroll(rememberScrollState())
+                                        .padding(horizontal = 22.dp, vertical = 20.dp),
+                                    horizontalAlignment = Alignment.CenterHorizontally,
+                                    verticalArrangement = Arrangement.spacedBy(16.dp)
+                                ) {
+                                    // Top Drag Handle
+                                    Box(
+                                        modifier = Modifier
+                                            .width(36.dp)
+                                            .height(4.dp)
+                                            .clip(CircleShape)
+                                            .background(MaterialTheme.colorScheme.onSurface.copy(alpha = 0.20f))
+                                    )
 
+                                    // Header Title
+                                    Text(
+                                        text = if (isEditing) "Edit Record" else "Track Lent / Borrowed",
+                                        style = MaterialTheme.typography.titleLarge.copy(
+                                            fontFamily = GoogleSansFlex,
+                                            fontWeight = FontWeight.Bold,
+                                            color = MaterialTheme.colorScheme.onSurface
+                                        ),
+                                        textAlign = TextAlign.Center
+                                    )
+
+                                    Text(
+                                        text = if (type == "LENT") "Log money you lent to friends or colleagues." else "Log money you borrowed from friends or colleagues.",
+                                        fontFamily = GoogleSansFlex,
+                                        color = MaterialTheme.colorScheme.onSurfaceVariant,
+                                        fontSize = 12.5.sp,
+                                        textAlign = TextAlign.Center
+                                    )
                     // Two-way toggle: I Lent / I Borrowed
                     Row(
                         modifier = Modifier.fillMaxWidth(),
@@ -1444,10 +1394,31 @@ fun LendingEntryDialog(
                         }
                     }
                 }
-            }
-        }
+
+                                    Spacer(modifier = Modifier.height(8.dp))
+
+                                    Button(
+                                        onClick = {
+                                            if (isValid) {
+                                                currentStep = LendingEntryStep.SUMMARY_DRAWER
+                                            }
+                                        },
+                                        enabled = isValid,
+                                        shape = RoundedCornerShape(16.dp),
+                                        colors = kanriPrimaryButtonColors(),
+                                        modifier = Modifier
+                                            .fillMaxWidth()
+                                            .height(52.dp)
+                                    ) {
+                                        Text(
+                                            text = if (isEditing) "Proceed to Update" else "Review",
+                                            style = MaterialTheme.typography.titleMedium.copy(fontWeight = FontWeight.Bold)
+                                        )
+                                    }
+                                }
+                            }
+                        }
                     }
-                }
                 LendingEntryStep.SUMMARY_DRAWER -> {
                     val detailRows = listOfNotNull(
                         DrawerDetailRow(title = "Type", value = if (type == "LENT") "Lent" else "Borrowed"),

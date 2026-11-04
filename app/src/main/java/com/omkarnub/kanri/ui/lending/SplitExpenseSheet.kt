@@ -1,18 +1,13 @@
-﻿package com.omkarnub.kanri.ui.lending
+package com.omkarnub.kanri.ui.lending
 
 import androidx.compose.material3.ExperimentalMaterial3Api
 import androidx.compose.material3.SheetState
 import androidx.compose.runtime.Composable
-
-enum class SplitRole {
-    I_PAID,         // User paid total -> collects from friends (Money I Lent)
-    SOMEONE_ELSE    // Friend paid total -> user owes their share (Money I Borrowed)
-}
+import dev.chrisbanes.haze.HazeState
 
 /**
- * SplitExpenseSheet delegates directly to the full-page SplitExpenseScreen.
- * Ensures backward-compatibility with all existing callers while delivering
- * the full-page monochrome levitating pie experience.
+ * SplitExpenseSheet delegates directly to SplitExpenseEntryDialog for the unified
+ * Kokonut pop-up workflow (Amount Pad -> Fill Details -> Summary Drawer + Slide To Confirm).
  */
 @OptIn(ExperimentalMaterial3Api::class)
 @Composable
@@ -23,14 +18,16 @@ fun SplitExpenseSheet(
     onSaveBorrowerSplit: (payerName: String, userShare: Double, eventDescription: String) -> Unit,
     existingPeople: List<String> = emptyList(),
     initialAmount: Double? = null,
-    initialDescription: String? = null
+    initialDescription: String? = null,
+    hazeState: HazeState? = null
 ) {
-    SplitExpenseScreen(
+    SplitExpenseEntryDialog(
         onDismiss = onDismiss,
         onSaveLenderSplit = onSaveLenderSplit,
         onSaveBorrowerSplit = onSaveBorrowerSplit,
         existingPeople = existingPeople,
         initialAmount = initialAmount,
-        initialDescription = initialDescription
+        initialDescription = initialDescription,
+        hazeState = hazeState
     )
 }

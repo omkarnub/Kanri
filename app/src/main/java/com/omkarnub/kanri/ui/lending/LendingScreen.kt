@@ -636,22 +636,12 @@ fun LendingScreen(
             )
         }
 
-    // 6. Split a Bill Full Screen Overlay
-    androidx.compose.animation.AnimatedVisibility(
-        visible = showSplitSheet,
-        enter = androidx.compose.animation.slideInVertically(
-            initialOffsetY = { it },
-            animationSpec = tween(380, easing = androidx.compose.animation.core.FastOutSlowInEasing)
-        ) + androidx.compose.animation.fadeIn(tween(280)),
-        exit = androidx.compose.animation.slideOutVertically(
-            targetOffsetY = { it },
-            animationSpec = tween(320, easing = androidx.compose.animation.core.FastOutSlowInEasing)
-        ) + androidx.compose.animation.fadeOut(tween(220))
-    ) {
+    // 6. Split a Bill Entry Dialog (Unified Pop-up Workflow)
+    if (showSplitSheet) {
         val existingPeople = remember(hubState.allPeopleSummaries) {
             hubState.allPeopleSummaries.map { it.displayName }
         }
-        SplitExpenseScreen(
+        SplitExpenseEntryDialog(
             onDismiss = { showSplitSheet = false },
             onSaveLenderSplit = { friendNames, perPersonShare, eventDescription ->
                 viewModel.addSplitAsLender(friendNames, perPersonShare, eventDescription)
@@ -661,7 +651,8 @@ fun LendingScreen(
                 viewModel.addSplitAsBorrower(payerName, userShare, eventDescription)
                 showSplitSheet = false
             },
-            existingPeople = existingPeople
+            existingPeople = existingPeople,
+            hazeState = null
         )
     }
     }

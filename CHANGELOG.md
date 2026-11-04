@@ -5,6 +5,31 @@ All notable changes to Kanri will be documented in this file.
 The format is based on [Keep a Changelog](https://keepachangelog.com/en/1.0.0/),
 and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0.html).
 
+## [1.4.4] - 2026-11-04
+
+### Added
+- **Restored Unified 4-Option Action Dock Popup**:
+  - Expanded `AddExpenseIncomePopup.kt` to present all 4 core transaction entry points:
+    - **Expense**: "Log spent money" (Vibrant Red with `ExpenseFlowIcon`)
+    - **Income**: "Log received money" (Sage Green with `IncomeFlowIcon`)
+    - **Lend & Borrow**: "Lent or borrowed money" (Indigo/Violet with custom bidirectional `LendBorrowFlowIcon`)
+    - **Split Expense**: "Split a bill with friends" (Amber/Orange with custom diverging `SplitBillFlowIcon`)
+  - Added custom procedural SVG composable `SplitBillFlowIcon` matching the geometric aesthetic of Kanri flow icons.
+- **Unified Kokonut Pop-up Workflow for Split Expense (`SplitExpenseEntryDialog`)**:
+  - Introduced `SplitExpenseEntryDialog.kt` adopting the exact 3-step modern pop-up paradigm:
+    1. **Amount Pad (`KokonutAmountPad`)**: Fluid zero-start amount keypad with rolling numbers and currency formatting.
+    2. **Fill Details**: Sleek bottom-anchored frosted glass modal card (`KanriGlassCard` with 26 dp rounded corners) featuring an edit amount affordance chip, "I Paid (I Lent)" vs "Friend Paid (I Owe)" role toggle, event description, interactive people counter stepper (2–20 people) with dynamic per-person share calculations, and smart contact suggestion chips.
+    3. **Summary Drawer (`KokonutSmoothDrawer`)**: Review drawer displaying event details, people breakdown, per-person share, and interactive haptic `KokonutSlideToConfirm` with confirmation types (`SlideConfirmationType.LEND` and `SlideConfirmationType.BORROW`).
+  - Updated `SplitExpenseSheet.kt` to delegate directly to `SplitExpenseEntryDialog` for backwards-compatibility.
+  - Extracted centralized `enum class SplitRole` into `SplitRole.kt`.
+
+### Changed
+- **Lend & Borrow Entry Dialog Refinement (`LendingEntryDialog.kt`)**:
+  - Refactored `LendingEntryStep.FILL_DETAILS` from a full-page Scaffold into a sleek, bottom-docked frosted glass card (`KanriGlassCard` with top drag handle and 26 dp rounded top corners), matching the exact pop-up workflow of `AddTransactionDialog`.
+  - Wired both `onAddLendBorrow` and `onSplitExpense` in `MainNavigationScreen.kt` to trigger the unified entry dialogs seamlessly.
+  - Updated `LendingScreen.kt` to invoke `SplitExpenseEntryDialog` when clicking "Split a Group Expense".
+- Bumped application version to `1.4.4` (Build 15).
+
 ## [1.4.3] - 2026-11-04
 
 ### Changed
