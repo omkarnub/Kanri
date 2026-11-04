@@ -213,10 +213,10 @@ fun createCustomGlassTokens(c: GlassCustomization): KanriGlassTokens {
     ).copy(alpha = (c.surfaceOpacity * 1.5f).coerceIn(0.05f, 0.75f))
     val fallbackSurface = (if (c.tintLightness < 0f) Color(0xFF14151B) else Color(0xFFFAF9F5)).copy(alpha = 0.88f)
 
-    // In glass mode, borders are always specular white rim reflections (never dark gray or black)
+    // In glass mode, borders are specular white rim reflections (never dark gray or black)
     val borderBase = Color.White
-    val borderStart = borderBase.copy(alpha = c.borderOpacity.coerceIn(0.12f, 0.35f))
-    val borderEnd = borderBase.copy(alpha = (c.borderOpacity * 0.20f).coerceIn(0.02f, 0.12f))
+    val borderStart = borderBase.copy(alpha = c.borderOpacity.coerceIn(0.0f, 0.85f))
+    val borderEnd = borderBase.copy(alpha = (c.borderOpacity * 0.25f).coerceIn(0.0f, 0.35f))
     val shadow = Color.Black.copy(alpha = 0.035f)
 
     return GlassTokens.copy(

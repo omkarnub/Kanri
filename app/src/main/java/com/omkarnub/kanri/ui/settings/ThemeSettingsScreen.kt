@@ -325,7 +325,7 @@ private fun CustomiseGlassRow(
 
     if (tokens != null) {
         KanriGlassCard(
-            level = GlassLevel.Flat,
+            level = GlassLevel.Blur,
             modifier = modifier.fillMaxWidth()
         ) {
             rowContent()

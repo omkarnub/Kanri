@@ -19,7 +19,12 @@ The settings architecture adheres to:
        - **Live Shader Backgrounds**: 10 animated WebGL / Canvas backgrounds displayed **side by side in 2 columns** (`Gemini Aurora`, `Grain Gradient`, `Hero Geometric`, `Prism Swirl`, `Cloudscape`, `Ink Ridges`, `Fuji & Sakura`, `Sumi-e Mist`, `Thistle Portico`, `Still Sunset Meadow`).
          - **Thistle Portico**: High-performance Canvas 2D scene with pointed Gothic arch, castle view, wisteria racemes swaying in the wind, falling petals, and luminous light shafts.
          - **Still Sunset Meadow**: 3D voxel landscape with interactive grass parting, blocky flowers, rolling hills, and a dynamic real-world day/sunset/night cycle driven by the user's local time zone.
-       - **Customise Glass Components** action row navigating to `GlassCustomizerScreen`.
+        - **Customise Glass Components** action row navigating to `GlassCustomizerScreen`:
+          - **Live Glass Preview Card**: Shows real-time visual feedback of blur depth, translucency, specular border reflections, and corner curvature over the active live background.
+          - **Frosted Blur (0 to 50 dp)**: Directly scales hardware backdrop blur through Haze / RenderNode without restrictive minimum clamping, allowing clean transitions down to 0 dp (clear glass).
+          - **Glass Tint (2% to 40%)**: Dynamically adjusts background alpha and tint saturation.
+          - **Border & Edge Shine (0% to 70%)**: Controls specular edge reflection intensity from fully off (0%) up to intense luminance.
+          - **Corner Curvature (10 to 32 dp)**: Modifies corner radius dynamically across cards.
    - **App Launcher Icon**: Toggle between Dark and Light activity aliases with confirmation dialog.
 
 2. **Wallets & Currency**:

@@ -103,7 +103,8 @@ import dev.chrisbanes.haze.hazeEffect
 enum class GlassLevel {
     Blur,
     Flat,
-    Strong
+    Strong,
+    Dock
 }
 
 /**
@@ -164,6 +165,7 @@ fun Modifier.kanriGlass(
         val glassShadowElevation = when (level) {
             GlassLevel.Strong -> 2.dp
             GlassLevel.Blur -> 1.dp
+            GlassLevel.Dock -> 2.dp
             GlassLevel.Flat -> 0.dp
         }
         val glassSpotShadow = Color.Black.copy(alpha = 0.035f)
@@ -187,19 +189,21 @@ fun Modifier.kanriGlass(
 
         val surfaceModifier = when (level) {
             GlassLevel.Blur -> {
+                val tintFactor = (tokens.tintBlur.alpha / 0.15f).coerceIn(0.2f, 2.5f)
+                val baseFrostAlpha = if (tokens.isDark) 0.38f else 0.55f
                 val frostBg = (if (tokens.isDark) Color(0xFF14151E) else Color(0xFFFAF9F5)).copy(
-                    alpha = if (tokens.isDark) 0.38f else 0.55f
+                    alpha = (baseFrostAlpha * tintFactor).coerceIn(0.04f, 0.88f)
                 )
                 val frostTint = tokens.tintBlur.copy(
-                    alpha = (tokens.tintBlur.alpha * 2.2f).coerceIn(0.18f, 0.45f)
+                    alpha = (tokens.tintBlur.alpha * 2.2f).coerceIn(0.02f, 0.60f)
                 )
-                if (isBlurCapable && currentHaze != null) {
+                if (isBlurCapable && currentHaze != null && tokens.blurRadius > 0.dp) {
                     baseModifier.hazeEffect(
                         state = currentHaze,
                         style = HazeStyle(
                             backgroundColor = frostBg,
                             tint = HazeTint(frostTint),
-                            blurRadius = tokens.blurRadius.coerceAtLeast(20.dp),
+                            blurRadius = tokens.blurRadius,
                             noiseFactor = 0.025f
                         )
                     )
@@ -215,26 +219,69 @@ fun Modifier.kanriGlass(
             }
             GlassLevel.Flat -> {
                 val flatBg = if (tokens.isDark) {
-                    Color.White.copy(alpha = (tokens.buttonOpacity * 0.9f).coerceIn(0.08f, 0.28f))
+                    Color.White.copy(alpha = (tokens.buttonOpacity * 0.9f).coerceIn(0.04f, 0.35f))
                 } else {
-                    Color.Black.copy(alpha = (tokens.buttonOpacity * 0.5f).coerceIn(0.04f, 0.18f))
+                    Color.Black.copy(alpha = (tokens.buttonOpacity * 0.5f).coerceIn(0.02f, 0.22f))
                 }
                 baseModifier.background(flatBg)
             }
+            GlassLevel.Dock -> {
+                // Floating Dock: Specular optical glass lens designed to float cleanly over scrolling content
+                // dynamically driven by Glass Engine Customizer's blur, tint, opacity, borders & lighting
+                val blurFactor = if (tokens.blurRadius > 0.dp) (tokens.blurRadius / 24.dp).coerceIn(0.4f, 1.6f) else 0.5f
+                val dockBg = if (tokens.isDark) {
+                    Brush.verticalGradient(
+                        listOf(
+                            Color.White.copy(alpha = ((tokens.buttonOpacity * 0.95f) * blurFactor).coerceIn(0.06f, 0.35f)),
+                            Color.White.copy(alpha = ((tokens.buttonOpacity * 0.45f) * blurFactor).coerceIn(0.02f, 0.22f))
+                        )
+                    )
+                } else {
+                    Brush.verticalGradient(
+                        listOf(
+                            Color.White.copy(alpha = (0.45f * blurFactor).coerceIn(0.20f, 0.70f)),
+                            Color.White.copy(alpha = (0.22f * blurFactor).coerceIn(0.08f, 0.45f))
+                        )
+                    )
+                }
+                val dockTint = tokens.tintBlur.copy(
+                    alpha = (tokens.tintBlur.alpha * 1.4f).coerceIn(0.04f, 0.40f)
+                )
+
+                val withHaze = if (isBlurCapable && currentHaze != null && tokens.blurRadius > 0.dp) {
+                    baseModifier.hazeEffect(
+                        state = currentHaze,
+                        style = HazeStyle(
+                            backgroundColor = Color.Transparent,
+                            tint = HazeTint(tokens.tintBlur.copy(alpha = 0.05f)),
+                            blurRadius = tokens.blurRadius * 0.75f,
+                            noiseFactor = 0.015f
+                        )
+                    )
+                } else {
+                    baseModifier
+                }
+
+                withHaze
+                    .background(dockBg)
+                    .background(dockTint)
+            }
             GlassLevel.Strong -> {
+                val tintFactor = (tokens.tintStrong.alpha / 0.25f).coerceIn(0.3f, 2.2f)
+                val baseStrongAlpha = if (tokens.isDark) 0.68f else 0.88f
                 val strongBg = (if (tokens.isDark) Color(0xFF14151B) else Color(0xFFFAF9F5)).copy(
-                    alpha = if (tokens.isDark) 0.68f else 0.88f
+                    alpha = (baseStrongAlpha * tintFactor).coerceIn(0.12f, 0.95f)
                 )
                 val strongTint = tokens.tintStrong.copy(
-                    alpha = (tokens.tintStrong.alpha * 1.5f).coerceIn(0.25f, 0.60f)
+                    alpha = (tokens.tintStrong.alpha * 1.5f).coerceIn(0.08f, 0.75f)
                 )
-                if (isBlurCapable && currentHaze != null) {
+                if (isBlurCapable && currentHaze != null && tokens.blurRadius > 0.dp) {
                     baseModifier.hazeEffect(
                         state = currentHaze,
                         style = HazeStyle(
                             backgroundColor = strongBg,
                             tint = HazeTint(strongTint),
-                            blurRadius = (tokens.blurRadius * 1.45f).coerceAtLeast(36.dp),
+                            blurRadius = tokens.blurRadius * 1.35f,
                             noiseFactor = 0.035f
                         )
                     )
@@ -276,6 +323,7 @@ fun Modifier.kanriGlass(
         val cardBg = when (level) {
             GlassLevel.Strong -> if (isDark) MaterialTheme.colorScheme.surfaceContainerHigh else Color(0xFFFFFFFF)
             GlassLevel.Blur -> if (isDark) MaterialTheme.colorScheme.surfaceContainer else Color(0xFFFFFFFF)
+            GlassLevel.Dock -> if (isDark) MaterialTheme.colorScheme.surfaceContainer.copy(alpha = 0.85f) else Color(0xFFFAF9F5).copy(alpha = 0.85f)
             GlassLevel.Flat -> if (isDark) MaterialTheme.colorScheme.surfaceContainerLow else MaterialTheme.colorScheme.surfaceContainer
         }
 
@@ -294,7 +342,7 @@ fun Modifier.kanriGlass(
 
         val shadowElevation = if (level == GlassLevel.Strong) {
             if (isDark) 6.dp else 2.5.dp
-        } else if (level == GlassLevel.Blur) {
+        } else if (level == GlassLevel.Blur || level == GlassLevel.Dock) {
             if (isDark) 3.dp else 1.dp
         } else {
             0.dp
@@ -422,30 +470,44 @@ data class KanriGlassTheme(
 )
 
 fun getKanriGlassTheme(
-    themeMode: ThemeMode
+    themeMode: ThemeMode,
+    glassTokens: com.omkarnub.kanri.ui.theme.KanriGlassTokens? = null
 ): KanriGlassTheme {
     return when (themeMode) {
-        ThemeMode.GLASS -> KanriGlassTheme(
-            glassBorder = BorderStroke(0.8.dp, Color.White.copy(alpha = 0.25f)),
-            activeContentColor = DarkOffWhite,
-            inactiveContentColor = Color(0x99FFFFFF),
-            addButtonIconColor = DarkOffWhite,
-            shadowColor = Color.Black.copy(alpha = 0.25f),
-            shadowElevation = 8.dp,
-            hazeStyle = HazeStyle(
-                backgroundColor = Color(0xFF14151F).copy(alpha = 0.72f),
-                tint = HazeTint(Color.White.copy(alpha = 0.14f)),
-                blurRadius = 24.dp,
-                noiseFactor = 0.03f
-            ),
-            popupHazeStyle = HazeStyle(
-                backgroundColor = Color(0xFF14151F).copy(alpha = 0.88f),
-                tint = HazeTint(Color.White.copy(alpha = 0.16f)),
-                blurRadius = 36.dp,
-                noiseFactor = 0.04f
-            ),
-            fallbackBackgroundColor = Color(0xFF14151F).copy(alpha = 0.88f)
-        )
+        ThemeMode.GLASS -> {
+            val tokens = glassTokens ?: com.omkarnub.kanri.ui.theme.GlassTokens
+            val blur = tokens.blurRadius
+            val strongBlur = tokens.blurRadius * 1.35f
+            val isBlurZero = blur <= 0.dp
+            KanriGlassTheme(
+                glassBorder = BorderStroke(
+                    tokens.borderWidth,
+                    Brush.linearGradient(listOf(tokens.borderStart, tokens.borderEnd))
+                ),
+                activeContentColor = DarkOffWhite,
+                inactiveContentColor = Color(0x99FFFFFF),
+                addButtonIconColor = DarkOffWhite,
+                shadowColor = tokens.shadow,
+                shadowElevation = 8.dp,
+                hazeStyle = HazeStyle(
+                    backgroundColor = (if (tokens.isDark) Color(0xFF14151F) else Color(0xFFFAF9F5)).copy(
+                        alpha = if (tokens.isDark) 0.38f else 0.55f
+                    ),
+                    tint = HazeTint(tokens.tintBlur),
+                    blurRadius = if (isBlurZero) 0.dp else blur,
+                    noiseFactor = if (isBlurZero) 0f else 0.02f
+                ),
+                popupHazeStyle = HazeStyle(
+                    backgroundColor = (if (tokens.isDark) Color(0xFF14151F) else Color(0xFFFAF9F5)).copy(
+                        alpha = if (tokens.isDark) 0.75f else 0.88f
+                    ),
+                    tint = HazeTint(tokens.tintStrong),
+                    blurRadius = if (isBlurZero) 0.dp else strongBlur,
+                    noiseFactor = if (isBlurZero) 0f else 0.035f
+                ),
+                fallbackBackgroundColor = tokens.fallbackSurface
+            )
+        }
 
         ThemeMode.DARK, ThemeMode.SYSTEM -> KanriGlassTheme(
             glassBorder = BorderStroke(0.8.dp, Color(0x28FFFFFF)),
@@ -455,10 +517,10 @@ fun getKanriGlassTheme(
             shadowColor = Color.Black.copy(alpha = 0.40f),
             shadowElevation = 14.dp,
             hazeStyle = HazeStyle(
-                backgroundColor = Color(0xFF141414).copy(alpha = 0.55f),
-                tint = HazeTint(Color(0x35141414)),
+                backgroundColor = Color(0xFF141414).copy(alpha = 0.22f),
+                tint = HazeTint(Color.White.copy(alpha = 0.08f)),
                 blurRadius = 24.dp,
-                noiseFactor = 0.05f
+                noiseFactor = 0.04f
             ),
             popupHazeStyle = HazeStyle(
                 backgroundColor = Color(0xFF141414).copy(alpha = 0.65f),
@@ -466,7 +528,7 @@ fun getKanriGlassTheme(
                 blurRadius = 36.dp,
                 noiseFactor = 0.07f
             ),
-            fallbackBackgroundColor = Color(0xFF1A1A1A).copy(alpha = 0.92f)
+            fallbackBackgroundColor = Color(0xFF1A1A1A).copy(alpha = 0.40f)
         )
 
         ThemeMode.AMOLED -> KanriGlassTheme(
@@ -477,10 +539,10 @@ fun getKanriGlassTheme(
             shadowColor = Color.Black.copy(alpha = 0.55f),
             shadowElevation = 14.dp,
             hazeStyle = HazeStyle(
-                backgroundColor = Color(0xFF000000).copy(alpha = 0.60f),
-                tint = HazeTint(Color(0x30000000)),
+                backgroundColor = Color(0xFF000000).copy(alpha = 0.22f),
+                tint = HazeTint(Color.White.copy(alpha = 0.08f)),
                 blurRadius = 24.dp,
-                noiseFactor = 0.05f
+                noiseFactor = 0.04f
             ),
             popupHazeStyle = HazeStyle(
                 backgroundColor = Color(0xFF000000).copy(alpha = 0.70f),
@@ -488,7 +550,7 @@ fun getKanriGlassTheme(
                 blurRadius = 36.dp,
                 noiseFactor = 0.07f
             ),
-            fallbackBackgroundColor = Color(0xFF0E0E0E).copy(alpha = 0.94f)
+            fallbackBackgroundColor = Color(0xFF0E0E0E).copy(alpha = 0.40f)
         )
 
         ThemeMode.LIGHT -> KanriGlassTheme(
@@ -499,10 +561,10 @@ fun getKanriGlassTheme(
             shadowColor = Color.Black.copy(alpha = 0.04f),
             shadowElevation = 8.dp,
             hazeStyle = HazeStyle(
-                backgroundColor = Color.White.copy(alpha = 0.85f),
-                tint = HazeTint(Color.White.copy(alpha = 0.65f)),
+                backgroundColor = Color.White.copy(alpha = 0.28f),
+                tint = HazeTint(Color.White.copy(alpha = 0.10f)),
                 blurRadius = 24.dp,
-                noiseFactor = 0.03f
+                noiseFactor = 0.02f
             ),
             popupHazeStyle = HazeStyle(
                 backgroundColor = Color.White.copy(alpha = 0.92f),
@@ -510,7 +572,7 @@ fun getKanriGlassTheme(
                 blurRadius = 36.dp,
                 noiseFactor = 0.04f
             ),
-            fallbackBackgroundColor = Color.White.copy(alpha = 0.94f)
+            fallbackBackgroundColor = Color.White.copy(alpha = 0.35f)
         )
     }
 }
@@ -523,9 +585,10 @@ fun rememberKanriGlassTheme(
     val themePrefs = remember { ThemePreferences.getInstance(context) }
     val currentThemeMode by themePrefs.themeModeFlow.collectAsState()
     val effectiveThemeMode = themeMode ?: currentThemeMode
+    val glassTokens = LocalKanriGlass.current
 
-    return remember(effectiveThemeMode) {
-        getKanriGlassTheme(effectiveThemeMode)
+    return remember(effectiveThemeMode, glassTokens) {
+        getKanriGlassTheme(effectiveThemeMode, glassTokens)
     }
 }
 
@@ -673,7 +736,7 @@ fun applyWindowBlur(window: Window?, blurRadiusPx: Int = 110) {
             window.addFlags(WindowManager.LayoutParams.FLAG_BLUR_BEHIND)
             val params = window.attributes
             params.flags = params.flags or WindowManager.LayoutParams.FLAG_BLUR_BEHIND
-            params.blurBehindRadius = blurRadiusPx.coerceIn(50, 160)
+            params.blurBehindRadius = blurRadiusPx.coerceIn(0, 200)
             window.attributes = params
         } catch (_: Exception) {}
     }
@@ -726,7 +789,7 @@ fun KanriModalBottomSheet(
         val density = LocalDensity.current
         val blurRadiusPx = remember(tokens, density) {
             val dpVal = tokens?.blurRadius ?: 32.dp
-            with(density) { dpVal.roundToPx() }.coerceIn(60, 160)
+            if (dpVal <= 0.dp) 0 else with(density) { dpVal.roundToPx() }.coerceIn(0, 200)
         }
         DisposableEffect(view, blurRadiusPx) {
             fun attachBlur() {
@@ -800,7 +863,7 @@ fun KanriGlassDialog(
         val density = LocalDensity.current
         val blurRadiusPx = remember(tokens, density) {
             val dpVal = tokens?.blurRadius ?: 32.dp
-            with(density) { dpVal.roundToPx() }.coerceIn(60, 160)
+            if (dpVal <= 0.dp) 0 else with(density) { dpVal.roundToPx() }.coerceIn(0, 200)
         }
         DisposableEffect(view, blurRadiusPx) {
             fun attachBlur() {
@@ -1007,7 +1070,7 @@ fun KanriGlassButton(
     val buttonFill = if (tokens != null) {
         val baseAlpha = when (level) {
             GlassLevel.Strong -> 0.22f
-            GlassLevel.Blur -> 0.16f
+            GlassLevel.Blur, GlassLevel.Dock -> 0.16f
             GlassLevel.Flat -> 0.12f
         }
         if (tokens.isDark) Color.White.copy(alpha = baseAlpha) else Color.Black.copy(alpha = baseAlpha * 0.7f)
