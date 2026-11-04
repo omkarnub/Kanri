@@ -306,7 +306,7 @@ fun RecurringPaymentsSheet(
                     contentAlignment = Alignment.Center
                 ) {
                     Column(horizontalAlignment = Alignment.CenterHorizontally) {
-                        Text("🔁", fontSize = 36.sp)
+                        Icon(imageVector = Icons.Default.Repeat, contentDescription = null, modifier = Modifier.size(36.dp), tint = MaterialTheme.colorScheme.primary)
                         Spacer(modifier = Modifier.height(6.dp))
                         Text(
                             text = "No subscriptions tracked",

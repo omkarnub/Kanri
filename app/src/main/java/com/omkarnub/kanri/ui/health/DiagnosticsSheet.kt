@@ -154,7 +154,7 @@ fun DiagnosticsSheet(
                 ) {
                     Column {
                         Text(
-                            text = if (allOk) "All Systems Operational 🛡️" else "$healthyCount of $totalCount Services Active",
+                            text = if (allOk) "All Systems Operational" else "$healthyCount of $totalCount Services Active",
                             fontSize = 16.sp,
                             fontWeight = FontWeight.Bold,
                             color = if (allOk) Color(0xFF06D6A0) else if (isLightMode) Color(0xFFB45309) else Color(0xFFFFD166)

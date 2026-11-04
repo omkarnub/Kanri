@@ -101,9 +101,9 @@ object BirthdayHelper {
                 PendingIntent.FLAG_UPDATE_CURRENT or PendingIntent.FLAG_IMMUTABLE
             )
 
-            val title = "Happy Birthday, $firstName! 🎂"
-            val text = "Wishing you joy, good health, and prosperity in the year ahead! Have a fantastic day 🎉"
-            val bigText = "May your year ahead be filled with happiness, peace, and abundance. Take a moment to celebrate yourself today ✨"
+            val title = "Happy Birthday, $firstName!"
+            val text = "Wishing you joy, good health, and prosperity in the year ahead! Have a fantastic day."
+            val bigText = "May your year ahead be filled with happiness, peace, and abundance. Take a moment to celebrate yourself today."
 
             val notification = NotificationCompat.Builder(context, CHANNEL_ID)
                 .setSmallIcon(R.drawable.ic_notification)

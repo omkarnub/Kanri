@@ -405,7 +405,7 @@ fun AddEditSavingsGoalDialog(
                             verticalAlignment = Alignment.CenterVertically
                         ) {
                             Text(
-                                text = "💡",
+                                text = "TIP",
                                 fontSize = 16.sp
                             )
                             Spacer(modifier = Modifier.width(10.dp))
@@ -801,7 +801,7 @@ fun GoalDetailsSheet(
                             color = MaterialTheme.colorScheme.onSurface
                         )
                         Text(
-                            text = if (isFinished) "Goal Achieved 🎉" else "${percent.toInt()}% reached",
+                            text = if (isFinished) "Goal Achieved" else "${percent.toInt()}% reached",
                             fontFamily = GoogleSansFlex,
                             fontSize = 12.sp,
                             color = MaterialTheme.colorScheme.onSurfaceVariant

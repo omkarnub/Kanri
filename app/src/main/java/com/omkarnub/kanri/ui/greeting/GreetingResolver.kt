@@ -59,8 +59,8 @@ object GreetingResolver {
      */
     fun resolve(context: GreetingContext): GreetingResult {
         if (context.isBirthday) {
-            val birthdayGreeting = formatGreeting("Happy Birthday, {name}! 🎂", context.userName)
-            val birthdaySubtitle = "Wishing you joy, good health, and abundance in the year ahead ✨"
+            val birthdayGreeting = formatGreeting("Happy Birthday, {name}!", context.userName)
+            val birthdaySubtitle = "Wishing you joy, good health, and abundance in the year ahead."
             return GreetingResult(
                 greeting = birthdayGreeting,
                 subtitle = birthdaySubtitle,

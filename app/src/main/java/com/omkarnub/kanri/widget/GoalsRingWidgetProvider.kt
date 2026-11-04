@@ -1,4 +1,4 @@
-﻿package com.omkarnub.kanri.widget
+package com.omkarnub.kanri.widget
 
 import android.appwidget.AppWidgetManager
 import android.appwidget.AppWidgetProvider
@@ -69,7 +69,7 @@ class GoalsRingWidgetProvider : AppWidgetProvider() {
                 val ringBitmap = WidgetCanvasRenderer.renderGoalRing(
                     context = context,
                     progressPercent = progressPercent,
-                    emoji = topGoal?.emoji ?: "🎯",
+                    emoji = topGoal?.emoji ?: "target",
                     sizePx = 480
                 )
 

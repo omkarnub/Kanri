@@ -128,7 +128,7 @@ class MonthViewModel(application: Application) : AndroidViewModel(application) {
         val categorySpends = categoryAmountMap.map { (catId, amount) ->
             val cat = categoryObjectMap[catId]
             val name = cat?.name ?: "Uncategorized"
-            val emoji = if (cat != null) getEmojiForCategory(cat.name) else "❓"
+            val emoji = ""
             val color = if (cat != null) parseHexColor(cat.colorHex) else Color(0xFF6E7681)
             val percentage = if (spent > 0) ((amount / spent) * 100).toFloat() else 0f
 
@@ -219,15 +219,15 @@ class MonthViewModel(application: Application) : AndroidViewModel(application) {
     companion object {
         fun getEmojiForCategory(categoryName: String): String {
             return when (categoryName.lowercase()) {
-                "food & dining" -> "🍔"
-                "groceries" -> "🛒"
-                "shopping" -> "🛍️"
-                "transport" -> "🚗"
-                "bills & utilities" -> "💡"
-                "salary & income" -> "💰"
-                "health & medical" -> "🏥"
-                "cash & atm" -> "🏧"
-                else -> "📦"
+                "food & dining" -> ""
+                "groceries" -> ""
+                "shopping" -> ""
+                "transport" -> ""
+                "bills & utilities" -> ""
+                "salary & income" -> ""
+                "health & medical" -> ""
+                "cash & atm" -> ""
+                else -> ""
             }
         }
     }

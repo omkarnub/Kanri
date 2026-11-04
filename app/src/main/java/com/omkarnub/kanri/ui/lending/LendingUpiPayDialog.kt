@@ -1,4 +1,4 @@
-﻿package com.omkarnub.kanri.ui.lending
+package com.omkarnub.kanri.ui.lending
 
 import android.content.Context
 import androidx.activity.compose.BackHandler
@@ -250,7 +250,7 @@ fun LendingUpiPayDialog(
                     if (hasLaunchedUpi) {
                         Spacer(modifier = Modifier.height(12.dp))
                         KanriGlassButton(
-                            text = "✓ Payment Completed? Mark as Repaid",
+                            text = "Payment Completed? Mark as Repaid",
                             onClick = {
                                 onMarkAsRepaid()
                                 onDismiss()

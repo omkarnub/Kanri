@@ -25,7 +25,7 @@ data class SavingsGoalEntity(
     val colorHex: String = "#06D6A0",
 
     @ColumnInfo(name = "emoji")
-    val emoji: String = "🎯",
+    val emoji: String = "target",
 
     @ColumnInfo(name = "is_completed")
     val isCompleted: Boolean = false

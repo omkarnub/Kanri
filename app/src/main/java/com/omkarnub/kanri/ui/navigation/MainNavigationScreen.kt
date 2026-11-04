@@ -250,9 +250,7 @@ fun MainNavigationScreen(
                                 KanriMotion.tabTransition(isForward)
                             },
                             label = "tabTransition",
-                            modifier = Modifier
-                                .fillMaxSize()
-                                .hazeSource(effectiveHazeState)
+                            modifier = Modifier.fillMaxSize()
                         ) { targetTab ->
                             when (targetTab) {
                                 KanriTab.HOME -> HomeScreen(

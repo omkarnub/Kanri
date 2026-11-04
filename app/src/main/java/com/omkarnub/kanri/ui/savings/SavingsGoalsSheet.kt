@@ -369,7 +369,7 @@ fun SavingsGoalsSheet(
                                                 color = MaterialTheme.colorScheme.surfaceVariant
                                             ) {
                                                 Text(
-                                                    text = "Achieved! 🎉",
+                                                    text = "Achieved!",
                                                     modifier = Modifier.padding(horizontal = 6.dp, vertical = 2.dp),
                                                     fontFamily = GoogleSansFlex,
                                                     fontSize = 9.sp,

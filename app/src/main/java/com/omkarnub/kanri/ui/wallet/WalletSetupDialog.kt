@@ -223,7 +223,7 @@ fun WalletSetupDialog(
                         horizontalAlignment = Alignment.CenterHorizontally
                     ) {
                         Text(
-                            text = "💵 1. Cash in Hand",
+                            text = "1. Cash in Hand",
                             style = MaterialTheme.typography.labelSmall.copy(
                                 fontWeight = if (isCashSelected) FontWeight.Bold else FontWeight.Medium
                             ),
@@ -280,7 +280,7 @@ fun WalletSetupDialog(
                         horizontalAlignment = Alignment.CenterHorizontally
                     ) {
                         Text(
-                            text = "🏦 2. Online / Bank",
+                            text = "2. Online / Bank",
                             style = MaterialTheme.typography.labelSmall.copy(
                                 fontWeight = if (isOnlineSelected) FontWeight.Bold else FontWeight.Medium
                             ),

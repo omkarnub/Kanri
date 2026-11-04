@@ -1,4 +1,4 @@
-﻿package com.omkarnub.kanri.ui.savings
+package com.omkarnub.kanri.ui.savings
 
 import androidx.compose.material3.Icon
 import androidx.compose.material3.LocalContentColor
@@ -34,16 +34,16 @@ fun getGoalIconRes(iconKeyOrEmoji: String?): Int {
 
     val key = iconKeyOrEmoji.trim().lowercase()
     return when {
-        key == "target" || key == "🎯" -> R.drawable.ic_goal_target
+        key == "target" -> R.drawable.ic_goal_target
         key == "savings" || key == "vault" || key == "piggy" || key == "bank" -> R.drawable.ic_goal_savings
-        key == "shield" || key == "🛡️" || key == "emergency" || key == "safety" -> R.drawable.ic_goal_shield
-        key == "laptop" || key == "💻" || key == "📱" || key == "tech" || key == "gadget" || key == "phone" -> R.drawable.ic_goal_laptop
-        key == "car" || key == "🚗" || key == "vehicle" || key == "bike" -> R.drawable.ic_goal_car
-        key == "home" || key == "🏠" || key == "house" || key == "flat" || key == "property" -> R.drawable.ic_goal_home
-        key == "travel" || key == "🏖️" || key == "flight" || key == "trip" || key == "vacation" -> R.drawable.ic_goal_travel
-        key == "education" || key == "🎓" || key == "school" || key == "college" || key == "study" -> R.drawable.ic_goal_education
-        key == "gift" || key == "💍" || key == "wedding" || key == "anniversary" || key == "celebration" -> R.drawable.ic_goal_gift
-        key == "trophy" || key == "🎮" || key == "milestone" || key == "award" -> R.drawable.ic_goal_trophy
+        key == "shield" || key == "emergency" || key == "safety" -> R.drawable.ic_goal_shield
+        key == "laptop" || key == "tech" || key == "gadget" || key == "phone" -> R.drawable.ic_goal_laptop
+        key == "car" || key == "vehicle" || key == "bike" -> R.drawable.ic_goal_car
+        key == "home" || key == "house" || key == "flat" || key == "property" -> R.drawable.ic_goal_home
+        key == "travel" || key == "flight" || key == "trip" || key == "vacation" -> R.drawable.ic_goal_travel
+        key == "education" || key == "school" || key == "college" || key == "study" -> R.drawable.ic_goal_education
+        key == "gift" || key == "wedding" || key == "anniversary" || key == "celebration" -> R.drawable.ic_goal_gift
+        key == "trophy" || key == "milestone" || key == "award" -> R.drawable.ic_goal_trophy
         key == "investment" || key == "stocks" || key == "sip" || key == "wealth" -> R.drawable.ic_goal_investment
         key == "star" || key == "wish" || key == "wishlist" -> R.drawable.ic_goal_star
         else -> R.drawable.ic_goal_target

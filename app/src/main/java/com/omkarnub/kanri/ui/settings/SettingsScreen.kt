@@ -880,7 +880,7 @@ fun SettingsScreen(
                 // Primary Currency
                 SettingsRow(
                     title = "Primary Currency",
-                    subtitle = "${currentCurrency.flag} ${currentCurrency.displayName} (${currentCurrency.symbol} ${currentCurrency.code})",
+                    subtitle = "${currentCurrency.displayName} (${currentCurrency.symbol} ${currentCurrency.code})",
                     icon = Icons.Default.Paid,
                     onClick = { showCurrencyDialog = true }
                 )

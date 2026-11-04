@@ -28,7 +28,7 @@ The settings architecture adheres to:
    - **App Launcher Icon**: Toggle between Dark and Light activity aliases with confirmation dialog.
 
 2. **Wallets & Currency**:
-   - Primary App Currency selection (40+ international currencies with flags and symbols).
+   - Primary App Currency selection (40+ international currencies with clean currency symbol chips, avoiding emoji flags).
    - Cash Opening Balance direct correction.
    - Online Opening Balance direct correction.
    - Reconfigure Wallets wizard.
@@ -91,6 +91,16 @@ The glass customization interface has been refined into a minimal, focused tool:
 
 - **Setting Birthday**: In `ProfileScreen`, user can tap the Date of Birth row to open `KanriGlassDatePickerDialog` and select their birthday (formatted as `dd MMM yyyy`).
 - **Dynamic Greeting**: On the user's birthday, `HomeViewModel` and `GreetingResolver` display a festive greeting:
-  - Header: `"Happy Birthday, {name}! 🎂"`
-  - Subtitle: `"Wishing you joy, good health, and abundance in the year ahead ✨"`
+  - Header: `"Happy Birthday, {name}!"`
+  - Subtitle: `"Wishing you joy, good health, and abundance in the year ahead."`
 - **Birthday Notifications**: `BirthdayHelper.checkAndTriggerBirthdayNotification` fires an annual high-priority celebration notification on their birthday.
+
+---
+
+## 5. Clean, Professional Visual Language (Zero Emojis)
+
+Kanri adheres strictly to a modern, typographic, and vector-driven design language:
+- **No Emojis**: Emojis are strictly prohibited throughout all user-facing interfaces, notifications, dialogs, widgets, avatars, and data models.
+- **Letter Monograms**: User avatars utilize bold uppercase letter monograms against rich gradient surfaces (`KokonutAvatarSelector`).
+- **Vector Icons**: Actions, categories, reminders, and recurrent operations use Material Symbols / vector icons (`androidx.compose.material.icons`).
+- **Currency Chips**: Regional currencies in the currency selection sheet display clean typographic symbol badges instead of emoji flag characters.

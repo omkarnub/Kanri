@@ -571,7 +571,7 @@ fun GoalsScreen(
                                                 color = MaterialTheme.colorScheme.surfaceVariant
                                             ) {
                                                 Text(
-                                                    text = "Achieved! 🎉",
+                                                    text = "Achieved!",
                                                     modifier = Modifier.padding(horizontal = 6.dp, vertical = 2.dp),
                                                     fontFamily = GoogleSansFlex,
                                                     style = MaterialTheme.typography.labelSmall.copy(

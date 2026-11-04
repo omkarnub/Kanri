@@ -69,18 +69,18 @@ data class PresetAvatar(
 )
 
 val PRESET_AVATARS = listOf(
-    PresetAvatar("fox", "Fox", "🦊", listOf(Color(0xFFFF9966), Color(0xFFFF5E62))),
-    PresetAvatar("panda", "Panda", "🐼", listOf(Color(0xFF56AB2F), Color(0xFFA8E063))),
-    PresetAvatar("lion", "Lion", "🦁", listOf(Color(0xFFF7971E), Color(0xFFFFD200))),
-    PresetAvatar("rocket", "Rocket", "🚀", listOf(Color(0xFF8A2387), Color(0xFFE94057), Color(0xFFF27121))),
-    PresetAvatar("cyber", "Cyber", "⚡", listOf(Color(0xFF00C9FF), Color(0xFF92FE9D))),
-    PresetAvatar("sakura", "Sakura", "🌸", listOf(Color(0xFFFF758C), Color(0xFFFF7EB3))),
-    PresetAvatar("gentleman", "Suave", "🎩", listOf(Color(0xFF434343), Color(0xFF000000))),
-    PresetAvatar("gamer", "Gamer", "🎧", listOf(Color(0xFF654EA3), Color(0xFFEAAFC8))),
-    PresetAvatar("zen", "Zen", "🌿", listOf(Color(0xFF11998E), Color(0xFF38EF7D))),
-    PresetAvatar("diamond", "Precious", "💎", listOf(Color(0xFF4FACFE), Color(0xFF00F2FE))),
-    PresetAvatar("artist", "Artist", "🎨", listOf(Color(0xFFFF0844), Color(0xFFFFB199))),
-    PresetAvatar("coffee", "Barista", "☕", listOf(Color(0xFF8B5A2B), Color(0xFFC49A6C)))
+    PresetAvatar("amber", "Amber", "A", listOf(Color(0xFFFF9966), Color(0xFFFF5E62))),
+    PresetAvatar("emerald", "Emerald", "E", listOf(Color(0xFF56AB2F), Color(0xFFA8E063))),
+    PresetAvatar("solar", "Solar", "S", listOf(Color(0xFFF7971E), Color(0xFFFFD200))),
+    PresetAvatar("ruby", "Ruby", "R", listOf(Color(0xFF8A2387), Color(0xFFE94057), Color(0xFFF27121))),
+    PresetAvatar("cyan", "Cyan", "C", listOf(Color(0xFF00C9FF), Color(0xFF92FE9D))),
+    PresetAvatar("rose", "Rose", "K", listOf(Color(0xFFFF758C), Color(0xFFFF7EB3))),
+    PresetAvatar("onyx", "Onyx", "O", listOf(Color(0xFF434343), Color(0xFF000000))),
+    PresetAvatar("violet", "Violet", "V", listOf(Color(0xFF654EA3), Color(0xFFEAAFC8))),
+    PresetAvatar("mint", "Mint", "M", listOf(Color(0xFF11998E), Color(0xFF38EF7D))),
+    PresetAvatar("azure", "Azure", "Z", listOf(Color(0xFF4FACFE), Color(0xFF00F2FE))),
+    PresetAvatar("coral", "Coral", "P", listOf(Color(0xFFFF0844), Color(0xFFFFB199))),
+    PresetAvatar("bronze", "Bronze", "B", listOf(Color(0xFF8B5A2B), Color(0xFFC49A6C)))
 )
 
 fun renderPresetAvatarToBitmap(preset: PresetAvatar, size: Int = 256): Bitmap {
@@ -99,10 +99,12 @@ fun renderPresetAvatarToBitmap(preset: PresetAvatar, size: Int = 256): Bitmap {
     }
     canvas.drawCircle(size / 2f, size / 2f, size / 2f, paint)
 
-    // Draw emoji
+    // Draw clean monogram initial
     val textPaint = Paint().apply {
         isAntiAlias = true
-        textSize = size * 0.52f
+        color = android.graphics.Color.WHITE
+        typeface = android.graphics.Typeface.create(android.graphics.Typeface.DEFAULT, android.graphics.Typeface.BOLD)
+        textSize = size * 0.44f
         textAlign = Paint.Align.CENTER
     }
     val yPos = (size / 2f - (textPaint.descent() + textPaint.ascent()) / 2f)

@@ -223,9 +223,9 @@ fun createCustomGlassTokens(c: GlassCustomization): KanriGlassTokens {
         }
         else -> {
             // Neutral / No tint: pure clear glass with no dark or light cast
-            tintBlur = Color.White.copy(alpha = 0.04f)
+            tintBlur = Color.White.copy(alpha = 0.08f)
             tintFlat = Color.White.copy(alpha = 0.08f)
-            tintStrong = Color(0xFF14151B).copy(alpha = 0.22f)
+            tintStrong = Color.White.copy(alpha = 0.16f)
             fallbackSurface = Color(0xFF14151B).copy(alpha = 0.80f)
         }
     }

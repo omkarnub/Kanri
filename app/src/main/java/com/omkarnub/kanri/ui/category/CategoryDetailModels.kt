@@ -32,7 +32,7 @@ data class TopPayeeItem(
 data class CategoryDetailUiState(
     val categoryId: Long? = null,
     val categoryName: String = "",
-    val emoji: String = "📦",
+    val emoji: String = "",
     val color: Color = Color(0xFF58A6FF),
     val selectedScope: CategoryTimeScope = CategoryTimeScope.THIS_MONTH,
     val currentMonthSpent: Double = 0.0,

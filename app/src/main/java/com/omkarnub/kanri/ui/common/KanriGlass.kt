@@ -93,6 +93,7 @@ import com.omkarnub.kanri.ui.theme.LightBackground
 import com.omkarnub.kanri.ui.theme.LocalKanriGlass
 import com.omkarnub.kanri.ui.theme.ThemeMode
 import com.omkarnub.kanri.ui.theme.ThemePreferences
+import com.omkarnub.kanri.ui.theme.lerpColor
 import com.omkarnub.kanri.util.rememberKanriHaptics
 import dev.chrisbanes.haze.HazeState
 import dev.chrisbanes.haze.HazeStyle
@@ -189,19 +190,42 @@ fun Modifier.kanriGlass(
 
         val surfaceModifier = when (level) {
             GlassLevel.Blur -> {
-                val lightness = tokens.tintLightness
+                val lightness = tokens.tintLightness.coerceIn(-1f, 1f)
                 val frostBgColor = when {
-                    lightness < -0.04f -> Color(0xFF0C0D14)
-                    lightness > 0.04f -> Color(0xFFFAF9F6)
+                    lightness < -0.04f -> {
+                        val d = (-lightness).coerceIn(0f, 1f)
+                        lerpColor(Color(0xFF14151E), Color(0xFF06070A), d)
+                    }
+                    lightness > 0.04f -> {
+                        val l = lightness.coerceIn(0f, 1f)
+                        lerpColor(Color(0xFF14151E), Color(0xFFFAF9F6), l)
+                    }
                     else -> if (tokens.isDark) Color(0xFF14151E) else Color(0xFFFAF9F5)
                 }
                 val frostBgAlpha = when {
-                    lightness < -0.04f -> (0.16f + (-lightness) * 0.50f)
-                    lightness > 0.04f -> (0.14f + lightness * 0.46f)
-                    else -> 0.06f
+                    lightness < -0.04f -> {
+                        val d = (-lightness).coerceIn(0f, 1f)
+                        (0.32f + d * 0.45f).coerceIn(0.20f, 0.88f)
+                    }
+                    lightness > 0.04f -> {
+                        val l = lightness.coerceIn(0f, 1f)
+                        (0.30f + l * 0.40f).coerceIn(0.20f, 0.85f)
+                    }
+                    else -> if (tokens.isDark) 0.32f else 0.50f
                 }
-                val frostBg = frostBgColor.copy(alpha = frostBgAlpha.coerceIn(0.02f, 0.88f))
-                val frostTint = tokens.tintBlur
+                val frostBg = frostBgColor.copy(alpha = frostBgAlpha)
+
+                val frostTint = when {
+                    lightness < -0.04f -> {
+                        val d = (-lightness).coerceIn(0f, 1f)
+                        Color.Black.copy(alpha = (0.10f + d * 0.35f).coerceIn(0.06f, 0.55f))
+                    }
+                    lightness > 0.04f -> {
+                        val l = lightness.coerceIn(0f, 1f)
+                        Color.White.copy(alpha = (0.12f + l * 0.35f).coerceIn(0.08f, 0.55f))
+                    }
+                    else -> Color.White.copy(alpha = 0.10f)
+                }
 
                 if (isBlurCapable && currentHaze != null && tokens.blurRadius > 0.dp) {
                     baseModifier.hazeEffect(
@@ -235,14 +259,14 @@ fun Modifier.kanriGlass(
                 // Floating Dock: Specular optical glass lens designed to float cleanly over scrolling content
                 // dynamically driven by Glass Engine Customizer's blur, tint, opacity, borders & lighting
                 val blurFactor = if (tokens.blurRadius > 0.dp) (tokens.blurRadius / 24.dp).coerceIn(0.4f, 1.6f) else 0.5f
-                val lightness = tokens.tintLightness
+                val lightness = tokens.tintLightness.coerceIn(-1f, 1f)
                 val dockBg = when {
                     lightness < -0.04f -> {
                         val d = -lightness
                         Brush.verticalGradient(
                             listOf(
-                                Color(0xFF1C1D24).copy(alpha = (0.28f + d * 0.45f).coerceIn(0.1f, 0.85f)),
-                                Color(0xFF0C0D12).copy(alpha = (0.38f + d * 0.45f).coerceIn(0.15f, 0.90f))
+                                Color(0xFF1C1D24).copy(alpha = (0.42f + d * 0.40f).coerceIn(0.25f, 0.90f)),
+                                Color(0xFF0C0D12).copy(alpha = (0.55f + d * 0.38f).coerceIn(0.30f, 0.95f))
                             )
                         )
                     }
@@ -250,30 +274,32 @@ fun Modifier.kanriGlass(
                         val l = lightness
                         Brush.verticalGradient(
                             listOf(
-                                Color.White.copy(alpha = (0.28f + l * 0.45f).coerceIn(0.1f, 0.85f)),
-                                Color.White.copy(alpha = (0.16f + l * 0.35f).coerceIn(0.06f, 0.70f))
+                                Color.White.copy(alpha = (0.38f + l * 0.35f).coerceIn(0.20f, 0.85f)),
+                                Color.White.copy(alpha = (0.24f + l * 0.30f).coerceIn(0.12f, 0.75f))
                             )
                         )
                     }
                     else -> {
                         Brush.verticalGradient(
                             listOf(
-                                Color.White.copy(alpha = ((tokens.buttonOpacity * 0.95f) * blurFactor).coerceIn(0.06f, 0.35f)),
-                                Color.White.copy(alpha = ((tokens.buttonOpacity * 0.45f) * blurFactor).coerceIn(0.02f, 0.22f))
+                                Color.White.copy(alpha = ((tokens.buttonOpacity * 1.4f) * blurFactor).coerceIn(0.14f, 0.40f)),
+                                Color.White.copy(alpha = ((tokens.buttonOpacity * 0.75f) * blurFactor).coerceIn(0.06f, 0.26f))
                             )
                         )
                     }
                 }
-                val dockTint = tokens.tintBlur.copy(
-                    alpha = (tokens.tintBlur.alpha * 1.4f).coerceIn(0.04f, 0.40f)
-                )
+                val dockTint = when {
+                    lightness < -0.04f -> Color.Black.copy(alpha = 0.20f)
+                    lightness > 0.04f -> Color.White.copy(alpha = 0.18f)
+                    else -> Color.White.copy(alpha = 0.08f)
+                }
 
                 val withHaze = if (isBlurCapable && currentHaze != null && tokens.blurRadius > 0.dp) {
                     baseModifier.hazeEffect(
                         state = currentHaze,
                         style = HazeStyle(
                             backgroundColor = Color.Transparent,
-                            tint = HazeTint(tokens.tintBlur.copy(alpha = 0.05f)),
+                            tint = HazeTint(dockTint),
                             blurRadius = tokens.blurRadius * 0.75f,
                             noiseFactor = 0.015f
                         )
@@ -287,21 +313,23 @@ fun Modifier.kanriGlass(
                     .background(dockTint)
             }
             GlassLevel.Strong -> {
-                val lightness = tokens.tintLightness
+                val lightness = tokens.tintLightness.coerceIn(-1f, 1f)
                 val strongBgColor = when {
                     lightness < -0.04f -> Color(0xFF0A0B10)
                     lightness > 0.04f -> Color(0xFFFFFFFF)
                     else -> if (tokens.isDark) Color(0xFF14151B) else Color(0xFFFAF9F5)
                 }
                 val strongBgAlpha = when {
-                    lightness < -0.04f -> (0.35f + (-lightness) * 0.50f)
-                    lightness > 0.04f -> (0.30f + lightness * 0.50f)
-                    else -> 0.22f
+                    lightness < -0.04f -> (0.68f + (-lightness) * 0.25f).coerceIn(0.50f, 0.96f)
+                    lightness > 0.04f -> (0.62f + lightness * 0.25f).coerceIn(0.50f, 0.92f)
+                    else -> if (tokens.isDark) 0.68f else 0.85f
                 }
-                val strongBg = strongBgColor.copy(alpha = strongBgAlpha.coerceIn(0.12f, 0.95f))
-                val strongTint = tokens.tintStrong.copy(
-                    alpha = (tokens.tintStrong.alpha * 1.5f).coerceIn(0.08f, 0.75f)
-                )
+                val strongBg = strongBgColor.copy(alpha = strongBgAlpha)
+                val strongTint = when {
+                    lightness < -0.04f -> Color.Black.copy(alpha = 0.25f)
+                    lightness > 0.04f -> Color.White.copy(alpha = 0.25f)
+                    else -> tokens.tintStrong
+                }
                 if (isBlurCapable && currentHaze != null && tokens.blurRadius > 0.dp) {
                     baseModifier.hazeEffect(
                         state = currentHaze,

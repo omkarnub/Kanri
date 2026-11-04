@@ -128,9 +128,9 @@ class LendingReminderWorker(
 
         val totalCount = overdue.size + dueToday.size + dueSoon.size
         val title = when {
-            overdue.isNotEmpty() -> "⚠️ Overdue Dues Alert (${overdue.size})"
+            overdue.isNotEmpty() -> "Overdue Dues Alert (${overdue.size})"
             dueToday.isNotEmpty() -> "⏰ Dues Due Today (${dueToday.size})"
-            else -> "📅 Upcoming Dues Reminder"
+            else -> "Upcoming Dues Reminder"
         }
 
         val lines = mutableListOf<String>()

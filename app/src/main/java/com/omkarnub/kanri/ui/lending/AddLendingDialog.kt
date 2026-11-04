@@ -109,7 +109,7 @@ fun AddLendingDialog(
                             contentAlignment = Alignment.Center
                         ) {
                             Text(
-                                text = "🤝 I Lent Money",
+                                text = "I Lent Money",
                                 fontWeight = FontWeight.Bold,
                                 color = MaterialTheme.colorScheme.onSurface,
                                 fontSize = 13.sp
@@ -131,7 +131,7 @@ fun AddLendingDialog(
                             contentAlignment = Alignment.Center
                         ) {
                             Text(
-                                text = "📥 I Borrowed",
+                                text = "I Borrowed",
                                 fontWeight = FontWeight.Bold,
                                 color = MaterialTheme.colorScheme.onSurface,
                                 fontSize = 13.sp

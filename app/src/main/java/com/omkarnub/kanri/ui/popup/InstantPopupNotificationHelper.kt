@@ -83,10 +83,10 @@ object InstantPopupNotificationHelper {
             "ATM Cash Withdrawal"
         } else if (isDebit) {
             val walletSuffix = if (isWalletConfigured) " · Online" else ""
-            "💸 ${formatCurrency(amount)}$walletSuffix spent" + if (displayMerchant.isNotBlank()) " at $displayMerchant" else ""
+            "${formatCurrency(amount)}$walletSuffix spent" + if (displayMerchant.isNotBlank()) " at $displayMerchant" else ""
         } else {
             val walletSuffix = if (isWalletConfigured) " · Online" else ""
-            "💰 ${formatCurrency(amount)}$walletSuffix received" + if (displayMerchant.isNotBlank()) " from $displayMerchant" else ""
+            "${formatCurrency(amount)}$walletSuffix received" + if (displayMerchant.isNotBlank()) " from $displayMerchant" else ""
         }
 
         val details = if (isAtmTransfer) {

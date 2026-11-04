@@ -1,4 +1,4 @@
-﻿package com.omkarnub.kanri.ui.category
+package com.omkarnub.kanri.ui.category
 
 import android.app.Application
 import androidx.compose.ui.graphics.Color
@@ -17,7 +17,7 @@ import java.util.Calendar
 data class CategoryDetailFilterConfig(
     val categoryId: Long? = null,
     val categoryName: String = "",
-    val emoji: String = "📦",
+    val emoji: String = "",
     val color: Color = Color(0xFF58A6FF),
     val targetYear: Int = Calendar.getInstance().get(Calendar.YEAR),
     val targetMonth: Int = Calendar.getInstance().get(Calendar.MONTH),
