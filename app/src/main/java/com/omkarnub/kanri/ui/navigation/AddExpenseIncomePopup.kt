@@ -90,8 +90,6 @@ fun AddExpenseIncomePopup(
     onDismiss: () -> Unit,
     onAddExpense: () -> Unit,
     onAddIncome: () -> Unit,
-    onAddLendBorrow: () -> Unit = {},
-    onSplitExpense: () -> Unit = {},
     modifier: Modifier = Modifier,
     hazeState: HazeState? = null,
     themeMode: ThemeMode? = null
@@ -194,36 +192,6 @@ fun AddExpenseIncomePopup(
                         onClick = {
                             onDismiss()
                             onAddIncome()
-                        }
-                    )
-                    PopupOptionCard(
-                        title = "Lend & Borrow",
-                        subtitle = "Lent or borrowed money",
-                        accentColor = Color(0xFF6366F1),
-                        icon = { tint -> LendBorrowFlowIcon(tint = tint, size = 24.dp) },
-                        hazeState = hazeState,
-                        tintOpacity = expenseTintOpacity,
-                        tintLightness = tintLightness,
-                        cornerRadius = cornerRadius,
-                        borderWidth = borderWidth,
-                        onClick = {
-                            onDismiss()
-                            onAddLendBorrow()
-                        }
-                    )
-                    PopupOptionCard(
-                        title = "Split Expense",
-                        subtitle = "Split a bill with friends",
-                        accentColor = Color(0xFFF59E0B),
-                        icon = { tint -> SplitBillFlowIcon(tint = tint, size = 24.dp) },
-                        hazeState = hazeState,
-                        tintOpacity = incomeTintOpacity,
-                        tintLightness = tintLightness,
-                        cornerRadius = cornerRadius,
-                        borderWidth = borderWidth,
-                        onClick = {
-                            onDismiss()
-                            onSplitExpense()
                         }
                     )
                 }

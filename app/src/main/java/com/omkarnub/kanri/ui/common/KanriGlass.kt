@@ -105,7 +105,8 @@ enum class GlassLevel {
     Blur,
     Flat,
     Strong,
-    Dock
+    Dock,
+    EntrySheet
 }
 
 /**
@@ -164,7 +165,7 @@ fun Modifier.kanriGlass(
         }
 
         val glassShadowElevation = when (level) {
-            GlassLevel.Strong -> 2.dp
+            GlassLevel.Strong, GlassLevel.EntrySheet -> 2.dp
             GlassLevel.Blur -> 1.dp
             GlassLevel.Dock -> 2.dp
             GlassLevel.Flat -> 0.dp
@@ -346,6 +347,29 @@ fun Modifier.kanriGlass(
                         .background(strongTint)
                 }
             }
+            GlassLevel.EntrySheet -> {
+                // Fixed 50dp blur and 10% dark tint for Amount Pad, Transaction Details, and Summary Drawer
+                val fixedBlur = 50.dp
+                val fixedTint = Color.Black.copy(alpha = 0.10f)
+                val baseBg = if (tokens.isDark) Color(0xFF14151B).copy(alpha = 0.85f) else Color(0xFFFAF9F5).copy(alpha = 0.88f)
+
+                if (isBlurCapable && currentHaze != null) {
+                    baseModifier.hazeEffect(
+                        state = currentHaze,
+                        style = HazeStyle(
+                            backgroundColor = Color.Transparent,
+                            tint = HazeTint(fixedTint),
+                            blurRadius = fixedBlur,
+                            noiseFactor = 0.02f
+                        )
+                    )
+                    .background(fixedTint)
+                } else {
+                    baseModifier
+                        .background(baseBg)
+                        .background(fixedTint)
+                }
+            }
         }
 
         val glassBorderWidth = (tokens.borderWidth * 0.8f).coerceIn(0.6.dp, 1.dp)
@@ -376,7 +400,7 @@ fun Modifier.kanriGlass(
         val isDark = MaterialTheme.colorScheme.surface.luminance() < 0.5f
 
         val cardBg = when (level) {
-            GlassLevel.Strong -> if (isDark) MaterialTheme.colorScheme.surfaceContainerHigh else Color(0xFFFFFFFF)
+            GlassLevel.Strong, GlassLevel.EntrySheet -> if (isDark) MaterialTheme.colorScheme.surfaceContainerHigh else Color(0xFFFFFFFF)
             GlassLevel.Blur -> if (isDark) MaterialTheme.colorScheme.surfaceContainer else Color(0xFFFFFFFF)
             GlassLevel.Dock -> if (isDark) MaterialTheme.colorScheme.surfaceContainer.copy(alpha = 0.85f) else Color(0xFFFAF9F5).copy(alpha = 0.85f)
             GlassLevel.Flat -> if (isDark) MaterialTheme.colorScheme.surfaceContainerLow else MaterialTheme.colorScheme.surfaceContainer
@@ -395,7 +419,7 @@ fun Modifier.kanriGlass(
             )
         }
 
-        val shadowElevation = if (level == GlassLevel.Strong) {
+        val shadowElevation = if (level == GlassLevel.Strong || level == GlassLevel.EntrySheet) {
             if (isDark) 6.dp else 2.5.dp
         } else if (level == GlassLevel.Blur || level == GlassLevel.Dock) {
             if (isDark) 3.dp else 1.dp
@@ -405,6 +429,8 @@ fun Modifier.kanriGlass(
 
         val spotShadow = if (isDark) Color.Black.copy(alpha = 0.35f) else Color.Black.copy(alpha = 0.035f)
         val ambientShadow = if (isDark) Color.Black.copy(alpha = 0.18f) else Color.Black.copy(alpha = 0.015f)
+
+        val entrySheetTint = Color.Black.copy(alpha = 0.10f)
 
         this
             .scale(scale)
@@ -419,7 +445,23 @@ fun Modifier.kanriGlass(
                 } else Modifier
             )
             .clip(effectiveShape)
-            .background(cardBg)
+            .then(
+                if (level == GlassLevel.EntrySheet && isBlurCapable && currentHaze != null) {
+                    Modifier.hazeEffect(
+                        state = currentHaze,
+                        style = HazeStyle(
+                            backgroundColor = Color.Transparent,
+                            tint = HazeTint(entrySheetTint),
+                            blurRadius = 50.dp,
+                            noiseFactor = 0.02f
+                        )
+                    ).background(entrySheetTint)
+                } else {
+                    Modifier.background(cardBg).then(
+                        if (level == GlassLevel.EntrySheet) Modifier.background(entrySheetTint) else Modifier
+                    )
+                }
+            )
             .border(
                 width = 0.8.dp,
                 brush = borderBrush,
@@ -1143,7 +1185,7 @@ fun KanriGlassButton(
 
     val buttonFill = if (tokens != null) {
         val baseAlpha = when (level) {
-            GlassLevel.Strong -> 0.22f
+            GlassLevel.Strong, GlassLevel.EntrySheet -> 0.22f
             GlassLevel.Blur, GlassLevel.Dock -> 0.16f
             GlassLevel.Flat -> 0.12f
         }

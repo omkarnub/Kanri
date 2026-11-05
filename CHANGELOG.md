@@ -5,6 +5,33 @@ All notable changes to Kanri will be documented in this file.
 The format is based on [Keep a Changelog](https://keepachangelog.com/en/1.0.0/),
 and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0.html).
 
+## [1.4.5] - 2026-11-05
+
+### Changed
+- **Dock Floating '+' Menu Cleaned Up**:
+  - Removed "Lend & Borrow" and "Split Expense" from the dock floating '+' action popup (`AddExpenseIncomePopup.kt`).
+  - The menu now cleanly surfaces the 2 core spending actions: "Expense" and "Income".
+- **Lend & Borrow Half-Screen Popup Refinement (`LendingEntryDialog.kt`)**:
+  - Removed fullscreen Android Dialog window wrapper and forced `fillMaxHeight(0.92f)`.
+  - Transformed `LendingEntryDialog` into a bottom-anchored, half-screen popup sheet with uniformly arranged info fields:
+    - Top drag handle and header title/subtitle.
+    - Sleek Amount Summary Card with instant Edit affordance.
+    - "I Lent" vs "I Borrowed" segmented toggle.
+    - Person Name field with Profile and Contacts pickers and quick-select chips.
+    - Uniform Date & Time row matching `AddTransactionDialog`.
+    - Expected Return Date chips (presets and custom calendar picker).
+    - Wallet Impact chips ("Cash", "Online", "Not from balances").
+    - Notes input.
+    - Action Buttons: "Back" text button on left, "Cancel" and bold "Proceed" primary button on right.
+  - Proceed button triggers a fluid spring slide-up to the small half-screen summary drawer (`KokonutSmoothDrawer`) with rolling total and `KokonutSlideToConfirm` slider.
+- **Fixed 50dp Blur & 10% Dark Tint (`GlassLevel.EntrySheet`)**:
+  - Added `GlassLevel.EntrySheet` to `KanriGlass.kt` providing a calibrated fixed 50 dp blur radius and 10% dark tint (`Color.Black.copy(alpha = 0.10f)`).
+  - Applied `GlassLevel.EntrySheet` across:
+    - Amount pads (`KokonutAmountPad`).
+    - Transaction details cards (`FILL_DETAILS` in `AddTransactionDialog`, `LendingEntryDialog`, and `SplitExpenseEntryDialog`).
+    - Summary drawers with slider (`KokonutSmoothDrawer`).
+- Bumped application version to `1.4.5` (Build 16).
+
 ## [1.4.4] - 2026-11-04
 
 ### Added

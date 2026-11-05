@@ -62,6 +62,7 @@ import androidx.compose.material3.OutlinedTextField
 import androidx.compose.material3.OutlinedTextFieldDefaults
 import androidx.compose.material3.Surface
 import androidx.compose.material3.Text
+import androidx.compose.material3.TextButton
 import androidx.compose.runtime.Composable
 import androidx.compose.runtime.DisposableEffect
 import androidx.compose.runtime.LaunchedEffect
@@ -351,11 +352,9 @@ fun SplitExpenseEntryDialog(
                                 contentAlignment = Alignment.BottomCenter
                             ) {
                                 KanriGlassCard(
-                                    modifier = Modifier
-                                        .fillMaxWidth()
-                                        .fillMaxHeight(0.92f),
+                                    modifier = Modifier.fillMaxWidth(),
                                     shape = RoundedCornerShape(topStart = 26.dp, topEnd = 26.dp, bottomStart = 0.dp, bottomEnd = 0.dp),
-                                    level = GlassLevel.Strong,
+                                    level = GlassLevel.EntrySheet,
                                     hazeState = hazeState
                                 ) {
                                     Column(
@@ -778,25 +777,57 @@ fun SplitExpenseEntryDialog(
 
                                         Spacer(modifier = Modifier.height(12.dp))
 
-                                        // Primary Action: Review Split
-                                        Button(
-                                            onClick = {
-                                                if (isValid) {
-                                                    haptics.primaryAction()
-                                                    currentStep = SplitExpenseStep.SUMMARY_DRAWER
-                                                }
-                                            },
-                                            enabled = isValid,
-                                            shape = RoundedCornerShape(16.dp),
-                                            colors = kanriPrimaryButtonColors(),
-                                            modifier = Modifier
-                                                .fillMaxWidth()
-                                                .height(52.dp)
+                                        // Action Buttons: Back, Cancel & Proceed
+                                        Row(
+                                            modifier = Modifier.fillMaxWidth(),
+                                            horizontalArrangement = Arrangement.SpaceBetween,
+                                            verticalAlignment = Alignment.CenterVertically
                                         ) {
-                                            Text(
-                                                text = "Review Split",
-                                                style = MaterialTheme.typography.titleMedium.copy(fontWeight = FontWeight.Bold)
-                                            )
+                                            TextButton(onClick = {
+                                                haptics.tick()
+                                                currentStep = SplitExpenseStep.AMOUNT_PAD
+                                            }) {
+                                                Text(
+                                                    text = "Back",
+                                                    fontFamily = GoogleSansFlex,
+                                                    color = MaterialTheme.colorScheme.onSurfaceVariant,
+                                                    fontWeight = FontWeight.Medium
+                                                )
+                                            }
+                                            Row(
+                                                verticalAlignment = Alignment.CenterVertically,
+                                                horizontalArrangement = Arrangement.spacedBy(8.dp)
+                                            ) {
+                                                TextButton(onClick = {
+                                                    haptics.tick()
+                                                    performDismiss()
+                                                }) {
+                                                    Text(
+                                                        text = "Cancel",
+                                                        fontFamily = GoogleSansFlex,
+                                                        color = MaterialTheme.colorScheme.onSurfaceVariant,
+                                                        fontWeight = FontWeight.Medium
+                                                    )
+                                                }
+                                                Button(
+                                                    onClick = {
+                                                        if (isValid) {
+                                                            haptics.primaryAction()
+                                                            currentStep = SplitExpenseStep.SUMMARY_DRAWER
+                                                        }
+                                                    },
+                                                    enabled = isValid,
+                                                    colors = kanriPrimaryButtonColors(),
+                                                    shape = RoundedCornerShape(12.dp)
+                                                ) {
+                                                    Text(
+                                                        text = "Proceed",
+                                                        fontFamily = GoogleSansFlex,
+                                                        fontWeight = FontWeight.Bold,
+                                                        modifier = Modifier.padding(horizontal = 6.dp)
+                                                    )
+                                                }
+                                            }
                                         }
                                     }
                                 }
@@ -820,33 +851,38 @@ fun SplitExpenseEntryDialog(
                                 } else null
                             )
 
-                            KokonutSmoothDrawer(
-                                title = "Review Split Bill",
-                                description = "${eventDescription.ifBlank { "Group Expense" }} • $peopleCount people",
-                                totalAmount = if (selectedRole == SplitRole.I_PAID) othersTotal else perPersonShare,
-                                slideLabel = if (selectedRole == SplitRole.I_PAID) {
-                                    "Slide to split (Collect ₹${othersTotal.toInt()})"
-                                } else {
-                                    "Slide to confirm (Owe ₹${perPersonShare.toInt()})"
-                                },
-                                detailRows = detailRows,
-                                accountType = if (selectedRole == SplitRole.I_PAID) "Lent Ledger" else "Borrowed Ledger",
-                                confirmationType = if (selectedRole == SplitRole.I_PAID) SlideConfirmationType.LEND else SlideConfirmationType.BORROW,
-                                hazeState = hazeState,
-                                onConfirm = {
-                                    if (selectedRole == SplitRole.I_PAID) {
-                                        onSaveLenderSplit(friendNames.toList(), perPersonShare, eventDescription.trim())
+                            Box(
+                                modifier = Modifier.fillMaxSize(),
+                                contentAlignment = Alignment.BottomCenter
+                            ) {
+                                KokonutSmoothDrawer(
+                                    title = "Review Split Bill",
+                                    description = "${eventDescription.ifBlank { "Group Expense" }} • $peopleCount people",
+                                    totalAmount = if (selectedRole == SplitRole.I_PAID) othersTotal else perPersonShare,
+                                    slideLabel = if (selectedRole == SplitRole.I_PAID) {
+                                        "Slide to split (Collect ₹${othersTotal.toInt()})"
                                     } else {
-                                        onSaveBorrowerSplit(payerName.trim(), perPersonShare, eventDescription.trim())
+                                        "Slide to confirm (Owe ₹${perPersonShare.toInt()})"
+                                    },
+                                    detailRows = detailRows,
+                                    accountType = if (selectedRole == SplitRole.I_PAID) "Lent Ledger" else "Borrowed Ledger",
+                                    confirmationType = if (selectedRole == SplitRole.I_PAID) SlideConfirmationType.LEND else SlideConfirmationType.BORROW,
+                                    hazeState = hazeState,
+                                    onConfirm = {
+                                        if (selectedRole == SplitRole.I_PAID) {
+                                            onSaveLenderSplit(friendNames.toList(), perPersonShare, eventDescription.trim())
+                                        } else {
+                                            onSaveBorrowerSplit(payerName.trim(), perPersonShare, eventDescription.trim())
+                                        }
+                                    },
+                                    onSuccessComplete = {
+                                        performDismiss()
+                                    },
+                                    onDismiss = {
+                                        currentStep = SplitExpenseStep.FILL_DETAILS
                                     }
-                                },
-                                onSuccessComplete = {
-                                    performDismiss()
-                                },
-                                onDismiss = {
-                                    currentStep = SplitExpenseStep.FILL_DETAILS
-                                }
-                            )
+                                )
+                            }
                         }
                     }
                 }

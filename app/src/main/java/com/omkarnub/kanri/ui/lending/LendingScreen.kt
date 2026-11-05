@@ -208,7 +208,8 @@ fun LendingScreen(
             }
         }
     ) { innerPadding ->
-        // Main Screen Transition: Main List <-> Person Detail
+        Box(modifier = Modifier.fillMaxSize()) {
+            // Main Screen Transition: Main List <-> Person Detail
         AnimatedContent(
             targetState = hubState.selectedPersonSummary,
             transitionSpec = {
@@ -652,8 +653,9 @@ fun LendingScreen(
                 showSplitSheet = false
             },
             existingPeople = existingPeople,
-            hazeState = null
+            hazeState = LocalHazeState.current
         )
+    }
     }
     }
     }

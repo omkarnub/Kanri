@@ -156,7 +156,7 @@ fun KokonutSmoothDrawer(
                     }
                 )
             },
-        level = GlassLevel.Strong,
+        level = GlassLevel.EntrySheet,
         shape = RoundedCornerShape(topStart = 28.dp, topEnd = 28.dp, bottomStart = 0.dp, bottomEnd = 0.dp),
         hazeState = hazeState
     ) {

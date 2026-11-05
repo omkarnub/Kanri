@@ -38,7 +38,7 @@ fun getGoalIconRes(iconKeyOrEmoji: String?): Int {
         key == "savings" || key == "vault" || key == "piggy" || key == "bank" -> R.drawable.ic_goal_savings
         key == "shield" || key == "emergency" || key == "safety" -> R.drawable.ic_goal_shield
         key == "laptop" || key == "tech" || key == "gadget" || key == "phone" -> R.drawable.ic_goal_laptop
-        key == "car" || key == "vehicle" || key == "bike" -> R.drawable.ic_goal_car
+        key == "car" || key == "vehicle" || key == "bike" || key == "🚗" -> R.drawable.ic_goal_car
         key == "home" || key == "house" || key == "flat" || key == "property" -> R.drawable.ic_goal_home
         key == "travel" || key == "flight" || key == "trip" || key == "vacation" -> R.drawable.ic_goal_travel
         key == "education" || key == "school" || key == "college" || key == "study" -> R.drawable.ic_goal_education

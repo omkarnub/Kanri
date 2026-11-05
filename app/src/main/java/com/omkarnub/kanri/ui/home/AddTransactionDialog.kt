@@ -344,7 +344,7 @@ fun AddTransactionDialog(
                             KanriGlassCard(
                                 modifier = Modifier.fillMaxWidth(),
                                 shape = RoundedCornerShape(topStart = 26.dp, topEnd = 26.dp, bottomStart = 0.dp, bottomEnd = 0.dp),
-                                level = GlassLevel.Strong,
+                                level = GlassLevel.EntrySheet,
                                 hazeState = hazeState
                             ) {
                                 Column(

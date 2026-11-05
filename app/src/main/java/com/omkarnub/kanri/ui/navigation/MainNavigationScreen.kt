@@ -292,18 +292,6 @@ fun MainNavigationScreen(
                                 addTransactionInitialType = "CREDIT"
                                 showAddTransactionDialog = true
                             },
-                            onAddLendBorrow = {
-                                addLendingInitialType = "LENT"
-                                addLendingInitialPerson = ""
-                                addLendingInitialAmount = 0.0
-                                addLendingInitialNotes = null
-                                showAddLendingDialog = true
-                            },
-                            onSplitExpense = {
-                                splitInitialAmount = null
-                                splitInitialDescription = null
-                                showSplitSheet = true
-                            },
                             hazeState = effectiveHazeState
                         )
 
