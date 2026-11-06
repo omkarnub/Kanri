@@ -32,7 +32,7 @@ import com.omkarnub.kanri.ui.theme.LocalKanriGlass
 
 /**
  * A sleek, frosted glass card featured prominently in the Lend & Borrow menu
- * with fixed 50dp blur and 10% dark tint.
+ * with variable glass blur and tint.
  */
 @Composable
 fun LendingSplitGroupCard(
@@ -42,7 +42,7 @@ fun LendingSplitGroupCard(
     KanriGlassCard(
         modifier = modifier.fillMaxWidth(),
         shape = RoundedCornerShape(20.dp),
-        level = GlassLevel.EntrySheet,
+        level = GlassLevel.Blur,
         hazeState = LocalHazeState.current,
         onClick = onClick
     ) {

@@ -94,6 +94,9 @@ flowchart LR
 All entry workflows enforce a standardized visual glass hierarchy via `GlassLevel.EntrySheet`:
 - **Blur Radius**: Fixed at `50.dp`.
 - **Tint**: Fixed at 10% dark tint (`Color.Black.copy(alpha = 0.10f)`).
+- **Internal Keypad Digits & Controls**: Keys (`TactileKeypadKey`), preset chips (`TactilePresetChip`), and empty-state action button in `KokonutAmountPad` follow the identical 10% dark tint and subtle white border to match the container.
+- **Summary Information & Slider Track**: The metadata detail rows in `KokonutSmoothDrawer` and the slider track in `KokonutSlideToConfirm` follow the identical 10% dark tint.
+- **Hub Controls & Insights**: Main view elements like `LendingSplitGroupCard`, `LendingSegmentedControl`, "Add Record" button, and `InsightsRangeBar` utilize standard variable glass blur (`GlassLevel.Blur`) so dynamic theme tinting and variable blur radius remain active.
 - **Surface**: Supported across both custom glass themes (using hardware `hazeEffect`) and solid Material themes (with dark scrim and frosted fallbacks).
 
 ---
@@ -105,6 +108,7 @@ All entry workflows enforce a standardized visual glass hierarchy via `GlassLeve
 - `app/src/main/java/com/omkarnub/kanri/ui/home/AddTransactionDialog.kt`: Unified 3-step half-screen dialog for Expense and Income.
 - `app/src/main/java/com/omkarnub/kanri/ui/lending/LendingEntryDialog.kt`: Unified 3-step half-screen bottom popup dialog for Lend & Borrow records with Proceed button and Kokonut drawer.
 - `app/src/main/java/com/omkarnub/kanri/ui/lending/SplitExpenseEntryDialog.kt`: Unified 3-step half-screen bottom popup dialog for splitting group bills with Proceed button and Kokonut drawer.
-- `app/src/main/java/com/omkarnub/kanri/ui/common/kokonut/KokonutAmountPad.kt`: Standardized zero-start amount pad with `GlassLevel.EntrySheet`.
-- `app/src/main/java/com/omkarnub/kanri/ui/common/kokonut/KokonutSmoothDrawer.kt`: Standardized summary drawer with `GlassLevel.EntrySheet` and slide-to-confirm slider.
+- `app/src/main/java/com/omkarnub/kanri/ui/common/kokonut/KokonutAmountPad.kt`: Standardized zero-start amount pad with `GlassLevel.EntrySheet` and 10% dark tint keypad keys.
+- `app/src/main/java/com/omkarnub/kanri/ui/common/kokonut/KokonutSmoothDrawer.kt`: Standardized summary drawer with `GlassLevel.EntrySheet`, 10% dark tint summary card, and slide-to-confirm slider.
+- `app/src/main/java/com/omkarnub/kanri/ui/insights/sections/InsightsRangeBar.kt`: Sticky time period range selector with variable glass blur (`GlassLevel.Blur`).
 - `app/src/main/java/com/omkarnub/kanri/ui/lending/LendingScreen.kt`: Lend & Borrow hub entry points with full screen overlay and haze support.

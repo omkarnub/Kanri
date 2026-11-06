@@ -5,6 +5,20 @@ All notable changes to Kanri will be documented in this file.
 The format is based on [Keep a Changelog](https://keepachangelog.com/en/1.0.0/),
 and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0.html).
 
+## [1.4.8] - 2026-11-07
+
+### Changed & Refined
+- **Variable Glass Blur & Tint Alignment**:
+  - Restored `LendingSplitGroupCard` (Split Group Expense card) and `LendingSegmentedControl` ([People | Timeline] toggle bar) to use `GlassLevel.Blur` with `LocalHazeState.current`, aligning with all other variable glass cards in the app.
+  - Restored "Add Record" action pill button and "Add First Entry" button in `LendingScreen.kt` to use `GlassLevel.Blur` with `LocalHazeState.current`.
+  - Updated `InsightsRangeBar` (Time Period Selector: Month, 30D, 3M, Year, Custom) from `GlassLevel.Flat` to `GlassLevel.Blur` with `LocalHazeState.current`, allowing the live backdrop blur and dynamic theme tint to shine through.
+- **Fixed 10% Dark Tint Consistency across Numpad and Summary Popup**:
+  - Unified `TactileKeypadKey` digits and `TactilePresetChip` in `KokonutAmountPad` to strictly adhere to the fixed 10% dark tint (`Color.Black.copy(alpha = 0.10f)`) and subtle border (`Color.White.copy(alpha = 0.10f)`), seamlessly matching the numpad sheet container.
+  - Standardized the Continue CTA in `KokonutAmountPad` to use the 10% dark tint when empty.
+  - Standardized the metadata detail cards container and dividers in `KokonutSmoothDrawer` (entry summary popup) to use `Color.Black.copy(alpha = 0.10f)` and `Color.White.copy(alpha = 0.10f)` borders.
+  - Standardized the slider track background in `KokonutSlideToConfirm` to follow `Color.Black.copy(alpha = 0.10f)` with matching border.
+- Bumped application version to `1.4.8` (Build 19).
+
 ## [1.4.7] - 2026-11-06
 
 ### Added & Refined

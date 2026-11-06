@@ -250,10 +250,10 @@ fun KokonutSmoothDrawer(
             // Metadata Detail Cards Container
             Surface(
                 shape = RoundedCornerShape(16.dp),
-                color = if (tokens != null) tokens.tintFlat.copy(alpha = 0.35f) else (if (dark) Zinc900.copy(alpha = 0.45f) else Zinc100.copy(alpha = 0.6f)),
+                color = Color.Black.copy(alpha = 0.10f),
                 border = androidx.compose.foundation.BorderStroke(
                     0.8.dp,
-                    if (tokens != null) tokens.borderStart.copy(alpha = 0.25f) else (if (dark) Zinc800 else Zinc200)
+                    Color.White.copy(alpha = 0.10f)
                 ),
                 modifier = Modifier.fillMaxWidth()
             ) {
@@ -288,7 +288,7 @@ fun KokonutSmoothDrawer(
                         if (index < detailRows.size - 1) {
                             HorizontalDivider(
                                 thickness = 0.6.dp,
-                                color = if (dark) Zinc800.copy(alpha = 0.6f) else Zinc200.copy(alpha = 0.7f)
+                                color = Color.White.copy(alpha = 0.08f)
                             )
                         }
                     }

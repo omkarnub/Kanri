@@ -447,12 +447,12 @@ fun KokonutAmountPad(
             )
 
             val btnBg = if (isEmpty) {
-                if (tokens != null) tokens.tintFlat.copy(alpha = 0.5f) else if (dark) Zinc900 else Zinc100
+                Color.Black.copy(alpha = 0.10f)
             } else {
                 if (dark) Zinc100 else Zinc900
             }
             val btnTextColor = if (isEmpty) {
-                if (dark) Zinc600 else Zinc400
+                if (dark) Zinc500 else Zinc400
             } else {
                 if (dark) Zinc900 else Color.White
             }
@@ -467,6 +467,11 @@ fun KokonutAmountPad(
                     }
                     .clip(RoundedCornerShape(16.dp))
                     .background(btnBg)
+                    .border(
+                        0.8.dp,
+                        if (isEmpty) Color.White.copy(alpha = 0.10f) else Color.Transparent,
+                        RoundedCornerShape(16.dp)
+                    )
                     .clickable(
                         interactionSource = interactionSource,
                         indication = null
@@ -567,14 +572,14 @@ private fun TactileKeypadKey(
             .clip(RoundedCornerShape(16.dp))
             .background(
                 if (isPressed) {
-                    if (tokens != null) tokens.tintStrong else if (dark) Zinc800 else Zinc200
+                    Color.Black.copy(alpha = 0.22f)
                 } else {
-                    if (tokens != null) tokens.tintFlat.copy(alpha = 0.35f) else if (dark) Zinc900.copy(alpha = 0.45f) else Zinc100.copy(alpha = 0.6f)
+                    Color.Black.copy(alpha = 0.10f)
                 }
             )
             .border(
                 0.8.dp,
-                if (tokens != null) tokens.borderStart.copy(alpha = if (isPressed) 0.50f else 0.20f) else if (dark) Zinc800 else Zinc200,
+                if (isPressed) Color.White.copy(alpha = 0.22f) else Color.White.copy(alpha = 0.10f),
                 RoundedCornerShape(16.dp)
             )
             .clickable(
@@ -650,15 +655,15 @@ private fun TactilePresetChip(
             }
             .clip(RoundedCornerShape(17.dp))
             .border(
-                1.dp,
-                if (tokens != null) tokens.borderStart.copy(alpha = 0.35f) else if (dark) Zinc800 else Zinc200,
+                0.8.dp,
+                if (isPressed) Color.White.copy(alpha = 0.22f) else Color.White.copy(alpha = 0.10f),
                 RoundedCornerShape(17.dp)
             )
             .background(
                 if (isPressed) {
-                    if (tokens != null) tokens.tintStrong else if (dark) Zinc800 else Zinc200
+                    Color.Black.copy(alpha = 0.22f)
                 } else {
-                    if (tokens != null) tokens.tintFlat else if (dark) Zinc900.copy(alpha = 0.5f) else Zinc100.copy(alpha = 0.6f)
+                    Color.Black.copy(alpha = 0.10f)
                 }
             )
             .clickable(

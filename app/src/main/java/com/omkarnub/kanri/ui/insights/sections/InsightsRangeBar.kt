@@ -1,4 +1,4 @@
-﻿package com.omkarnub.kanri.ui.insights.sections
+package com.omkarnub.kanri.ui.insights.sections
 
 import androidx.compose.animation.animateColorAsState
 import androidx.compose.foundation.background
@@ -53,7 +53,9 @@ import java.time.ZoneId
 
 import com.omkarnub.kanri.ui.common.GlassLevel
 import com.omkarnub.kanri.ui.common.KanriGlassCard
+import com.omkarnub.kanri.ui.common.LocalHazeState
 import com.omkarnub.kanri.ui.theme.LocalKanriGlass
+import dev.chrisbanes.haze.HazeState
 
 private val ExpenseRed = Color(0xFFE54D2E)
 private val IncomeSage = Color(0xFF30A46C)
@@ -66,7 +68,8 @@ fun InsightsRangeBar(
     onRangeSelected: (InsightsRange) -> Unit,
     onModeSelected: (InsightsMode) -> Unit,
     modifier: Modifier = Modifier,
-    earliestTxMillis: Long? = null
+    earliestTxMillis: Long? = null,
+    hazeState: HazeState? = LocalHazeState.current
 ) {
     var showCustomDatePicker by remember { mutableStateOf(false) }
     val haptics = rememberKanriHaptics()
@@ -74,7 +77,8 @@ fun InsightsRangeBar(
 
     KanriGlassCard(
         modifier = modifier.fillMaxWidth(),
-        level = GlassLevel.Flat,
+        level = GlassLevel.Blur,
+        hazeState = hazeState ?: LocalHazeState.current,
         shape = RoundedCornerShape(20.dp)
     ) {
         Column(
@@ -88,7 +92,7 @@ fun InsightsRangeBar(
                 modifier = Modifier
                     .fillMaxWidth()
                     .background(
-                        color = tokens?.tintFlat?.copy(alpha = 0.5f) ?: MaterialTheme.colorScheme.surface.copy(alpha = 0.5f),
+                        color = tokens?.tintFlat?.copy(alpha = 0.35f) ?: MaterialTheme.colorScheme.surface.copy(alpha = 0.35f),
                         shape = RoundedCornerShape(14.dp)
                     )
                     .padding(3.dp),
@@ -153,7 +157,7 @@ fun InsightsRangeBar(
                 modifier = Modifier
                     .fillMaxWidth()
                     .background(
-                        color = tokens?.tintFlat?.copy(alpha = 0.5f) ?: MaterialTheme.colorScheme.surface.copy(alpha = 0.5f),
+                        color = tokens?.tintFlat?.copy(alpha = 0.35f) ?: MaterialTheme.colorScheme.surface.copy(alpha = 0.35f),
                         shape = RoundedCornerShape(14.dp)
                     )
                     .padding(3.dp),

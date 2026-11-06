@@ -383,11 +383,11 @@ fun KokonutSlideToConfirm(
                 modifier = Modifier
                     .fillMaxSize()
                     .background(
-                        if (tokens != null) tokens.tintFlat else (if (dark) Zinc900 else Zinc100)
+                        Color.Black.copy(alpha = 0.10f)
                     )
                     .border(
-                        1.dp,
-                        if (tokens != null) tokens.borderStart.copy(alpha = 0.35f) else (if (dark) Zinc800 else Zinc200),
+                        0.8.dp,
+                        Color.White.copy(alpha = 0.10f),
                         RoundedCornerShape(28.dp)
                     )
             )
