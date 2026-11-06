@@ -229,7 +229,7 @@ fun KokonutSlideToConfirm(
             }
 
             val minDelayJob = async {
-                delay(550)
+                delay(650)
             }
 
             var success = false
@@ -248,7 +248,7 @@ fun KokonutSlideToConfirm(
                 haptics.success()
 
                 // Hold green success state so the user clearly sees the checkmark & message
-                delay(650)
+                delay(850)
 
                 if (onSuccessComplete != null) {
                     onSuccessComplete()

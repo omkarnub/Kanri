@@ -175,23 +175,9 @@ fun LendingScreen(
                                     }
                                 },
                                 shape = CircleShape,
-                                level = GlassLevel.Strong,
-                                modifier = Modifier
-                                    .padding(end = 12.dp)
-                                    .border(
-                                        width = 1.2.dp,
-                                        brush = Brush.linearGradient(
-                                            listOf(
-                                                Color.White.copy(alpha = 0.50f),
-                                                Color.White.copy(alpha = 0.18f)
-                                            )
-                                        ),
-                                        shape = CircleShape
-                                    )
-                                    .background(
-                                        color = Color.White.copy(alpha = 0.16f),
-                                        shape = CircleShape
-                                    ),
+                                level = GlassLevel.EntrySheet,
+                                hazeState = LocalHazeState.current,
+                                modifier = Modifier.padding(end = 12.dp),
                                 textColor = tokens?.textPrimary ?: MaterialTheme.colorScheme.onSurface,
                                 icon = {
                                     Icon(
@@ -430,7 +416,8 @@ fun LendingScreen(
                                             }
                                         },
                                         shape = androidx.compose.foundation.shape.RoundedCornerShape(14.dp),
-                                        level = GlassLevel.Strong,
+                                        level = GlassLevel.EntrySheet,
+                                        hazeState = LocalHazeState.current,
                                         modifier = Modifier.padding(top = 8.dp),
                                         icon = {
                                             Icon(
@@ -678,11 +665,9 @@ fun LendingScreen(
             onDismiss = { showSplitSheet = false },
             onSaveLenderSplit = { friendNames, perPersonShare, eventDescription ->
                 viewModel.addSplitAsLender(friendNames, perPersonShare, eventDescription)
-                showSplitSheet = false
             },
             onSaveBorrowerSplit = { payerName, userShare, eventDescription ->
                 viewModel.addSplitAsBorrower(payerName, userShare, eventDescription)
-                showSplitSheet = false
             },
             existingPeople = existingPeople,
             hazeState = LocalHazeState.current

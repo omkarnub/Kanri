@@ -5,6 +5,21 @@ All notable changes to Kanri will be documented in this file.
 The format is based on [Keep a Changelog](https://keepachangelog.com/en/1.0.0/),
 and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0.html).
 
+## [1.4.7] - 2026-11-06
+
+### Added & Refined
+- **Slider Saving Loader & Emerald Green Success Message**:
+  - Decoupled asynchronous database persistence from modal dialog dismissal in `MainNavigationScreen.kt` and `LendingScreen.kt`.
+  - The slide-to-confirm slider (`KokonutSlideToConfirm`) now executes its full fluid lifecycle upon completion:
+    1. Ink floods across the slider track with a centered spinner and "Saving…".
+    2. Slider smoothly transitions to vibrant Emerald Green with checkmark icon and confirmation label ("Loan saved!" / "Borrowing saved!" / "Expense saved!").
+    3. Tactile haptic pulse triggers, holding the green success confirmation for 850ms before smoothly dismissing the sheet.
+- **Glassmorphic Fixed 50dp Blur & 10% Dark Tint on Hub Controls**:
+  - Updated `LendingSplitGroupCard` (Split a Group Expense card) to use `GlassLevel.EntrySheet` with `LocalHazeState.current`.
+  - Updated `LendingSegmentedControl` ([People | Timeline] toggle bar) to use `GlassLevel.EntrySheet` with `LocalHazeState.current`.
+  - Updated the "Add Record" pill action button and "Add First Entry" button in `LendingScreen.kt` to adopt `GlassLevel.EntrySheet` with `LocalHazeState.current`, removing legacy opaque borders and backgrounds.
+- Bumped application version to `1.4.7` (Build 18).
+
 ## [1.4.6] - 2026-11-06
 
 ### Fixed

@@ -432,8 +432,6 @@ fun MainNavigationScreen(
                             wallet = wallet
                         )
                     }
-                    showAddLendingDialog = false
-                    editingLendingEntry = null
                 },
                 initialType = addLendingInitialType,
                 initialPersonName = addLendingInitialPerson,
@@ -459,15 +457,9 @@ fun MainNavigationScreen(
                 },
                 onSaveLenderSplit = { friendNames, perPersonShare, eventDescription ->
                     lendingViewModel.addSplitAsLender(friendNames, perPersonShare, eventDescription)
-                    showSplitSheet = false
-                    splitInitialAmount = null
-                    splitInitialDescription = null
                 },
                 onSaveBorrowerSplit = { payerName, userShare, eventDescription ->
                     lendingViewModel.addSplitAsBorrower(payerName, userShare, eventDescription)
-                    showSplitSheet = false
-                    splitInitialAmount = null
-                    splitInitialDescription = null
                 },
                 existingPeople = existingPeople,
                 initialAmount = splitInitialAmount,

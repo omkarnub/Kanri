@@ -1,4 +1,4 @@
-﻿package com.omkarnub.kanri.ui.lending
+package com.omkarnub.kanri.ui.lending
 
 import androidx.compose.animation.animateColorAsState
 import androidx.compose.animation.core.FastOutSlowInEasing
@@ -26,6 +26,7 @@ import androidx.compose.ui.unit.sp
 
 import com.omkarnub.kanri.ui.common.GlassLevel
 import com.omkarnub.kanri.ui.common.KanriGlassCard
+import com.omkarnub.kanri.ui.common.LocalHazeState
 import com.omkarnub.kanri.ui.theme.LocalKanriGlass
 
 @Composable
@@ -38,7 +39,8 @@ fun LendingSegmentedControl(
 
     KanriGlassCard(
         modifier = modifier.fillMaxWidth(),
-        level = GlassLevel.Flat,
+        level = GlassLevel.EntrySheet,
+        hazeState = LocalHazeState.current,
         shape = RoundedCornerShape(14.dp)
     ) {
         Row(

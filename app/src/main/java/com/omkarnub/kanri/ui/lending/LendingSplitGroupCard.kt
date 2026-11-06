@@ -1,4 +1,4 @@
-﻿package com.omkarnub.kanri.ui.lending
+package com.omkarnub.kanri.ui.lending
 
 import androidx.compose.foundation.clickable
 import androidx.compose.foundation.layout.Column
@@ -27,42 +27,26 @@ import androidx.compose.ui.unit.dp
 import androidx.compose.ui.unit.sp
 import com.omkarnub.kanri.ui.common.GlassLevel
 import com.omkarnub.kanri.ui.common.KanriGlassCard
+import com.omkarnub.kanri.ui.common.LocalHazeState
 import com.omkarnub.kanri.ui.theme.LocalKanriGlass
 
 /**
- * A sleek, borderless card featured prominently in the Lend & Borrow menu
- * to invite the user into the full-page monochrome Split Group Expense experience.
+ * A sleek, frosted glass card featured prominently in the Lend & Borrow menu
+ * with fixed 50dp blur and 10% dark tint.
  */
 @Composable
 fun LendingSplitGroupCard(
     onClick: () -> Unit,
     modifier: Modifier = Modifier
 ) {
-    val tokens = LocalKanriGlass.current
-    if (tokens != null) {
-        KanriGlassCard(
-            modifier = modifier.fillMaxWidth(),
-            shape = RoundedCornerShape(20.dp),
-            level = GlassLevel.Flat,
-            onClick = onClick
-        ) {
-            LendingSplitGroupContent()
-        }
-    } else {
-        Card(
-            modifier = modifier
-                .fillMaxWidth()
-                .clip(RoundedCornerShape(20.dp))
-                .clickable(onClick = onClick),
-            shape = RoundedCornerShape(20.dp),
-            colors = CardDefaults.cardColors(
-                containerColor = MaterialTheme.colorScheme.surfaceVariant.copy(alpha = 0.35f)
-            ),
-            border = null, // Strictly borderless
-            elevation = CardDefaults.cardElevation(defaultElevation = 0.dp)
-        ) {
-            LendingSplitGroupContent()
-        }
+    KanriGlassCard(
+        modifier = modifier.fillMaxWidth(),
+        shape = RoundedCornerShape(20.dp),
+        level = GlassLevel.EntrySheet,
+        hazeState = LocalHazeState.current,
+        onClick = onClick
+    ) {
+        LendingSplitGroupContent()
     }
 }
 
