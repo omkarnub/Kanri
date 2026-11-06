@@ -1,7 +1,7 @@
 # Entry Workflows & Action Popup Design
 
-**Current Version:** 1.4.5 (Build 16)  
-**Last Updated:** 2026-11-05  
+**Current Version:** 1.4.6 (Build 17)  
+**Last Updated:** 2026-11-06  
 
 ---
 
@@ -21,7 +21,17 @@ All entry surfaces enforce a fixed 50 dp blur and 10% dark tint via `GlassLevel.
 
 ---
 
-## 2. Floating Dock Action Popup (`AddExpenseIncomePopup`)
+## 2. Navigation Z-Order Elevation & Floating Dock Behavior
+To eliminate any possibility of bottom dialogs appearing behind the bottom floating dock (`KanriFloatingDock`), all modal dialogs are elevated to the root navigation overlay container in `MainNavigationScreen.kt`:
+
+- **Root Z-Order Elevation**: `AddTransactionDialog`, `LendingEntryDialog`, `SplitExpenseEntryDialog`, and `LendingTransactionBridgeDialog` are rendered in the root Box of `MainNavigationScreen.kt`, *above* the tab contents and above `KanriFloatingDock`.
+- **Dock Auto-Slide Transition**: When any entry sheet is active (`isAnyEntryModalOpen`), `KanriFloatingDock` smoothly slides down off-screen via `slideOutVertically + fadeOut`. When the sheet is confirmed or dismissed, the dock smoothly slides back into position via `slideInVertically + fadeIn`.
+- **Delegated Entry Callbacks**: `LendingScreen` and `HomeScreen` expose `onOpenAddEntry`, `onOpenSplitExpense`, and `onOpenLendBorrowTransaction` callbacks so that all user actions (e.g. "Add Record", "Track Loan", "Edit", "Split a Group Expense", "Bridge from Transaction") trigger the top-level elevated container.
+- **Pure In-Compose Architecture**: `SplitExpenseEntryDialog` was converted to a pure in-compose sheet (matching `LendingEntryDialog` and `AddTransactionDialog`), ensuring direct sampling of the backdrop `HazeState` without native dialog window boundary limitations.
+
+---
+
+## 3. Floating Dock Action Popup (`AddExpenseIncomePopup`)
 The floating dock '+' button displays a hardware-accelerated frosted glass card (`KanriGlassCard`) elevated directly above the bottom navigation dock.
 
 ### Core Options

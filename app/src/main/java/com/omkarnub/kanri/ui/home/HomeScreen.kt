@@ -145,6 +145,7 @@ fun HomeScreen(
     onTransactionClick: (TransactionWithCategory) -> Unit = {},
     openWalletSheet: Boolean = false,
     onWalletSheetOpened: () -> Unit = {},
+    onOpenLendBorrowTransaction: ((TransactionWithCategory) -> Unit)? = null,
     modifier: Modifier = Modifier,
     viewModel: HomeViewModel = viewModel()
 ) {
@@ -325,7 +326,11 @@ fun HomeScreen(
                 selectedTransactionForCategory = null
             },
             onOpenLendBorrow = {
-                lendingEntryForTransaction = target
+                if (onOpenLendBorrowTransaction != null) {
+                    onOpenLendBorrowTransaction(target)
+                } else {
+                    lendingEntryForTransaction = target
+                }
                 selectedTransactionForCategory = null
             }
         )

@@ -5,6 +5,18 @@ All notable changes to Kanri will be documented in this file.
 The format is based on [Keep a Changelog](https://keepachangelog.com/en/1.0.0/),
 and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0.html).
 
+## [1.4.6] - 2026-11-06
+
+### Fixed
+- **Lend & Borrow and Split Bill Popup Elevation Above Floating Dock**:
+  - Fixed Z-order glitch where `LendingEntryDialog` and `SplitExpenseEntryDialog` could be rendered behind `KanriFloatingDock`.
+  - Elevated all modal entry dialogs (`LendingEntryDialog`, `SplitExpenseEntryDialog`, `AddTransactionDialog`, and `LendingTransactionBridgeDialog`) to the root Box in `MainNavigationScreen.kt`, above all tabs and docks.
+  - Added delegated callbacks `onOpenAddEntry` and `onOpenSplitExpense` in `LendingScreen`, and `onOpenLendBorrowTransaction` in `HomeScreen`, linking all trigger buttons directly to the root-level modal host.
+  - Wired `KanriFloatingDock` visibility to automatically animate down off-screen (`slideOutVertically + fadeOut`) when any entry sheet is open, and smoothly slide back up (`slideInVertically + fadeIn`) upon dismissal or completion.
+  - Converted `SplitExpenseEntryDialog` to pure in-compose sheet architecture (eliminating `Dialog` window wrapping) for unified backdrop `HazeState` live blur sampling.
+  - Bottom-anchored all `AnimatedContent` step transitions (`contentAlignment = Alignment.BottomCenter`) across Amount Pad, Fill Details, and Summary Drawer for seamless vertical alignment.
+- Bumped application version to `1.4.6` (Build 17).
+
 ## [1.4.5] - 2026-11-05
 
 ### Changed

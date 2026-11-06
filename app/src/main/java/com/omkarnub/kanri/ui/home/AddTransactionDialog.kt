@@ -260,6 +260,7 @@ fun AddTransactionDialog(
         ) {
             AnimatedContent(
                 targetState = currentStep,
+                contentAlignment = Alignment.BottomCenter,
                 transitionSpec = {
                     if (targetState == AddTransactionStep.SUMMARY_DRAWER) {
                         (slideInVertically(

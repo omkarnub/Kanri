@@ -77,7 +77,9 @@ import kotlinx.coroutines.launch
 fun LendingScreen(
     modifier: Modifier = Modifier,
     viewModel: LendingViewModel = viewModel(),
-    hubViewModel: LendingHubViewModel = viewModel()
+    hubViewModel: LendingHubViewModel = viewModel(),
+    onOpenAddEntry: ((type: String, person: String, amount: Double, notes: String?, existingEntry: LendingWithRepayments?) -> Unit)? = null,
+    onOpenSplitExpense: (() -> Unit)? = null
 ) {
     val hubState by hubViewModel.uiState.collectAsState()
     val haptics = rememberKanriHaptics()
@@ -163,10 +165,14 @@ fun LendingScreen(
                                 text = "Add Record",
                                 onClick = {
                                     haptics.primaryAction()
-                                    addEntryInitialType = "LENT"
-                                    addEntryInitialPerson = ""
-                                    editingEntry = null
-                                    showAddEntryDialog = true
+                                    if (onOpenAddEntry != null) {
+                                        onOpenAddEntry("LENT", "", 0.0, null, null)
+                                    } else {
+                                        addEntryInitialType = "LENT"
+                                        addEntryInitialPerson = ""
+                                        editingEntry = null
+                                        showAddEntryDialog = true
+                                    }
                                 },
                                 shape = CircleShape,
                                 level = GlassLevel.Strong,
@@ -266,17 +272,25 @@ fun LendingScreen(
                     },
                     onAddLentClick = {
                         haptics.click()
-                        addEntryInitialType = "LENT"
-                        addEntryInitialPerson = selectedPerson.displayName
-                        editingEntry = null
-                        showAddEntryDialog = true
+                        if (onOpenAddEntry != null) {
+                            onOpenAddEntry("LENT", selectedPerson.displayName, 0.0, null, null)
+                        } else {
+                            addEntryInitialType = "LENT"
+                            addEntryInitialPerson = selectedPerson.displayName
+                            editingEntry = null
+                            showAddEntryDialog = true
+                        }
                     },
                     onAddBorrowedClick = {
                         haptics.click()
-                        addEntryInitialType = "BORROWED"
-                        addEntryInitialPerson = selectedPerson.displayName
-                        editingEntry = null
-                        showAddEntryDialog = true
+                        if (onOpenAddEntry != null) {
+                            onOpenAddEntry("BORROWED", selectedPerson.displayName, 0.0, null, null)
+                        } else {
+                            addEntryInitialType = "BORROWED"
+                            addEntryInitialPerson = selectedPerson.displayName
+                            editingEntry = null
+                            showAddEntryDialog = true
+                        }
                     },
                     onRecordRepaymentClick = {
                         haptics.click()
@@ -339,7 +353,11 @@ fun LendingScreen(
                         LendingSplitGroupCard(
                             onClick = {
                                 haptics.click()
-                                showSplitSheet = true
+                                if (onOpenSplitExpense != null) {
+                                    onOpenSplitExpense()
+                                } else {
+                                    showSplitSheet = true
+                                }
                             },
                             modifier = Modifier
                                 .padding(horizontal = 18.dp)
@@ -402,10 +420,14 @@ fun LendingScreen(
                                     KanriGlassButton(
                                         text = "Add First Entry",
                                         onClick = {
-                                            addEntryInitialType = "LENT"
-                                            addEntryInitialPerson = ""
-                                            editingEntry = null
-                                            showAddEntryDialog = true
+                                            if (onOpenAddEntry != null) {
+                                                onOpenAddEntry("LENT", "", 0.0, null, null)
+                                            } else {
+                                                addEntryInitialType = "LENT"
+                                                addEntryInitialPerson = ""
+                                                editingEntry = null
+                                                showAddEntryDialog = true
+                                            }
                                         },
                                         shape = androidx.compose.foundation.shape.RoundedCornerShape(14.dp),
                                         level = GlassLevel.Strong,
@@ -594,8 +616,18 @@ fun LendingScreen(
                 },
                 onEdit = {
                     selectedTransactionForDetail = null
-                    editingEntry = entry
-                    showAddEntryDialog = true
+                    if (onOpenAddEntry != null) {
+                        onOpenAddEntry(
+                            entry.lending.type,
+                            entry.lending.personName,
+                            entry.lending.amount,
+                            entry.lending.notes,
+                            entry
+                        )
+                    } else {
+                        editingEntry = entry
+                        showAddEntryDialog = true
+                    }
                 },
                 onDelete = {
                     selectedTransactionForDetail = null

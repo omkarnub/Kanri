@@ -256,6 +256,7 @@ fun LendingEntryDialog(
         ) {
             AnimatedContent(
                 targetState = currentStep,
+                contentAlignment = Alignment.BottomCenter,
                 transitionSpec = {
                     if (targetState == LendingEntryStep.SUMMARY_DRAWER) {
                         (slideInVertically(

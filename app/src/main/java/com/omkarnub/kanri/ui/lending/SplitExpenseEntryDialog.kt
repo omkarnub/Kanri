@@ -217,29 +217,11 @@ fun SplitExpenseEntryDialog(
         }
     })
 
-    Dialog(
-        onDismissRequest = { performDismiss() },
-        properties = DialogProperties(
-            usePlatformDefaultWidth = false,
-            decorFitsSystemWindows = false
-        )
+    Box(
+        modifier = Modifier.fillMaxSize(),
+        contentAlignment = Alignment.BottomCenter
     ) {
-        val view = LocalView.current
-        DisposableEffect(view) {
-            val window = (view.parent as? DialogWindowProvider)?.window
-            window?.let { w ->
-                w.setDimAmount(0f)
-                w.setBackgroundDrawableResource(android.R.color.transparent)
-                applyWindowBlur(w)
-            }
-            onDispose {}
-        }
-
-        Box(
-            modifier = Modifier.fillMaxSize(),
-            contentAlignment = Alignment.BottomCenter
-        ) {
-            // Scrim backdrop
+        // Scrim backdrop
             Box(
                 modifier = Modifier
                     .fillMaxSize()
@@ -271,6 +253,7 @@ fun SplitExpenseEntryDialog(
             ) {
                 AnimatedContent(
                     targetState = currentStep,
+                    contentAlignment = Alignment.BottomCenter,
                     transitionSpec = {
                         if (targetState == SplitExpenseStep.SUMMARY_DRAWER) {
                             (slideInVertically(
@@ -888,5 +871,4 @@ fun SplitExpenseEntryDialog(
                 }
             }
         }
-    }
 }

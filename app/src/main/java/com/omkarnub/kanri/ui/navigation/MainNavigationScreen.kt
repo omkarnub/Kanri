@@ -39,9 +39,12 @@ import androidx.compose.animation.core.spring
 import androidx.compose.animation.core.Spring
 import com.omkarnub.kanri.ui.home.TransactionDetailScreen
 import com.omkarnub.kanri.ui.lending.AddLendingDialog
+import com.omkarnub.kanri.ui.lending.LendingHubViewModel
 import com.omkarnub.kanri.ui.lending.LendingScreen
 import com.omkarnub.kanri.ui.lending.LendingViewModel
 import com.omkarnub.kanri.ui.lending.SplitExpenseSheet
+import com.omkarnub.kanri.data.db.LendingWithRepayments
+import com.omkarnub.kanri.data.db.TransactionWithCategory
 import com.omkarnub.kanri.ui.month.MonthViewScreen
 import com.omkarnub.kanri.ui.profile.ProfileScreen
 import com.omkarnub.kanri.ui.savings.GoalsScreen
@@ -88,8 +91,10 @@ fun MainNavigationScreen(
 
     val homeViewModel: HomeViewModel = viewModel()
     val lendingViewModel: LendingViewModel = viewModel()
+    val lendingHubViewModel: LendingHubViewModel = viewModel()
     val homeState by homeViewModel.uiState.collectAsState()
     val lendingState by lendingViewModel.uiState.collectAsState()
+    val lendingHubState by lendingHubViewModel.uiState.collectAsState()
 
     var showAddExpenseIncomeSheet by remember { mutableStateOf(false) }
     var showAddTransactionDialog by remember { mutableStateOf(false) }
@@ -100,9 +105,14 @@ fun MainNavigationScreen(
     var addLendingInitialAmount by remember { androidx.compose.runtime.mutableDoubleStateOf(0.0) }
     var addLendingInitialPerson by remember { mutableStateOf("") }
     var addLendingInitialNotes by remember { mutableStateOf<String?>("") }
+    var editingLendingEntry by remember { mutableStateOf<LendingWithRepayments?>(null) }
+
     var showSplitSheet by remember { mutableStateOf(false) }
     var splitInitialAmount by remember { mutableStateOf<Double?>(null) }
     var splitInitialDescription by remember { mutableStateOf<String?>(null) }
+    var bridgeTransaction by remember { mutableStateOf<TransactionWithCategory?>(null) }
+
+    val isAnyEntryModalOpen = showAddTransactionDialog || showAddLendingDialog || showSplitSheet || bridgeTransaction != null
     var openWalletSheetFromWidget by remember { mutableStateOf(false) }
     var showSetBudgetDialog by remember { mutableStateOf(false) }
     val splitSheetState = rememberModalBottomSheetState(skipPartiallyExpanded = true)
@@ -262,6 +272,7 @@ fun MainNavigationScreen(
                                     onTransactionClick = { item -> viewingTransactionId = item.transaction.id },
                                     openWalletSheet = openWalletSheetFromWidget,
                                     onWalletSheetOpened = { openWalletSheetFromWidget = false },
+                                    onOpenLendBorrowTransaction = { bridgeTransaction = it },
                                     viewModel = homeViewModel,
                                     modifier = Modifier.fillMaxSize()
                                 )
@@ -272,6 +283,18 @@ fun MainNavigationScreen(
                                 )
                                 KanriTab.LEND_BORROW -> LendingScreen(
                                     viewModel = lendingViewModel,
+                                    hubViewModel = lendingHubViewModel,
+                                    onOpenAddEntry = { type, person, amount, notes, existingEntry ->
+                                        addLendingInitialType = type
+                                        addLendingInitialPerson = person
+                                        addLendingInitialAmount = amount
+                                        addLendingInitialNotes = notes ?: ""
+                                        editingLendingEntry = existingEntry
+                                        showAddLendingDialog = true
+                                    },
+                                    onOpenSplitExpense = {
+                                        showSplitSheet = true
+                                    },
                                     modifier = Modifier.fillMaxSize()
                                 )
                                 KanriTab.GOALS -> GoalsScreen(
@@ -295,9 +318,9 @@ fun MainNavigationScreen(
                             hazeState = effectiveHazeState
                         )
 
-                        // Floating Translucent Glass Dock Overlay (slides down when detail sub-screen is active)
+                        // Floating Translucent Glass Dock Overlay (slides down when detail sub-screen or entry modal is active)
                         androidx.compose.animation.AnimatedVisibility(
-                            visible = !isInsightsSubScreenOpen,
+                            visible = !isInsightsSubScreenOpen && !isAnyEntryModalOpen,
                             enter = slideInVertically(
                                 initialOffsetY = { it },
                                 animationSpec = spring(dampingRatio = 0.82f, stiffness = Spring.StiffnessMediumLow)
@@ -370,6 +393,7 @@ fun MainNavigationScreen(
                     addLendingInitialAmount = amount
                     addLendingInitialPerson = counterparty
                     addLendingInitialNotes = note
+                    editingLendingEntry = null
                     showAddLendingDialog = true
                 },
                 hazeState = effectiveHazeState
@@ -378,23 +402,54 @@ fun MainNavigationScreen(
 
         // Add Lending Dialog
         if (showAddLendingDialog) {
+            val recentPeople = remember(lendingHubState.allPeopleSummaries) {
+                lendingHubState.allPeopleSummaries.map { it.displayName }
+            }
             com.omkarnub.kanri.ui.lending.LendingEntryDialog(
-                onDismiss = { showAddLendingDialog = false },
+                onDismiss = {
+                    showAddLendingDialog = false
+                    editingLendingEntry = null
+                },
                 onSave = { personName, amount, type, date, dueDate, notes, wallet ->
-                    lendingViewModel.addRecord(personName, amount, type, dueDate, notes, wallet)
+                    if (editingLendingEntry != null) {
+                        lendingHubViewModel.editEntry(
+                            id = editingLendingEntry!!.lending.id,
+                            personName = personName,
+                            amount = amount,
+                            type = type,
+                            date = date,
+                            dueDate = dueDate,
+                            notes = notes
+                        )
+                    } else {
+                        lendingHubViewModel.addEntry(
+                            personName = personName,
+                            amount = amount,
+                            type = type,
+                            date = date,
+                            dueDate = dueDate,
+                            notes = notes,
+                            wallet = wallet
+                        )
+                    }
+                    showAddLendingDialog = false
+                    editingLendingEntry = null
                 },
                 initialType = addLendingInitialType,
                 initialPersonName = addLendingInitialPerson,
                 initialAmount = addLendingInitialAmount,
                 initialNotes = addLendingInitialNotes,
+                existingEntry = editingLendingEntry,
+                recentPeople = recentPeople,
+                allPeople = lendingHubState.allPeopleSummaries,
                 hazeState = effectiveHazeState
             )
         }
 
         // Split Bill Entry Dialog (Unified Pop-up Workflow)
         if (showSplitSheet) {
-            val existingPeople = remember(lendingState.records) {
-                lendingState.records.map { it.personName.trim() }.distinct().filter { it.isNotBlank() }
+            val existingPeople = remember(lendingHubState.allPeopleSummaries) {
+                lendingHubState.allPeopleSummaries.map { it.displayName }.distinct().filter { it.isNotBlank() }
             }
             com.omkarnub.kanri.ui.lending.SplitExpenseEntryDialog(
                 onDismiss = {
@@ -418,6 +473,14 @@ fun MainNavigationScreen(
                 initialAmount = splitInitialAmount,
                 initialDescription = splitInitialDescription,
                 hazeState = effectiveHazeState
+            )
+        }
+
+        // Lending Transaction Bridge Dialog
+        bridgeTransaction?.let { target ->
+            com.omkarnub.kanri.ui.lending.LendingTransactionBridgeDialog(
+                targetTransaction = target,
+                onDismiss = { bridgeTransaction = null }
             )
         }
 
