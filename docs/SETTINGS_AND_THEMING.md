@@ -103,3 +103,24 @@ Kanri adheres strictly to a modern, typographic, and vector-driven design langua
 - **Letter Monograms**: User avatars utilize bold uppercase letter monograms against rich gradient surfaces (`KokonutAvatarSelector`).
 - **Vector Icons**: Actions, categories, reminders, and recurrent operations use Material Symbols / vector icons (`androidx.compose.material.icons`).
 - **Standard Currency Flags**: Currencies in the currency selection sheet and settings subtitle utilize standard regional flag indicators for clear, intuitive international currency identification.
+
+---
+
+## 6. Splash Screen & Launch Flow Architecture
+
+Kanri uses Google's official Jetpack Splash Screen library (`androidx.core:core-splashscreen`):
+- **Theme Starting Styles**:
+  - `Theme.Kanri.Starting` (Dark starting theme, inherits from `Theme.SplashScreen`)
+  - `Theme.Kanri.Starting.Light` (Light starting theme, inherits from `Theme.SplashScreen`)
+- **Attributes & Circular Artifact Elimination**:
+  - `windowSplashScreenBackground`: Solid black (`#000000`) or cream (`#FEFAEC`).
+  - `windowSplashScreenAnimatedIcon`: Centered vector branding (`@drawable/panchang_light` / `@drawable/panchang_dark`).
+  - `android:windowSplashScreenIconBackgroundColor` is intentionally omitted, preventing the OS from rendering a circular disc / circular cutout behind the wordmark.
+- **Fluid Exit & Handover Choreography**:
+  - Initialized in `MainActivity.onCreate()` via `installSplashScreen()`.
+  - Conditioned with `splashScreen.setKeepOnScreenCondition { !isAppReady }` to guarantee the splash screen stays mounted until Compose initializes the first frame.
+  - Overridden via `splashScreen.setOnExitAnimationListener`:
+    - Wordmark floats slightly upward (-16dp) and scales (1.10x) as it dissolves over 320ms (`cubic-bezier(0.23, 1, 0.32, 1)`).
+    - Splash background cross-fades over 380ms.
+    - Compose content executes an in-sync entrance reveal (`scale 0.98 -> 1.0` and `alpha 0.85 -> 1.0` over 380ms) for a continuous, cinematic handover from splash into the app.
+- **Version**: Kanri `1.4.9` (Build 20).

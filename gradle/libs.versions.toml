@@ -16,8 +16,10 @@ sqlcipher = "4.6.1"
 graphicsPath = "1.1.0"
 securityCrypto = "1.1.0-alpha06"
 work = "2.9.1"
+coreSplashscreen = "1.0.1"
 
 [libraries]
+androidx-core-splashscreen = { group = "androidx.core", name = "core-splashscreen", version.ref = "coreSplashscreen" }
 androidx-core-ktx = { group = "androidx.core", name = "core-ktx", version.ref = "coreKtx" }
 junit = { group = "junit", name = "junit", version.ref = "junit" }
 androidx-junit = { group = "androidx.test.ext", name = "junit", version.ref = "junitVersion" }

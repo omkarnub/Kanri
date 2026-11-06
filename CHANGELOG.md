@@ -5,6 +5,19 @@ All notable changes to Kanri will be documented in this file.
 The format is based on [Keep a Changelog](https://keepachangelog.com/en/1.0.0/),
 and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0.html).
 
+## [1.4.9] - 2026-11-07
+
+### Fixed
+- **Seamless App Launch & Fluid Splash Screen Handover**:
+  - Integrated official AndroidX Jetpack Splash Screen API (`androidx.core:core-splashscreen:1.0.1`).
+  - Added dedicated starting themes (`Theme.Kanri.Starting` and `Theme.Kanri.Starting.Light`) inheriting from `Theme.SplashScreen` with seamless `postSplashScreenTheme` transitions.
+  - Eliminated the split-second circular CRT-style mask and center circular disc by removing the redundant `android:windowSplashScreenIconBackgroundColor` attribute.
+  - Integrated `setKeepOnScreenCondition` to hold the launch splash precisely until the root Compose composition has initialized, completely eliminating blank/unrendered frame flashes.
+  - Choreographed an ultra-smooth exit motion: the centered branding wordmark floats gently upward (-16dp) and scales slightly (1.10x) as it dissolves over 320ms, while the splash window cross-fades over 380ms using an Apple/Emil-inspired cubic-bezier ease-out curve (`cubic-bezier(0.23, 1, 0.32, 1)`).
+  - Coordinated an in-sync entrance reveal for Compose app content (`0.98 -> 1.0` scale and `0.85 -> 1.0` alpha over 380ms) for a continuous, cinematic handover from splash into the app.
+  - Standardized window backgrounds across dark and light post-splash themes.
+- Bumped application version to `1.4.9` (Build 20).
+
 ## [1.4.8] - 2026-11-07
 
 ### Changed & Refined

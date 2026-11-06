@@ -23,8 +23,8 @@ android {
         applicationId = "com.omkarnub.kanri"
         minSdk = 26
         targetSdk = 37
-        versionCode = 19
-        versionName = "1.4.8"
+        versionCode = 20
+        versionName = "1.4.9"
 
         testInstrumentationRunner = "androidx.test.runner.AndroidJUnitRunner"
     }
@@ -76,6 +76,7 @@ android {
 dependencies {
     implementation(platform(libs.androidx.compose.bom))
     implementation(libs.androidx.activity.compose)
+    implementation(libs.androidx.core.splashscreen)
     implementation(libs.androidx.compose.material3)
     implementation(libs.androidx.compose.ui)
     implementation(libs.androidx.compose.ui.graphics)

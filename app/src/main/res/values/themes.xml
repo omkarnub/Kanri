@@ -1,21 +1,29 @@
 <?xml version="1.0" encoding="utf-8"?>
 <resources xmlns:tools="http://schemas.android.com/tools">
+    <!-- Dark Splash Screen Starting Theme -->
+    <style name="Theme.Kanri.Starting" parent="Theme.SplashScreen">
+        <item name="windowSplashScreenBackground">#000000</item>
+        <item name="windowSplashScreenAnimatedIcon">@drawable/panchang_light</item>
+        <item name="postSplashScreenTheme">@style/Theme.Kanri</item>
+    </style>
+
+    <!-- Light Splash Screen Starting Theme -->
+    <style name="Theme.Kanri.Starting.Light" parent="Theme.SplashScreen">
+        <item name="windowSplashScreenBackground">#FEFAEC</item>
+        <item name="windowSplashScreenAnimatedIcon">@drawable/panchang_dark</item>
+        <item name="postSplashScreenTheme">@style/Theme.Kanri.Light</item>
+    </style>
+
     <!-- Default theme is DARK for Kanri -->
     <style name="Theme.Kanri" parent="android:Theme.Material.NoActionBar">
-        <item name="android:windowBackground">@drawable/splash_background_dark</item>
-        <item name="android:windowSplashScreenBackground" tools:targetApi="s">#000000</item>
-        <item name="android:windowSplashScreenAnimatedIcon" tools:targetApi="s">@drawable/panchang_light</item>
-        <item name="android:windowSplashScreenIconBackgroundColor" tools:targetApi="s">#000000</item>
+        <item name="android:windowBackground">#000000</item>
         <item name="android:statusBarColor">@android:color/transparent</item>
         <item name="android:navigationBarColor">@android:color/transparent</item>
     </style>
 
     <!-- Light theme for MainActivityLight -->
     <style name="Theme.Kanri.Light" parent="android:Theme.Material.Light.NoActionBar">
-        <item name="android:windowBackground">@drawable/splash_background_light</item>
-        <item name="android:windowSplashScreenBackground" tools:targetApi="s">#FEFAEC</item>
-        <item name="android:windowSplashScreenAnimatedIcon" tools:targetApi="s">@drawable/panchang_dark</item>
-        <item name="android:windowSplashScreenIconBackgroundColor" tools:targetApi="s">#FEFAEC</item>
+        <item name="android:windowBackground">#FEFAEC</item>
         <item name="android:statusBarColor">@android:color/transparent</item>
         <item name="android:navigationBarColor">@android:color/transparent</item>
         <item name="android:windowLightStatusBar">true</item>
