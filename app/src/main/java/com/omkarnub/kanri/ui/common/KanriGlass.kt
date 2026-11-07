@@ -430,8 +430,6 @@ fun Modifier.kanriGlass(
         val spotShadow = if (isDark) Color.Black.copy(alpha = 0.35f) else Color.Black.copy(alpha = 0.035f)
         val ambientShadow = if (isDark) Color.Black.copy(alpha = 0.18f) else Color.Black.copy(alpha = 0.015f)
 
-        val entrySheetTint = Color.Black.copy(alpha = 0.10f)
-
         this
             .scale(scale)
             .then(
@@ -445,23 +443,7 @@ fun Modifier.kanriGlass(
                 } else Modifier
             )
             .clip(effectiveShape)
-            .then(
-                if (level == GlassLevel.EntrySheet && isBlurCapable && currentHaze != null) {
-                    Modifier.hazeEffect(
-                        state = currentHaze,
-                        style = HazeStyle(
-                            backgroundColor = Color.Transparent,
-                            tint = HazeTint(entrySheetTint),
-                            blurRadius = 50.dp,
-                            noiseFactor = 0.02f
-                        )
-                    ).background(entrySheetTint)
-                } else {
-                    Modifier.background(cardBg).then(
-                        if (level == GlassLevel.EntrySheet) Modifier.background(entrySheetTint) else Modifier
-                    )
-                }
-            )
+            .background(cardBg)
             .border(
                 width = 0.8.dp,
                 brush = borderBrush,

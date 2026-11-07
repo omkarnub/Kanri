@@ -1,6 +1,6 @@
 # Entry Workflows & Action Popup Design
 
-**Current Version:** 1.5.0 (Build 21)  
+**Current Version:** 1.5.1 (Build 22)  
 **Last Updated:** 2026-11-07  
 
 ---
@@ -18,7 +18,7 @@ Every entry follows the identical 3-step Apple-grade pop-up workflow:
 2. Half-screen Fill Details popup with uniformly arranged fields, Back, Cancel, and Proceed buttons
 3. Down-to-up small half-screen summary drawer with rolling numbers and slide-to-confirm slider (`KokonutSmoothDrawer` + `KokonutSlideToConfirm`).
 
-All entry surfaces enforce a fixed 50 dp blur and 10% dark tint via `GlassLevel.EntrySheet`.
+In Glass Mode, all entry surfaces enforce a fixed 50 dp blur and 10% dark tint via `GlassLevel.EntrySheet`. In Solid Modes (Light, Dark, AMOLED, and System), all entry surfaces use crisp, fully opaque theme container backgrounds without blur or transparency.
 
 ---
 
@@ -66,7 +66,7 @@ flowchart LR
 - Formatted currency display with live rolling digits.
 - Clean pull/dismiss drag handle at the top.
 - Proceeding advances directly to the Fill Details step with the entered amount preserved.
-- Calibrated to `GlassLevel.EntrySheet` (fixed 50 dp blur and 10% dark tint).
+- Calibrated to `GlassLevel.EntrySheet` (frosted 50 dp blur in Glass Mode; crisp opaque container background in Solid Light/Dark/AMOLED modes).
 
 ### Step 2: Fill Details (`KanriGlassCard`)
 - Bottom-docked half-screen card with 26 dp rounded top corners (NO full-screen stretching).
@@ -80,14 +80,14 @@ flowchart LR
   - Wallet impact chips ("Cash", "Online", "Not from balances").
   - Contextual Note field.
 - **Action Buttons**: "Back" text button on the left, "Cancel" text button and bold "Proceed" primary button on the right.
-- Calibrated to `GlassLevel.EntrySheet` (fixed 50 dp blur and 10% dark tint).
+- Calibrated to `GlassLevel.EntrySheet` (frosted 50 dp blur in Glass Mode; crisp opaque container background in Solid Light/Dark/AMOLED modes).
 
 ### Step 3: Summary Drawer & Slide to Confirm (`KokonutSmoothDrawer`)
 - Down-to-up small half-screen summary drawer with detailed breakdown rows.
 - Rolling total amount display.
 - Semantic confirmation color and label (`SlideConfirmationType.EXPENSE`, `INCOME`, `LEND`, or `BORROW`).
 - **`KokonutSlideToConfirm`**: Zero-latency drag gesture with progressive haptic feedback, snap animation, loading spinner, and success checkmark before automatically dismissing the dialog.
-- Calibrated to `GlassLevel.EntrySheet` (fixed 50 dp blur and 10% dark tint).
+- Calibrated to `GlassLevel.EntrySheet` (frosted 50 dp blur in Glass Mode; crisp opaque container background in Solid Light/Dark/AMOLED modes).
 
 ---
 

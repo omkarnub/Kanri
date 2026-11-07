@@ -378,16 +378,25 @@ fun KokonutSlideToConfirm(
                     }
                 }
         ) {
+            val trackBg = if (tokens != null) {
+                Color.Black.copy(alpha = 0.10f)
+            } else {
+                if (dark) Zinc900 else Zinc100
+            }
+            val trackBorder = if (tokens != null) {
+                Color.White.copy(alpha = 0.10f)
+            } else {
+                if (dark) Zinc800 else Zinc200
+            }
+
             // Track Background
             Box(
                 modifier = Modifier
                     .fillMaxSize()
-                    .background(
-                        Color.Black.copy(alpha = 0.10f)
-                    )
+                    .background(trackBg)
                     .border(
                         0.8.dp,
-                        Color.White.copy(alpha = 0.10f),
+                        trackBorder,
                         RoundedCornerShape(28.dp)
                     )
             )

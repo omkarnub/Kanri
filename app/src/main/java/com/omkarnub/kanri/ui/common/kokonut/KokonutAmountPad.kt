@@ -447,7 +447,11 @@ fun KokonutAmountPad(
             )
 
             val btnBg = if (isEmpty) {
-                Color.Black.copy(alpha = 0.10f)
+                if (tokens != null) {
+                    Color.Black.copy(alpha = 0.10f)
+                } else {
+                    if (dark) Zinc900 else Zinc100
+                }
             } else {
                 if (dark) Zinc100 else Zinc900
             }
@@ -455,6 +459,15 @@ fun KokonutAmountPad(
                 if (dark) Zinc500 else Zinc400
             } else {
                 if (dark) Zinc900 else Color.White
+            }
+            val btnBorderColor = if (isEmpty) {
+                if (tokens != null) {
+                    Color.White.copy(alpha = 0.10f)
+                } else {
+                    if (dark) Zinc800 else Zinc200
+                }
+            } else {
+                Color.Transparent
             }
 
             Box(
@@ -469,7 +482,7 @@ fun KokonutAmountPad(
                     .background(btnBg)
                     .border(
                         0.8.dp,
-                        if (isEmpty) Color.White.copy(alpha = 0.10f) else Color.Transparent,
+                        btnBorderColor,
                         RoundedCornerShape(16.dp)
                     )
                     .clickable(
@@ -562,6 +575,22 @@ private fun TactileKeypadKey(
         }
     }
 
+    val keyBg = if (tokens != null) {
+        if (isPressed) Color.Black.copy(alpha = 0.22f) else Color.Black.copy(alpha = 0.10f)
+    } else {
+        if (isPressed) {
+            if (dark) Zinc800 else Zinc200
+        } else {
+            if (dark) Zinc900 else Zinc100
+        }
+    }
+
+    val keyBorder = if (tokens != null) {
+        if (isPressed) Color.White.copy(alpha = 0.22f) else Color.White.copy(alpha = 0.10f)
+    } else {
+        if (dark) Zinc800 else Zinc200
+    }
+
     Box(
         modifier = modifier
             .height(54.dp)
@@ -570,16 +599,10 @@ private fun TactileKeypadKey(
                 scaleY = scale
             }
             .clip(RoundedCornerShape(16.dp))
-            .background(
-                if (isPressed) {
-                    Color.Black.copy(alpha = 0.22f)
-                } else {
-                    Color.Black.copy(alpha = 0.10f)
-                }
-            )
+            .background(keyBg)
             .border(
                 0.8.dp,
-                if (isPressed) Color.White.copy(alpha = 0.22f) else Color.White.copy(alpha = 0.10f),
+                keyBorder,
                 RoundedCornerShape(16.dp)
             )
             .clickable(
@@ -646,6 +669,22 @@ private fun TactilePresetChip(
         label = "presetScale"
     )
 
+    val chipBg = if (tokens != null) {
+        if (isPressed) Color.Black.copy(alpha = 0.22f) else Color.Black.copy(alpha = 0.10f)
+    } else {
+        if (isPressed) {
+            if (dark) Zinc800 else Zinc200
+        } else {
+            if (dark) Zinc900 else Zinc100
+        }
+    }
+
+    val chipBorder = if (tokens != null) {
+        if (isPressed) Color.White.copy(alpha = 0.22f) else Color.White.copy(alpha = 0.10f)
+    } else {
+        if (dark) Zinc800 else Zinc200
+    }
+
     Box(
         modifier = Modifier
             .height(34.dp)
@@ -656,16 +695,10 @@ private fun TactilePresetChip(
             .clip(RoundedCornerShape(17.dp))
             .border(
                 0.8.dp,
-                if (isPressed) Color.White.copy(alpha = 0.22f) else Color.White.copy(alpha = 0.10f),
+                chipBorder,
                 RoundedCornerShape(17.dp)
             )
-            .background(
-                if (isPressed) {
-                    Color.Black.copy(alpha = 0.22f)
-                } else {
-                    Color.Black.copy(alpha = 0.10f)
-                }
-            )
+            .background(chipBg)
             .clickable(
                 interactionSource = interactionSource,
                 indication = null,
