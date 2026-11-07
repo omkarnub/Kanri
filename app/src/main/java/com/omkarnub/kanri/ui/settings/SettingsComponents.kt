@@ -51,6 +51,7 @@ import androidx.compose.foundation.verticalScroll
 import androidx.compose.material.icons.Icons
 import androidx.compose.material.icons.automirrored.filled.KeyboardArrowRight
 import androidx.compose.material.icons.filled.AutoAwesome
+import androidx.compose.material.icons.filled.Bolt
 import androidx.compose.material.icons.filled.BrightnessAuto
 import androidx.compose.material.icons.filled.Check
 import androidx.compose.material.icons.filled.CheckCircle
@@ -1026,6 +1027,19 @@ fun PermissionsStatusOverview(
         )
 
         SettingsDivider()
+
+        if (isOverlayAllowed) {
+            SettingsRow(
+                title = "Preview Payment Detection Popup",
+                subtitle = "Preview the floating glass popup for detected payments (₹380)",
+                icon = Icons.Default.Bolt,
+                onClick = {
+                    haptics.click()
+                    com.omkarnub.kanri.ui.popup.InstantPopupService.triggerTestPopup(context, isDebit = true)
+                }
+            )
+            SettingsDivider()
+        }
 
         // 5. Background Battery Exemption
         SettingsSwitchRow(

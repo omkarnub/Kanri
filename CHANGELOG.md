@@ -5,6 +5,28 @@ All notable changes to Kanri will be documented in this file.
 The format is based on [Keep a Changelog](https://keepachangelog.com/en/1.0.0/),
 and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0.html).
 
+## [1.5.0] - 2026-11-07
+
+### Added
+- **Redesigned Instant Payment Detection Popup Card**:
+  - Re-architected `InstantPopupCard` and `InstantPopupService` into a unified, high-polish floating card overlay triggered automatically on detected SMS and UPI payments.
+  - **Frosted Glass Optics (Glass Mode)**: Enabled Android WindowManager compositor blur (`FLAG_BLUR_BEHIND` with `blurBehindRadius = 45.dp`) on Android 12+ (API 31+). Layered with a 35% dark glass tint, vertical white sheen gradient, 0.8 dp specular gradient border, and 1 dp top specular highlight rim so the underlying blurred screen shines through with optical depth.
+  - **Theme-Adaptive Surfaces**: Unified card layout across all themes with semantic lighting—pure white elevated card (`#FFFFFF`) for Light mode, high-contrast dark charcoal (`#161618`) for Dark mode, and deep black (`#000000`) for AMOLED mode.
+  - **Streamlined Layout & Information Hierarchy**:
+    - Top centered dim grey timestamp (`GoogleSansFlex`, Medium, `#8E8E93`) with aligned close icon button.
+    - Large 40 sp bold currency typography in Vibrant Red (`#E54D2E`) for expense and Sage Green (`#30A46C`) for income.
+    - Clean merchant name and bank/wallet brand tag.
+    - Unboxed, left-aligned "Search categories" text hyperlink button to quickly expand the search input box.
+    - Top 5 category pill capsules (`RoundedCornerShape(50)`) with icons and checkmark feedback.
+    - Capsule-shaped notes input prompt (`RoundedCornerShape(50)`).
+    - Single capsule "Done" primary CTA (`RoundedCornerShape(50)`).
+    - "Split expense ›" action replacing "Open in Kanri", launching the split bill flow with pre-filled amount and merchant.
+  - **Coordinated Spring Pop-up & Pop-down Motion**:
+    - Replicated the signature entrance/exit spring curves from `AddExpenseIncomePopup.kt` (`fadeIn` + `scaleIn` + `slideInVertically` with `KanriMotion.SnappySpring` and `SmoothSlideSpring`).
+    - Smooth exit transition (`fadeOut` + `scaleOut` + `slideOutVertically`) before service termination across all dismissal actions (tap outside, close '✕', Done button, Split expense).
+  - **In-App Popup Preview**: Added "Preview Payment Detection Popup" to Settings under Floating Quick Category to allow instant testing and visual verification.
+- Bumped application version to `1.5.0` (Build 21).
+
 ## [1.4.9] - 2026-11-07
 
 ### Fixed

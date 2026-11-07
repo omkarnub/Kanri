@@ -1,7 +1,7 @@
 # Entry Workflows & Action Popup Design
 
-**Current Version:** 1.4.7 (Build 18)  
-**Last Updated:** 2026-11-06  
+**Current Version:** 1.5.0 (Build 21)  
+**Last Updated:** 2026-11-07  
 
 ---
 
@@ -11,6 +11,7 @@ Kanri provides a unified, fluid financial logging workflow for all core entry ty
 2. **Income**: Recording received money with optional savings goal contribution.
 3. **Lend & Borrow**: Personal debt ledger tracking funds lent to or borrowed from contacts.
 4. **Split Expense**: Splitting group bills between multiple friends with automatic ledger synchronization.
+5. **Instant Payment Detection Popup**: Floating interactive overlay triggered when SMS or UPI payment notifications arrive.
 
 Every entry follows the identical 3-step Apple-grade pop-up workflow:
 1. Zero-start Amount Pad (`KokonutAmountPad`)
@@ -49,7 +50,7 @@ The floating dock '+' button displays a hardware-accelerated frosted glass card 
 
 ---
 
-## 3. The 3-Step Unified Pop-up Workflow
+## 4. The 3-Step Unified Pop-up Workflow
 Every manual entry is rendered as a bottom-anchored modal popup sheet rather than a centered or full-page dialog.
 
 ```mermaid
@@ -90,25 +91,42 @@ flowchart LR
 
 ---
 
-## 4. Fixed 50dp Blur & 10% Dark Tint Specification
-All entry workflows enforce a standardized visual glass hierarchy via `GlassLevel.EntrySheet`:
-- **Blur Radius**: Fixed at `50.dp`.
-- **Tint**: Fixed at 10% dark tint (`Color.Black.copy(alpha = 0.10f)`).
-- **Internal Keypad Digits & Controls**: Keys (`TactileKeypadKey`), preset chips (`TactilePresetChip`), and empty-state action button in `KokonutAmountPad` follow the identical 10% dark tint and subtle white border to match the container.
-- **Summary Information & Slider Track**: The metadata detail rows in `KokonutSmoothDrawer` and the slider track in `KokonutSlideToConfirm` follow the identical 10% dark tint.
-- **Hub Controls & Insights**: Main view elements like `LendingSplitGroupCard`, `LendingSegmentedControl`, "Add Record" button, and `InsightsRangeBar` utilize standard variable glass blur (`GlassLevel.Blur`) so dynamic theme tinting and variable blur radius remain active.
-- **Surface**: Supported across both custom glass themes (using hardware `hazeEffect`) and solid Material themes (with dark scrim and frosted fallbacks).
+## 5. Instant Payment Detection Floating Popup Card (`InstantPopupCard` & `InstantPopupService`)
+When an incoming transaction SMS or UPI notification is received, Kanri presents an interactive floating card directly over the screen:
+
+### Visual Architecture & Glassmorphic Optics
+- **Android WindowManager Compositor Blur**: On Android 12+ (API 31+), the overlay window enables `FLAG_BLUR_BEHIND` with `blurBehindRadius = 45.dp` in Glass mode.
+- **45% Dark Scrim Backdrop**: A full-screen translucent scrim (`Color.Black.copy(alpha = 0.45f)`) dims the underlying screen with coordinated `fadeIn`/`fadeOut` transitions.
+- **Translucent Frosted Card Container**: The card is rendered with a 35% dark tint (`#141622` at 0.35 alpha), a vertical white sheen gradient, a 0.8 dp specular gradient border, and an inner 1 dp top specular highlight rim, allowing the hardware-accelerated 45 dp blur of the underlying screen to shine through cleanly with real optical depth.
+- **Theme-Adaptive Surface**: Unified across all themes:
+  - **Glass Mode**: Hardware-accelerated cross-window blur with translucent specular glass card.
+  - **Light Mode**: Pure crisp white elevated surface (`#FFFFFF`) with subtle border and elevation shadow.
+  - **Dark Mode**: High-contrast dark charcoal surface (`#161618`) with elevation shadow.
+  - **AMOLED Mode**: Deep pure black surface (`#000000`) with high-contrast border.
+
+### Interaction & UX Layout
+1. **Header**: Clean, centered dim grey date & timestamp (`07 Nov, 05:45 AM`) in `GoogleSansFlex` with an aligned close icon button.
+2. **Amount**: Large 40 sp bold currency typography in Vibrant Red (`#E54D2E`) for expense and Sage Green (`#30A46C`) for income.
+3. **Merchant & Tag**: Clean merchant name and bank/wallet brand tag.
+4. **Left-Aligned Search**: Plain text hyperlink with search icon on the left to quickly expand the search input box.
+5. **Top 5 Category Pills**: Displays only the top 5 relevant/smart-resolved categories in capsule pills (`RoundedCornerShape(50)`).
+6. **Capsule Notes Prompt**: Pill-shaped notes input box (`RoundedCornerShape(50)`) with clear button.
+7. **Single Capsule Done Button**: Full-width primary CTA with circular edges (`RoundedCornerShape(50)`).
+8. **Split Expense Action**: Direct hyperlink at the bottom ("Split expense ›") opening the split expense flow with pre-filled amount and merchant.
+
+### Coordinated Pop-up & Pop-down Motion
+The popup card shares the exact signature spring motion from `AddExpenseIncomePopup`:
+- **Pop-up (Entrance)**: `fadeIn(180ms)` + `scaleIn(0.90f, KanriMotion.SnappySpring)` + `slideInVertically(10%, KanriMotion.SmoothSlideSpring)`.
+- **Pop-down (Exit)**: `fadeOut(140ms)` + `scaleOut(0.94f)` + `slideOutVertically(8%)`.
+- Coordinated through `dismissWithAnimation` across outside dismiss, close button, Done button, and Split expense action.
 
 ---
 
-## 5. Modules & Files Involved
-- `app/src/main/java/com/omkarnub/kanri/ui/common/KanriGlass.kt`: `GlassLevel.EntrySheet` implementation with fixed 50 dp blur and 10% dark tint.
-- `app/src/main/java/com/omkarnub/kanri/ui/navigation/AddExpenseIncomePopup.kt`: Clean 2-option floating action popup menu ("Expense" and "Income").
+## 6. Modules & Files Involved
+- `app/src/main/java/com/omkarnub/kanri/ui/popup/InstantPopupCard.kt`: Themed floating payment detection popup card.
+- `app/src/main/java/com/omkarnub/kanri/ui/popup/InstantPopupService.kt`: Overlay service managing `WindowManager.LayoutParams`, cross-window blur, background scrim, and lifecycle.
+- `app/src/main/java/com/omkarnub/kanri/ui/popup/InstantPopupSheet.kt`: In-app quick categorization bottom sheet and demo popup triggers.
+- `app/src/main/java/com/omkarnub/kanri/ui/settings/SettingsComponents.kt`: Settings screen item for previewing the detection popup.
+- `app/src/main/java/com/omkarnub/kanri/ui/common/KanriGlass.kt`: Core glassmorphism tokens, `KanriGlassCard`, and `GlassLevel.EntrySheet`.
+- `app/src/main/java/com/omkarnub/kanri/ui/navigation/AddExpenseIncomePopup.kt`: Action popup menu and signature spring motion curves (`KanriMotion`).
 - `app/src/main/java/com/omkarnub/kanri/ui/navigation/MainNavigationScreen.kt`: Navigation host wiring floating dock popup and dialog triggers.
-- `app/src/main/java/com/omkarnub/kanri/ui/home/AddTransactionDialog.kt`: Unified 3-step half-screen dialog for Expense and Income.
-- `app/src/main/java/com/omkarnub/kanri/ui/lending/LendingEntryDialog.kt`: Unified 3-step half-screen bottom popup dialog for Lend & Borrow records with Proceed button and Kokonut drawer.
-- `app/src/main/java/com/omkarnub/kanri/ui/lending/SplitExpenseEntryDialog.kt`: Unified 3-step half-screen bottom popup dialog for splitting group bills with Proceed button and Kokonut drawer.
-- `app/src/main/java/com/omkarnub/kanri/ui/common/kokonut/KokonutAmountPad.kt`: Standardized zero-start amount pad with `GlassLevel.EntrySheet` and 10% dark tint keypad keys.
-- `app/src/main/java/com/omkarnub/kanri/ui/common/kokonut/KokonutSmoothDrawer.kt`: Standardized summary drawer with `GlassLevel.EntrySheet`, 10% dark tint summary card, and slide-to-confirm slider.
-- `app/src/main/java/com/omkarnub/kanri/ui/insights/sections/InsightsRangeBar.kt`: Sticky time period range selector with variable glass blur (`GlassLevel.Blur`).
-- `app/src/main/java/com/omkarnub/kanri/ui/lending/LendingScreen.kt`: Lend & Borrow hub entry points with full screen overlay and haze support.

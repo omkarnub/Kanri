@@ -460,19 +460,7 @@ private fun FeatureBullet(title: String, desc: String) {
 }
 
 private fun triggerTestPopup(context: Context) {
-    val intent = Intent(context, InstantPopupService::class.java).apply {
-        putExtra(InstantPopupService.EXTRA_TRANSACTION_ID, 9999L)
-        putExtra(InstantPopupService.EXTRA_AMOUNT, 380.00)
-        putExtra(InstantPopupService.EXTRA_IS_DEBIT, true)
-        putExtra(InstantPopupService.EXTRA_COUNTERPARTY, "Swiggy")
-        putExtra(InstantPopupService.EXTRA_BANK, "HDFC Bank")
-        putExtra(InstantPopupService.EXTRA_SOURCE_TYPE, "UPI")
-    }
-    if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.O) {
-        context.startForegroundService(intent)
-    } else {
-        context.startService(intent)
-    }
+    InstantPopupService.triggerTestPopup(context, isDebit = true)
 }
 
 private fun triggerTestNotification(context: Context) {

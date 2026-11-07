@@ -1,20 +1,11 @@
 package com.omkarnub.kanri.ui.popup
 
 import androidx.compose.animation.AnimatedContent
-import androidx.compose.animation.AnimatedVisibility
-import androidx.compose.animation.core.FastOutSlowInEasing
-import androidx.compose.animation.core.Spring
-import androidx.compose.animation.core.spring
 import androidx.compose.animation.core.tween
 import androidx.compose.animation.fadeIn
 import androidx.compose.animation.fadeOut
 import androidx.compose.animation.scaleIn
-import androidx.compose.animation.slideInHorizontally
-import androidx.compose.animation.slideInVertically
-import androidx.compose.animation.slideOutHorizontally
-import androidx.compose.animation.slideOutVertically
 import androidx.compose.animation.togetherWith
-import androidx.compose.foundation.BorderStroke
 import androidx.compose.foundation.background
 import androidx.compose.foundation.border
 import androidx.compose.foundation.clickable
@@ -25,49 +16,38 @@ import androidx.compose.foundation.layout.Box
 import androidx.compose.foundation.layout.Column
 import androidx.compose.foundation.layout.Row
 import androidx.compose.foundation.layout.Spacer
-import androidx.compose.foundation.layout.fillMaxSize
 import androidx.compose.foundation.layout.fillMaxWidth
 import androidx.compose.foundation.layout.height
-import androidx.compose.foundation.layout.navigationBarsPadding
 import androidx.compose.foundation.layout.padding
 import androidx.compose.foundation.layout.size
 import androidx.compose.foundation.layout.width
 import androidx.compose.foundation.rememberScrollState
-import androidx.compose.foundation.shape.CircleShape
 import androidx.compose.foundation.shape.RoundedCornerShape
 import androidx.compose.foundation.text.BasicTextField
 import androidx.compose.foundation.text.KeyboardActions
 import androidx.compose.foundation.text.KeyboardOptions
 import androidx.compose.material.icons.Icons
-import androidx.compose.material.icons.automirrored.filled.ArrowBack
-import androidx.compose.material.icons.automirrored.filled.CallSplit
-import androidx.compose.material.icons.filled.Add
+import androidx.compose.material.icons.filled.Check
 import androidx.compose.material.icons.filled.Close
-import androidx.compose.material.icons.filled.Group
-import androidx.compose.material.icons.filled.Remove
+import androidx.compose.material.icons.filled.Edit
 import androidx.compose.material.icons.filled.Search
 import androidx.compose.material3.Button
 import androidx.compose.material3.ButtonDefaults
-import androidx.compose.material3.Card
-import androidx.compose.material3.CardDefaults
 import androidx.compose.material3.Icon
 import androidx.compose.material3.IconButton
 import androidx.compose.material3.Surface
 import androidx.compose.material3.Text
 import androidx.compose.runtime.Composable
-import androidx.compose.runtime.LaunchedEffect
 import androidx.compose.runtime.getValue
-import androidx.compose.runtime.mutableIntStateOf
 import androidx.compose.runtime.mutableStateOf
 import androidx.compose.runtime.remember
-import androidx.compose.runtime.rememberCoroutineScope
 import androidx.compose.runtime.setValue
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.draw.clip
+import androidx.compose.ui.draw.shadow
 import androidx.compose.ui.graphics.Brush
 import androidx.compose.ui.graphics.Color
-import com.omkarnub.kanri.ui.theme.LocalKanriGlass
 import androidx.compose.ui.graphics.SolidColor
 import androidx.compose.ui.platform.LocalContext
 import androidx.compose.ui.platform.LocalFocusManager
@@ -76,26 +56,33 @@ import androidx.compose.ui.text.font.FontWeight
 import androidx.compose.ui.text.input.ImeAction
 import androidx.compose.ui.text.style.TextAlign
 import androidx.compose.ui.text.style.TextOverflow
+import androidx.compose.ui.tooling.preview.Preview
 import androidx.compose.ui.unit.dp
 import androidx.compose.ui.unit.sp
 import com.omkarnub.kanri.data.db.CategoryEntity
 import com.omkarnub.kanri.ui.common.CategoryIcon
 import com.omkarnub.kanri.ui.home.formatCurrency
 import com.omkarnub.kanri.ui.theme.GoogleSansFlex
+import com.omkarnub.kanri.ui.theme.KanriMotion
 import com.omkarnub.kanri.ui.theme.ThemeMode
 import com.omkarnub.kanri.ui.theme.ThemePreferences
 import com.omkarnub.kanri.util.BrandFormatter
-import kotlinx.coroutines.delay
-import kotlinx.coroutines.launch
+import com.omkarnub.kanri.util.rememberKanriHaptics
+import java.text.SimpleDateFormat
+import java.util.Date
+import java.util.Locale
 
 /**
- * Concept B: Bottom-docked frosted glassmorphism card for instant transaction overlays.
- * Features:
- * - Theme-aware styling matching user-selected mode (Dark, AMOLED, or Light)
- * - Pure monochrome luxury palette (zero blue accents on buttons, cursors, or input boxes)
- * - Inline Split Bill flow with interactive people counter & real-time share math
- * - Soft spring entrance and smooth content morph animations
- * - Persistent overlay (manual dismissal only)
+ * InstantPopupCard: Floating interactive card for instant payment detection overlay.
+ * Redesigned clean, modern UX unified across all themes (Glass, Light, Dark, AMOLED):
+ * 1. Card surface adapts to theme (translucent frosted glass on Glass, crisp solid elevation on Light/Dark/AMOLED)
+ * 2. Dim grey timestamp in top center with subtle close button
+ * 3. Prominent bold amount: Red for expense, Green for income
+ * 4. Clean merchant name & bank/wallet source tag
+ * 5. Top 5 categories only with left-aligned unboxed search hyperlink
+ * 6. Smooth circular capsule notes input prompt
+ * 7. Single Done button with circular capsule edges
+ * 8. "Split expense ›" action with pre-filled amounts
  */
 @Composable
 fun InstantPopupCard(
@@ -107,85 +94,83 @@ fun InstantPopupCard(
     categories: List<CategoryEntity>,
     onDone: (categoryId: Long?, note: String) -> Unit,
     onSplitBill: () -> Unit,
-    onOpenInApp: () -> Unit,
+    onOpenInApp: () -> Unit = {},
+    onDismiss: () -> Unit,
+    modifier: Modifier = Modifier,
+    initialCategoryId: Long? = null,
+    initialNote: String = ""
+) {
+    ThemedInstantPopupCardContent(
+        amount = amount,
+        isDebit = isDebit,
+        counterparty = counterparty,
+        bank = bank,
+        sourceType = sourceType,
+        categories = categories,
+        initialCategoryId = initialCategoryId,
+        initialNote = initialNote,
+        onDone = onDone,
+        onSplitBill = onSplitBill,
+        onDismiss = onDismiss,
+        modifier = modifier
+    )
+}
+
+@Composable
+private fun ThemedInstantPopupCardContent(
+    amount: Double,
+    isDebit: Boolean,
+    counterparty: String,
+    bank: String?,
+    sourceType: String,
+    categories: List<CategoryEntity>,
+    initialCategoryId: Long?,
+    initialNote: String,
+    onDone: (categoryId: Long?, note: String) -> Unit,
+    onSplitBill: () -> Unit,
     onDismiss: () -> Unit,
     modifier: Modifier = Modifier
 ) {
     val context = LocalContext.current
-    val coroutineScope = rememberCoroutineScope()
     val focusManager = LocalFocusManager.current
-    var isVisible by remember { mutableStateOf(false) }
+    val haptics = rememberKanriHaptics()
 
-    // Theme resolution
     val themeMode = remember { ThemePreferences.getInstance(context).themeMode }
+    val isGlass = themeMode == ThemeMode.GLASS
     val isLight = themeMode == ThemeMode.LIGHT
     val isAmoled = themeMode == ThemeMode.AMOLED
-    val currentGlass = LocalKanriGlass.current
-    val glassTokens = currentGlass ?: if (themeMode == ThemeMode.GLASS) com.omkarnub.kanri.ui.theme.GlassTokens else null
 
-    // Theme-matched monochrome or glass design tokens strictly matching user theme
-    val containerBg = when {
-        glassTokens != null -> glassTokens.tintStrong
-        isLight -> Color(0xF8FAF9F5) // Soft frosted alabaster
-        isAmoled -> Color(0xFA000000) // Deep AMOLED pitch black
-        else -> Color(0xF2121212) // Frosted charcoal dark
-    }
+    // Dynamic semantic styling per theme
+    val amountColor = if (isDebit) Color(0xFFE54D2E) else Color(0xFF30A46C)
+    val dimGrey = if (isLight) Color(0xFF76777A) else Color(0xFF8E8E93)
+    val primaryTextColor = if (isLight) Color(0xFF161616) else Color.White
+    val secondaryTextColor = if (isLight) Color(0xFF6B685F) else Color.White.copy(alpha = 0.65f)
 
-    val primaryTextColor = glassTokens?.textPrimary ?: if (isLight) Color(0xFF000000) else Color(0xFFF2F2F5)
-    val secondaryTextColor = glassTokens?.textSecondary ?: if (isLight) Color(0xFF6B685F) else Color(0xFFA6A6A6)
-    val chipBg = glassTokens?.tintFlat ?: if (isLight) Color(0xFFF4F2EB) else if (isAmoled) Color(0xFF141414) else Color(0xFF1E1E1E)
-    val inputBg = glassTokens?.tintFlat ?: if (isLight) Color(0xFFECEAE2) else if (isAmoled) Color(0xFF1A1A1A) else Color(0xFF242424)
-    val neutralBorder = glassTokens?.borderEnd ?: if (isLight) Color(0xFFE8E4DA) else Color(0x22FFFFFF)
-    val activeBorder = glassTokens?.accent ?: if (isLight) Color(0xFF000000) else Color(0xFFFFFFFF)
+    val pillUnselectedBg = if (isLight) Color(0xFFF2F0E8) else Color.White.copy(alpha = 0.08f)
+    val pillUnselectedText = if (isLight) Color(0xFF161616) else Color.White
+    val pillSelectedBg = if (isLight) Color(0xFF161616) else Color.White
+    val pillSelectedText = if (isLight) Color(0xFFFAF9F5) else Color(0xFF0F1018)
 
-    val specularGradient = if (glassTokens != null) {
-        Brush.linearGradient(listOf(glassTokens.borderStart, glassTokens.borderEnd))
-    } else if (isLight) {
-        Brush.verticalGradient(
-            listOf(
-                Color.White.copy(alpha = 0.60f),
-                Color(0xFFE8E4DA).copy(alpha = 0.50f),
-                Color(0xFFE8E4DA).copy(alpha = 0.20f)
-            )
-        )
-    } else {
-        Brush.verticalGradient(
-            listOf(
-                Color(0x35FFFFFF),
-                Color(0x12FFFFFF),
-                Color(0x18202020)
-            )
-        )
-    }
+    val inputBg = if (isLight) Color(0xFFF2F0E8) else Color.White.copy(alpha = 0.08f)
+    val inputPlaceholder = if (isLight) Color(0xFF8A8880) else Color.White.copy(alpha = 0.40f)
 
-    val doneBtnBg = glassTokens?.accent ?: if (isLight) Color(0xFF000000) else Color(0xFFFFFFFF)
-    val doneBtnContent = glassTokens?.onAccent ?: if (isLight) Color(0xFFFAF9F5) else Color(0xFF121212)
-    val secondaryBtnBg = glassTokens?.tintFlat ?: if (isLight) Color(0xFFECEAE2) else if (isAmoled) Color(0xFF1E1E1E) else Color(0xFF262626)
-    val secondaryBtnContent = glassTokens?.textPrimary ?: if (isLight) Color(0xFF000000) else Color(0xFFF2F2F5)
-
-    // Form state
-    var selectedCategoryId by remember { mutableStateOf<Long?>(null) }
-    var noteText by remember { mutableStateOf("") }
-    var searchQuery by remember { mutableStateOf("") }
-    var isSearching by remember { mutableStateOf(false) }
-
-    fun triggerDismiss(andExecute: () -> Unit = onDismiss) {
-        if (!isVisible) return
-        coroutineScope.launch {
-            isVisible = false
-            delay(180)
-            andExecute()
-        }
-    }
-
-    LaunchedEffect(Unit) {
-        isVisible = true
-    }
+    val doneBtnBg = if (isLight) Color(0xFF161616) else Color.White
+    val doneBtnText = if (isLight) Color(0xFFFAF9F5) else Color(0xFF0F1018)
 
     val walletPrefs = remember { com.omkarnub.kanri.data.wallet.WalletPreferences.getInstance(context) }
     val isWalletConfigured = walletPrefs.isWalletSetupCompleted
     val atmMode = walletPrefs.atmWithdrawalMode
     val isAtmTransfer = isDebit && sourceType.equals("ATM", ignoreCase = true) && atmMode == com.omkarnub.kanri.data.wallet.AtmWithdrawalMode.TRANSFER
+
+    var selectedCategoryId by remember(initialCategoryId) { mutableStateOf(initialCategoryId) }
+    var noteText by remember(initialNote) { mutableStateOf(initialNote) }
+    var searchQuery by remember { mutableStateOf("") }
+    var isSearching by remember { mutableStateOf(false) }
+
+    val formattedDateTime = remember {
+        val sdf = SimpleDateFormat("dd MMM, hh:mm a", Locale.getDefault())
+        sdf.format(Date())
+    }
 
     val filteredCategories = remember(categories, searchQuery) {
         if (searchQuery.isBlank()) {
@@ -195,461 +180,500 @@ fun InstantPopupCard(
         }
     }
 
-    val accentColor = if (glassTokens != null) {
-        if (isDebit) glassTokens.debit else glassTokens.credit
-    } else {
-        if (isDebit) Color(0xFFE54D2E) else Color(0xFF30A46C)
+    // Top 5 categories only
+    val top5Categories = remember(filteredCategories, selectedCategoryId) {
+        val ordered = if (selectedCategoryId != null) {
+            val sel = filteredCategories.filter { it.id == selectedCategoryId }
+            val rest = filteredCategories.filter { it.id != selectedCategoryId }
+            sel + rest
+        } else {
+            filteredCategories
+        }
+        ordered.take(5)
     }
 
-    AnimatedVisibility(
-        visible = isVisible,
-        enter = slideInVertically(
-            initialOffsetY = { it },
-            animationSpec = spring(
-                dampingRatio = 0.82f,
-                stiffness = Spring.StiffnessMediumLow
+    val displayMerchant = if (isAtmTransfer) {
+        "ATM Cash Withdrawal"
+    } else {
+        BrandFormatter.cleanMerchantName(counterparty).ifBlank {
+            if (isDebit) "Expense" else "Income"
+        }
+    }
+
+    val brandTag = BrandFormatter.formatBrandTag(
+        bank = bank,
+        sourceType = sourceType,
+        isWalletConfigured = isWalletConfigured,
+        isAtmTransfer = isAtmTransfer
+    )
+
+    val cardShape = RoundedCornerShape(28.dp)
+
+    val cardModifier = when {
+        isGlass -> modifier
+            .fillMaxWidth()
+            .padding(horizontal = 16.dp, vertical = 10.dp)
+            .clip(cardShape)
+            .background(Color(0xFF141622).copy(alpha = 0.35f))
+            .background(
+                Brush.verticalGradient(
+                    colors = listOf(
+                        Color.White.copy(alpha = 0.12f),
+                        Color.White.copy(alpha = 0.03f)
+                    )
+                )
             )
-        ) + fadeIn(animationSpec = tween(240)),
-        exit = slideOutVertically(
-            targetOffsetY = { it },
-            animationSpec = tween(180, easing = FastOutSlowInEasing)
-        ) + fadeOut(animationSpec = tween(160))
-    ) {
-        Card(
-            modifier = modifier
-                .fillMaxWidth()
-                .navigationBarsPadding()
-                .padding(start = 14.dp, end = 14.dp, top = 6.dp, bottom = 12.dp)
-                .clickable(
-                    interactionSource = remember { MutableInteractionSource() },
-                    indication = null
-                ) {
-                    focusManager.clearFocus()
-                },
-            shape = RoundedCornerShape(topStart = 40.dp, topEnd = 40.dp, bottomStart = 30.dp, bottomEnd = 30.dp),
-            colors = CardDefaults.cardColors(containerColor = containerBg),
-            elevation = CardDefaults.cardElevation(defaultElevation = 24.dp),
-            border = BorderStroke(1.dp, specularGradient)
+            .border(
+                width = 0.8.dp,
+                brush = Brush.verticalGradient(
+                    colors = listOf(
+                        Color.White.copy(alpha = 0.45f),
+                        Color.White.copy(alpha = 0.12f)
+                    )
+                ),
+                shape = cardShape
+            )
+        isLight -> modifier
+            .fillMaxWidth()
+            .padding(horizontal = 16.dp, vertical = 10.dp)
+            .shadow(
+                elevation = 16.dp,
+                shape = cardShape,
+                spotColor = Color.Black.copy(alpha = 0.10f),
+                ambientColor = Color.Black.copy(alpha = 0.04f)
+            )
+            .clip(cardShape)
+            .background(Color(0xFFFFFFFF))
+            .border(width = 0.8.dp, color = Color(0xFFE5E2D9), shape = cardShape)
+        isAmoled -> modifier
+            .fillMaxWidth()
+            .padding(horizontal = 16.dp, vertical = 10.dp)
+            .clip(cardShape)
+            .background(Color(0xFF000000))
+            .border(width = 0.8.dp, color = Color.White.copy(alpha = 0.18f), shape = cardShape)
+        else -> modifier // Dark
+            .fillMaxWidth()
+            .padding(horizontal = 16.dp, vertical = 10.dp)
+            .shadow(
+                elevation = 16.dp,
+                shape = cardShape,
+                spotColor = Color.Black.copy(alpha = 0.45f),
+                ambientColor = Color.Black.copy(alpha = 0.20f)
+            )
+            .clip(cardShape)
+            .background(Color(0xFF161618))
+            .border(width = 0.8.dp, color = Color.White.copy(alpha = 0.14f), shape = cardShape)
+    }
+
+    Box(
+        modifier = cardModifier.clickable(
+            interactionSource = remember { MutableInteractionSource() },
+            indication = null
         ) {
-            Column(
+            focusManager.clearFocus()
+        }
+    ) {
+        if (isGlass) {
+            // Specular inner highlight rim along the top
+            Box(
                 modifier = Modifier
                     .fillMaxWidth()
-                    .padding(bottom = 12.dp),
-                horizontalAlignment = Alignment.CenterHorizontally
+                    .height(1.dp)
+                    .background(
+                        Brush.horizontalGradient(
+                            colors = listOf(
+                                Color.Transparent,
+                                Color.White.copy(alpha = 0.50f),
+                                Color.Transparent
+                            )
+                        )
+                    )
+            )
+        }
+
+        Column(
+            modifier = Modifier
+                .fillMaxWidth()
+                .padding(horizontal = 20.dp, vertical = 16.dp),
+            horizontalAlignment = Alignment.CenterHorizontally
+        ) {
+            // Top dim grey date and time in top center
+            Box(
+                modifier = Modifier.fillMaxWidth(),
+                contentAlignment = Alignment.Center
             ) {
-                // Drag handle
-                Box(
-                    modifier = Modifier
-                        .padding(top = 10.dp, bottom = 4.dp)
-                        .width(38.dp)
-                        .height(4.dp)
-                        .clip(CircleShape)
-                        .background(if (isLight) Color(0x30000000) else Color(0x55FFFFFF))
+                Text(
+                    text = formattedDateTime,
+                    fontFamily = GoogleSansFlex,
+                    fontSize = 12.sp,
+                    fontWeight = FontWeight.Medium,
+                    color = dimGrey,
+                    textAlign = TextAlign.Center
                 )
 
-                // Top Row: Time detected + Close icon
-                Row(
+                IconButton(
+                    onClick = {
+                        haptics.click()
+                        onDismiss()
+                    },
                     modifier = Modifier
-                        .fillMaxWidth()
-                        .padding(horizontal = 20.dp, vertical = 4.dp),
-                    horizontalArrangement = Arrangement.SpaceBetween,
-                    verticalAlignment = Alignment.CenterVertically
+                        .size(28.dp)
+                        .align(Alignment.CenterEnd)
                 ) {
-                    Text(
-                        text = "Just now",
-                        fontSize = 12.sp,
-                        fontWeight = FontWeight.Normal,
-                        color = secondaryTextColor
+                    Icon(
+                        imageVector = Icons.Default.Close,
+                        contentDescription = "Close",
+                        tint = dimGrey,
+                        modifier = Modifier.size(15.dp)
                     )
-
-                    IconButton(
-                        onClick = { triggerDismiss() },
-                        modifier = Modifier
-                            .size(28.dp)
-                            .clip(CircleShape)
-                            .background(if (isLight) Color(0x14000000) else Color(0x28FFFFFF))
-                    ) {
-                        Icon(
-                            imageVector = Icons.Default.Close,
-                            contentDescription = "Close",
-                            tint = if (isLight) Color(0xFF44444A) else Color(0xFFCCCCCC),
-                            modifier = Modifier.size(14.dp)
-                        )
-                    }
                 }
+            }
 
-                // Hero Section with Ambient Radial Glow
-                Box(
-                    modifier = Modifier
-                        .fillMaxWidth()
-                        .padding(horizontal = 16.dp)
-                        .background(
-                            brush = Brush.radialGradient(
-                                colors = listOf(
-                                    accentColor.copy(alpha = if (isLight) 0.05f else 0.07f),
-                                    Color.Transparent
-                                ),
-                                radius = 240f
-                            )
-                        ),
-                    contentAlignment = Alignment.Center
+            Spacer(modifier = Modifier.height(10.dp))
+
+            // Amount in bold with Red for expense, Green for income
+            AnimatedContent(
+                targetState = amount,
+                transitionSpec = {
+                    (fadeIn(animationSpec = tween(280, easing = KanriMotion.EaseOut)) +
+                            scaleIn(initialScale = 0.92f, animationSpec = KanriMotion.SnappySpring))
+                        .togetherWith(fadeOut(animationSpec = tween(140)))
+                },
+                label = "AmountAnimation"
+            ) { targetAmount ->
+                Text(
+                    text = "${if (isDebit) "-" else "+"} ${formatCurrency(targetAmount)}",
+                    fontFamily = GoogleSansFlex,
+                    fontSize = 40.sp,
+                    fontWeight = FontWeight.Bold,
+                    color = amountColor,
+                    letterSpacing = (-0.5).sp,
+                    textAlign = TextAlign.Center
+                )
+            }
+
+            Spacer(modifier = Modifier.height(2.dp))
+
+            // Merchant Name
+            Text(
+                text = displayMerchant,
+                fontFamily = GoogleSansFlex,
+                fontSize = 18.sp,
+                fontWeight = FontWeight.SemiBold,
+                color = primaryTextColor,
+                maxLines = 1,
+                overflow = TextOverflow.Ellipsis,
+                textAlign = TextAlign.Center
+            )
+
+            // Bank / Source info
+            if (brandTag.title.isNotBlank()) {
+                Spacer(modifier = Modifier.height(3.dp))
+                Text(
+                    text = brandTag.title,
+                    fontFamily = GoogleSansFlex,
+                    fontSize = 12.5.sp,
+                    fontWeight = FontWeight.Normal,
+                    color = secondaryTextColor,
+                    textAlign = TextAlign.Center
+                )
+            }
+
+            Spacer(modifier = Modifier.height(14.dp))
+
+            // Category Section: Plain text dim hyperlink search button above top 5 pills, aligned LEFT
+            if (!isAtmTransfer) {
+                Column(
+                    modifier = Modifier.fillMaxWidth(),
+                    horizontalAlignment = Alignment.Start
                 ) {
-                    Column(
-                        horizontalAlignment = Alignment.CenterHorizontally,
-                        modifier = Modifier.padding(vertical = 4.dp)
+                    // Hyperlink search button on the LEFT
+                    Row(
+                        modifier = Modifier
+                            .fillMaxWidth()
+                            .padding(bottom = 6.dp),
+                        horizontalArrangement = Arrangement.Start,
+                        verticalAlignment = Alignment.CenterVertically
                     ) {
-                        // Smoothly animated amount display
-                        AnimatedContent(
-                            targetState = amount,
-                            transitionSpec = {
-                                (fadeIn(animationSpec = tween(320, easing = FastOutSlowInEasing)) +
-                                        scaleIn(initialScale = 0.90f, animationSpec = spring(dampingRatio = 0.75f, stiffness = 320f)))
-                                    .togetherWith(
-                                        fadeOut(animationSpec = tween(180))
-                                    )
-                            },
-                            label = "AmountAnimation"
-                        ) { targetAmount ->
+                        Row(
+                            modifier = Modifier
+                                .clip(RoundedCornerShape(50))
+                                .clickable {
+                                    haptics.click()
+                                    isSearching = !isSearching
+                                    if (!isSearching) searchQuery = ""
+                                }
+                                .padding(horizontal = 4.dp, vertical = 3.dp),
+                            verticalAlignment = Alignment.CenterVertically,
+                            horizontalArrangement = Arrangement.spacedBy(4.dp)
+                        ) {
+                            Icon(
+                                imageVector = if (isSearching) Icons.Default.Close else Icons.Default.Search,
+                                contentDescription = "Search",
+                                tint = dimGrey,
+                                modifier = Modifier.size(13.dp)
+                            )
                             Text(
-                                text = "${if (isDebit) "-" else "+"} ${formatCurrency(targetAmount)}",
+                                text = if (isSearching) "Close search" else "Search categories",
                                 fontFamily = GoogleSansFlex,
-                                fontSize = 38.sp,
-                                fontWeight = FontWeight.Bold,
-                                color = accentColor,
-                                letterSpacing = (-0.5).sp,
-                                textAlign = TextAlign.Center
+                                fontSize = 12.sp,
+                                fontWeight = FontWeight.Medium,
+                                color = dimGrey
                             )
                         }
+                    }
 
-                        Spacer(modifier = Modifier.height(4.dp))
-
-                        // Polished merchant display name
-                        val displayMerchant = if (isAtmTransfer) {
-                            "ATM Cash Withdrawal"
-                        } else {
-                            BrandFormatter.cleanMerchantName(counterparty).ifBlank {
-                                if (isDebit) "Expense" else "Income"
-                            }
-                        }
-
-                        Text(
-                            text = displayMerchant,
-                            fontFamily = GoogleSansFlex,
-                            fontSize = 16.5.sp,
-                            fontWeight = FontWeight.SemiBold,
-                            color = primaryTextColor,
-                            maxLines = 1,
-                            overflow = TextOverflow.Ellipsis,
-                            textAlign = TextAlign.Center
-                        )
-
-                        Spacer(modifier = Modifier.height(6.dp))
-
-                        // Polished fintech brand & source tag (monochrome)
-                        val brandTag = BrandFormatter.formatBrandTag(
-                            bank = bank,
-                            sourceType = sourceType,
-                            isWalletConfigured = isWalletConfigured,
-                            isAtmTransfer = isAtmTransfer
-                        )
-
-                        Surface(
-                            shape = RoundedCornerShape(10.dp),
-                            color = chipBg,
-                            border = BorderStroke(0.8.dp, neutralBorder)
+                    // Optional search input box when search is toggled
+                    if (isSearching) {
+                        Box(
+                            modifier = Modifier
+                                .fillMaxWidth()
+                                .height(40.dp)
+                                .clip(RoundedCornerShape(50))
+                                .background(inputBg)
+                                .padding(horizontal = 14.dp),
+                            contentAlignment = Alignment.CenterStart
                         ) {
                             Row(
                                 verticalAlignment = Alignment.CenterVertically,
-                                horizontalArrangement = Arrangement.spacedBy(6.dp),
-                                modifier = Modifier.padding(horizontal = 10.dp, vertical = 4.dp)
+                                modifier = Modifier.fillMaxWidth()
                             ) {
                                 Icon(
-                                    imageVector = brandTag.icon,
+                                    imageVector = Icons.Default.Search,
                                     contentDescription = null,
-                                    tint = if (brandTag.isTransfer) Color(0xFF30A46C) else primaryTextColor.copy(alpha = 0.85f),
-                                    modifier = Modifier.size(13.dp)
+                                    tint = dimGrey,
+                                    modifier = Modifier.size(14.dp)
                                 )
-                                Text(
-                                    text = brandTag.title,
-                                    fontFamily = GoogleSansFlex,
-                                    fontSize = 12.sp,
-                                    fontWeight = FontWeight.SemiBold,
-                                    color = primaryTextColor,
-                                    letterSpacing = 0.1.sp
+                                Spacer(modifier = Modifier.width(8.dp))
+                                BasicTextField(
+                                    value = searchQuery,
+                                    onValueChange = { searchQuery = it },
+                                    singleLine = true,
+                                    textStyle = TextStyle(
+                                        fontFamily = GoogleSansFlex,
+                                        color = primaryTextColor,
+                                        fontSize = 13.sp
+                                    ),
+                                    cursorBrush = SolidColor(primaryTextColor),
+                                    modifier = Modifier.weight(1f),
+                                    decorationBox = { innerTextField ->
+                                        if (searchQuery.isEmpty()) {
+                                            Text(
+                                                text = "Search categories...",
+                                                fontFamily = GoogleSansFlex,
+                                                color = inputPlaceholder,
+                                                fontSize = 13.sp
+                                            )
+                                        }
+                                        innerTextField()
+                                    }
                                 )
+                                if (searchQuery.isNotEmpty()) {
+                                    IconButton(
+                                        onClick = { searchQuery = "" },
+                                        modifier = Modifier.size(20.dp)
+                                    ) {
+                                        Icon(
+                                            imageVector = Icons.Default.Close,
+                                            contentDescription = "Clear",
+                                            tint = secondaryTextColor,
+                                            modifier = Modifier.size(12.dp)
+                                        )
+                                    }
+                                }
+                            }
+                        }
+
+                        Spacer(modifier = Modifier.height(8.dp))
+                    }
+
+                    // Top 5 Category Pills: Circular capsule edges
+                    Row(
+                        modifier = Modifier
+                            .fillMaxWidth()
+                            .horizontalScroll(rememberScrollState()),
+                        horizontalArrangement = Arrangement.spacedBy(8.dp),
+                        verticalAlignment = Alignment.CenterVertically
+                    ) {
+                        top5Categories.forEach { cat ->
+                            val isSelected = selectedCategoryId == cat.id
+                            Surface(
+                                shape = RoundedCornerShape(50),
+                                color = if (isSelected) pillSelectedBg else pillUnselectedBg,
+                                modifier = Modifier
+                                    .clip(RoundedCornerShape(50))
+                                    .clickable {
+                                        haptics.click()
+                                        selectedCategoryId = if (isSelected) null else cat.id
+                                    }
+                            ) {
+                                Row(
+                                    modifier = Modifier.padding(horizontal = 14.dp, vertical = 8.dp),
+                                    verticalAlignment = Alignment.CenterVertically,
+                                    horizontalArrangement = Arrangement.spacedBy(6.dp)
+                                ) {
+                                    if (isSelected) {
+                                        Icon(
+                                            imageVector = Icons.Default.Check,
+                                            contentDescription = null,
+                                            tint = pillSelectedText,
+                                            modifier = Modifier.size(13.dp)
+                                        )
+                                    }
+                                    CategoryIcon(
+                                        categoryName = cat.name,
+                                        iconName = cat.iconName,
+                                        tint = if (isSelected) pillSelectedText else pillUnselectedText,
+                                        modifier = Modifier.size(14.dp)
+                                    )
+                                    Text(
+                                        text = cat.name,
+                                        fontFamily = GoogleSansFlex,
+                                        fontSize = 12.sp,
+                                        fontWeight = if (isSelected) FontWeight.Bold else FontWeight.Medium,
+                                        color = if (isSelected) pillSelectedText else pillUnselectedText
+                                    )
+                                }
                             }
                         }
                     }
-                }
 
-                Spacer(modifier = Modifier.height(10.dp))
+                    Spacer(modifier = Modifier.height(12.dp))
 
-                // Standard Mode: Category Chips + Notes + [Done] [Split Bill]
-                Column(
-                    modifier = Modifier
-                        .fillMaxWidth()
-                        .padding(horizontal = 16.dp),
-                    horizontalAlignment = Alignment.Start
-                ) {
-                            if (!isAtmTransfer) {
-                                if (isSearching) {
-                                    Row(
-                                        modifier = Modifier
-                                            .fillMaxWidth()
-                                            .height(38.dp)
-                                            .clip(RoundedCornerShape(10.dp))
-                                            .background(inputBg)
-                                            .border(1.dp, activeBorder, RoundedCornerShape(10.dp))
-                                            .padding(horizontal = 10.dp),
-                                        verticalAlignment = Alignment.CenterVertically
-                                    ) {
-                                        Icon(
-                                            imageVector = Icons.Default.Search,
-                                            contentDescription = null,
-                                            tint = secondaryTextColor,
-                                            modifier = Modifier.size(16.dp)
-                                        )
-                                        Spacer(modifier = Modifier.width(8.dp))
-                                        BasicTextField(
-                                            value = searchQuery,
-                                            onValueChange = { searchQuery = it },
-                                            singleLine = true,
-                                            textStyle = TextStyle(
-                                                color = primaryTextColor,
-                                                fontSize = 13.sp
-                                            ),
-                                            cursorBrush = SolidColor(if (isLight) Color.Black else Color.White),
-                                            modifier = Modifier.weight(1f),
-                                            decorationBox = { innerTextField ->
-                                                if (searchQuery.isEmpty()) {
-                                                    Text(
-                                                        text = "Search categories...",
-                                                        color = secondaryTextColor,
-                                                        fontSize = 13.sp
-                                                    )
-                                                }
-                                                innerTextField()
-                                            }
-                                        )
-                                        IconButton(
-                                            onClick = {
-                                                isSearching = false
-                                                searchQuery = ""
-                                            },
-                                            modifier = Modifier.size(24.dp)
-                                        ) {
-                                            Icon(
-                                                imageVector = Icons.Default.Close,
-                                                contentDescription = "Close search",
-                                                tint = secondaryTextColor,
-                                                modifier = Modifier.size(14.dp)
-                                            )
-                                        }
-                                    }
-
-                                    Spacer(modifier = Modifier.height(8.dp))
-                                }
-
-                                // Category Chips Row
-                                Row(
-                                    modifier = Modifier
-                                        .fillMaxWidth()
-                                        .horizontalScroll(rememberScrollState()),
-                                    horizontalArrangement = Arrangement.spacedBy(7.dp),
-                                    verticalAlignment = Alignment.CenterVertically
-                                ) {
-                                    if (!isSearching) {
-                                        Surface(
-                                            shape = RoundedCornerShape(10.dp),
-                                            color = chipBg,
-                                            border = BorderStroke(1.dp, neutralBorder),
-                                            modifier = Modifier
-                                                .clip(RoundedCornerShape(10.dp))
-                                                .clickable { isSearching = true }
-                                        ) {
-                                            Box(
-                                                modifier = Modifier.padding(horizontal = 10.dp, vertical = 7.dp),
-                                                contentAlignment = Alignment.Center
-                                            ) {
-                                                Icon(
-                                                    imageVector = Icons.Default.Search,
-                                                    contentDescription = "Search Categories",
-                                                    tint = secondaryTextColor,
-                                                    modifier = Modifier.size(14.dp)
-                                                )
-                                            }
-                                        }
-                                    }
-
-                                    filteredCategories.forEach { cat ->
-                                        val isSelected = selectedCategoryId == cat.id
-                                        Surface(
-                                            shape = RoundedCornerShape(10.dp),
-                                            color = if (isSelected) {
-                                                if (isLight) Color(0xFF141416) else Color(0xFFFFFFFF)
-                                            } else chipBg,
-                                            border = if (isSelected) {
-                                                BorderStroke(1.2.dp, activeBorder)
-                                            } else BorderStroke(1.dp, neutralBorder),
-                                            modifier = Modifier
-                                                .clip(RoundedCornerShape(10.dp))
-                                                .clickable {
-                                                    selectedCategoryId = if (isSelected) null else cat.id
-                                                }
-                                        ) {
-                                            Row(
-                                                modifier = Modifier.padding(horizontal = 11.dp, vertical = 7.dp),
-                                                verticalAlignment = Alignment.CenterVertically
-                                            ) {
-                                                CategoryIcon(
-                                                    categoryName = cat.name,
-                                                    iconName = cat.iconName,
-                                                    tint = if (isSelected) {
-                                                        if (isLight) Color.White else Color.Black
-                                                    } else secondaryTextColor,
-                                                    modifier = Modifier.size(14.dp)
-                                                )
-                                                Spacer(modifier = Modifier.width(6.dp))
-                                                Text(
-                                                    text = cat.name,
-                                                    fontSize = 12.sp,
-                                                    fontWeight = if (isSelected) FontWeight.SemiBold else FontWeight.Normal,
-                                                    color = if (isSelected) {
-                                                        if (isLight) Color.White else Color.Black
-                                                    } else primaryTextColor
-                                                )
-                                            }
-                                        }
-                                    }
-                                }
-
-                                Spacer(modifier = Modifier.height(10.dp))
-
-                                // Note Input Box (Pure monochrome)
-                                Box(
-                                    modifier = Modifier
-                                        .fillMaxWidth()
-                                        .height(40.dp)
-                                        .clip(RoundedCornerShape(10.dp))
-                                        .background(inputBg)
-                                        .border(1.dp, neutralBorder, RoundedCornerShape(10.dp))
-                                        .padding(horizontal = 12.dp),
-                                    contentAlignment = Alignment.CenterStart
-                                ) {
-                                    BasicTextField(
-                                        value = noteText,
-                                        onValueChange = { noteText = it },
-                                        singleLine = true,
-                                        textStyle = TextStyle(
-                                            color = primaryTextColor,
+                    // Notes prompt: Circular edges
+                    Box(
+                        modifier = Modifier
+                            .fillMaxWidth()
+                            .height(42.dp)
+                            .clip(RoundedCornerShape(50))
+                            .background(inputBg)
+                            .padding(horizontal = 14.dp),
+                        contentAlignment = Alignment.CenterStart
+                    ) {
+                        Row(
+                            verticalAlignment = Alignment.CenterVertically,
+                            modifier = Modifier.fillMaxWidth()
+                        ) {
+                            Icon(
+                                imageVector = Icons.Default.Edit,
+                                contentDescription = null,
+                                tint = inputPlaceholder,
+                                modifier = Modifier.size(14.dp)
+                            )
+                            Spacer(modifier = Modifier.width(8.dp))
+                            BasicTextField(
+                                value = noteText,
+                                onValueChange = { noteText = it },
+                                singleLine = true,
+                                textStyle = TextStyle(
+                                    fontFamily = GoogleSansFlex,
+                                    color = primaryTextColor,
+                                    fontSize = 13.sp
+                                ),
+                                cursorBrush = SolidColor(primaryTextColor),
+                                keyboardOptions = KeyboardOptions(imeAction = ImeAction.Done),
+                                keyboardActions = KeyboardActions(onDone = { focusManager.clearFocus() }),
+                                modifier = Modifier.weight(1f),
+                                decorationBox = { innerTextField ->
+                                    if (noteText.isEmpty()) {
+                                        Text(
+                                            text = "Add note (optional)...",
+                                            fontFamily = GoogleSansFlex,
+                                            color = inputPlaceholder,
                                             fontSize = 13.sp
-                                        ),
-                                        cursorBrush = SolidColor(if (isLight) Color.Black else Color.White),
-                                        keyboardOptions = KeyboardOptions(imeAction = ImeAction.Done),
-                                        keyboardActions = KeyboardActions(onDone = { focusManager.clearFocus() }),
-                                        modifier = Modifier.fillMaxWidth(),
-                                        decorationBox = { innerTextField ->
-                                            if (noteText.isEmpty()) {
-                                                Text(
-                                                    text = "Add a note (optional)",
-                                                    color = secondaryTextColor,
-                                                    fontSize = 13.sp
-                                                )
-                                            }
-                                            innerTextField()
-                                        }
-                                    )
-                                }
-
-                                Spacer(modifier = Modifier.height(12.dp))
-                            }
-
-                            // Dual Action Row: Done & Split Bill
-                            Row(
-                                modifier = Modifier.fillMaxWidth(),
-                                horizontalArrangement = Arrangement.spacedBy(10.dp)
-                            ) {
-                                Button(
-                                    onClick = {
-                                        triggerDismiss {
-                                            onDone(selectedCategoryId, noteText)
-                                        }
-                                    },
-                                    modifier = Modifier
-                                        .weight(1f)
-                                        .height(44.dp),
-                                    shape = RoundedCornerShape(12.dp),
-                                    colors = ButtonDefaults.buttonColors(
-                                        containerColor = doneBtnBg,
-                                        contentColor = doneBtnContent
-                                    ),
-                                    elevation = ButtonDefaults.buttonElevation(defaultElevation = 0.dp)
-                                ) {
-                                    Text(
-                                        text = "Done",
-                                        fontFamily = GoogleSansFlex,
-                                        fontSize = 14.5.sp,
-                                        fontWeight = FontWeight.SemiBold
-                                    )
-                                }
-
-                                if (isDebit && !isAtmTransfer) {
-                                    Surface(
-                                        shape = RoundedCornerShape(12.dp),
-                                        color = secondaryBtnBg,
-                                        border = BorderStroke(1.dp, neutralBorder),
-                                        modifier = Modifier
-                                            .weight(1f)
-                                            .height(44.dp)
-                                            .clip(RoundedCornerShape(12.dp))
-                                            .clickable {
-                                                triggerDismiss {
-                                                    onSplitBill()
-                                                }
-                                            }
-                                    ) {
-                                        Row(
-                                            modifier = Modifier.fillMaxSize(),
-                                            horizontalArrangement = Arrangement.Center,
-                                            verticalAlignment = Alignment.CenterVertically
-                                        ) {
-                                            Icon(
-                                                imageVector = Icons.AutoMirrored.Filled.CallSplit,
-                                                contentDescription = "Split Bill",
-                                                tint = secondaryBtnContent,
-                                                modifier = Modifier.size(16.dp)
-                                            )
-                                            Spacer(modifier = Modifier.width(6.dp))
-                                            Text(
-                                                text = "Split Bill",
-                                                fontFamily = GoogleSansFlex,
-                                                fontSize = 14.sp,
-                                                fontWeight = FontWeight.SemiBold,
-                                                color = secondaryBtnContent
-                                            )
-                                        }
+                                        )
                                     }
+                                    innerTextField()
+                                }
+                            )
+                            if (noteText.isNotEmpty()) {
+                                IconButton(
+                                    onClick = { noteText = "" },
+                                    modifier = Modifier.size(20.dp)
+                                ) {
+                                    Icon(
+                                        imageVector = Icons.Default.Close,
+                                        contentDescription = "Clear",
+                                        tint = secondaryTextColor,
+                                        modifier = Modifier.size(12.dp)
+                                    )
                                 }
                             }
                         }
+                    }
 
-                Spacer(modifier = Modifier.height(6.dp))
+                    Spacer(modifier = Modifier.height(14.dp))
+                }
+            }
 
-                // Small hyperlink text to open app
+            // Single Done button with circular capsule edges (RoundedCornerShape(50))
+            Button(
+                onClick = {
+                    haptics.click()
+                    onDone(selectedCategoryId, noteText)
+                },
+                modifier = Modifier
+                    .fillMaxWidth()
+                    .height(48.dp),
+                shape = RoundedCornerShape(50),
+                colors = ButtonDefaults.buttonColors(
+                    containerColor = doneBtnBg,
+                    contentColor = doneBtnText
+                ),
+                elevation = ButtonDefaults.buttonElevation(defaultElevation = 0.dp)
+            ) {
                 Text(
-                    text = "Open in Kanri ›",
-                    fontSize = 12.sp,
-                    color = secondaryTextColor,
+                    text = "Done",
+                    fontFamily = GoogleSansFlex,
+                    fontSize = 15.5.sp,
+                    fontWeight = FontWeight.Bold,
+                    color = doneBtnText
+                )
+            }
+
+            // Replace open in kanri with split expense hyperlink
+            if (isDebit && !isAtmTransfer) {
+                Spacer(modifier = Modifier.height(10.dp))
+                Text(
+                    text = "Split expense  ›",
+                    fontFamily = GoogleSansFlex,
+                    fontSize = 12.5.sp,
+                    fontWeight = FontWeight.Medium,
+                    color = dimGrey,
                     modifier = Modifier
-                        .clip(RoundedCornerShape(4.dp))
+                        .clip(RoundedCornerShape(50))
                         .clickable {
-                            triggerDismiss {
-                                onOpenInApp()
-                            }
+                            haptics.click()
+                            onSplitBill()
                         }
-                        .padding(horizontal = 8.dp, vertical = 3.dp)
+                        .padding(horizontal = 12.dp, vertical = 6.dp)
                 )
             }
         }
     }
+}
+
+@Preview(showBackground = true, backgroundColor = 0xFF0B0C15)
+@Composable
+private fun GlassInstantPopupDebitPreview() {
+    val sampleCategories = listOf(
+        CategoryEntity(id = 1L, name = "Food & Dining", colorHex = "#FF7043", iconName = "restaurant"),
+        CategoryEntity(id = 2L, name = "Groceries", colorHex = "#10B981", iconName = "shopping_cart"),
+        CategoryEntity(id = 3L, name = "Shopping", colorHex = "#8B5CF6", iconName = "shopping_bag"),
+        CategoryEntity(id = 4L, name = "Auto / Taxi", colorHex = "#F59E0B", iconName = "taxi"),
+        CategoryEntity(id = 5L, name = "Entertainment", colorHex = "#EC4899", iconName = "movie")
+    )
+    InstantPopupCard(
+        amount = 380.00,
+        isDebit = true,
+        counterparty = "Swiggy",
+        bank = "HDFC Bank",
+        sourceType = "UPI",
+        categories = sampleCategories,
+        initialCategoryId = 1L,
+        onDone = { _, _ -> },
+        onSplitBill = {},
+        onOpenInApp = {},
+        onDismiss = {}
+    )
 }
