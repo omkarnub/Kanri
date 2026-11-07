@@ -381,12 +381,12 @@ fun KokonutSlideToConfirm(
             val trackBg = if (tokens != null) {
                 Color.Black.copy(alpha = 0.10f)
             } else {
-                if (dark) Zinc900 else Zinc100
+                if (dark) Color(0xFF161616) else Zinc100
             }
             val trackBorder = if (tokens != null) {
                 Color.White.copy(alpha = 0.10f)
             } else {
-                if (dark) Zinc800 else Zinc200
+                if (dark) Color(0xFF282828) else Zinc200
             }
 
             // Track Background
@@ -414,7 +414,7 @@ fun KokonutSlideToConfirm(
                     fontSize = 14.5.sp,
                     fontFamily = GoogleSansFlex,
                     fontWeight = FontWeight.Medium,
-                    color = tokens?.textSecondary ?: if (dark) Zinc400 else Zinc500,
+                    color = tokens?.textSecondary ?: if (dark) Color(0xFFA6A6A6) else Zinc500,
                     maxLines = 1
                 )
             }
@@ -423,7 +423,7 @@ fun KokonutSlideToConfirm(
             val targetInkBgColor = if (isDone) {
                 if (dark) confirmationType.darkColor else confirmationType.lightColor
             } else {
-                if (dark) Zinc100 else Zinc900
+                if (dark) Color(0xFFF2F2F5) else Zinc900
             }
 
             val animatedInkBgColor by animateColorAsState(
@@ -453,7 +453,7 @@ fun KokonutSlideToConfirm(
             val inkTextColor = if (isDone) {
                 Color.White
             } else {
-                if (dark) Zinc900 else Color.White
+                if (dark) Color(0xFF121212) else Color.White
             }
 
             Box(
@@ -517,7 +517,7 @@ fun KokonutSlideToConfirm(
             }
 
             // 4. Draggable Thumb (Circle 48dp)
-            val targetThumbBg = if (isDone) Color.White else (if (dark) Zinc100 else Zinc900)
+            val targetThumbBg = if (isDone) Color.White else (if (dark) Color(0xFFF2F2F5) else Zinc900)
             val animatedThumbBg by animateColorAsState(
                 targetValue = targetThumbBg,
                 animationSpec = tween(240, easing = SLIDE_EASE_OUT),
@@ -527,7 +527,7 @@ fun KokonutSlideToConfirm(
             val targetThumbIconColor = if (isDone) {
                 if (dark) confirmationType.darkColor else confirmationType.lightColor
             } else {
-                if (dark) Zinc900 else Color.White
+                if (dark) Color(0xFF121212) else Color.White
             }
             val animatedThumbIconColor by animateColorAsState(
                 targetValue = targetThumbIconColor,

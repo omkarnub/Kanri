@@ -182,7 +182,7 @@ fun KokonutSmoothDrawer(
                         modifier = Modifier
                             .size(width = 36.dp, height = 4.dp)
                             .clip(CircleShape)
-                            .background(if (dark) Zinc700 else Zinc300)
+                            .background(if (dark) Color(0xFF383838) else Zinc300)
                     )
                 }
                 IconButton(
@@ -192,7 +192,7 @@ fun KokonutSmoothDrawer(
                     Icon(
                         imageVector = Icons.Default.Close,
                         contentDescription = "Close",
-                        tint = tokens?.textSecondary ?: if (dark) Zinc400 else Zinc500,
+                        tint = tokens?.textSecondary ?: if (dark) Color(0xFFA6A6A6) else Zinc500,
                         modifier = Modifier.size(18.dp)
                     )
                 }
@@ -251,17 +251,17 @@ fun KokonutSmoothDrawer(
             val detailContainerBg = if (tokens != null) {
                 Color.Black.copy(alpha = 0.10f)
             } else {
-                if (dark) Zinc900 else Zinc100
+                if (dark) Color(0xFF161616) else Zinc100
             }
             val detailContainerBorder = if (tokens != null) {
                 Color.White.copy(alpha = 0.10f)
             } else {
-                if (dark) Zinc800 else Zinc200
+                if (dark) Color(0xFF282828) else Zinc200
             }
             val dividerColor = if (tokens != null) {
                 Color.White.copy(alpha = 0.08f)
             } else {
-                if (dark) Zinc800 else Zinc200
+                if (dark) Color(0xFF282828) else Zinc200
             }
 
             Surface(
@@ -289,14 +289,14 @@ fun KokonutSmoothDrawer(
                                 text = row.title,
                                 fontSize = 12.5.sp,
                                 fontFamily = GoogleSansFlex,
-                                color = tokens?.textSecondary ?: if (dark) Zinc400 else Zinc500
+                                color = tokens?.textSecondary ?: if (dark) Color(0xFFA6A6A6) else Zinc500
                             )
                             Text(
                                 text = row.value,
                                 fontSize = 13.sp,
                                 fontFamily = GoogleSansFlex,
                                 fontWeight = FontWeight.SemiBold,
-                                color = tokens?.textPrimary ?: if (dark) Zinc100 else Zinc900,
+                                color = tokens?.textPrimary ?: if (dark) Color(0xFFF2F2F5) else Zinc900,
                                 maxLines = 1,
                                 overflow = TextOverflow.Ellipsis
                             )

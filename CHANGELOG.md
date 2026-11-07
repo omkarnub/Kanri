@@ -10,10 +10,8 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 ### Fixed
 - **Opaque Backgrounds & Contrast for Entry Workflows in Dark and Light Modes**:
   - Fixed `KanriGlassCard` when rendering `GlassLevel.EntrySheet` in solid themes (Light, Dark, AMOLED, and System), replacing the missing-haze transparent fallback with clean, 100% opaque surface backgrounds (`surfaceContainerHigh` in Dark/AMOLED mode and pure `#FFFFFF` in Light mode).
-  - Restored opaque tactile styling in `KokonutAmountPad` (`TactileKeypadKey` and `TactilePresetChip`) using `Zinc900`/`Zinc800` in Dark mode and `Zinc100`/`Zinc200` in Light mode, while preserving the 10% dark glass tint in Glass mode.
-  - Standardized the Continue CTA button in `KokonutAmountPad` to render opaque `Zinc900`/`Zinc100` backgrounds in solid themes when empty, avoiding washed-out transparency.
-  - Updated the metadata detail container in `KokonutSmoothDrawer` to use opaque `Zinc900`/`Zinc100` surfaces and solid dividers in non-glass modes.
-  - Standardized the slide track container in `KokonutSlideToConfirm` to use opaque `Zinc900`/`Zinc100` with subtle border contrast in non-glass modes.
+  - Swapped out cool blueish-slate tones in Dark mode across numpad buttons (`TactileKeypadKey`, `TactilePresetChip`), Continue CTA button, summary list container (`KokonutSmoothDrawer`), and slider track (`KokonutSlideToConfirm`) in favor of Kanri's pure neutral dark charcoal palette (`#161616` tile background, `#282828` border/pressed, `#383838` drag handle, `#A6A6A6` secondary text, and `#F2F2F5` primary text), eliminating blueish tint.
+  - Kept the verified, high-contrast light mode styling (`Zinc100`/`Zinc200`/`Zinc900`) and the 10% dark glass tint in Glass mode intact.
   - Bumped version to `1.5.1` (Build 22).
 
 ## [1.5.0] - 2026-11-07

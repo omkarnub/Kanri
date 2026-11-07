@@ -276,7 +276,7 @@ fun KokonutAmountPad(
                             modifier = Modifier
                                 .size(width = 36.dp, height = 4.dp)
                                 .clip(CircleShape)
-                                .background(if (dark) Zinc700 else Zinc300)
+                                .background(if (dark) Color(0xFF383838) else Zinc300)
                         )
                     }
                 }
@@ -288,7 +288,7 @@ fun KokonutAmountPad(
                         Icon(
                             imageVector = Icons.Default.Close,
                             contentDescription = "Close",
-                            tint = tokens?.textSecondary ?: if (dark) Zinc400 else Zinc500,
+                            tint = tokens?.textSecondary ?: if (dark) Color(0xFFA6A6A6) else Zinc500,
                             modifier = Modifier.size(18.dp)
                         )
                     }
@@ -332,7 +332,7 @@ fun KokonutAmountPad(
                         fontSize = 54.sp,
                         fontFamily = GoogleSansFlex,
                         fontWeight = FontWeight.Black,
-                        color = if (isEmpty) (if (dark) Zinc700 else Zinc300) else (tokens?.textSecondary ?: if (dark) Zinc400 else Zinc500),
+                        color = if (isEmpty) (if (dark) Color(0xFF383838) else Zinc300) else (tokens?.textSecondary ?: if (dark) Color(0xFFA6A6A6) else Zinc500),
                         letterSpacing = (-0.025).sp,
                         modifier = Modifier.padding(end = 4.dp)
                     )
@@ -341,7 +341,7 @@ fun KokonutAmountPad(
                     RollingAmountDisplay(
                         rawInput = rawInput,
                         fontSize = 54.sp,
-                        color = if (isEmpty) (if (dark) Zinc700 else Zinc300) else (tokens?.textPrimary ?: if (dark) Zinc50 else Zinc900),
+                        color = if (isEmpty) (if (dark) Color(0xFF383838) else Zinc300) else (tokens?.textPrimary ?: if (dark) Color(0xFFF2F2F5) else Zinc900),
                         dark = dark
                     )
                 }
@@ -387,7 +387,7 @@ fun KokonutAmountPad(
                         Text(
                             text = subText,
                             fontSize = 12.sp,
-                            color = tokens?.textSecondary ?: if (dark) Zinc400 else Zinc500,
+                            color = tokens?.textSecondary ?: if (dark) Color(0xFFA6A6A6) else Zinc500,
                             textAlign = TextAlign.Center
                         )
                     }
@@ -450,21 +450,21 @@ fun KokonutAmountPad(
                 if (tokens != null) {
                     Color.Black.copy(alpha = 0.10f)
                 } else {
-                    if (dark) Zinc900 else Zinc100
+                    if (dark) Color(0xFF161616) else Zinc100
                 }
             } else {
-                if (dark) Zinc100 else Zinc900
+                if (dark) Color(0xFFF2F2F5) else Zinc900
             }
             val btnTextColor = if (isEmpty) {
-                if (dark) Zinc500 else Zinc400
+                if (dark) Color(0xFF757575) else Zinc400
             } else {
-                if (dark) Zinc900 else Color.White
+                if (dark) Color(0xFF121212) else Color.White
             }
             val btnBorderColor = if (isEmpty) {
                 if (tokens != null) {
                     Color.White.copy(alpha = 0.10f)
                 } else {
-                    if (dark) Zinc800 else Zinc200
+                    if (dark) Color(0xFF282828) else Zinc200
                 }
             } else {
                 Color.Transparent
@@ -579,16 +579,16 @@ private fun TactileKeypadKey(
         if (isPressed) Color.Black.copy(alpha = 0.22f) else Color.Black.copy(alpha = 0.10f)
     } else {
         if (isPressed) {
-            if (dark) Zinc800 else Zinc200
+            if (dark) Color(0xFF282828) else Zinc200
         } else {
-            if (dark) Zinc900 else Zinc100
+            if (dark) Color(0xFF161616) else Zinc100
         }
     }
 
     val keyBorder = if (tokens != null) {
         if (isPressed) Color.White.copy(alpha = 0.22f) else Color.White.copy(alpha = 0.10f)
     } else {
-        if (dark) Zinc800 else Zinc200
+        if (dark) Color(0xFF282828) else Zinc200
     }
 
     Box(
@@ -631,9 +631,9 @@ private fun TactileKeypadKey(
                     imageVector = Icons.AutoMirrored.Filled.Backspace,
                     contentDescription = "Delete",
                     tint = if (isPressed) {
-                        tokens?.textPrimary ?: if (dark) Zinc100 else Zinc900
+                        tokens?.textPrimary ?: if (dark) Color(0xFFF2F2F5) else Zinc900
                     } else {
-                        tokens?.textSecondary ?: if (dark) Zinc400 else Zinc500
+                        tokens?.textSecondary ?: if (dark) Color(0xFFA6A6A6) else Zinc500
                     },
                     modifier = Modifier.size(22.dp)
                 )
@@ -643,7 +643,7 @@ private fun TactileKeypadKey(
                     fontSize = 24.sp,
                     fontFamily = GoogleSansFlex,
                     fontWeight = FontWeight.SemiBold,
-                    color = tokens?.textPrimary ?: if (dark) Zinc100 else Zinc900
+                    color = tokens?.textPrimary ?: if (dark) Color(0xFFF2F2F5) else Zinc900
                 )
             }
         }
@@ -673,16 +673,16 @@ private fun TactilePresetChip(
         if (isPressed) Color.Black.copy(alpha = 0.22f) else Color.Black.copy(alpha = 0.10f)
     } else {
         if (isPressed) {
-            if (dark) Zinc800 else Zinc200
+            if (dark) Color(0xFF282828) else Zinc200
         } else {
-            if (dark) Zinc900 else Zinc100
+            if (dark) Color(0xFF161616) else Zinc100
         }
     }
 
     val chipBorder = if (tokens != null) {
         if (isPressed) Color.White.copy(alpha = 0.22f) else Color.White.copy(alpha = 0.10f)
     } else {
-        if (dark) Zinc800 else Zinc200
+        if (dark) Color(0xFF282828) else Zinc200
     }
 
     Box(
@@ -716,7 +716,7 @@ private fun TactilePresetChip(
             fontSize = 12.5.sp,
             fontFamily = GoogleSansFlex,
             fontWeight = FontWeight.SemiBold,
-            color = tokens?.textPrimary ?: if (dark) Zinc200 else Zinc800
+            color = tokens?.textPrimary ?: if (dark) Color(0xFFE2E2E2) else Zinc800
         )
     }
 }
@@ -843,7 +843,7 @@ private fun RollingAmountDisplay(
                     Text(
                         text = token.text,
                         style = style,
-                        color = if (token.text == ".") color else (if (dark) Zinc500 else Zinc400),
+                        color = if (token.text == ".") color else (if (dark) Color(0xFFA6A6A6) else Zinc400),
                         textAlign = TextAlign.Center
                     )
                 }
