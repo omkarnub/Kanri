@@ -66,35 +66,7 @@ fun GlassBackdrop(
             modifier = Modifier.fillMaxSize()
         )
 
-        // 2. Ambient radial glow mesh drawn directly in Compose
-        // This ensures Compose Haze (dev.chrisbanes.haze) captures rich colors in hazeSource for all glass cards
-        Canvas(modifier = Modifier.fillMaxSize()) {
-            val w = size.width
-            val h = size.height
-            drawCircle(
-                brush = androidx.compose.ui.graphics.Brush.radialGradient(
-                    colors = listOf(Color(0xFF6366F1).copy(alpha = 0.16f), Color.Transparent),
-                    center = androidx.compose.ui.geometry.Offset(w * 0.20f, h * 0.22f),
-                    radius = w * 0.65f
-                )
-            )
-            drawCircle(
-                brush = androidx.compose.ui.graphics.Brush.radialGradient(
-                    colors = listOf(Color(0xFFEC4899).copy(alpha = 0.14f), Color.Transparent),
-                    center = androidx.compose.ui.geometry.Offset(w * 0.85f, h * 0.60f),
-                    radius = w * 0.70f
-                )
-            )
-            drawCircle(
-                brush = androidx.compose.ui.graphics.Brush.radialGradient(
-                    colors = listOf(Color(0xFF10B981).copy(alpha = 0.12f), Color.Transparent),
-                    center = androidx.compose.ui.geometry.Offset(w * 0.40f, h * 0.88f),
-                    radius = w * 0.55f
-                )
-            )
-        }
-
-        // 3. Translucent tone-balancing scrim to maintain pristine WCAG contrast and readability
+        // 2. Translucent tone-balancing scrim to maintain pristine WCAG contrast and readability
         // Keeps dark glass deep and mysterious, and light glass crisp and luminous.
         Box(
             modifier = Modifier
@@ -105,7 +77,7 @@ fun GlassBackdrop(
                 )
         )
 
-        // 4. Subtle micro-grain overlay
+        // 3. Subtle micro-grain overlay
         if (grainShader != null) {
             Canvas(modifier = Modifier.fillMaxSize()) {
                 drawRect(brush = grainShader)

@@ -1,12 +1,20 @@
 package com.omkarnub.kanri.data.budget
 
+import com.omkarnub.kanri.util.AppCurrency
+import com.omkarnub.kanri.util.CurrencyUtils
 import java.text.SimpleDateFormat
 import java.util.Calendar
 import java.util.Locale
+import kotlin.math.min
 
 object BudgetCalculator {
 
-    const val DEFAULT_MONTHLY_BUDGET = 20000.0
+    fun getDefaultMonthlyBudget(currency: AppCurrency = CurrencyUtils.getCurrency()): Double {
+        return currency.defaultMonthlyBudget
+    }
+
+    val DEFAULT_MONTHLY_BUDGET: Double
+        get() = getDefaultMonthlyBudget()
 
     fun calculateRemaining(budget: Double, spent: Double): Double {
         return budget - spent
@@ -29,31 +37,137 @@ object BudgetCalculator {
         return ((budget - spent) / budget).toFloat().coerceIn(0f, 1f)
     }
 
-    fun getCurrentMonthKey(calendar: Calendar = Calendar.getInstance()): String {
-        val year = calendar.get(Calendar.YEAR)
-        val month = calendar.get(Calendar.MONTH) + 1
-        return "%d-%02d".format(year, month)
-    }
-
-    fun getCurrentMonthDisplayName(calendar: Calendar = Calendar.getInstance()): String {
-        val formatter = SimpleDateFormat("MMMM", Locale.getDefault())
-        return formatter.format(calendar.time)
-    }
-
-    fun getDaysRemainingInMonth(calendar: Calendar = Calendar.getInstance()): Int {
-        val currentDay = calendar.get(Calendar.DAY_OF_MONTH)
-        val totalDays = calendar.getActualMaximum(Calendar.DAY_OF_MONTH)
-        return (totalDays - currentDay + 1).coerceAtLeast(1)
-    }
-
-    fun getStartOfMonthMillis(calendar: Calendar = Calendar.getInstance()): Long {
+    /**
+     * Returns the start timestamp (in millis) for the active budget cycle.
+     * If cycleStartDay == 1: 1st of the current calendar month at 00:00:00.000.
+     * If cycleStartDay > 1 (e.g. 25):
+     * - If today's day >= cycleStartDay: started on cycleStartDay of the current month.
+     * - If today's day < cycleStartDay: started on cycleStartDay of the PREVIOUS month.
+     */
+    fun getStartOfCycleMillis(
+        cycleStartDay: Int = 1,
+        calendar: Calendar = Calendar.getInstance()
+    ): Long {
         val cal = (calendar.clone() as Calendar).apply {
-            set(Calendar.DAY_OF_MONTH, 1)
             set(Calendar.HOUR_OF_DAY, 0)
             set(Calendar.MINUTE, 0)
             set(Calendar.SECOND, 0)
             set(Calendar.MILLISECOND, 0)
         }
+        val currentDay = cal.get(Calendar.DAY_OF_MONTH)
+        val maxCurrentMonth = cal.getActualMaximum(Calendar.DAY_OF_MONTH)
+        val effectiveStartDayCurrent = cycleStartDay.coerceIn(1, maxCurrentMonth)
+
+        if (cycleStartDay <= 1) {
+            cal.set(Calendar.DAY_OF_MONTH, 1)
+            return cal.timeInMillis
+        }
+
+        if (currentDay >= effectiveStartDayCurrent) {
+            cal.set(Calendar.DAY_OF_MONTH, effectiveStartDayCurrent)
+        } else {
+            // Started in previous month
+            cal.add(Calendar.MONTH, -1)
+            val maxPrevMonth = cal.getActualMaximum(Calendar.DAY_OF_MONTH)
+            val effectiveStartDayPrev = cycleStartDay.coerceIn(1, maxPrevMonth)
+            cal.set(Calendar.DAY_OF_MONTH, effectiveStartDayPrev)
+        }
         return cal.timeInMillis
     }
+
+    /**
+     * Returns the end timestamp (in millis) for the active budget cycle.
+     */
+    fun getEndOfCycleMillis(
+        cycleStartDay: Int = 1,
+        calendar: Calendar = Calendar.getInstance()
+    ): Long {
+        val startMillis = getStartOfCycleMillis(cycleStartDay, calendar)
+        val endCal = Calendar.getInstance().apply {
+            timeInMillis = startMillis
+            add(Calendar.MONTH, 1)
+            val maxNextMonth = getActualMaximum(Calendar.DAY_OF_MONTH)
+            val effectiveNextStartDay = cycleStartDay.coerceIn(1, maxNextMonth)
+            set(Calendar.DAY_OF_MONTH, effectiveNextStartDay)
+            set(Calendar.HOUR_OF_DAY, 0)
+            set(Calendar.MINUTE, 0)
+            set(Calendar.SECOND, 0)
+            set(Calendar.MILLISECOND, 0)
+            add(Calendar.MILLISECOND, -1)
+        }
+        return endCal.timeInMillis
+    }
+
+    /**
+     * Returns the number of days remaining until the active cycle ends (inclusive of today).
+     */
+    fun getDaysRemainingInCycle(
+        cycleStartDay: Int = 1,
+        calendar: Calendar = Calendar.getInstance()
+    ): Int {
+        if (cycleStartDay <= 1) {
+            val currentDay = calendar.get(Calendar.DAY_OF_MONTH)
+            val totalDays = calendar.getActualMaximum(Calendar.DAY_OF_MONTH)
+            return (totalDays - currentDay + 1).coerceAtLeast(1)
+        }
+        val endMillis = getEndOfCycleMillis(cycleStartDay, calendar)
+        val diffMillis = endMillis - calendar.timeInMillis
+        if (diffMillis <= 0) return 1
+        val days = (diffMillis / (1000L * 60 * 60 * 24)).toInt() + 1
+        return days.coerceAtLeast(1)
+    }
+
+    /**
+     * Returns the unique month/cycle key for Room BudgetEntity lookup.
+     */
+    fun getCurrentCycleKey(
+        cycleStartDay: Int = 1,
+        calendar: Calendar = Calendar.getInstance()
+    ): String {
+        if (cycleStartDay <= 1) {
+            val year = calendar.get(Calendar.YEAR)
+            val month = calendar.get(Calendar.MONTH) + 1
+            return "%d-%02d".format(year, month)
+        }
+        val startCal = Calendar.getInstance().apply {
+            timeInMillis = getStartOfCycleMillis(cycleStartDay, calendar)
+        }
+        val year = startCal.get(Calendar.YEAR)
+        val month = startCal.get(Calendar.MONTH) + 1
+        return "%d-%02d".format(year, month)
+    }
+
+    /**
+     * Returns human-readable cycle display name (e.g. "November" or "25 Oct – 24 Nov").
+     */
+    fun getCurrentCycleDisplayName(
+        cycleStartDay: Int = 1,
+        calendar: Calendar = Calendar.getInstance()
+    ): String {
+        if (cycleStartDay <= 1) {
+            val formatter = SimpleDateFormat("MMMM", Locale.getDefault())
+            return formatter.format(calendar.time)
+        }
+        val startCal = Calendar.getInstance().apply {
+            timeInMillis = getStartOfCycleMillis(cycleStartDay, calendar)
+        }
+        val endCal = Calendar.getInstance().apply {
+            timeInMillis = getEndOfCycleMillis(cycleStartDay, calendar)
+        }
+        val fmt = SimpleDateFormat("d MMM", Locale.getDefault())
+        return "${fmt.format(startCal.time)} – ${fmt.format(endCal.time)}"
+    }
+
+    // Backward-compatible delegates
+    fun getCurrentMonthKey(calendar: Calendar = Calendar.getInstance()): String =
+        getCurrentCycleKey(1, calendar)
+
+    fun getCurrentMonthDisplayName(calendar: Calendar = Calendar.getInstance()): String =
+        getCurrentCycleDisplayName(1, calendar)
+
+    fun getDaysRemainingInMonth(calendar: Calendar = Calendar.getInstance()): Int =
+        getDaysRemainingInCycle(1, calendar)
+
+    fun getStartOfMonthMillis(calendar: Calendar = Calendar.getInstance()): Long =
+        getStartOfCycleMillis(1, calendar)
 }

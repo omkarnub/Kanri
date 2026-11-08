@@ -1,7 +1,7 @@
 # Entry Workflows & Action Popup Design
 
-**Current Version:** 1.5.1 (Build 22)  
-**Last Updated:** 2026-11-07  
+**Current Version:** 1.5.3 (Build 24)  
+**Last Updated:** 2026-11-09  
 
 ---
 
@@ -18,7 +18,7 @@ Every entry follows the identical 3-step Apple-grade pop-up workflow:
 2. Half-screen Fill Details popup with uniformly arranged fields, Back, Cancel, and Proceed buttons
 3. Down-to-up small half-screen summary drawer with rolling numbers and slide-to-confirm slider (`KokonutSmoothDrawer` + `KokonutSlideToConfirm`).
 
-In Glass Mode, all entry surfaces enforce a fixed 50 dp blur and 10% dark tint via `GlassLevel.EntrySheet`. In Solid Modes (Light, Dark, AMOLED, and System), all entry surfaces use crisp, fully opaque theme container backgrounds without blur or transparency.
+All entry surfaces enforce a fixed 50 dp blur and 10% dark tint via `GlassLevel.EntrySheet`.
 
 ---
 
@@ -66,7 +66,7 @@ flowchart LR
 - Formatted currency display with live rolling digits.
 - Clean pull/dismiss drag handle at the top.
 - Proceeding advances directly to the Fill Details step with the entered amount preserved.
-- Calibrated to `GlassLevel.EntrySheet` (frosted 50 dp blur in Glass Mode; crisp opaque container background in Solid Light/Dark/AMOLED modes).
+- Calibrated to `GlassLevel.EntrySheet` (fixed 50 dp blur and 10% dark tint).
 
 ### Step 2: Fill Details (`KanriGlassCard`)
 - Bottom-docked half-screen card with 26 dp rounded top corners (NO full-screen stretching).
@@ -80,14 +80,14 @@ flowchart LR
   - Wallet impact chips ("Cash", "Online", "Not from balances").
   - Contextual Note field.
 - **Action Buttons**: "Back" text button on the left, "Cancel" text button and bold "Proceed" primary button on the right.
-- Calibrated to `GlassLevel.EntrySheet` (frosted 50 dp blur in Glass Mode; crisp opaque container background in Solid Light/Dark/AMOLED modes).
+- Calibrated to `GlassLevel.EntrySheet` (fixed 50 dp blur and 10% dark tint).
 
 ### Step 3: Summary Drawer & Slide to Confirm (`KokonutSmoothDrawer`)
 - Down-to-up small half-screen summary drawer with detailed breakdown rows.
 - Rolling total amount display.
 - Semantic confirmation color and label (`SlideConfirmationType.EXPENSE`, `INCOME`, `LEND`, or `BORROW`).
 - **`KokonutSlideToConfirm`**: Zero-latency drag gesture with progressive haptic feedback, snap animation, loading spinner, and success checkmark before automatically dismissing the dialog.
-- Calibrated to `GlassLevel.EntrySheet` (frosted 50 dp blur in Glass Mode; crisp opaque container background in Solid Light/Dark/AMOLED modes).
+- Calibrated to `GlassLevel.EntrySheet` (fixed 50 dp blur and 10% dark tint).
 
 ---
 
@@ -105,26 +105,41 @@ When an incoming transaction SMS or UPI notification is received, Kanri presents
   - **AMOLED Mode**: Deep pure black surface (`#000000`) with high-contrast border.
 
 ### Interaction & UX Layout
-1. **Header**: Clean, centered dim grey date & timestamp (`07 Nov, 05:45 AM`) in `GoogleSansFlex` with an aligned close icon button.
-2. **Amount**: Large 40 sp bold currency typography in Vibrant Red (`#E54D2E`) for expense and Sage Green (`#30A46C`) for income.
-3. **Merchant & Tag**: Clean merchant name and bank/wallet brand tag.
-4. **Left-Aligned Search**: Plain text hyperlink with search icon on the left to quickly expand the search input box.
-5. **Top 5 Category Pills**: Displays only the top 5 relevant/smart-resolved categories in capsule pills (`RoundedCornerShape(50)`).
-6. **Capsule Notes Prompt**: Pill-shaped notes input box (`RoundedCornerShape(50)`) with clear button.
-7. **Single Capsule Done Button**: Full-width primary CTA with circular edges (`RoundedCornerShape(50)`).
-8. **Split Expense Action**: Direct hyperlink at the bottom ("Split expense ›") opening the split expense flow with pre-filled amount and merchant.
+1. **Top Drag Handle & Natural Drag-Down to Dismiss**:
+   - Visual 36×4 dp rounded pill drag handle (`RoundedCornerShape(50)`) in subtle dim grey (`dimGrey.copy(alpha = 0.35f)`) at the top center of the card.
+   - **Direct 1:1 Drag-Down Manipulation**: Touch tracking with zero-latency synchronous offset updates.
+   - **Rubberband Upward Resistance**: Tactile exponential decay resistance when pulling upward (asymptotically capped at -24 dp) snapping back to 0 with elastic spring bounce.
+   - **Dismiss Commit & Fling**: Commits to dismiss when dragged past 90 dp or when flicked downward with velocity > 1000 px/s; springs back to rest if released below threshold.
+   - **Directional Disambiguation**: Horizontal gestures (`abs(dx) > abs(dy) * 1.15f`) are gracefully handed off to category pill horizontal scroll and the `KokonutSlideToConfirm` slider without interference or accidental dismissal.
+2. **Header**: Clean, centered dim grey date & timestamp (`07 Nov, 05:45 AM`) in `GoogleSansFlex` with an aligned close icon button.
+3. **Amount**: Large 40 sp bold currency typography in Vibrant Red (`#E54D2E`) for expense and Sage Green (`#30A46C`) for income.
+4. **Merchant & Tag**: Clean merchant name and bank/wallet brand tag.
+5. **Left-Aligned Search**: Plain text hyperlink with search icon on the left to quickly expand the search input box.
+6. **Dynamic Contextual Category Pills**: Displays dynamically ranked categories in capsule pills (`RoundedCornerShape(50)`). Ranks categories based on historical usage frequency from past transactions and time-of-day contextual relevance (e.g. morning coffee/transit vs midday groceries vs evening dining), placing the smart-resolved category at index 0.
+7. **Capsule Notes Prompt**: Pill-shaped notes input box (`RoundedCornerShape(50)`) with clear button.
+8. **Primary Slide-to-Confirm Slider (`KokonutSlideToConfirm`)**: Unified 1:1 Apple Fluid Design drag gesture with rubberband resistance, fluid ink trailing layer, dynamic confirming state ("Saving…"), and morphing emerald green success checkmark banner ("Expense saved!" / "Income added!") with tactile haptic pulse and 850ms hold before transitioning to the Current Balance view.
+9. **Post-Confirmation "Current Balance" View with Rolling Text Animation & Bracketed Delta**:
+   - **Down-to-Up Transition**: Smooth physical slide transition (`slideInVertically` from bottom + `fadeIn` paired with exiting form's `slideOutVertically` upward + `fadeOut` and animated `SizeTransform`) directly inside the card container.
+   - **"Current Balance" Header**: Dim grey medium label in `GoogleSansFlex`.
+   - **Rolling Text Reel Animation (`RollingText`)**: Ported slot-machine physics using deterministic `mulberry32` PRNG. Each character travels through a vertical reel of rotating digits (`copies = cycles + 1`) decelerating via `expo.out` easing (`CubicBezierEasing(0.16f, 1.0f, 0.3f, 1.0f)`) with individual character duration variance.
+   - **Bracketed Delta Amount**: Shows the added/deducted amount right next to the rolling balance: `[Amount with rolling animation](+amount/-amount)` in Sage Green (`#30A46C`) for income and Vibrant Red (`#E54D2E`) for expense.
+   - **All Google Sans Font**: Strictly adheres to `GoogleSansFlex` across all numbers, currency symbols, and text.
+   - **3-Second Auto-Dismissal**: Automatically dismisses the popup 3 seconds after the balance rolls into place (also dismissible immediately at any moment via natural drag-down).
+10. **Split Expense Action**: Direct hyperlink at the bottom ("Split expense ›") opening the split expense flow with pre-filled amount and merchant.
 
 ### Coordinated Pop-up & Pop-down Motion
 The popup card shares the exact signature spring motion from `AddExpenseIncomePopup`:
 - **Pop-up (Entrance)**: `fadeIn(180ms)` + `scaleIn(0.90f, KanriMotion.SnappySpring)` + `slideInVertically(10%, KanriMotion.SmoothSlideSpring)`.
 - **Pop-down (Exit)**: `fadeOut(140ms)` + `scaleOut(0.94f)` + `slideOutVertically(8%)`.
-- Coordinated through `dismissWithAnimation` across outside dismiss, close button, Done button, and Split expense action.
+- Coordinated through `dismissWithAnimation` across outside dismiss, close button, 3-second post-balance auto-dismissal, and Split expense action.
 
 ---
 
 ## 6. Modules & Files Involved
-- `app/src/main/java/com/omkarnub/kanri/ui/popup/InstantPopupCard.kt`: Themed floating payment detection popup card.
-- `app/src/main/java/com/omkarnub/kanri/ui/popup/InstantPopupService.kt`: Overlay service managing `WindowManager.LayoutParams`, cross-window blur, background scrim, and lifecycle.
+- `app/src/main/java/com/omkarnub/kanri/ui/popup/InstantPopupCard.kt`: Themed floating payment detection popup card with down-to-up balance transition and 3-second auto-dismissal.
+- `app/src/main/java/com/omkarnub/kanri/ui/common/RollingText.kt`: Jetpack Compose port of GSAP slot-machine rolling digit reel component with `mulberry32` PRNG and `expo.out` easing.
+- `app/src/main/java/com/omkarnub/kanri/ui/popup/InstantPopupService.kt`: Overlay service managing `WindowManager.LayoutParams`, cross-window blur, background scrim, live balance resolution, and lifecycle.
+- `app/src/main/java/com/omkarnub/kanri/ui/common/kokonut/KokonutSlideToConfirm.kt`: Primary tactile slide-to-confirm slider component with ink flooding, spinner, and emerald green success state.
 - `app/src/main/java/com/omkarnub/kanri/ui/popup/InstantPopupSheet.kt`: In-app quick categorization bottom sheet and demo popup triggers.
 - `app/src/main/java/com/omkarnub/kanri/ui/settings/SettingsComponents.kt`: Settings screen item for previewing the detection popup.
 - `app/src/main/java/com/omkarnub/kanri/ui/common/KanriGlass.kt`: Core glassmorphism tokens, `KanriGlassCard`, and `GlassLevel.EntrySheet`.

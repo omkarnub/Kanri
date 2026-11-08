@@ -33,11 +33,14 @@ import androidx.compose.material.icons.automirrored.filled.ArrowBack
 import androidx.compose.material.icons.automirrored.filled.KeyboardArrowRight
 import androidx.compose.material.icons.filled.Check
 import androidx.compose.material.icons.filled.Tune
+import androidx.compose.material3.Button
+import androidx.compose.material3.ButtonDefaults
 import androidx.compose.material3.ExperimentalMaterial3Api
 import androidx.compose.material3.HorizontalDivider
 import androidx.compose.material3.Icon
 import androidx.compose.material3.IconButton
 import androidx.compose.material3.MaterialTheme
+import androidx.compose.material3.OutlinedButton
 import androidx.compose.material3.Scaffold
 import androidx.compose.material3.Surface
 import androidx.compose.material3.Text
@@ -222,36 +225,14 @@ fun ThemeSettingsScreen(
                             )
                         }
 
-                        // 10 Shader cards side by side (2 columns)
-                        val shaderPairs: List<Pair<GlassBackgroundType, GlassBackgroundType>> = listOf(
-                            GlassBackgroundType.AURORA to GlassBackgroundType.GRAIN_GRADIENT,
-                            GlassBackgroundType.HERO_GEOMETRIC to GlassBackgroundType.PRISM_GRADIENT,
-                            GlassBackgroundType.CLOUD_SHADER to GlassBackgroundType.INK_RIDGES,
-                            GlassBackgroundType.FUJI_SAKURA to GlassBackgroundType.SUMI_E_MIST,
-                            GlassBackgroundType.THISTLE_PORTICO to GlassBackgroundType.SUNSET_MEADOW
-                        )
-
+                        // Shader backgrounds list view (single column, no previews, Apply button beside each)
                         Column(verticalArrangement = Arrangement.spacedBy(10.dp)) {
-                            shaderPairs.forEach { pair ->
-                                val shader1 = pair.first
-                                val shader2 = pair.second
-                                Row(
-                                    modifier = Modifier.fillMaxWidth(),
-                                    horizontalArrangement = Arrangement.spacedBy(10.dp)
-                                ) {
-                                    ShaderGridCard(
-                                        type = shader1,
-                                        isSelected = activeShader == shader1,
-                                        onClick = { themePrefs.glassBackground = shader1 },
-                                        modifier = Modifier.weight(1f)
-                                    )
-                                    ShaderGridCard(
-                                        type = shader2,
-                                        isSelected = activeShader == shader2,
-                                        onClick = { themePrefs.glassBackground = shader2 },
-                                        modifier = Modifier.weight(1f)
-                                    )
-                                }
+                            GlassBackgroundType.entries.forEach { shaderType ->
+                                ShaderListItem(
+                                    type = shaderType,
+                                    isSelected = activeShader == shaderType,
+                                    onApply = { themePrefs.glassBackground = shaderType }
+                                )
                             }
                         }
                     }
@@ -343,17 +324,17 @@ private fun CustomiseGlassRow(
 }
 
 @Composable
-private fun ShaderGridCard(
+private fun ShaderListItem(
     type: GlassBackgroundType,
     isSelected: Boolean,
-    onClick: () -> Unit,
+    onApply: () -> Unit,
     modifier: Modifier = Modifier
 ) {
     val haptics = rememberKanriHaptics()
     val tokens = LocalKanriGlass.current
 
-    val cardContent = @Composable {
-        Column(
+    val itemContent = @Composable {
+        Row(
             modifier = Modifier
                 .fillMaxWidth()
                 .clickable(
@@ -361,64 +342,87 @@ private fun ShaderGridCard(
                     indication = ripple(),
                     onClick = {
                         haptics.click()
-                        onClick()
+                        onApply()
                     }
                 )
-                .padding(10.dp),
-            verticalArrangement = Arrangement.spacedBy(8.dp)
+                .padding(horizontal = 16.dp, vertical = 14.dp),
+            verticalAlignment = Alignment.CenterVertically,
+            horizontalArrangement = Arrangement.SpaceBetween
         ) {
-            // Shader gradient swatch on top
-            Box(
+            Column(
                 modifier = Modifier
-                    .fillMaxWidth()
-                    .height(60.dp)
-                    .clip(RoundedCornerShape(10.dp))
-                    .background(getShaderGradientBrush(type))
-                    .border(
-                        1.dp,
-                        if (isSelected) MaterialTheme.colorScheme.primary else Color.White.copy(alpha = 0.2f),
-                        RoundedCornerShape(10.dp)
-                    ),
-                contentAlignment = Alignment.TopEnd
+                    .weight(1f)
+                    .padding(end = 12.dp)
             ) {
-                if (isSelected) {
-                    Box(
-                        modifier = Modifier
-                            .padding(6.dp)
-                            .size(22.dp)
-                            .clip(CircleShape)
-                            .background(MaterialTheme.colorScheme.primary),
-                        contentAlignment = Alignment.Center
-                    ) {
-                        Icon(
-                            imageVector = Icons.Default.Check,
-                            contentDescription = "Selected",
-                            tint = MaterialTheme.colorScheme.onPrimary,
-                            modifier = Modifier.size(13.dp)
-                        )
-                    }
-                }
-            }
-
-            Column(modifier = Modifier.fillMaxWidth()) {
                 Text(
                     text = type.displayName,
                     style = MaterialTheme.typography.titleSmall.copy(
                         fontWeight = FontWeight.Bold,
-                        fontSize = 13.sp
+                        fontSize = 14.5.sp
                     ),
-                    color = if (isSelected) MaterialTheme.colorScheme.primary else MaterialTheme.colorScheme.onSurface,
-                    maxLines = 1,
-                    overflow = TextOverflow.Ellipsis
+                    color = if (isSelected) MaterialTheme.colorScheme.primary else MaterialTheme.colorScheme.onSurface
                 )
+                Spacer(modifier = Modifier.height(2.dp))
                 Text(
                     text = getShaderDescription(type),
-                    style = MaterialTheme.typography.bodySmall,
-                    color = MaterialTheme.colorScheme.onSurfaceVariant,
-                    fontSize = 11.sp,
-                    maxLines = 1,
-                    overflow = TextOverflow.Ellipsis
+                    style = MaterialTheme.typography.bodySmall.copy(
+                        fontSize = 12.sp,
+                        lineHeight = 16.sp
+                    ),
+                    color = MaterialTheme.colorScheme.onSurfaceVariant
                 )
+            }
+
+            if (isSelected) {
+                Button(
+                    onClick = {
+                        haptics.click()
+                        onApply()
+                    },
+                    colors = ButtonDefaults.buttonColors(
+                        containerColor = MaterialTheme.colorScheme.primary,
+                        contentColor = MaterialTheme.colorScheme.onPrimary
+                    ),
+                    shape = RoundedCornerShape(10.dp),
+                    contentPadding = PaddingValues(horizontal = 12.dp, vertical = 0.dp),
+                    modifier = Modifier.height(34.dp)
+                ) {
+                    Icon(
+                        imageVector = Icons.Default.Check,
+                        contentDescription = "Applied",
+                        modifier = Modifier.size(15.dp)
+                    )
+                    Spacer(modifier = Modifier.width(4.dp))
+                    Text(
+                        text = "Applied",
+                        style = MaterialTheme.typography.labelMedium.copy(
+                            fontWeight = FontWeight.Bold,
+                            fontSize = 12.sp
+                        )
+                    )
+                }
+            } else {
+                OutlinedButton(
+                    onClick = {
+                        haptics.click()
+                        onApply()
+                    },
+                    shape = RoundedCornerShape(10.dp),
+                    border = BorderStroke(1.dp, MaterialTheme.colorScheme.primary.copy(alpha = 0.5f)),
+                    colors = ButtonDefaults.outlinedButtonColors(
+                        contentColor = MaterialTheme.colorScheme.primary
+                    ),
+                    contentPadding = PaddingValues(horizontal = 14.dp, vertical = 0.dp),
+                    modifier = Modifier.height(34.dp)
+                ) {
+                    Text(
+                        text = "Apply",
+                        style = MaterialTheme.typography.labelMedium.copy(
+                            fontWeight = FontWeight.SemiBold,
+                            fontSize = 12.sp
+                        )
+                    )
+                }
             }
         }
     }
@@ -428,8 +432,14 @@ private fun ShaderGridCard(
             level = if (isSelected) GlassLevel.Strong else GlassLevel.Flat,
             shape = RoundedCornerShape(14.dp),
             modifier = modifier
+                .fillMaxWidth()
+                .border(
+                    width = if (isSelected) 1.5.dp else 0.dp,
+                    color = if (isSelected) MaterialTheme.colorScheme.primary.copy(alpha = 0.6f) else Color.Transparent,
+                    shape = RoundedCornerShape(14.dp)
+                )
         ) {
-            cardContent()
+            itemContent()
         }
     } else {
         Surface(
@@ -439,9 +449,9 @@ private fun ShaderGridCard(
                 if (isSelected) 1.5.dp else 1.dp,
                 if (isSelected) MaterialTheme.colorScheme.primary else MaterialTheme.colorScheme.outlineVariant.copy(alpha = 0.4f)
             ),
-            modifier = modifier
+            modifier = modifier.fillMaxWidth()
         ) {
-            cardContent()
+            itemContent()
         }
     }
 }

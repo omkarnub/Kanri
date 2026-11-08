@@ -5,6 +5,84 @@ All notable changes to Kanri will be documented in this file.
 The format is based on [Keep a Changelog](https://keepachangelog.com/en/1.0.0/),
 and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0.html).
 
+## [1.6.0] - 2026-11-09
+
+### Added & Dynamic Enhancements
+- **Dynamic Salary / Budget Cycle Start Day**:
+  - Unlocked monthly budgeting from rigid calendar Day 1 (`set(Calendar.DAY_OF_MONTH, 1)`) via new `BudgetPreferences`.
+  - Added user-configurable **Budget Cycle Start Day** setting (1 to 28/31) under *Settings -> Wallets & Currency*, allowing salaried users to align their budget directly with their monthly payday (e.g. Day 25 or Day 28).
+  - Enhanced `BudgetCalculator` with `getStartOfCycleMillis`, `getEndOfCycleMillis`, `getDaysRemainingInCycle`, and `getCurrentCycleDisplayName` so daily safe-to-spend, days remaining, and burn rates dynamically track the active cycle.
+- **Currency-Aware Dynamic Default Monthly Budget**:
+  - Replaced hardcoded `DEFAULT_MONTHLY_BUDGET = 20000.0` with dynamic per-currency defaults across all 52 supported global currencies in `AppCurrency` (e.g., $2,500 for USD, €2,200 for EUR, ¥300,000 for JPY, ₹25,000 for INR, 700 KD for KWD).
+  - Synchronized `SetBudgetDialog` and `FinancialHealthCalculator` to scale default inputs and step increments dynamically.
+- **Currency-Tailored Numpad Quick Amount Presets**:
+  - Replaced hardcoded `listOf(100, 500, 1000, 2000)` presets in `KokonutAmountPad` with `CurrencyUtils.getCurrency().quickPresets`.
+  - Presets dynamically adjust to appropriate denominations: USD/EUR/GBP/CHF (`+5, +10, +20, +50`), CAD/AUD/SGD (`+10, +20, +50, +100`), JPY (`+500, +1000, +5000, +10000`), INR (`+100, +500, +1000, +2000`), KRW (`+1000, +5000, +10000, +50000`), etc.
+- **Dynamic Contextual Category Suggestions in Instant Payment Popup**:
+  - Replaced static database-order category pills in `InstantPopupService` and `InstantPopupCard` with a dual-factor dynamic ranking engine:
+    1. **Historical Frequency**: Prioritizes categories the user spends on most frequently based on recent ledger transactions.
+    2. **Time-of-Day Context**: Contextually weights categories according to transaction time (e.g., Morning -> Food/Cafe/Transit/Fuel; Midday -> Food/Groceries/Shopping; Evening -> Transit/Dining/Groceries; Night -> Dining/Entertainment).
+    3. Resolved/merchant-mapped category is placed at index 0 with selected checkmark, followed by the dynamically ranked pills.
+- Bumped version to `1.6.0` (Build 27).
+
+## [1.5.5] - 2026-11-09
+
+### Fixed
+- **Eliminated Faint Purplish/Pinkish Radial Glow Circle on Backgrounds**:
+  - Removed hardcoded legacy ambient radial glow mesh (`Color(0xFF6366F1)` indigo/purple and `Color(0xFFEC4899)` pink circles) from `GlassBackdrop.kt`.
+  - Restored pure, vibrant, uncluttered color fidelity across all live WebGL shader backgrounds (Prism Swirl, Gemini Aurora, Sunset Meadow, Thistle Portico, Cloudscape, etc.).
+- Bumped version to `1.5.5` (Build 26).
+
+## [1.5.4] - 2026-11-09
+
+### Changed
+- **Live Shader Backgrounds Refactored to Minimalist List View**:
+  - **Single-Column List View**: Replaced the 2-column grid layout in `ThemeSettingsScreen` with a clean, full-width vertical list layout for all 10 live WebGL shader backgrounds.
+  - **Removed Previews**: Eliminated heavy gradient swatch previews / boxes in favor of a clean, distraction-free typographic layout showing shader title and description.
+  - **Dedicated "Apply" Action Button**: Placed a responsive Apply button beside each shader item:
+    - Active shader displays "Applied" in primary container color with a checkmark icon (`Icons.Default.Check`).
+    - Inactive shaders display an "Apply" outlined button that immediately activates the shader and triggers subtle haptics.
+    - Whole row remains interactive and clickable for seamless one-tap selection.
+- Bumped version to `1.5.4` (Build 25).
+
+## [1.5.3] - 2026-11-09
+
+### Added
+- **Post-Confirmation "Current Balance" View with Rolling Text Reel Animation & Bracketed Delta**:
+  - **Down-to-Up Transition**: On slide confirmation completion (`onSuccessComplete`), `InstantPopupCard` executes a smooth physical down-to-up transition (`slideInVertically` from bottom + `fadeIn` paired with the exiting form's `slideOutVertically` upward + `fadeOut` and animated `SizeTransform`) into the Current Balance view.
+  - **GSAP-Grade `RollingText` Reel Component**:
+    - Ported slot-machine/rolling digits physics to Jetpack Compose using deterministic `mulberry32` PRNG.
+    - Configured per-character vertical reels (`copies = minCycles + cycleVariance + 1`) that roll through rotating digits before locking into the exact target character.
+    - Applied exponential deceleration easing (`CubicBezierEasing(0.16f, 1.0f, 0.3f, 1.0f)`) with individual character duration variance.
+    - Strictly enforced `GoogleSansFlex` font across all text, numbers, and symbols in the popup.
+  - **Bracketed Added/Deducted Amount Display**: Renders the transaction delta right beside the balance in brackets `[Amount with rolling animation](+amount/-amount)` with Vibrant Red (`#E54D2E`) for expense and Sage Green (`#30A46C`) for income.
+  - **Live Dynamic Balance Extraction**: Resolves balance directly from the transaction's bank SMS (`SmsParser.extractBalance`), recent account ledger history, or wallet calculations.
+  - **Timed Auto-Dismissal**: Automatically dismisses the popup overlay after 3 seconds, while retaining instant manual drag-down to dismiss at any moment.
+- **Natural Drag-Down to Dismiss for Payment Detection Popup Card**:
+  - Implemented 1:1 Apple Fluid Design direct touch manipulation on `InstantPopupCard` allowing the user to naturally swipe/drag down anywhere on the card to dismiss.
+  - **Tactile Drag Handle Affordance**: Added a centered 36×4 dp rounded capsule pull handle (`RoundedCornerShape(50)`) at the top of the card in subtle dim grey (`dimGrey.copy(alpha = 0.35f)`).
+  - **Rubberband Upward Elasticity**: When the user drags upwards, exponential decay resistance asymptotically limits movement to -24 dp and springs back to 0 on release.
+  - **Fluid Dismiss & Flick Thresholds**:
+    - Commits to dismiss when pulled down past 90 dp, smoothly springing off-screen (`animateTo(450.dp)`) with subtle tactile haptic confirmation (`haptics.click()`).
+    - Downward velocity flick detection (> 1000 px/s with offset > 20 dp) triggers instant animated dismissal.
+    - If released before threshold, card snaps back to resting position using an interruptible spring (`Spring.StiffnessMediumLow`, `dampingRatio = 0.82f`).
+  - **Directional Gesture Disambiguation**: Horizontal gestures (`abs(dx) > abs(dy) * 1.15f`) are gracefully handed off to category pill horizontal scrolling and the `KokonutSlideToConfirm` slider without interference or accidental dismissal.
+  - Dynamic opacity fading (`graphicsLayer`) as card is pulled down for enhanced spatial depth.
+- Bumped version to `1.5.3` (Build 24).
+
+## [1.5.2] - 2026-11-09
+
+### Added & Refined
+- **Slide-to-Confirm Slider in Payment Detection Popup**:
+  - Replaced the static "Done" button in `InstantPopupCard` with Kanri's signature 1:1 Apple Fluid Design `KokonutSlideToConfirm` slider.
+  - **Dynamic State Lifecycle**:
+    - **Idle**: Displays "Slide to save expense" (for debits) or "Slide to save income" (for credits) with tactile draggable thumb.
+    - **Confirming**: Seamless ink flooding across the track with a centered spinner and "Saving…".
+    - **Done**: Morphs into vibrant Emerald Green with checkmark icon and confirmation label ("Expense saved!" / "Income added!").
+    - **Success Confirmation**: Triggers `haptics.success()` and holds the emerald confirmation state for 850ms before smoothly initiating the pop-down dismissal animation (`dismissWithAnimation`).
+  - Seamlessly integrated with asynchronous Room database persistence in `InstantPopupService.kt` on `Dispatchers.IO`.
+- Bumped version to `1.5.2` (Build 23).
+
 ## [1.5.1] - 2026-11-07
 
 ### Fixed

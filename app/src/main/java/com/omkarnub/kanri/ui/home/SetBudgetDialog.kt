@@ -1,4 +1,4 @@
-﻿package com.omkarnub.kanri.ui.home
+package com.omkarnub.kanri.ui.home
 
 import androidx.compose.foundation.BorderStroke
 import androidx.compose.foundation.background
@@ -82,9 +82,12 @@ fun SetBudgetDialog(
     val glassTheme = rememberKanriGlassTheme()
     val haptics = rememberKanriHaptics()
 
+    val defaultBudget = com.omkarnub.kanri.data.budget.BudgetCalculator.getDefaultMonthlyBudget(CurrencyUtils.getCurrency())
     var budgetAmount by remember(currentBudget) {
-        mutableDoubleStateOf(if (currentBudget > 0) currentBudget else if (category != null) 3000.0 else 20000.0)
+        mutableDoubleStateOf(if (currentBudget > 0) currentBudget else if (category != null) (defaultBudget * 0.15) else defaultBudget)
     }
+    val quickIncrements = remember { CurrencyUtils.getCurrency().quickPresets.map { it.toDouble() } }
+    val stepAmount = remember(quickIncrements) { quickIncrements.lastOrNull() ?: 500.0 }
     var isManualInput by remember { mutableStateOf(false) }
     var customText by remember(budgetAmount) { mutableStateOf(budgetAmount.toLong().toString()) }
     var customTextFieldValue by remember(budgetAmount) {
@@ -155,7 +158,7 @@ fun SetBudgetDialog(
                         IconButton(
                             onClick = {
                                 haptics.tick()
-                                val next = (budgetAmount - 1000.0).coerceAtLeast(100.0)
+                                val next = (budgetAmount - stepAmount).coerceAtLeast(stepAmount)
                                 budgetAmount = next
                                 val str = next.toLong().toString()
                                 customText = str
@@ -272,7 +275,7 @@ fun SetBudgetDialog(
                         IconButton(
                             onClick = {
                                 haptics.tick()
-                                val next = budgetAmount + 1000.0
+                                val next = budgetAmount + stepAmount
                                 budgetAmount = next
                                 val str = next.toLong().toString()
                                 customText = str
@@ -304,7 +307,6 @@ fun SetBudgetDialog(
                     modifier = Modifier.fillMaxWidth(),
                     horizontalArrangement = Arrangement.spacedBy(8.dp)
                 ) {
-                    val quickIncrements = listOf(10.0, 50.0, 100.0, 500.0)
                     quickIncrements.forEach { inc ->
                         Surface(
                             shape = RoundedCornerShape(10.dp),

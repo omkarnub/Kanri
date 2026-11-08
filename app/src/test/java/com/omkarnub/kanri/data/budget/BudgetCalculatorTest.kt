@@ -66,4 +66,43 @@ class BudgetCalculatorTest {
         // 30 - 17 + 1 = 14 days remaining
         assertEquals(14, days)
     }
+
+    @Test
+    fun testCycleStartDay25_whenPastCycleStart() {
+        val cal = Calendar.getInstance().apply {
+            set(Calendar.YEAR, 2026)
+            set(Calendar.MONTH, Calendar.NOVEMBER)
+            set(Calendar.DAY_OF_MONTH, 28)
+            set(Calendar.HOUR_OF_DAY, 10)
+        }
+        val startCal = Calendar.getInstance().apply {
+            timeInMillis = BudgetCalculator.getStartOfCycleMillis(25, cal)
+        }
+        assertEquals(2026, startCal.get(Calendar.YEAR))
+        assertEquals(Calendar.NOVEMBER, startCal.get(Calendar.MONTH))
+        assertEquals(25, startCal.get(Calendar.DAY_OF_MONTH))
+    }
+
+    @Test
+    fun testCycleStartDay25_whenBeforeCycleStart() {
+        val cal = Calendar.getInstance().apply {
+            set(Calendar.YEAR, 2026)
+            set(Calendar.MONTH, Calendar.NOVEMBER)
+            set(Calendar.DAY_OF_MONTH, 10)
+            set(Calendar.HOUR_OF_DAY, 10)
+        }
+        val startCal = Calendar.getInstance().apply {
+            timeInMillis = BudgetCalculator.getStartOfCycleMillis(25, cal)
+        }
+        assertEquals(2026, startCal.get(Calendar.YEAR))
+        assertEquals(Calendar.OCTOBER, startCal.get(Calendar.MONTH))
+        assertEquals(25, startCal.get(Calendar.DAY_OF_MONTH))
+    }
+
+    @Test
+    fun testDefaultMonthlyBudgetForCurrencies() {
+        assertEquals(25000.0, BudgetCalculator.getDefaultMonthlyBudget(com.omkarnub.kanri.util.AppCurrency.INR), 0.001)
+        assertEquals(2500.0, BudgetCalculator.getDefaultMonthlyBudget(com.omkarnub.kanri.util.AppCurrency.USD), 0.001)
+        assertEquals(300000.0, BudgetCalculator.getDefaultMonthlyBudget(com.omkarnub.kanri.util.AppCurrency.JPY), 0.001)
+    }
 }

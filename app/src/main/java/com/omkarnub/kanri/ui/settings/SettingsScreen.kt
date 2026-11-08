@@ -40,6 +40,7 @@ import androidx.compose.material.icons.filled.AutoAwesome
 import androidx.compose.material.icons.filled.AutoFixHigh
 import androidx.compose.material.icons.filled.BlurOn
 import androidx.compose.material.icons.filled.BugReport
+import androidx.compose.material.icons.filled.CalendarToday
 import androidx.compose.material.icons.filled.CloudDownload
 import androidx.compose.material.icons.filled.CloudSync
 import androidx.compose.material.icons.filled.CloudUpload
@@ -159,6 +160,8 @@ fun SettingsScreen(
 
     val currencyPrefs = remember { CurrencyPreferences.getInstance(context) }
     val currentCurrency by currencyPrefs.currencyFlow.collectAsState()
+    val budgetPrefs = remember { com.omkarnub.kanri.data.budget.BudgetPreferences.getInstance(context) }
+    val budgetCycleStartDay by budgetPrefs.budgetCycleStartDayFlow.collectAsState()
 
     val walletRepo = remember { WalletRepository(context) }
     val walletPrefs = remember { WalletPreferences.getInstance(context) }
@@ -186,6 +189,7 @@ fun SettingsScreen(
     var showMerchantRulesScreen by rememberSaveable { mutableStateOf(false) }
 
     var showCurrencyDialog by remember { mutableStateOf(false) }
+    var showBudgetCycleDialog by remember { mutableStateOf(false) }
     var showExportStatementSheet by remember { mutableStateOf(false) }
     var showPrivacyPolicyDialog by remember { mutableStateOf(false) }
     var showCrashLogsDialog by remember { mutableStateOf(false) }
@@ -301,6 +305,19 @@ fun SettingsScreen(
                 showCurrencyDialog = false
             },
             onDismiss = { showCurrencyDialog = false }
+        )
+    }
+
+    if (showBudgetCycleDialog) {
+        BudgetCycleStartDialog(
+            currentDay = budgetCycleStartDay,
+            onSelectDay = { selectedDay ->
+                haptics.success()
+                budgetPrefs.budgetCycleStartDay = selectedDay
+                showBudgetCycleDialog = false
+                Toast.makeText(context, "Budget cycle updated to Day $selectedDay", Toast.LENGTH_SHORT).show()
+            },
+            onDismiss = { showBudgetCycleDialog = false }
         )
     }
 
@@ -884,6 +901,21 @@ fun SettingsScreen(
                     subtitle = "$currencyFlag${currentCurrency.displayName} (${currentCurrency.symbol} ${currentCurrency.code})",
                     icon = Icons.Default.Paid,
                     onClick = { showCurrencyDialog = true }
+                )
+
+                SettingsDivider()
+
+                // Budget Cycle Start Day
+                val cycleSubtitle = if (budgetCycleStartDay == 1) {
+                    "Day 1 of month (Calendar Cycle)"
+                } else {
+                    "Day $budgetCycleStartDay of every month (Salary Cycle)"
+                }
+                SettingsRow(
+                    title = "Budget Cycle Start Day",
+                    subtitle = cycleSubtitle,
+                    icon = Icons.Default.CalendarToday,
+                    onClick = { showBudgetCycleDialog = true }
                 )
 
                 SettingsDivider()

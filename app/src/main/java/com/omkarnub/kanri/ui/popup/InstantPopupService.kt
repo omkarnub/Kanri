@@ -87,6 +87,7 @@ class InstantPopupService : Service() {
         const val EXTRA_COUNTERPARTY = "extra_counterparty"
         const val EXTRA_BANK = "extra_bank"
         const val EXTRA_SOURCE_TYPE = "extra_source_type"
+        const val EXTRA_RAW_SMS = "extra_raw_sms"
 
         private const val CHANNEL_ID = "kanri_overlay_service_channel"
         private const val NOTIFICATION_ID = 4001
@@ -99,6 +100,7 @@ class InstantPopupService : Service() {
                 putExtra(EXTRA_COUNTERPARTY, if (isDebit) "Swiggy" else "Rahul Sharma")
                 putExtra(EXTRA_BANK, if (isDebit) "HDFC Bank" else "Google Pay")
                 putExtra(EXTRA_SOURCE_TYPE, "UPI")
+                putExtra(EXTRA_RAW_SMS, if (isDebit) "Sent Rs.380.00 to Swiggy on 09-Nov-26 via UPI. Avl Bal Rs.14,620.00" else "Received Rs.1250.00 from Rahul. Avl Bal Rs.28,750.00")
             }
             if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.O) {
                 context.startForegroundService(intent)
@@ -148,6 +150,7 @@ class InstantPopupService : Service() {
         val counterparty = intent.getStringExtra(EXTRA_COUNTERPARTY) ?: ""
         val bank = intent.getStringExtra(EXTRA_BANK)
         val sourceType = intent.getStringExtra(EXTRA_SOURCE_TYPE) ?: "UPI"
+        val rawSms = intent.getStringExtra(EXTRA_RAW_SMS) ?: ""
 
         val secPrefs = com.omkarnub.kanri.data.security.SecurityPreferences.getInstance(this)
         if (secPrefs.isLockEnabled && com.omkarnub.kanri.data.security.SecurityManager.isAppLocked.value) {
@@ -172,7 +175,8 @@ class InstantPopupService : Service() {
             isDebit = isDebit,
             counterparty = counterparty,
             bank = bank,
-            sourceType = sourceType
+            sourceType = sourceType,
+            rawSms = rawSms
         )
 
         return START_NOT_STICKY
@@ -184,7 +188,8 @@ class InstantPopupService : Service() {
         isDebit: Boolean,
         counterparty: String,
         bank: String?,
-        sourceType: String
+        sourceType: String,
+        rawSms: String = ""
     ) {
         removeExistingOverlay()
 
@@ -259,21 +264,69 @@ class InstantPopupService : Service() {
                     var initialNote by remember {
                         mutableStateOf("")
                     }
+                    var currentBalance by remember {
+                        mutableStateOf<Double?>(null)
+                    }
 
                     LaunchedEffect(Unit) {
-                        val cats = withContext(Dispatchers.IO) {
-                            db.categoryDao().getAllCategoriesSync()
-                        }
-                        categories = cats
+                        val result = withContext(Dispatchers.IO) {
+                            val allCats = db.categoryDao().getAllCategoriesSync()
+                            val recentTxs = db.transactionDao().getAllTransactionsWithCategorySync().take(150)
+                            val frequencyMap = recentTxs.mapNotNull { it.category?.id }.groupingBy { it }.eachCount()
 
-                        // Smart pre-resolution of category & note
-                        val (resolvedCatId, resolvedNote) = withContext(Dispatchers.IO) {
+                            // Contextual time-of-day scoring for intelligent category ranking
+                            val hour = java.util.Calendar.getInstance().get(java.util.Calendar.HOUR_OF_DAY)
+                            val timeAffinity: (String) -> Int = { name ->
+                                val lower = name.lowercase()
+                                when (hour) {
+                                    in 6..10 -> when {
+                                        lower.contains("food") || lower.contains("dining") || lower.contains("cafe") -> 35
+                                        lower.contains("auto") || lower.contains("taxi") || lower.contains("transit") || lower.contains("fuel") -> 30
+                                        lower.contains("grocer") -> 20
+                                        else -> 0
+                                    }
+                                    in 11..15 -> when {
+                                        lower.contains("food") || lower.contains("dining") -> 35
+                                        lower.contains("grocer") -> 20
+                                        lower.contains("shopping") -> 15
+                                        else -> 0
+                                    }
+                                    in 16..20 -> when {
+                                        lower.contains("auto") || lower.contains("taxi") || lower.contains("transit") || lower.contains("fuel") -> 30
+                                        lower.contains("grocer") -> 25
+                                        lower.contains("shopping") -> 20
+                                        lower.contains("food") || lower.contains("dining") -> 20
+                                        else -> 0
+                                    }
+                                    else -> when {
+                                        lower.contains("food") || lower.contains("dining") -> 35
+                                        lower.contains("entertainment") -> 25
+                                        else -> 0
+                                    }
+                                }
+                            }
+
+                            val dynamicallyRankedCats = allCats.sortedWith(
+                                compareByDescending<CategoryEntity> { (frequencyMap[it.id] ?: 0) * 10 + timeAffinity(it.name) }
+                                    .thenBy { it.name }
+                            )
+
+                            // Smart pre-resolution of category, note & current balance
                             var foundId: Long? = null
                             var foundNote = ""
+                            var foundBal: Double? = null
+
+                            if (rawSms.isNotBlank()) {
+                                foundBal = com.omkarnub.kanri.data.parser.SmsParser.extractBalance(rawSms)
+                            }
+
                             if (txId > 0L) {
                                 val tx = db.transactionDao().getTransactionById(txId)
                                 foundId = tx?.categoryId
                                 foundNote = tx?.notes ?: ""
+                                if (foundBal == null && tx?.rawSms?.isNotBlank() == true) {
+                                    foundBal = com.omkarnub.kanri.data.parser.SmsParser.extractBalance(tx.rawSms)
+                                }
                             }
                             if (foundId == null && counterparty.isNotBlank()) {
                                 val lower = counterparty.trim().lowercase()
@@ -295,10 +348,41 @@ class InstantPopupService : Service() {
                                     }
                                 }
                             }
-                            Pair(foundId, foundNote)
+
+                            if (foundBal == null && !bank.isNullOrBlank()) {
+                                for (item in recentTxs) {
+                                    val t = item.transaction
+                                    if (t.bank.equals(bank, ignoreCase = true) && t.rawSms.isNotBlank()) {
+                                        val b = com.omkarnub.kanri.data.parser.SmsParser.extractBalance(t.rawSms)
+                                        if (b != null) {
+                                            foundBal = if (t.id == txId) b else if (isDebit) (b - amount).coerceAtLeast(0.0) else b + amount
+                                            break
+                                        }
+                                    }
+                                }
+                            }
+
+                            if (foundBal == null) {
+                                for (item in recentTxs) {
+                                    val t = item.transaction
+                                    if (t.rawSms.isNotBlank()) {
+                                        val b = com.omkarnub.kanri.data.parser.SmsParser.extractBalance(t.rawSms)
+                                        if (b != null) {
+                                            foundBal = if (isDebit) (b - amount).coerceAtLeast(0.0) else b + amount
+                                            break
+                                        }
+                                    }
+                                }
+                            }
+
+                            val defaultBal = if (isDebit) (15000.0 - amount) else (15000.0 + amount)
+                            PreResolutionResult(dynamicallyRankedCats, foundId, foundNote, foundBal ?: defaultBal)
                         }
-                        initialCategoryId = resolvedCatId
-                        initialNote = resolvedNote
+
+                        categories = result.categories
+                        initialCategoryId = result.categoryId
+                        initialNote = result.note
+                        currentBalance = result.balance
                     }
 
                     val scrimColor = if (isGlass) {
@@ -363,9 +447,9 @@ class InstantPopupService : Service() {
                                 categories = categories,
                                 initialCategoryId = initialCategoryId,
                                 initialNote = initialNote,
+                                currentBalance = currentBalance,
                                 onDone = { catId, note ->
-                                    dismissWithAnimation {
-                                        serviceScope.launch(Dispatchers.IO) {
+                                    withContext(Dispatchers.IO) {
                                             if (txId > 0L) {
                                                 val cleanNote = note.trim().ifEmpty { null }
                                                 if (catId != null) {
@@ -383,7 +467,6 @@ class InstantPopupService : Service() {
                                                     db.transactionDao().updateNotes(txId, cleanNote)
                                                 }
                                             }
-                                        }
                                     }
                                 },
                                 onSplitBill = {
@@ -493,4 +576,11 @@ class InstantPopupService : Service() {
         override val viewModelStore: ViewModelStore get() = appViewModelStore
         override val savedStateRegistry: SavedStateRegistry get() = savedStateRegistryController.savedStateRegistry
     }
+
+    private data class PreResolutionResult(
+        val categories: List<CategoryEntity>,
+        val categoryId: Long?,
+        val note: String,
+        val balance: Double?
+    )
 }

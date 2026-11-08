@@ -16,7 +16,9 @@ The settings architecture adheres to:
    - **Themes Sub-Window** (`ThemeSettingsScreen`):
      - Visual phone preview cards for `System`, `Light`, `Dark`, `AMOLED`, and `Glass`.
      - When `Glass` is selected:
-       - **Live Shader Backgrounds**: 10 animated WebGL / Canvas backgrounds displayed **side by side in 2 columns** (`Gemini Aurora`, `Grain Gradient`, `Hero Geometric`, `Prism Swirl`, `Cloudscape`, `Ink Ridges`, `Fuji & Sakura`, `Sumi-e Mist`, `Thistle Portico`, `Still Sunset Meadow`).
+       - **Live Shader Backgrounds**: Minimalist, single-column vertical list view of 10 animated WebGL / Canvas backgrounds (`Gemini Aurora`, `Grain Gradient`, `Hero Geometric`, `Prism Swirl`, `Cloudscape`, `Ink Ridges`, `Fuji & Sakura`, `Sumi-e Mist`, `Thistle Portico`, `Still Sunset Meadow`).
+         - **No Previews**: Removed gradient preview swatches for a clean, distraction-free typographic list view.
+         - **Apply / Applied Button**: Each row features a dedicated right-aligned action button ("Apply" with outline when unselected, or filled "Applied" with a checkmark when active), allowing instant selection alongside direct row-tapping.
          - **Thistle Portico**: High-performance Canvas 2D scene with pointed Gothic arch, castle view, wisteria racemes swaying in the wind, falling petals, and luminous light shafts.
          - **Still Sunset Meadow**: 3D voxel landscape with interactive grass parting, blocky flowers, rolling hills, and a 15-keyframe photorealistic 24-hour day cycle (Golden Rose sunrise, crisp morning azure, real-life Rayleigh daylight blue, fiery sunset peak, and starry cosmic night) driven by the user's local time zone.
         - **Customise Glass Components** action row navigating to `GlassCustomizerScreen`:
@@ -27,7 +29,8 @@ The settings architecture adheres to:
    - **App Launcher Icon**: Toggle between Dark and Light activity aliases with confirmation dialog.
 
 2. **Wallets & Currency**:
-   - Primary App Currency selection (40+ international currencies with standard national flag indicators and symbols).
+   - Primary App Currency selection (52 international currencies with standard national flag indicators, symbols, and currency-scaled default monthly budgets & quick-entry presets).
+   - **Budget Cycle Start Day**: Configurable day of month (1 to 28/31) to align monthly budget cycles and safe-to-spend calculations with the user's monthly salary / payday rather than forcing the 1st of the month.
    - Cash Opening Balance direct correction.
    - Online Opening Balance direct correction.
    - Reconfigure Wallets wizard.
@@ -123,4 +126,4 @@ Kanri uses Google's official Jetpack Splash Screen library (`androidx.core:core-
     - Wordmark floats slightly upward (-16dp) and scales (1.10x) as it dissolves over 320ms (`cubic-bezier(0.23, 1, 0.32, 1)`).
     - Splash background cross-fades over 380ms.
     - Compose content executes an in-sync entrance reveal (`scale 0.98 -> 1.0` and `alpha 0.85 -> 1.0` over 380ms) for a continuous, cinematic handover from splash into the app.
-- **Version**: Kanri `1.4.9` (Build 20).
+- **Version**: Kanri `1.6.0` (Build 27).

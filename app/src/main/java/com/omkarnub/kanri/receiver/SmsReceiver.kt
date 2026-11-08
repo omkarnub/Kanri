@@ -120,6 +120,7 @@ class SmsReceiver : BroadcastReceiver() {
                                             putExtra(InstantPopupService.EXTRA_COUNTERPARTY, counterparty)
                                             putExtra(InstantPopupService.EXTRA_BANK, entity.bank)
                                             putExtra(InstantPopupService.EXTRA_SOURCE_TYPE, entity.sourceType)
+                                            putExtra(InstantPopupService.EXTRA_RAW_SMS, entity.rawSms)
                                         }
                                         if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.O) {
                                             context.startForegroundService(serviceIntent)

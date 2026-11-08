@@ -134,7 +134,16 @@ class HomeViewModel(application: Application) : AndroidViewModel(application) {
     private val greetingDataStore = GreetingDataStore(application)
     val walletRepository = com.omkarnub.kanri.data.wallet.WalletRepository(application)
 
-    private val currentMonthKey = BudgetCalculator.getCurrentMonthKey()
+    private val budgetPrefs = com.omkarnub.kanri.data.budget.BudgetPreferences.getInstance(application)
+    private val currencyPrefs = com.omkarnub.kanri.util.CurrencyPreferences.getInstance(application)
+
+    @OptIn(ExperimentalCoroutinesApi::class)
+    private val currentBudgetFlow = budgetPrefs.budgetCycleStartDayFlow.flatMapLatest { cycleStartDay ->
+        val cycleKey = BudgetCalculator.getCurrentCycleKey(cycleStartDay)
+        budgetDao.getBudgetForMonth(cycleKey)
+    }
+
+    private val currentMonthKey get() = BudgetCalculator.getCurrentCycleKey(budgetPrefs.budgetCycleStartDay)
 
     // Feature 2: Selected month (Year, Month 1-indexed)
     private val _selectedMonth = MutableStateFlow<Pair<Int, Int>>(
@@ -208,7 +217,7 @@ class HomeViewModel(application: Application) : AndroidViewModel(application) {
     val uiState: StateFlow<HomeUiState> = combine(
         transactionDao.getTransactionsWithCategory(),
         categoryDao.getAllCategories(),
-        budgetDao.getBudgetForMonth(currentMonthKey),
+        currentBudgetFlow,
         reviewCount,
         reviewQueue,
         monthDelta,
@@ -216,7 +225,9 @@ class HomeViewModel(application: Application) : AndroidViewModel(application) {
         streakDataStore.lastCelebratedMilestone,
         lendingDao.getTotalLentPending(),
         lendingDao.getTotalBorrowedPending(),
-        walletRepository.observeBalances()
+        walletRepository.observeBalances(),
+        budgetPrefs.budgetCycleStartDayFlow,
+        currencyPrefs.currencyFlow
     ) { args: Array<Any?> ->
         val txList = args[0] as List<TransactionWithCategory>
         val catList = args[1] as List<CategoryEntity>
@@ -229,11 +240,13 @@ class HomeViewModel(application: Application) : AndroidViewModel(application) {
         val lentPending = (args[8] as? Double) ?: 0.0
         val borrowedPending = (args[9] as? Double) ?: 0.0
         val balances = args[10] as? com.omkarnub.kanri.data.wallet.WalletBalances ?: com.omkarnub.kanri.data.wallet.WalletBalances()
+        val cycleStartDay = args[11] as Int
+        val activeCurrency = args[12] as com.omkarnub.kanri.util.AppCurrency
 
         val startOfToday = getStartOfTodayMillis()
-        val startOfMonth = BudgetCalculator.getStartOfMonthMillis()
-        val daysLeft = BudgetCalculator.getDaysRemainingInMonth()
-        val monthName = BudgetCalculator.getCurrentMonthDisplayName()
+        val startOfCycle = BudgetCalculator.getStartOfCycleMillis(cycleStartDay)
+        val daysLeft = BudgetCalculator.getDaysRemainingInCycle(cycleStartDay)
+        val monthName = BudgetCalculator.getCurrentCycleDisplayName(cycleStartDay)
 
         var spentToday = 0.0
         var receivedToday = 0.0
@@ -252,7 +265,7 @@ class HomeViewModel(application: Application) : AndroidViewModel(application) {
                     receivedToday += tx.amount
                 }
             }
-            if (tx.timestamp >= startOfMonth) {
+            if (tx.timestamp >= startOfCycle) {
                 if (tx.type.equals("DEBIT", ignoreCase = true)) {
                     spentMonth += tx.amount
                 } else if (tx.type.equals("CREDIT", ignoreCase = true)) {
@@ -261,7 +274,8 @@ class HomeViewModel(application: Application) : AndroidViewModel(application) {
             }
         }
 
-        val budgetLimit = budgetEntity?.monthlyLimit ?: BudgetCalculator.DEFAULT_MONTHLY_BUDGET
+        val defaultBudget = BudgetCalculator.getDefaultMonthlyBudget(activeCurrency)
+        val budgetLimit = budgetEntity?.monthlyLimit ?: defaultBudget
         val remaining = BudgetCalculator.calculateRemaining(budgetLimit, spentMonth)
         val safePerDay = BudgetCalculator.calculateSafeToSpendPerDay(budgetLimit, spentMonth, daysLeft)
         val percentRemaining = BudgetCalculator.calculatePercentRemaining(budgetLimit, spentMonth)

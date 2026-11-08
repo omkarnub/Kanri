@@ -157,7 +157,7 @@ fun KokonutAmountPad(
     initialAmount: Double = 0.0,
     maxAmount: Double = AMOUNT_PAD_MAX_AMOUNT,
     balance: Double? = null,
-    presets: List<Int> = listOf(100, 500, 1000, 2000),
+    presets: List<Int> = CurrencyUtils.getCurrency().quickPresets,
     currency: String = CurrencyUtils.getCurrencySymbol(),
     showHandle: Boolean = true,
     accentColor: Color? = null,

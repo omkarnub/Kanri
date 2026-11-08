@@ -16,10 +16,11 @@ class InstantPopupTest {
             InstantPopupService.EXTRA_IS_DEBIT,
             InstantPopupService.EXTRA_COUNTERPARTY,
             InstantPopupService.EXTRA_BANK,
-            InstantPopupService.EXTRA_SOURCE_TYPE
+            InstantPopupService.EXTRA_SOURCE_TYPE,
+            InstantPopupService.EXTRA_RAW_SMS
         )
-        // All 6 extra keys must be distinct
-        assertEquals(6, keys.size)
+        // All 7 extra keys must be distinct
+        assertEquals(7, keys.size)
         keys.forEach { key ->
             assertTrue(key.isNotBlank())
         }

@@ -1,14 +1,23 @@
 package com.omkarnub.kanri.ui.popup
 
 import androidx.compose.animation.AnimatedContent
+import androidx.compose.animation.SizeTransform
+import androidx.compose.animation.core.Animatable
+import androidx.compose.animation.core.CubicBezierEasing
+import androidx.compose.animation.core.Spring
+import androidx.compose.animation.core.spring
 import androidx.compose.animation.core.tween
 import androidx.compose.animation.fadeIn
 import androidx.compose.animation.fadeOut
 import androidx.compose.animation.scaleIn
+import androidx.compose.animation.slideInVertically
+import androidx.compose.animation.slideOutVertically
 import androidx.compose.animation.togetherWith
 import androidx.compose.foundation.background
 import androidx.compose.foundation.border
 import androidx.compose.foundation.clickable
+import androidx.compose.foundation.gestures.awaitEachGesture
+import androidx.compose.foundation.gestures.awaitFirstDown
 import androidx.compose.foundation.horizontalScroll
 import androidx.compose.foundation.interaction.MutableInteractionSource
 import androidx.compose.foundation.layout.Arrangement
@@ -18,6 +27,7 @@ import androidx.compose.foundation.layout.Row
 import androidx.compose.foundation.layout.Spacer
 import androidx.compose.foundation.layout.fillMaxWidth
 import androidx.compose.foundation.layout.height
+import androidx.compose.foundation.layout.offset
 import androidx.compose.foundation.layout.padding
 import androidx.compose.foundation.layout.size
 import androidx.compose.foundation.layout.width
@@ -31,16 +41,17 @@ import androidx.compose.material.icons.filled.Check
 import androidx.compose.material.icons.filled.Close
 import androidx.compose.material.icons.filled.Edit
 import androidx.compose.material.icons.filled.Search
-import androidx.compose.material3.Button
-import androidx.compose.material3.ButtonDefaults
 import androidx.compose.material3.Icon
 import androidx.compose.material3.IconButton
 import androidx.compose.material3.Surface
 import androidx.compose.material3.Text
 import androidx.compose.runtime.Composable
+import androidx.compose.runtime.LaunchedEffect
 import androidx.compose.runtime.getValue
+import androidx.compose.runtime.mutableFloatStateOf
 import androidx.compose.runtime.mutableStateOf
 import androidx.compose.runtime.remember
+import androidx.compose.runtime.rememberCoroutineScope
 import androidx.compose.runtime.setValue
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
@@ -49,18 +60,34 @@ import androidx.compose.ui.draw.shadow
 import androidx.compose.ui.graphics.Brush
 import androidx.compose.ui.graphics.Color
 import androidx.compose.ui.graphics.SolidColor
+import androidx.compose.ui.graphics.graphicsLayer
+import androidx.compose.ui.input.pointer.PointerEventPass
+import androidx.compose.ui.input.pointer.changedToUp
+import androidx.compose.ui.input.pointer.pointerInput
+import androidx.compose.ui.input.pointer.util.VelocityTracker
 import androidx.compose.ui.platform.LocalContext
+import androidx.compose.ui.platform.LocalDensity
 import androidx.compose.ui.platform.LocalFocusManager
+import androidx.compose.ui.platform.LocalViewConfiguration
 import androidx.compose.ui.text.TextStyle
 import androidx.compose.ui.text.font.FontWeight
 import androidx.compose.ui.text.input.ImeAction
 import androidx.compose.ui.text.style.TextAlign
 import androidx.compose.ui.text.style.TextOverflow
 import androidx.compose.ui.tooling.preview.Preview
+import androidx.compose.ui.unit.IntOffset
 import androidx.compose.ui.unit.dp
 import androidx.compose.ui.unit.sp
+import kotlin.math.abs
+import kotlin.math.exp
+import kotlin.math.roundToInt
+import kotlinx.coroutines.delay
+import kotlinx.coroutines.launch
 import com.omkarnub.kanri.data.db.CategoryEntity
 import com.omkarnub.kanri.ui.common.CategoryIcon
+import com.omkarnub.kanri.ui.common.RollingText
+import com.omkarnub.kanri.ui.common.kokonut.KokonutSlideToConfirm
+import com.omkarnub.kanri.ui.common.kokonut.SlideConfirmationType
 import com.omkarnub.kanri.ui.home.formatCurrency
 import com.omkarnub.kanri.ui.theme.GoogleSansFlex
 import com.omkarnub.kanri.ui.theme.KanriMotion
@@ -76,13 +103,14 @@ import java.util.Locale
  * InstantPopupCard: Floating interactive card for instant payment detection overlay.
  * Redesigned clean, modern UX unified across all themes (Glass, Light, Dark, AMOLED):
  * 1. Card surface adapts to theme (translucent frosted glass on Glass, crisp solid elevation on Light/Dark/AMOLED)
- * 2. Dim grey timestamp in top center with subtle close button
- * 3. Prominent bold amount: Red for expense, Green for income
- * 4. Clean merchant name & bank/wallet source tag
- * 5. Top 5 categories only with left-aligned unboxed search hyperlink
- * 6. Smooth circular capsule notes input prompt
- * 7. Single Done button with circular capsule edges
- * 8. "Split expense ›" action with pre-filled amounts
+ * 2. Visual drag handle pill at top + natural 1:1 drag-down to dismiss with rubberband resistance
+ * 3. Dim grey timestamp in top center with subtle close button
+ * 4. Prominent bold amount: Red for expense, Green for income
+ * 5. Clean merchant name & bank/wallet source tag
+ * 6. Top 5 categories only with left-aligned unboxed search hyperlink
+ * 7. Smooth circular capsule notes input prompt
+ * 8. Slide-to-confirm slider matching the app's internal workflow (KokonutSlideToConfirm)
+ * 9. "Split expense ›" action with pre-filled amounts
  */
 @Composable
 fun InstantPopupCard(
@@ -92,13 +120,14 @@ fun InstantPopupCard(
     bank: String?,
     sourceType: String,
     categories: List<CategoryEntity>,
-    onDone: (categoryId: Long?, note: String) -> Unit,
+    onDone: suspend (categoryId: Long?, note: String) -> Unit,
     onSplitBill: () -> Unit,
     onOpenInApp: () -> Unit = {},
     onDismiss: () -> Unit,
     modifier: Modifier = Modifier,
     initialCategoryId: Long? = null,
-    initialNote: String = ""
+    initialNote: String = "",
+    currentBalance: Double? = null
 ) {
     ThemedInstantPopupCardContent(
         amount = amount,
@@ -109,6 +138,7 @@ fun InstantPopupCard(
         categories = categories,
         initialCategoryId = initialCategoryId,
         initialNote = initialNote,
+        currentBalance = currentBalance,
         onDone = onDone,
         onSplitBill = onSplitBill,
         onDismiss = onDismiss,
@@ -126,7 +156,8 @@ private fun ThemedInstantPopupCardContent(
     categories: List<CategoryEntity>,
     initialCategoryId: Long?,
     initialNote: String,
-    onDone: (categoryId: Long?, note: String) -> Unit,
+    currentBalance: Double?,
+    onDone: suspend (categoryId: Long?, note: String) -> Unit,
     onSplitBill: () -> Unit,
     onDismiss: () -> Unit,
     modifier: Modifier = Modifier
@@ -134,6 +165,27 @@ private fun ThemedInstantPopupCardContent(
     val context = LocalContext.current
     val focusManager = LocalFocusManager.current
     val haptics = rememberKanriHaptics()
+    val density = LocalDensity.current
+    val viewConfig = LocalViewConfiguration.current
+    val touchSlop = viewConfig.touchSlop
+    val coroutineScope = rememberCoroutineScope()
+
+    var showBalanceView by remember { mutableStateOf(false) }
+
+    val yAnim = remember { Animatable(0f) }
+    var isDraggingDown by remember { mutableStateOf(false) }
+    var dragY by remember { mutableFloatStateOf(0f) }
+    val maxUpwardResistance = with(density) { 24.dp.toPx() }
+
+    val currentY = if (isDraggingDown) dragY else yAnim.value
+
+    fun calculateDragY(rawY: Float): Float {
+        return if (rawY >= 0f) {
+            rawY
+        } else {
+            -maxUpwardResistance * (1f - exp(rawY / (maxUpwardResistance * 2f)))
+        }
+    }
 
     val themeMode = remember { ThemePreferences.getInstance(context).themeMode }
     val isGlass = themeMode == ThemeMode.GLASS
@@ -153,9 +205,6 @@ private fun ThemedInstantPopupCardContent(
 
     val inputBg = if (isLight) Color(0xFFF2F0E8) else Color.White.copy(alpha = 0.08f)
     val inputPlaceholder = if (isLight) Color(0xFF8A8880) else Color.White.copy(alpha = 0.40f)
-
-    val doneBtnBg = if (isLight) Color(0xFF161616) else Color.White
-    val doneBtnText = if (isLight) Color(0xFFFAF9F5) else Color(0xFF0F1018)
 
     val walletPrefs = remember { com.omkarnub.kanri.data.wallet.WalletPreferences.getInstance(context) }
     val isWalletConfigured = walletPrefs.isWalletSetupCompleted
@@ -180,7 +229,7 @@ private fun ThemedInstantPopupCardContent(
         }
     }
 
-    // Top 5 categories only
+    // Dynamically ranked category pills: pre-selected category first, followed by top contextually ranked categories
     val top5Categories = remember(filteredCategories, selectedCategoryId) {
         val ordered = if (selectedCategoryId != null) {
             val sel = filteredCategories.filter { it.id == selectedCategoryId }
@@ -189,7 +238,7 @@ private fun ThemedInstantPopupCardContent(
         } else {
             filteredCategories
         }
-        ordered.take(5)
+        ordered.take(7)
     }
 
     val displayMerchant = if (isAtmTransfer) {
@@ -209,10 +258,103 @@ private fun ThemedInstantPopupCardContent(
 
     val cardShape = RoundedCornerShape(28.dp)
 
+    val baseModifier = modifier
+        .fillMaxWidth()
+        .padding(horizontal = 16.dp, vertical = 10.dp)
+        .offset { IntOffset(0, currentY.roundToInt().coerceAtLeast(0)) }
+        .graphicsLayer {
+            val dragPx = currentY.coerceAtLeast(0f)
+            val maxFadeDist = with(density) { 320.dp.toPx() }
+            alpha = (1f - (dragPx / maxFadeDist) * 0.40f).coerceIn(0.60f, 1f)
+        }
+        .pointerInput(Unit) {
+            val velocityTracker = VelocityTracker()
+
+            awaitEachGesture {
+                val down = awaitFirstDown(pass = PointerEventPass.Initial, requireUnconsumed = false)
+                velocityTracker.resetTracking()
+                velocityTracker.addPosition(down.uptimeMillis, down.position)
+
+                val startY = down.position.y
+                val startX = down.position.x
+                var totalDx = 0f
+                var totalDy = 0f
+                var dragStarted = false
+
+                while (true) {
+                    val event = awaitPointerEvent(pass = PointerEventPass.Initial)
+                    val change = event.changes.firstOrNull { it.id == down.id } ?: break
+
+                    if (change.changedToUp()) {
+                        velocityTracker.addPosition(change.uptimeMillis, change.position)
+                        break
+                    }
+
+                    velocityTracker.addPosition(change.uptimeMillis, change.position)
+                    totalDx = change.position.x - startX
+                    totalDy = change.position.y - startY
+
+                    if (!dragStarted) {
+                        // Disambiguation: horizontal swipe takes priority for category scroll & slider
+                        if (abs(totalDx) > touchSlop && abs(totalDx) > abs(totalDy) * 1.15f) {
+                            break
+                        }
+                        if (abs(totalDy) > touchSlop && abs(totalDy) > abs(totalDx) * 1.15f) {
+                            dragStarted = true
+                            isDraggingDown = true
+                            dragY = calculateDragY(totalDy)
+                        }
+                    }
+
+                    if (dragStarted) {
+                        change.consume()
+                        dragY = calculateDragY(totalDy)
+                    }
+                }
+
+                if (dragStarted) {
+                    val releaseVelocityY = velocityTracker.calculateVelocity().y
+                    val dismissThreshold = with(density) { 90.dp.toPx() }
+                    val commitOffset = dragY
+
+                    val shouldDismiss = (commitOffset >= dismissThreshold) ||
+                            (releaseVelocityY > 1000f && commitOffset > with(density) { 20.dp.toPx() })
+
+                    coroutineScope.launch {
+                        yAnim.snapTo(commitOffset)
+                        isDraggingDown = false
+
+                        if (shouldDismiss) {
+                            haptics.click()
+                            val exitDistance = with(density) { 450.dp.toPx() }
+                            launch {
+                                yAnim.animateTo(
+                                    targetValue = exitDistance,
+                                    initialVelocity = releaseVelocityY.coerceAtLeast(600f),
+                                    animationSpec = spring(
+                                        stiffness = Spring.StiffnessMediumLow,
+                                        dampingRatio = 0.86f
+                                    )
+                                )
+                            }
+                            onDismiss()
+                        } else {
+                            yAnim.animateTo(
+                                targetValue = 0f,
+                                initialVelocity = releaseVelocityY,
+                                animationSpec = spring(
+                                    stiffness = Spring.StiffnessMediumLow,
+                                    dampingRatio = 0.82f
+                                )
+                            )
+                        }
+                    }
+                }
+            }
+        }
+
     val cardModifier = when {
-        isGlass -> modifier
-            .fillMaxWidth()
-            .padding(horizontal = 16.dp, vertical = 10.dp)
+        isGlass -> baseModifier
             .clip(cardShape)
             .background(Color(0xFF141622).copy(alpha = 0.35f))
             .background(
@@ -233,9 +375,7 @@ private fun ThemedInstantPopupCardContent(
                 ),
                 shape = cardShape
             )
-        isLight -> modifier
-            .fillMaxWidth()
-            .padding(horizontal = 16.dp, vertical = 10.dp)
+        isLight -> baseModifier
             .shadow(
                 elevation = 16.dp,
                 shape = cardShape,
@@ -245,15 +385,11 @@ private fun ThemedInstantPopupCardContent(
             .clip(cardShape)
             .background(Color(0xFFFFFFFF))
             .border(width = 0.8.dp, color = Color(0xFFE5E2D9), shape = cardShape)
-        isAmoled -> modifier
-            .fillMaxWidth()
-            .padding(horizontal = 16.dp, vertical = 10.dp)
+        isAmoled -> baseModifier
             .clip(cardShape)
             .background(Color(0xFF000000))
             .border(width = 0.8.dp, color = Color.White.copy(alpha = 0.18f), shape = cardShape)
-        else -> modifier // Dark
-            .fillMaxWidth()
-            .padding(horizontal = 16.dp, vertical = 10.dp)
+        else -> baseModifier // Dark
             .shadow(
                 elevation = 16.dp,
                 shape = cardShape,
@@ -291,12 +427,49 @@ private fun ThemedInstantPopupCardContent(
             )
         }
 
-        Column(
-            modifier = Modifier
-                .fillMaxWidth()
-                .padding(horizontal = 20.dp, vertical = 16.dp),
-            horizontalAlignment = Alignment.CenterHorizontally
-        ) {
+        AnimatedContent(
+            targetState = showBalanceView,
+            transitionSpec = {
+                if (targetState) {
+                    (slideInVertically(
+                        initialOffsetY = { fullHeight -> fullHeight },
+                        animationSpec = tween(420, easing = CubicBezierEasing(0.16f, 1.0f, 0.3f, 1.0f))
+                    ) + fadeIn(animationSpec = tween(320)))
+                        .togetherWith(
+                            slideOutVertically(
+                                targetOffsetY = { fullHeight -> -fullHeight / 2 },
+                                animationSpec = tween(320, easing = CubicBezierEasing(0.16f, 1.0f, 0.3f, 1.0f))
+                            ) + fadeOut(animationSpec = tween(220))
+                        ).using(
+                            SizeTransform(clip = false) { _, _ ->
+                                spring(
+                                    stiffness = Spring.StiffnessMediumLow,
+                                    dampingRatio = 0.85f
+                                )
+                            }
+                        )
+                } else {
+                    fadeIn(animationSpec = tween(200)).togetherWith(fadeOut(animationSpec = tween(200)))
+                }
+            },
+            label = "PopupCardContentTransition"
+        ) { isBalanceState ->
+            if (!isBalanceState) {
+                Column(
+                    modifier = Modifier
+                        .fillMaxWidth()
+                        .padding(start = 20.dp, end = 20.dp, top = 8.dp, bottom = 16.dp),
+                    horizontalAlignment = Alignment.CenterHorizontally
+                ) {
+            // Drag handle pill affordance (Natural Drag-Down to Dismiss)
+            Box(
+                modifier = Modifier
+                    .padding(bottom = 8.dp)
+                    .size(width = 36.dp, height = 4.dp)
+                    .clip(RoundedCornerShape(50))
+                    .background(dimGrey.copy(alpha = 0.35f))
+            )
+
             // Top dim grey date and time in top center
             Box(
                 modifier = Modifier.fillMaxWidth(),
@@ -606,30 +779,20 @@ private fun ThemedInstantPopupCardContent(
                 }
             }
 
-            // Single Done button with circular capsule edges (RoundedCornerShape(50))
-            Button(
-                onClick = {
-                    haptics.click()
+            // Primary Slide to Confirm CTA (#A4 KokonutSlideToConfirm)
+            KokonutSlideToConfirm(
+                label = if (isDebit) "Slide to save expense" else "Slide to save income",
+                confirmingLabel = "Saving…",
+                doneLabel = if (isDebit) "Expense saved!" else "Income added!",
+                confirmationType = if (isDebit) SlideConfirmationType.EXPENSE else SlideConfirmationType.INCOME,
+                onConfirm = {
                     onDone(selectedCategoryId, noteText)
                 },
-                modifier = Modifier
-                    .fillMaxWidth()
-                    .height(48.dp),
-                shape = RoundedCornerShape(50),
-                colors = ButtonDefaults.buttonColors(
-                    containerColor = doneBtnBg,
-                    contentColor = doneBtnText
-                ),
-                elevation = ButtonDefaults.buttonElevation(defaultElevation = 0.dp)
-            ) {
-                Text(
-                    text = "Done",
-                    fontFamily = GoogleSansFlex,
-                    fontSize = 15.5.sp,
-                    fontWeight = FontWeight.Bold,
-                    color = doneBtnText
-                )
-            }
+                onSuccessComplete = {
+                    showBalanceView = true
+                },
+                modifier = Modifier.fillMaxWidth()
+            )
 
             // Replace open in kanri with split expense hyperlink
             if (isDebit && !isAtmTransfer) {
@@ -650,6 +813,119 @@ private fun ThemedInstantPopupCardContent(
                 )
             }
         }
+    } else {
+        CurrentBalanceContent(
+            balance = currentBalance ?: if (isDebit) (15000.0 - amount) else (15000.0 + amount),
+            amount = amount,
+            isDebit = isDebit,
+            brandTitle = brandTag.title,
+            dimGrey = dimGrey,
+            primaryTextColor = primaryTextColor,
+            secondaryTextColor = secondaryTextColor,
+            onDismiss = onDismiss
+        )
+    }
+}
+}
+}
+
+@Composable
+private fun CurrentBalanceContent(
+    balance: Double,
+    amount: Double,
+    isDebit: Boolean,
+    brandTitle: String,
+    dimGrey: Color,
+    primaryTextColor: Color,
+    secondaryTextColor: Color,
+    onDismiss: () -> Unit
+) {
+    // Automatically dismiss after 3 seconds as requested
+    LaunchedEffect(Unit) {
+        delay(3000)
+        onDismiss()
+    }
+
+    val deltaColor = if (isDebit) Color(0xFFE54D2E) else Color(0xFF30A46C)
+    val deltaSign = if (isDebit) "-" else "+"
+    val deltaText = "($deltaSign${formatCurrency(amount)})"
+
+    Column(
+        modifier = Modifier
+            .fillMaxWidth()
+            .padding(start = 20.dp, end = 20.dp, top = 8.dp, bottom = 28.dp),
+        horizontalAlignment = Alignment.CenterHorizontally
+    ) {
+        // Drag handle pill affordance (Natural Drag-Down to Dismiss)
+        Box(
+            modifier = Modifier
+                .padding(bottom = 16.dp)
+                .size(width = 36.dp, height = 4.dp)
+                .clip(RoundedCornerShape(50))
+                .background(dimGrey.copy(alpha = 0.35f))
+        )
+
+        Spacer(modifier = Modifier.height(6.dp))
+
+        // "Current Balance" title
+        Text(
+            text = "Current Balance",
+            fontFamily = GoogleSansFlex,
+            fontSize = 13.5.sp,
+            fontWeight = FontWeight.Medium,
+            color = dimGrey,
+            textAlign = TextAlign.Center
+        )
+
+        Spacer(modifier = Modifier.height(10.dp))
+
+        // Balance amount with rolling text animation + bracketed delta amount (+amount / -amount)
+        val formattedBalance = remember(balance) {
+            formatCurrency(balance)
+        }
+
+        Row(
+            modifier = Modifier.fillMaxWidth(),
+            horizontalArrangement = Arrangement.Center,
+            verticalAlignment = Alignment.CenterVertically
+        ) {
+            RollingText(
+                text = formattedBalance,
+                textColor = primaryTextColor,
+                fontSize = 32.sp,
+                fontWeight = FontWeight.Bold,
+                fontFamily = GoogleSansFlex,
+                minCycles = 3,
+                cycleVariance = 3,
+                durationSeconds = 1.4f,
+                durationVarianceSeconds = 0.4f
+            )
+
+            Spacer(modifier = Modifier.width(8.dp))
+
+            Text(
+                text = deltaText,
+                fontFamily = GoogleSansFlex,
+                fontSize = 15.sp,
+                fontWeight = FontWeight.SemiBold,
+                color = deltaColor,
+                letterSpacing = (-0.2).sp
+            )
+        }
+
+        if (brandTitle.isNotBlank()) {
+            Spacer(modifier = Modifier.height(8.dp))
+            Text(
+                text = brandTitle,
+                fontFamily = GoogleSansFlex,
+                fontSize = 12.5.sp,
+                fontWeight = FontWeight.Normal,
+                color = secondaryTextColor,
+                textAlign = TextAlign.Center
+            )
+        }
+
+        Spacer(modifier = Modifier.height(6.dp))
     }
 }
 

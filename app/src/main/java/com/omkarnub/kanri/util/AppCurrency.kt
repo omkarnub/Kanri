@@ -68,6 +68,80 @@ enum class AppCurrency(
     val locale: Locale
         get() = Locale.forLanguageTag(localeTag)
 
+    /**
+     * Sensible default monthly budget baseline scaled to this currency's purchasing power.
+     */
+    val defaultMonthlyBudget: Double
+        get() = when (this) {
+            INR -> 25_000.0
+            USD -> 2_500.0
+            EUR -> 2_200.0
+            GBP -> 2_000.0
+            TRY -> 45_000.0
+            AED -> 8_000.0
+            SAR -> 8_000.0
+            CAD -> 3_500.0
+            AUD -> 3_500.0
+            JPY -> 300_000.0
+            CNY -> 15_000.0
+            CHF -> 2_500.0
+            SGD -> 3_500.0
+            HKD -> 20_000.0
+            NZD -> 3_500.0
+            KRW -> 2_500_000.0
+            BRL -> 6_000.0
+            MXN -> 25_000.0
+            IDR -> 10_000_000.0
+            MYR -> 5_000.0
+            THB -> 40_000.0
+            PHP -> 60_000.0
+            VND -> 25_000_000.0
+            ZAR -> 25_000.0
+            RUB -> 120_000.0
+            SEK, NOK, DKK -> 25_000.0
+            PLN -> 8_000.0
+            CZK -> 45_000.0
+            HUF -> 600_000.0
+            ILS -> 9_000.0
+            EGP -> 40_000.0
+            NGN -> 800_000.0
+            KES -> 150_000.0
+            PKR -> 150_000.0
+            BDT -> 100_000.0
+            LKR -> 200_000.0
+            NPR -> 100_000.0
+            KWD -> 700.0
+            QAR -> 8_000.0
+            OMR -> 800.0
+            BHD -> 800.0
+            CLP -> 1_500_000.0
+            COP -> 5_000_000.0
+            ARS -> 1_500_000.0
+            PEN -> 6_000.0
+            TWD -> 60_000.0
+            UAH -> 50_000.0
+            KZT -> 600_000.0
+            GHS -> 15_000.0
+            MAD -> 15_000.0
+        }
+
+    /**
+     * Dynamic quick-amount additive chips (+5, +10, etc.) tailored to this currency.
+     */
+    val quickPresets: List<Int>
+        get() = when (this) {
+            USD, EUR, GBP, CHF -> listOf(5, 10, 20, 50)
+            CAD, AUD, NZD, SGD, HKD, QAR -> listOf(10, 20, 50, 100)
+            KWD, BHD, OMR -> listOf(1, 5, 10, 20)
+            AED, SAR, BRL, PLN, PEN, ILS, MYR -> listOf(20, 50, 100, 200)
+            TRY, MXN, ZAR, SEK, NOK, DKK, CNY, EGP, GHS, MAD -> listOf(50, 100, 200, 500)
+            INR, RUB, PHP, THB, BDT, NPR, PKR, LKR, CZK -> listOf(100, 500, 1000, 2000)
+            JPY, TWD, UAH -> listOf(500, 1000, 5000, 10000)
+            KRW, KES, NGN, HUF, KZT -> listOf(1000, 5000, 10000, 50000)
+            IDR, VND, CLP, COP, ARS -> listOf(10000, 50000, 100000, 500000)
+            else -> listOf(10, 20, 50, 100)
+        }
+
     companion object {
         fun fromCode(code: String?): AppCurrency {
             if (code.isNullOrBlank()) return INR

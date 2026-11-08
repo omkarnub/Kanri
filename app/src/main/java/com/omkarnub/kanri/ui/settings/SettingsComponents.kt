@@ -76,6 +76,7 @@ import androidx.compose.material3.IconButton
 import androidx.compose.material3.MaterialTheme
 import androidx.compose.material3.OutlinedButton
 import androidx.compose.material3.OutlinedTextField
+import androidx.compose.material3.Slider
 import androidx.compose.material3.Surface
 import androidx.compose.material3.Switch
 import androidx.compose.material3.SwitchDefaults
@@ -1376,6 +1377,151 @@ fun SelectCurrencyDialog(
             }
         },
         confirmButton = {
+            TextButton(onClick = onDismiss) {
+                Text("Cancel", color = MaterialTheme.colorScheme.onSurfaceVariant)
+            }
+        }
+    )
+}
+
+// =============================================================================
+// 10B. BUDGET CYCLE START DAY PICKER DIALOG
+// =============================================================================
+@Composable
+fun BudgetCycleStartDialog(
+    currentDay: Int,
+    onSelectDay: (Int) -> Unit,
+    onDismiss: () -> Unit
+) {
+    var selectedDay by remember { mutableStateOf(currentDay) }
+    val haptics = rememberKanriHaptics()
+    val quickDays = listOf(1, 5, 10, 15, 20, 25, 28)
+
+    AlertDialog(
+        onDismissRequest = onDismiss,
+        title = {
+            Text(
+                text = "Budget Cycle Start Day",
+                fontFamily = GoogleSansFlex,
+                fontWeight = FontWeight.Bold,
+                color = MaterialTheme.colorScheme.onSurface
+            )
+        },
+        text = {
+            Column(
+                modifier = Modifier.fillMaxWidth(),
+                verticalArrangement = Arrangement.spacedBy(14.dp)
+            ) {
+                Text(
+                    text = "Select which day of the month your budget cycle begins. Salaried users can match their monthly payday so 'safe to spend' and 'days remaining' align with their salary.",
+                    fontSize = 12.5.sp,
+                    color = MaterialTheme.colorScheme.onSurfaceVariant
+                )
+
+                // Current day summary card
+                Surface(
+                    shape = RoundedCornerShape(12.dp),
+                    color = MaterialTheme.colorScheme.primary.copy(alpha = 0.12f),
+                    modifier = Modifier.fillMaxWidth()
+                ) {
+                    Column(
+                        modifier = Modifier.padding(14.dp),
+                        horizontalAlignment = Alignment.CenterHorizontally
+                    ) {
+                        Text(
+                            text = if (selectedDay == 1) "Day 1 (Calendar Month)" else "Day $selectedDay (Salary Cycle)",
+                            style = MaterialTheme.typography.titleMedium.copy(
+                                fontWeight = FontWeight.Bold,
+                                color = MaterialTheme.colorScheme.primary
+                            )
+                        )
+                        Spacer(modifier = Modifier.height(2.dp))
+                        Text(
+                            text = if (selectedDay == 1) "Resets on the 1st of every calendar month" else "Resets on the ${selectedDay}th of every month",
+                            style = MaterialTheme.typography.bodySmall,
+                            color = MaterialTheme.colorScheme.onSurfaceVariant
+                        )
+                    }
+                }
+
+                // Quick presets
+                Text(
+                    text = "POPULAR START DAYS",
+                    style = MaterialTheme.typography.labelSmall.copy(
+                        fontFamily = Panchang,
+                        fontWeight = FontWeight.Bold
+                    ),
+                    color = MaterialTheme.colorScheme.primary
+                )
+
+                Row(
+                    modifier = Modifier
+                        .fillMaxWidth()
+                        .horizontalScroll(rememberScrollState()),
+                    horizontalArrangement = Arrangement.spacedBy(8.dp)
+                ) {
+                    quickDays.forEach { day ->
+                        val isSelected = selectedDay == day
+                        Surface(
+                            shape = RoundedCornerShape(10.dp),
+                            color = if (isSelected) MaterialTheme.colorScheme.primary else MaterialTheme.colorScheme.surfaceContainer,
+                            border = BorderStroke(
+                                1.dp,
+                                if (isSelected) MaterialTheme.colorScheme.primary else MaterialTheme.colorScheme.outlineVariant.copy(alpha = 0.4f)
+                            ),
+                            modifier = Modifier
+                                .clip(RoundedCornerShape(10.dp))
+                                .clickable {
+                                    haptics.tick()
+                                    selectedDay = day
+                                }
+                        ) {
+                            Box(
+                                modifier = Modifier.padding(horizontal = 14.dp, vertical = 8.dp),
+                                contentAlignment = Alignment.Center
+                            ) {
+                                Text(
+                                    text = if (day == 1) "1st (Default)" else "${day}th",
+                                    fontWeight = if (isSelected) FontWeight.Bold else FontWeight.Medium,
+                                    color = if (isSelected) MaterialTheme.colorScheme.onPrimary else MaterialTheme.colorScheme.onSurface,
+                                    fontSize = 12.sp
+                                )
+                            }
+                        }
+                    }
+                }
+
+                // Slider for fine selection 1..28
+                Column(verticalArrangement = Arrangement.spacedBy(4.dp)) {
+                    Row(
+                        modifier = Modifier.fillMaxWidth(),
+                        horizontalArrangement = Arrangement.SpaceBetween
+                    ) {
+                        Text("Custom Day", style = MaterialTheme.typography.bodySmall)
+                        Text("Day $selectedDay", style = MaterialTheme.typography.bodySmall, fontWeight = FontWeight.Bold)
+                    }
+                    Slider(
+                        value = selectedDay.toFloat(),
+                        onValueChange = {
+                            selectedDay = it.toInt().coerceIn(1, 28)
+                        },
+                        valueRange = 1f..28f,
+                        steps = 26
+                    )
+                }
+            }
+        },
+        confirmButton = {
+            Button(
+                onClick = {
+                    onSelectDay(selectedDay)
+                    onDismiss()
+                }
+            ) {
+                Text("Save")
+            }
+        },
+        dismissButton = {
             TextButton(onClick = onDismiss) {
                 Text("Cancel", color = MaterialTheme.colorScheme.onSurfaceVariant)
             }
