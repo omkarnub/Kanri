@@ -43,3 +43,4 @@ class SafeToSpendTest {
         assertEquals(500.0, dailyAllowance, 0.001)
     }
 }
+

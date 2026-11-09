@@ -19,3 +19,4 @@ class StreakWidgetProvider : BasePixelWidgetProvider<StreakWidgetState>() {
         }
     }
 }
+

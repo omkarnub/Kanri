@@ -1,4 +1,4 @@
-﻿package com.omkarnub.kanri.widget
+package com.omkarnub.kanri.widget
 
 import android.app.PendingIntent
 import android.content.Context

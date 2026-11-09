@@ -45,3 +45,4 @@ class QuickActionsWidgetProvider : BasePixelWidgetProvider<QuickActionsWidgetSta
         }
     }
 }
+

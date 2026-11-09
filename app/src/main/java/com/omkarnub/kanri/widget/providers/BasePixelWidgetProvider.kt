@@ -1,10 +1,10 @@
 package com.omkarnub.kanri.widget.providers
 
-import android.app.PendingIntent
 import android.appwidget.AppWidgetManager
 import android.appwidget.AppWidgetProvider
 import android.content.ComponentName
 import android.content.Context
+import android.content.res.Configuration
 import android.os.Bundle
 import android.os.SystemClock
 import android.widget.RemoteViews
@@ -15,10 +15,8 @@ import com.omkarnub.kanri.widget.core.WidgetState
 import com.omkarnub.kanri.widget.render.WidgetRenderer
 import kotlinx.coroutines.CoroutineScope
 import kotlinx.coroutines.Dispatchers
-import kotlinx.coroutines.Job
 import kotlinx.coroutines.delay
 import kotlinx.coroutines.launch
-import kotlin.math.max
 
 /**
  * Common base for all 12 Kanri Pixel DotTiles widget providers.
@@ -85,14 +83,25 @@ abstract class BasePixelWidgetProvider<T : WidgetState> : AppWidgetProvider() {
     ) {
         val options = appWidgetManager.getAppWidgetOptions(appWidgetId)
         val density = context.resources.displayMetrics.density
+        val isPortrait = context.resources.configuration.orientation == Configuration.ORIENTATION_PORTRAIT
 
-        val minW = options.getInt(AppWidgetManager.OPTION_APPWIDGET_MIN_WIDTH, 160)
-        val minH = options.getInt(AppWidgetManager.OPTION_APPWIDGET_MIN_HEIGHT, 110)
+        val wDp = if (isPortrait) {
+            options.getInt(AppWidgetManager.OPTION_APPWIDGET_MIN_WIDTH, 180)
+        } else {
+            options.getInt(AppWidgetManager.OPTION_APPWIDGET_MAX_WIDTH, 260)
+        }.coerceIn(80, 600)
 
-        val widthPx = (minW * density).toInt().coerceIn(160, 1400)
-        val heightPx = (minH * density).toInt().coerceIn(100, 1000)
+        val hDp = if (isPortrait) {
+            options.getInt(AppWidgetManager.OPTION_APPWIDGET_MAX_HEIGHT, 140)
+        } else {
+            options.getInt(AppWidgetManager.OPTION_APPWIDGET_MIN_HEIGHT, 100)
+        }.coerceIn(60, 500)
+
+        val widthPx = (wDp * density).toInt()
+        val heightPx = (hDp * density).toInt()
 
         val bitmap = WidgetRenderer.renderToBitmap(
+            context = context,
             state = state,
             widthPx = widthPx,
             heightPx = heightPx,

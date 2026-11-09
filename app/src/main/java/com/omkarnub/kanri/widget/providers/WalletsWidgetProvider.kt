@@ -19,3 +19,4 @@ class WalletsWidgetProvider : BasePixelWidgetProvider<WalletsWidgetState>() {
         }
     }
 }
+

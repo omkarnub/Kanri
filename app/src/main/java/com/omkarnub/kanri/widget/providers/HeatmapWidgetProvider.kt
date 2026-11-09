@@ -19,3 +19,4 @@ class HeatmapWidgetProvider : BasePixelWidgetProvider<HeatmapWidgetState>() {
         }
     }
 }
+

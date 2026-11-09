@@ -200,3 +200,4 @@ data class QuickActionsWidgetState(
     ),
     override val accessibleDescription: String = "Quick financial actions"
 ) : WidgetState
+

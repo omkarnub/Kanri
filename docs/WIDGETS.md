@@ -1,15 +1,23 @@
 # Kanri Pixel DotTiles Widget System
 
+Current Version: **1.12.1** (Build 37)
+
 ## 1. Overview
-Kanri's widget subsystem is unified around a single, cohesive visual language: **Pixel DotTiles** (7-row dot-matrix). Designed with precision, restraint, and obsessive detail, the system delivers 12 specialized home screen widgets rendered by a pure Canvas engine shared 1:1 between Android `RemoteViews` bitmaps and Jetpack Compose in-app previews.
+Kanri's widget subsystem is unified around a single, cohesive visual language: **Pixel DotTiles** (Nothing-inspired dot-matrix & tactile cards). Designed with precision, restraint, and obsessive detail, the system delivers 12 specialized home screen widgets rendered by a pure Canvas engine shared 1:1 between Android `RemoteViews` bitmaps and Jetpack Compose in-app previews.
 
 ---
 
 ## 2. Design System Foundations
 
+### Typography & Fonts (`PixelFont` & `Ndot57`)
+- **Authentic Ndot57 Font**: Integrated official `Ndot57-Regular.otf` (`res/font/ndot57.otf`) for tabular dot-matrix numerals, percentages, and metrics.
+- **Clean Sans Typography**: High-contrast, clean system sans (`sans-serif-medium` / `sans-serif`) for headers, titles, subtitles, currency signs (`₹`), and axis labels. This follows the Louis Studios DotTiles & Weather specification.
+- **Indian Number System**: Automatic compact formatting (`₹850`, `₹12.4k`, `₹1.5L`, `₹1.2Cr`).
+- **No Text Distortion**: Replaced legacy `fitXY` with `fitCenter` and orientation-aware target sizing (`minW` x `maxH` in portrait), ensuring zero stretching, elongation, or distorted aspect ratios.
+
 ### Palette
 The design system enforces a strict, zero-drift color palette exposed via `PixelTheme`:
-- **Tile Background**: `#08080A` (Deepest Obsidian)
+- **Tile Background**: `#08080A` (Deep Obsidian Glass)
 - **Inner Border**: 1px `#24FFFFFF` (14% frosted edge)
 - **Corner Radius**: `22dp`
 - **Tile Padding**: `14dp`

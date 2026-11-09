@@ -37,3 +37,4 @@ class MoonPhaseTest {
         assertTrue(phase in 0f..1f)
     }
 }
+

@@ -29,3 +29,4 @@ class HeatmapQuantizationTest {
         assertEquals(1.0f, quantize(50000.0), 0.001f)
     }
 }
+

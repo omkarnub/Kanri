@@ -19,3 +19,4 @@ class ReviewInboxWidgetProvider : BasePixelWidgetProvider<ReviewInboxWidgetState
         }
     }
 }
+

@@ -38,3 +38,4 @@ class DotMatrixFontTest {
         assertTrue(pitch in 7f..14f)
     }
 }
+

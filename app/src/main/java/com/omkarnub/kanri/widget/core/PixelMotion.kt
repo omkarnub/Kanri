@@ -34,3 +34,4 @@ object PixelMotion {
     const val BURST_FRAME_INTERVAL_MS = 85L
     const val BURST_RATE_LIMIT_MS = 5000L
 }
+

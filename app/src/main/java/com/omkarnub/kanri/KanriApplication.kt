@@ -1,4 +1,4 @@
-﻿package com.omkarnub.kanri
+package com.omkarnub.kanri
 
 import android.app.Application
 import com.omkarnub.kanri.data.crash.CrashLogger

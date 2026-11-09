@@ -19,3 +19,4 @@ class BudgetWidgetProvider : BasePixelWidgetProvider<BudgetWidgetState>() {
         }
     }
 }
+

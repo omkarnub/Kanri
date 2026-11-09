@@ -5,6 +5,26 @@ All notable changes to Kanri will be documented in this file.
 The format is based on [Keep a Changelog](https://keepachangelog.com/en/1.0.0/),
 and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0.html).
 
+## [1.12.1] - 2026-11-10
+
+### Fixed & Enhanced
+- **Pixel DotTiles Typography & Visual Polish Overhaul**:
+  - **Authentic Ndot57 Font Integration**: Embedded official Nothing `Ndot57-Regular.otf` (`res/font/ndot57.otf`) for all hero numerals, currency amounts, percentages, and metrics.
+  - **Louis Studios & Weather Hierarchy**:
+    - Replaced crude manual 5x7 dot circle loops with crisp system sans (`sans-serif-medium`) for titles, subtitles, currency signs (`₹`), and axis labels.
+    - Sized and baseline-aligned currency prefix (`₹`) with Ndot57 numerals without tofu boxes or glyph truncation.
+  - **Eliminated Text Elongation & Distortion**:
+    - Changed `widget_tile_canvas.xml` and `widget_quick_actions.xml` from `scaleType="fitXY"` to `scaleType="fitCenter"` with `adjustViewBounds="true"`, strictly preventing launcher stretching.
+    - Updated `BasePixelWidgetProvider` to use orientation-aware target dimensions (`minW` in portrait, `maxH` in landscape) with density scaling.
+  - **Refined Data Visuals**:
+    - `Slider`: 44 fine vertical ticks with rounded block marker (GLOW/FILL modes) and clean sans endpoints.
+    - `Steps`: Equal-width histogram bars with faint slot guide lines.
+    - `Dots`: 24 hourly dots with density-scaled radii and active current hour indicator ring.
+    - `Vector Icons`: Integrated official Louis Studios SVG path icons (`spark`, `flame`, `clock`, `pulse`, `bolt`, `battery`, `drop`, `moon`, `sun`, `heart`, `plus`, `inbox`, `split`).
+    - `Sky Scene`: 8-pitch dot well featuring astronomical sun arc with rays, synodic moon phase, twinkling night stars, rolling hill horizon terrain, and 7-day spending pulse.
+  - **Unit Testing**: Added `PixelFontTest` covering Indian currency formatting, prefix splitting, tabular width measurement, and JVM fallback safety.
+- Bumped version to `1.12.1` (Build 37).
+
 ## [1.12.0] - 2026-11-10
 
 ### Rebuilt & Unified

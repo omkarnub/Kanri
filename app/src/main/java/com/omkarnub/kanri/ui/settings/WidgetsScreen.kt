@@ -489,7 +489,8 @@ fun PixelWidgetCanvasPreview(
                 widthPx = size.width,
                 heightPx = size.height,
                 progress = animProgress.value,
-                density = this.density
+                density = this.density,
+                context = context
             )
         }
     }
