@@ -13,8 +13,10 @@ import androidx.compose.foundation.clickable
 import androidx.compose.foundation.layout.Arrangement
 import androidx.compose.foundation.layout.Box
 import androidx.compose.foundation.layout.Column
+import androidx.compose.foundation.layout.PaddingValues
 import androidx.compose.foundation.layout.Row
 import androidx.compose.foundation.layout.Spacer
+import androidx.compose.foundation.layout.fillMaxHeight
 import androidx.compose.foundation.layout.fillMaxWidth
 import androidx.compose.foundation.layout.height
 import androidx.compose.foundation.layout.padding
@@ -81,6 +83,7 @@ import com.omkarnub.kanri.ui.home.formatCurrency
 import com.omkarnub.kanri.util.rememberKanriHaptics
 import kotlinx.coroutines.launch
 import java.text.SimpleDateFormat
+import java.util.Calendar
 import java.util.Date
 import java.util.Locale
 
@@ -524,33 +527,56 @@ fun ExportStatementSheet(
 
     if (showCustomDateRangePicker) {
         val currentCustom = selectedRange as? ExportRange.Custom
+        val defaultEnd = System.currentTimeMillis()
+        val defaultStart = remember {
+            Calendar.getInstance().apply {
+                set(Calendar.DAY_OF_MONTH, 1)
+                set(Calendar.HOUR_OF_DAY, 0)
+                set(Calendar.MINUTE, 0)
+                set(Calendar.SECOND, 0)
+                set(Calendar.MILLISECOND, 0)
+            }.timeInMillis
+        }
+
         val dateRangePickerState = rememberDateRangePickerState(
-            initialSelectedStartDateMillis = currentCustom?.startMillis,
-            initialSelectedEndDateMillis = currentCustom?.endMillis
+            initialSelectedStartDateMillis = currentCustom?.startMillis ?: defaultStart,
+            initialSelectedEndDateMillis = currentCustom?.endMillis ?: defaultEnd
         )
 
         KanriGlassDatePickerDialog(
             onDismissRequest = { showCustomDateRangePicker = false },
+            modifier = Modifier
+                .fillMaxWidth(0.96f)
+                .fillMaxHeight(0.85f),
             confirmButton = {
-                TextButton(
+                Button(
                     onClick = {
                         val start = dateRangePickerState.selectedStartDateMillis
-                        val end = dateRangePickerState.selectedEndDateMillis
-                        if (start != null && end != null) {
+                        val end = dateRangePickerState.selectedEndDateMillis ?: start
+                        if (start != null) {
                             haptics.success()
-                            selectedRange = ExportRange.Custom(start, end)
+                            selectedRange = ExportRange.Custom(start, end ?: start)
                         }
                         showCustomDateRangePicker = false
                     },
-                    enabled = dateRangePickerState.selectedStartDateMillis != null &&
-                            dateRangePickerState.selectedEndDateMillis != null
+                    enabled = dateRangePickerState.selectedStartDateMillis != null,
+                    colors = ButtonDefaults.buttonColors(
+                        containerColor = MaterialTheme.colorScheme.primary,
+                        contentColor = MaterialTheme.colorScheme.onPrimary
+                    ),
+                    shape = RoundedCornerShape(12.dp),
+                    contentPadding = PaddingValues(horizontal = 20.dp, vertical = 8.dp)
                 ) {
-                    Text("Apply", fontWeight = FontWeight.Bold)
+                    Text("Apply", fontWeight = FontWeight.Bold, fontSize = 14.sp)
                 }
             },
             dismissButton = {
-                TextButton(onClick = { showCustomDateRangePicker = false }) {
-                    Text("Cancel")
+                OutlinedButton(
+                    onClick = { showCustomDateRangePicker = false },
+                    shape = RoundedCornerShape(12.dp),
+                    contentPadding = PaddingValues(horizontal = 14.dp, vertical = 8.dp)
+                ) {
+                    Text("Cancel", fontSize = 14.sp)
                 }
             }
         ) {
@@ -585,7 +611,8 @@ fun ExportStatementSheet(
                 showModeToggle = false,
                 colors = DatePickerDefaults.colors(
                     containerColor = Color.Transparent
-                )
+                ),
+                modifier = Modifier.weight(1f)
             )
         }
     }

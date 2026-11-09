@@ -5,6 +5,16 @@ All notable changes to Kanri will be documented in this file.
 The format is based on [Keep a Changelog](https://keepachangelog.com/en/1.0.0/),
 and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0.html).
 
+## [1.8.1] - 2026-11-09
+
+### Fixed
+- **Custom Statement Date Range Picker Apply Button Visibility & UX**:
+  - Constrained `KanriGlassDatePickerDialog` to `fillMaxHeight(0.85f)` and added `Modifier.weight(1f)` to `DateRangePicker`, preventing the calendar grid from expanding off-screen and pushing action buttons below the display.
+  - Replaced subtle `TextButton` with prominent, high-contrast Material 3 `Button` (`containerColor = MaterialTheme.colorScheme.primary`) for "Apply" and `OutlinedButton` for "Cancel".
+  - Pre-populated default start date (first day of active month) and end date (today) upon opening dialog so date ranges are active immediately.
+  - Added single-date support (`end = selectedEndDateMillis ?: start`) and enabled Apply button whenever a valid start date is picked.
+- Bumped version to `1.8.1` (Build 30).
+
 ## [1.8.0] - 2026-11-09
 
 ### Added & Financial Statements
