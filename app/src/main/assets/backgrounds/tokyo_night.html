@@ -1,0 +1,421 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover">
+<title>Tokyo Night Bench – 9:16 pixel background</title>
+<style>
+  :root { --bg: #05010f; }
+  * { margin: 0; padding: 0; box-sizing: border-box; }
+  html, body {
+    margin: 0;
+    padding: 0;
+    width: 100%;
+    height: 100%;
+    background: var(--bg);
+    overflow: hidden;
+    user-select: none;
+    -webkit-user-select: none;
+    pointer-events: none;
+  }
+  canvas {
+    display: block;
+    width: 100vw;
+    height: 100vh;
+    object-fit: cover;
+    image-rendering: -moz-crisp-edges;
+    image-rendering: -webkit-crisp-edges;
+    image-rendering: pixelated;
+    image-rendering: crisp-edges;
+    pointer-events: none;
+  }
+</style>
+</head>
+<body>
+<canvas id="c" aria-label="Pixel art: a person on a mountain bench with a cat, looking at Tokyo at night"></canvas>
+<script>
+(() => {
+  const W = 135, H = 240, SEAT = 202, TAU = Math.PI * 2;
+  const cv = document.getElementById('c');
+  cv.width = W; cv.height = H;
+  const ctx = cv.getContext('2d');
+  const img = ctx.createImageData(W, H);
+  const px = new Uint32Array(img.data.buffer);
+  const bg = new Uint32Array(W * H);
+
+  const C = h => ((255 << 24) | ((h & 255) << 16) | (h & 0xff00) | ((h >> 16) & 255)) >>> 0;
+  const mk = o => Object.fromEntries(Object.entries(o).map(([k, v]) => [k, C(v)]));
+  const BAY = [0,8,2,10,12,4,14,6,3,11,1,9,15,7,13,5];
+  const bay = (x, y) => (BAY[(y & 3) * 4 + (x & 3)] + 0.5) / 16;
+  const ramp = (s, f, x, y) => {
+    f = f < 0 ? 0 : f > 1 ? 1 : f;
+    const t = f * (s.length - 1), i = Math.min(s.length - 2, Math.floor(t));
+    return bay(x, y) < t - i ? s[i + 1] : s[i];
+  };
+  const hash = (x, y) => {
+    let h = Math.imul(x, 374761393) + Math.imul(y, 668265263);
+    h = Math.imul(h ^ (h >>> 13), 1274126177);
+    return ((h ^ (h >>> 16)) >>> 0) / 4294967296;
+  };
+  let seed = 11;
+  const rnd = () => { seed = (seed * 1664525 + 1013904223) >>> 0; return seed / 4294967296; };
+
+  const rect = (x, y, w, h, c) => { for (let j = y; j < y + h; j++) for (let i = x; i < x + w; i++) if (i >= 0 && i < W && j >= 0 && j < H) bg[j * W + i] = c; };
+  const set = (x, y, c) => { x = Math.round(x); y = Math.round(y); if (x >= 0 && x < W && y >= 0 && y < H) px[y * W + x] = c; };
+  const drect = (x, y, w, h, c) => { for (let j = 0; j < h; j++) for (let i = 0; i < w; i++) set(x + i, y + j, c); };
+  const halo = (x, y, w, h, r, c, k) => {
+    for (let j = -r; j < h + r; j++) for (let i = -r; i < w + r; i++) {
+      const dx = i < 0 ? -i : i >= w ? i - w + 1 : 0, dy = j < 0 ? -j : j >= h ? j - h + 1 : 0;
+      const d = Math.hypot(dx, dy);
+      if (d > 0 && d < r && bay((x + i) & 255, (y + j) & 255) < (1 - d / r) * k) set(x + i, y + j, c);
+    }
+  };
+
+  /* ---------- static scene ---------- */
+  const SKY = [0x04051a, 0x090d2c, 0x1a1448, 0x3a1b5e, 0x7a2a72, 0xc4457a, 0xff8a7a].map(C);
+  for (let y = 0; y < H; y++) for (let x = 0; x < W; x++) bg[y * W + x] = ramp(SKY, Math.pow(Math.min(1, y / 125), 1.3), x, y);
+  // crescent moon
+  for (let y = 14; y < 36; y++) for (let x = 100; x < 124; x++) {
+    if (Math.hypot(x - 112, y - 24) <= 6.5 && Math.hypot(x - 115, y - 22) > 5.6) bg[y * W + x] = C(0xfff3c8);
+  }
+
+  const WIN = [0xffd27a, 0xffb347, 0xfff2c0, 0x7ad7ff, 0xff7aa8, 0xfff2c0];
+  const wins = [], beac = [];
+  function layer(t0, t1, wmin, wmax, c0, c1, rim, sx, sy, dens, ws, hs, dim) {
+    const ramp2 = [C(c0), C(c1)];
+    for (let x = -3; x < W;) {
+      const w = wmin + Math.floor(rnd() * (wmax - wmin + 1));
+      const top = Math.floor(t0 + rnd() * (t1 - t0));
+      for (let xx = Math.max(0, x); xx < Math.min(W, x + w); xx++)
+        for (let y = top; y < 176; y++) bg[y * W + xx] = y === top ? C(rim) : ramp(ramp2, (y - top) / (176 - top), xx, y);
+      for (let wy = top + 2; wy < 172; wy += sy) for (let wx = x + 1; wx < x + w - 1; wx += sx) {
+        if (rnd() < dens && wx >= 0 && wx < W) {
+          let c = WIN[Math.floor(rnd() * 6)];
+          if (dim) c = (c >> 1) & 0x7f7f7f;
+          wins.push({ x: wx, y: wy, w: ws, h: hs, c: C(c), ph: rnd() * TAU, r: 0.15 + rnd() * 0.7 });
+        }
+      }
+      if (rnd() < 0.14 && top < 140) beac.push({ x: x + (w >> 1), y: top - 1, ph: rnd() * 6 });
+      x += w + (rnd() < 0.3 ? 1 : 0);
+    }
+  }
+  layer(118, 134, 5, 9, 0x15163a, 0x211a4a, 0x3a2a70, 2, 3, 0.3, 1, 1, true);
+  layer(132, 152, 6, 11, 0x120f30, 0x1c1440, 0x4a3290, 3, 4, 0.38, 1, 2, false);
+
+  // Tokyo Tower
+  const TX = 100;
+  for (let y = 74; y < 176; y++) {
+    const t = Math.max(0, (y - 76) / 100), hw = Math.round(0.4 + 9.5 * Math.pow(t, 1.5));
+    const col = C(Math.floor((y - 76) / 7) % 2 ? 0xff6a2a : 0xfff0e0);
+    if (hw <= 1) rect(TX - hw, y, hw * 2 + 1, 1, col);
+    else { rect(TX - hw, y, 1, 1, col); rect(TX + hw, y, 1, 1, col); if (y % 7 === 0) rect(TX - hw, y, hw * 2 + 1, 1, C(0xc04a1a)); }
+  }
+  rect(TX - 4, 117, 9, 2, C(0xfff0e0)); rect(TX - 2, 99, 5, 2, C(0xfff0e0)); rect(TX, 66, 1, 8, C(0xffb080));
+  // Skytree (dark base; lights are animated)
+  const SX = 30;
+  const skyHW = y => Math.round(0.5 + ((y - 50) / 126) * 3.2);
+  for (let y = 50; y < 176; y++) { const hw = skyHW(y); rect(SX - hw, y, hw * 2 + 1, 1, C(0x1a3a78)); }
+  rect(SX, 40, 1, 10, C(0x7ab0ff));
+
+  layer(152, 168, 8, 14, 0x0d0a24, 0x160e34, 0x7a4aa8, 4, 5, 0.45, 2, 2, false);
+
+  // landmark: LED billboard building
+  rect(64, 146, 28, 30, C(0x0e0a22)); rect(64, 146, 28, 1, C(0x7a4aa8)); rect(67, 150, 22, 14, C(0x2a1a48));
+  // neon signs
+  const SIGNS = [
+    { x: 8, y: 158, w: 3, h: 10, cols: [0xff2e88, 0x21e6ff], rt: 1.5, ph: 0 },
+    { x: 20, y: 150, w: 8, h: 2, cols: [0xffe45e, 0xff2e88, 0x21e6ff], rt: 2.2, ph: 1 },
+    { x: 41, y: 160, w: 3, h: 9, cols: [0x21e6ff, 0xb06aff], rt: 1.1, ph: 2 },
+    { x: 49, y: 166, w: 6, h: 3, cols: [0xff6a2a, 0xffe45e], rt: 1.8, ph: 3 },
+    { x: 94, y: 160, w: 3, h: 8, cols: [0xff2e88, 0xffe45e], rt: 1.3, ph: 4 },
+    { x: 106, y: 154, w: 7, h: 2, cols: [0x7aff9a, 0x21e6ff], rt: 2.6, ph: 5 },
+    { x: 116, y: 162, w: 3, h: 10, cols: [0xff2e88, 0xb06aff, 0x21e6ff], rt: 1.7, ph: 6 },
+    { x: 58, y: 158, w: 2, h: 8, cols: [0xffe45e, 0xff2e88], rt: 2.9, ph: 7 }
+  ];
+  for (const s of SIGNS) rect(s.x - 1, s.y - 1, s.w + 2, s.h + 2, C(0x0a0618));
+
+  // streets
+  for (let y = 176; y < 200; y++) for (let x = 0; x < W; x++) bg[y * W + x] = ramp([C(0x0c0820), C(0x080616)], (y - 176) / 24, x, y);
+  const LC = [0xffc866, 0xff9a5a, 0xffe8b0, 0x7ad7ff].map(C);
+  for (const ry of [179, 185, 191, 197]) {
+    rect(0, ry, W, 1, C(0x1e1440));
+    for (let x = 1; x < W; x += 3) if (rnd() < 0.6) rect(x, ry - 1, 1, 1, LC[Math.floor(rnd() * 4)]);
+  }
+  for (let x = 5; x < W; x += 17) {
+    rect(x, 176, 1, 24, C(0x180f36));
+    for (let y = 177; y < 199; y += 3) if (rnd() < 0.45) rect(x, y, 1, 1, LC[Math.floor(rnd() * 4)]);
+  }
+
+  // ground edge
+  const edge = x => 197 + Math.round(Math.sin(x * 0.23) * 1.4 + Math.sin(x * 0.07 + 1) * 1.8);
+  for (let x = 0; x < W; x++) {
+    const e = edge(x);
+    for (let y = e; y < H; y++) {
+      let c = ramp([C(0x0b1a1c), C(0x040a0c)], (y - e) / 42, x, y);
+      if (y === e) c = C(0x3a2a5a); else if (y === e + 1) c = C(0x14242a);
+      else if (hash(x, y) < 0.03) c = C(0x12302a);
+      bg[y * W + x] = c;
+    }
+  }
+  // bench legs, shadow, lantern post
+  rect(33, SEAT + 3, 3, 14, C(0x2a170f)); rect(108, SEAT + 3, 3, 14, C(0x2a170f));
+  rect(26, 218, 90, 2, C(0x03060a)); rect(122, 204, 1, 14, C(0x1a1a22));
+
+  // pines framing the view
+  function pine(cx, top, sc) {
+    for (let y = top; y < 200; y++) {
+      const k = y - top, hw = Math.floor(k * 0.07 * sc + (k % 14) * 0.35 * sc + 1);
+      rect(cx - hw, y, hw * 2 + 1, 1, C(0x04070b));
+      if (k % 14 > 9) rect(cx + hw, y, 1, 1, C(0x4a2060));
+    }
+  }
+  pine(3, 62, 1); pine(133, 104, 0.9);
+
+  /* ---------- sprites ---------- */
+  const row = (l, s) => '.'.repeat(l) + s + '.'.repeat(24 - l - s.length);
+  const P = [
+    row(9, 'rrrrrr'), row(8, 'rhhhhhhc'), row(7, 'rhhhhhhhhc'), row(7, 'hhhhhhhhhh'), row(7, 'hhhhhhhhhh'),
+    row(7, 'hhhhhhhhhh'), row(7, 'hhhhhhhhhh'), row(7, 'ehhhhhhhhe'), row(8, 'hhhhhhhh'), row(9, 'nnnnnn'),
+    row(8, 'ssssssss'), row(4, 'r' + 's'.repeat(14) + 'c'), row(3, 's'.repeat(18))
+  ];
+  for (let i = 0; i < 9; i++) P.push(row(3, 'ssssssssSSssssssss'));
+  P.push(row(3, 'S'.repeat(18)), row(3, 'S'.repeat(18)));
+  const PP = mk({ h: 0x15101f, r: 0xff5aa0, c: 0x21e6ff, e: 0xc98e6c, n: 0xb87a5a, s: 0x33436a, S: 0x222d4c });
+  const SB = [
+    '..or.....co..', '..ooo...ooo..', '..ooooooooo..', '.ooooooooooo.', '.ooooooooooo.', '.oodoooooodo.',
+    '.ooooooooooo.', '..ooooooooo..', '..oodooodoo..', '.ooooooooooo.', '.oodoooooodo.', 'ooooooooooooo',
+    'ooodooooodooo', 'ooooooooooooo', 'ooooooooooooo'
+  ];
+  const SD = [
+    '..........o.o...', '..........ooooo.', '..........ooeook', '...oooooooooooo.',
+    '..oooodoooooooo.', '..ooooooooooooo.', '..oodooodooooll.', '..ooooooooooooo.'
+  ];
+  const CP = mk({ o: 0xe8892f, d: 0xb85f1c, l: 0xf6b06a, r: 0xff5aa0, c: 0x21e6ff, e: 0xb6ff6a, k: 0xff9aa0, z: 0x4a2410 });
+  const CPL = { ...CP, e: CP.z };
+  const HEART = ['.r.r.', 'rrrrr', '.rrr.', '..r..'];
+  const HP = mk({ r: 0xff5a7a });
+
+  function spr(rows, pal, x, y, flip, a, b) {
+    a = a || 0; b = b === undefined ? rows.length - 1 : b;
+    for (let j = a; j <= b; j++) {
+      const r = rows[j], w = r.length;
+      for (let i = 0; i < w; i++) { const c = pal[r[i]]; if (c !== undefined) set(x + (flip ? w - 1 - i : i), y + j, c); }
+    }
+  }
+
+  /* ---------- cat behaviour script ---------- */
+  const SCR = [['sit', 3], ['walk', 102], ['sit', 2.5], ['groom', 3], ['walk', 90], ['loaf', 4], ['walk', 78],
+    ['pet', 6], ['sit', 2], ['walk', 96], ['sit', 3], ['walk', 78], ['pet', 5], ['loaf', 5], ['walk', 104]];
+  const cat = { x: 96, dir: -1, i: 0, tm: 0, walk: 0 };
+  let hand = { x: 63, y: 199 }, hearts = [], lastSpawn = -1;
+  const nextState = () => { cat.i = (cat.i + 1) % SCR.length; cat.tm = 0; lastSpawn = -1; };
+  function stepCat(dt) {
+    const s = SCR[cat.i];
+    if (s[0] === 'walk') {
+      const dx = s[1] - cat.x, v = 11 * dt;
+      cat.walk += dt * 9;
+      if (Math.abs(dx) <= v) { cat.x = s[1]; nextState(); } else { cat.x += Math.sign(dx) * v; cat.dir = Math.sign(dx); }
+    } else { cat.tm += dt; if (cat.tm >= s[1]) nextState(); }
+  }
+
+  /* ---------- dynamic world ---------- */
+  const stars = Array.from({ length: 55 }, () => ({ x: 16 + Math.floor(rnd() * 105), y: Math.floor(rnd() * 92), ph: rnd() * TAU, sp: 1 + rnd() * 3 }))
+    .filter(s => Math.abs(s.x - 30) > 4 && Math.abs(s.x - 100) > 3 && !(s.x > 98 && s.x < 126 && s.y > 12 && s.y < 38));
+  const petals = Array.from({ length: 28 }, () => ({ x: rnd() * W, y: rnd() * H, sp: 6 + rnd() * 7, dr: 4 + rnd() * 7, ph: rnd() * TAU, c: C(rnd() < 0.5 ? 0xffb8d0 : 0xff8fb8), b: rnd() < 0.3 }));
+  const flies = Array.from({ length: 12 }, () => ({ x: 8 + rnd() * 119, y: 204 + rnd() * 28, ph: rnd() * TAU, sp: 0.3 + rnd() * 0.5 }));
+  const blades = (n, base, hmin, hmax, front) => Array.from({ length: n }, () => {
+    const x = Math.floor(rnd() * W);
+    return { x, y: front ? base + Math.floor(rnd() * 4) : edge(x) + 2, h: hmin + Math.floor(rnd() * (hmax - hmin + 1)), ph: rnd() * TAU };
+  });
+  const gBack = blades(60, 0, 3, 5, false), gFront = blades(26, 233, 5, 8, true);
+  const GB = C(0x0a2018), GT = C(0x2a6a50), GP = C(0x7a3a7a);
+  const lanes = [{ y: 179, d: 1, sp: 14, n: 6 }, { y: 185, d: -1, sp: 11, n: 7 }, { y: 191, d: 1, sp: 9, n: 5 }, { y: 197, d: -1, sp: 7, n: 5 }];
+
+  function grass(list, t) {
+    for (const g of list) for (let k = 0; k < g.h; k++) {
+      const dx = Math.round(Math.sin(t * 1.6 + g.ph + g.x * 0.05) * (k / g.h) * 1.6);
+      set(g.x + dx, g.y - k, k === g.h - 1 ? (g.x % 3 ? GT : GP) : GB);
+    }
+  }
+
+  function drawCat(t, petting) {
+    const st = SCR[cat.i][0], cx = Math.round(cat.x);
+    if (st === 'walk' || st === 'loaf') {
+      const flip = cat.dir < 0, loaf = st === 'loaf';
+      const sy = SEAT - (loaf ? 8 : 10), sx = cx - 8;
+      const X = c => flip ? 15 - c : c;
+      if (!loaf) {
+        for (let i = 0; i < 4; i++) {
+          const lc = [4, 6, 10, 12][i], ph = cat.walk + (i % 2) * Math.PI, s = Math.sin(ph);
+          const lx = sx + X(lc) + Math.round(s * 1.5);
+          set(lx, sy + 8, CP.d); if (s < 0.4) set(lx, sy + 9, CP.d);
+        }
+      }
+      const br = loaf ? Math.round(Math.sin(t * 2) * 0.5 + 0.5) : 0;
+      spr(SD, loaf ? CPL : CP, sx, sy + br, flip);
+      for (let i = 0; i < 8; i++) {
+        const tx = sx + X(2) + (flip ? 1 : -1) * Math.round(i * 0.8), ty = sy + 4 - (loaf ? Math.sin(t * 2 - i * 0.4) * 0.8 + i * 0.35 : i * 0.7 - Math.sin(t * 6 - i * 0.5) * 1.2);
+        set(tx, ty, i % 3 === 2 ? CP.d : CP.o); set(tx, ty + 1, CP.o);
+      }
+    } else {
+      const sx = cx - 6, sy = SEAT - 15;
+      const dip = petting ? (Math.sin(t * 9) > 0 ? 1 : 0) : (st === 'groom' && Math.sin(t * 7) > 0 ? 1 : 0);
+      spr(SB, CP, sx, sy, false, 7, 14);
+      spr(SB, CP, sx, sy + dip, false, petting && dip ? 1 : 0, 7);
+      const amp = petting ? 2.2 : 1;
+      for (let i = 0; i < 9; i++) {
+        const tx = cx + 6 + Math.round(i * 0.9), ty = SEAT - 2 - i * 0.6 + Math.sin(t * (petting ? 4.5 : 2.4) - i * 0.55) * amp;
+        set(tx, ty, i % 3 === 2 ? CP.d : CP.o); set(tx, ty + 1, CP.o);
+      }
+    }
+  }
+
+  function render(t, dt, p) {
+    px.set(bg);
+    // clouds
+    for (let k = 0; k < 2; k++) {
+      const cx = ((t * 1.8 + k * 70) % (W + 50)) - 35, cy = 22 + k * 24;
+      [[0, 10], [2, 18], [5, 13], [8, 7]].forEach(([dy, len], j) => {
+        for (let i = 0; i < len; i++) {
+          const x = Math.round(cx + i + (j % 2) * 3), y = cy + dy * 0.4 + j;
+          if (bay(x & 255, y & 255) < 0.55) set(x, y, j > 1 ? C(0xa04a8a) : C(0x3a2468));
+        }
+      });
+    }
+    // stars + plane
+    for (const s of stars) {
+      const b = Math.sin(t * s.sp + s.ph);
+      const c = b > 0.5 ? 0xffffff : b > -0.3 ? 0xb9a8ff : b > -0.8 ? 0x6c4fb5 : 0;
+      if (c) set(s.x, s.y, C(c));
+    }
+    const ps = (t % 24) / 9;
+    if (ps < 1) set(-5 + ps * 145, 34 - ps * 8, Math.floor(t * 2) % 2 ? C(0xff3030) : C(0xffffff));
+
+    // Skytree lights
+    for (let y = 52; y < 150; y++) {
+      const hw = skyHW(y), lit = (y + Math.floor(t * 14)) % 18 < 3;
+      for (let x = SX - hw; x <= SX + hw; x++) set(x, y, lit ? C(0xb8ffff) : C(0x2a62d0));
+    }
+    const dk = Math.sin(t * 1.3) > 0 ? 0xff7ae0 : 0x7affff;
+    drect(SX - 5, 94, 11, 3, C(dk)); drect(SX - 3, 106, 7, 2, C(dk));
+    // Tokyo Tower beacon
+    const bl = Math.sin(t * 4) > 0;
+    set(TX, 65, bl ? C(0xff3030) : C(0x601818)); if (bl) { set(TX - 1, 65, C(0x8a2020)); set(TX + 1, 65, C(0x8a2020)); }
+
+    // windows, beacons
+    for (const w of wins) if (Math.sin(t * w.r + w.ph) > -0.85) drect(w.x, w.y, w.w, w.h, w.c);
+    for (const b of beac) if (Math.sin(t * 3 + b.ph) > 0.3) set(b.x, b.y, C(0xff3030));
+
+    // neon signs
+    for (const s of SIGNS) {
+      const idx = Math.floor(t * s.rt + s.ph) % s.cols.length;
+      if (hash(Math.floor(t * 8), s.ph) > 0.93) continue;
+      const c = C(s.cols[idx]);
+      halo(s.x, s.y, s.w, s.h, 4, c, 0.5);
+      drect(s.x, s.y, s.w, s.h, c);
+    }
+    // LED billboard
+    halo(67, 150, 22, 14, 5, C(0xb02a86), 0.5);
+    const mode = Math.floor(t / 4) % 2, BL = [0xff2e88, 0x21e6ff, 0xffe45e, 0x2a0f4e].map(C);
+    for (let j = 0; j < 14; j++) for (let i = 0; i < 22; i++) {
+      let c;
+      if (mode === 0) c = BL[(Math.floor(i * 0.6 + t * 7) + Math.floor(j * 0.5)) & 3];
+      else { const hgt = (Math.sin(t * 6 + i * 0.9) * 0.5 + 0.5) * 14; c = 13 - j < hgt ? BL[Math.floor((13 - j) / 5)] : BL[3]; }
+      set(67 + i, 150 + j, c);
+    }
+    // cars
+    for (const l of lanes) for (let i = 0; i < l.n; i++) {
+      const x = Math.round((((t * l.sp * l.d + i * (W + 20) / l.n + l.y * 3) % (W + 20)) + W + 20) % (W + 20)) - 10;
+      set(x + (l.d > 0 ? 1 : 0), l.y, C(0xfff4c8)); set(x + (l.d > 0 ? 0 : 1), l.y, C(0xff2020));
+    }
+    // train
+    const tt = t % 13;
+    if (tt < 4.5) {
+      const hx = -4 + tt * 30;
+      for (let x = hx - 56; x <= hx; x++) {
+        if ((Math.floor(x) % 4) !== 3) { set(x, 169, C(0xfff0b0)); set(x, 170, C(0xfff0b0)); }
+        set(x, 168, C(0x2a2a44)); set(x, 171, C(0x4ad07a));
+      }
+    }
+
+    // back grass, lantern glow
+    grass(gBack, t);
+    const fl = 0.85 + 0.15 * Math.sin(t * 13) * Math.sin(t * 5.3);
+    for (let y = 176; y < 226; y++) for (let x = 98; x < W; x++) {
+      const d = Math.hypot(x - 122, y - 200);
+      if (d < 24 && bay(x & 255, y & 255) < Math.pow(1 - d / 24, 1.5) * 0.5 * fl) set(x, y, C(0x7a4a22));
+    }
+
+    // person
+    stepCat(dt);
+    const st = SCR[cat.i][0], petting = st === 'pet';
+    const x0 = 42, y0 = 178, bob = Math.sin(t * 1.8) > 0.55 ? -1 : 0;
+    spr(P, PP, x0, y0, false, 8, 23);
+    spr(P, PP, x0 + (petting ? 1 : 0), y0 + bob, false, 0, 8);
+    const tgx = petting ? cat.x : x0 + 21, tgy = petting ? SEAT - 17 + (Math.sin(t * 9) > 0 ? 0 : 1) : y0 + 21;
+    const k = 1 - Math.exp(-6 * dt);
+    hand.x += (tgx - hand.x) * k; hand.y += (tgy - hand.y) * k;
+    const sx = x0 + 18, sy = y0 + 13, n = Math.max(1, Math.round(Math.max(Math.abs(hand.x - sx), Math.abs(hand.y - sy))));
+    for (let i = 0; i <= n; i++) {
+      const ax = sx + (hand.x - sx) * i / n, ay = sy + (hand.y - sy) * i / n;
+      set(ax, ay, PP.s); set(ax, ay + 1, PP.S);
+    }
+    drect(Math.round(hand.x) - 1, Math.round(hand.y) - 1, 2, 2, PP.e);
+
+    drawCat(t, petting);
+
+    // bench seat, mug + steam, lantern box
+    drect(30, SEAT, 82, 1, C(0x7a4a2a)); drect(30, SEAT + 1, 82, 2, C(0x4a2c1e)); drect(30, SEAT + 3, 82, 1, C(0x2a170f));
+    drect(34, SEAT - 5, 4, 5, C(0xe8dccc)); drect(38, SEAT - 4, 1, 3, C(0xe8dccc)); drect(34, SEAT - 5, 4, 1, C(0x8a6a5a));
+    for (let i = 0; i < 7; i++) if (bay(i, 3) < 1 - i / 7) set(36 + Math.sin(t * 2 + i * 0.9) * 1.3, SEAT - 7 - i * 2 + (Math.floor(t * 3) % 2), C(0xd8d0e8));
+    drect(118, 197, 8, 8, C(0x2a1a10)); drect(119, 198, 6, 6, C(0xffd27a)); drect(120, 199, 4, 4, C(0xfff2c0));
+    for (let m = 0; m < 3; m++) if (Math.sin(t * 9 + m) > -0.5) set(122 + Math.cos(t * 1.7 + m * 2) * 9, 199 + Math.sin(t * 2.3 + m * 2) * 7, C(0xfff0c8));
+
+    // hearts
+    if (petting && cat.tm > 0.8) {
+      const f = Math.floor(cat.tm / 1.3);
+      if (f !== lastSpawn) { lastSpawn = f; hearts.push({ x: cat.x + (rnd() * 8 - 4), y: SEAT - 19, a: 0 }); }
+    }
+    hearts = hearts.filter(h => (h.a += dt) < 1.8);
+    for (const h of hearts) {
+      const hx = Math.round(h.x), hy = Math.round(h.y - h.a * 8 + Math.sin(h.a * 5) * 1.5);
+      for (let j = 0; j < 4; j++) for (let i = 0; i < 5; i++) if (HEART[j][i] === 'r' && bay(hx + i, hy + j) < 1.4 - h.a / 1.8) set(hx + i, hy + j, HP.r);
+    }
+
+    // front grass, fireflies, petals
+    grass(gFront, t);
+    for (const f of flies) if (Math.sin(t * 2 + f.ph) > 0.1) set(f.x + Math.sin(t * f.sp + f.ph) * 6, f.y + Math.cos(t * f.sp * 1.3 + f.ph) * 4, C(0xc8ff6a));
+    for (const q of petals) {
+      const y = ((q.y + t * q.sp) % (H + 10)) - 5;
+      const x = ((((q.x - t * q.dr) % (W + 20)) + W + 20) % (W + 20)) - 10 + Math.sin(t * 1.5 + q.ph) * 3;
+      set(x, y, q.c); if (q.b) set(x + 1, y, q.c);
+    }
+
+    // intro: dither-dissolve reveal
+    if (p < 1) for (let i = 0; i < W * H; i++) {
+      const y = (i / W) | 0, kk = ikey[i];
+      if (kk > p) px[i] = C(0x05010f); else if (kk > p - 0.03) px[i] = C(0xffd9f2);
+    }
+    ctx.putImageData(img, 0, 0);
+  }
+
+  const ikey = new Float32Array(W * H);
+  for (let y = 0; y < H; y++) for (let x = 0; x < W; x++) ikey[y * W + x] = hash(x + 5, y + 9) * 0.6 + (1 - y / H) * 0.4;
+
+  const INTRO = 3600;
+  let t0 = performance.now(), last = 0, prev = performance.now();
+  addEventListener('pointerdown', () => { t0 = performance.now(); });
+  function loop(now) {
+    requestAnimationFrame(loop);
+    if (now - last < 33) return;
+    last = now;
+    const dt = Math.min(0.1, (now - prev) / 1000); prev = now;
+    const e = Math.min(1, (now - t0) / INTRO);
+    const p = e >= 1 ? 1 : (1 - Math.pow(1 - e, 2)) * 1.03;
+    render(now / 1000, dt, p);
+  }
+  requestAnimationFrame(loop);
+})();
+</script>
+</body>
+</html>

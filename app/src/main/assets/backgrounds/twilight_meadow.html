@@ -1,0 +1,804 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover">
+<title>Twilight Mountain Lake & Wildflower Meadow – Pixel Art</title>
+<style>
+  :root {
+    --bg: #12101b;
+  }
+  * { margin: 0; padding: 0; box-sizing: border-box; }
+  html, body {
+    margin: 0;
+    padding: 0;
+    width: 100%;
+    height: 100%;
+    background: var(--bg);
+    overflow: hidden;
+    user-select: none;
+    -webkit-user-select: none;
+    pointer-events: none;
+  }
+  canvas {
+    display: block;
+    width: 100vw;
+    height: 100vh;
+    object-fit: cover;
+    image-rendering: -moz-crisp-edges;
+    image-rendering: -webkit-crisp-edges;
+    image-rendering: pixelated;
+    image-rendering: crisp-edges;
+    pointer-events: none;
+  }
+</style>
+</head>
+<body>
+<canvas id="c" aria-label="Pixel art twilight landscape: purple and golden sunset sky with crescent moon, jagged alpine peaks reflected in a still mountain lake, dark pine ridges, and a sloping green meadow filled with purple wildflower asters"></canvas>
+<script>
+(() => {
+  // Native pixel resolution matching the reference artwork (160 x 204)
+  const W = 160, H = 204, LAKE_Y = 108;
+
+  const cv = document.getElementById('c');
+  cv.width = W;
+  cv.height = H;
+  const ctx = cv.getContext('2d', { alpha: false });
+  const img = ctx.createImageData(W, H);
+  const px = new Uint32Array(img.data.buffer);
+  const bg = new Uint32Array(W * H);
+
+  // Convert 0xRRGGBB hex into ABGR 32-bit integer for little-endian ImageData
+  const C = h => ((255 << 24) | ((h & 255) << 16) | (h & 0xff00) | ((h >> 16) & 255)) >>> 0;
+
+  // Deterministic hash & PRNG for organic pixel cluster placement
+  const hash = (x, y) => {
+    let h = Math.imul(x, 374761393) + Math.imul(y, 668265263);
+    h = Math.imul(h ^ (h >>> 13), 1274126177);
+    return ((h ^ (h >>> 16)) >>> 0) / 4294967296;
+  };
+  function rng(seed) {
+    let a = seed >>> 0;
+    return () => {
+      a = (a + 0x6D2B79F5) >>> 0;
+      let t = Math.imul(a ^ (a >>> 15), a | 1);
+      t ^= t + Math.imul(t ^ (t >>> 7), t | 61);
+      return ((t ^ (t >>> 14)) >>> 0) / 4294967296;
+    };
+  }
+
+  // Pixel buffer helpers
+  const bset = (x, y, c) => {
+    x = Math.round(x);
+    y = Math.round(y);
+    if (x >= 0 && x < W && y >= 0 && y < H) bg[y * W + x] = c;
+  };
+  const set = (x, y, c) => {
+    x = Math.round(x);
+    y = Math.round(y);
+    if (x >= 0 && x < W && y >= 0 && y < H) px[y * W + x] = c;
+  };
+  const bDisk = (cx, cy, rx, ry, c) => {
+    const x0 = Math.floor(cx - rx), x1 = Math.ceil(cx + rx);
+    const y0 = Math.floor(cy - ry), y1 = Math.ceil(cy + ry);
+    for (let y = y0; y <= y1; y++) {
+      for (let x = x0; x <= x1; x++) {
+        if (Math.hypot((x - cx) / rx, (y - cy) / ry) <= 1) bset(x, y, c);
+      }
+    }
+  };
+
+  // Exact color palette sampled from the reference pixel artwork
+  const PAL = {
+    // Diagonal twilight sky bands
+    sky0: C(0x4c438a),
+    sky1: C(0x55539d),
+    sky2: C(0x645aa6),
+    sky3: C(0x7657a6),
+    sky4: C(0x885ba8),
+    sky5: C(0x9e63b0),
+    sky6: C(0xb46cb8),
+    sky7: C(0xc874bc),
+
+    // Sunset cloud layers & golden glow
+    cldDark: C(0x7656a3),
+    cldMid: C(0x8c5ca8),
+    cldOrchid: C(0xa364b2),
+    cldPink: C(0xba6eb8),
+    cldRose: C(0xd678ad),
+    cldCoral: C(0xeb8496),
+    cldPeach: C(0xf49889),
+    sunOrange: C(0xf5b179),
+    sunGold: C(0xf9c873),
+    sunBright: C(0xfee27d),
+    moonWhite: C(0xffffff),
+    moonGlow: C(0xd99ce0),
+
+    // Mountain rock, shadow, sunlit pink & glacier snow
+    mtnDarkest: C(0x2c2954),
+    mtnDark: C(0x3b3162),
+    mtnBase: C(0x463872),
+    mtnMid: C(0x544382),
+    mtnLight: C(0x685396),
+    mtnPink1: C(0xc476a6),
+    mtnPink2: C(0xe38ca4),
+    mtnIce1: C(0x5862a0),
+    mtnIce2: C(0x7380bf),
+    mtnIce3: C(0x94a6de),
+    mtnSnow: C(0xebf0ff),
+
+    // Midground forested foothills & right dark pine ridge
+    hill1: C(0x2b3668),
+    hill2: C(0x232d59),
+    hill3: C(0x1c254a),
+    pineDark: C(0x1c1c2b),
+    pineDeep: C(0x161824),
+    pineTex: C(0x141d29),
+
+    // Lake water & horizon line
+    waterLine1: C(0xafa4e0),
+    waterLine2: C(0x827ab5),
+    waterLine3: C(0x555585),
+    waterRipple: C(0x3d426b),
+    lakeMtn1: C(0x2c2b59),
+    lakeMtn2: C(0x383469),
+    lakeHill: C(0x1f274d),
+
+    // Left trees, reeds & foreground meadow
+    treeDark: C(0x1b241d),
+    treeMid: C(0x263324),
+    treeLight: C(0x32412b),
+    treeHi: C(0x3f5032),
+    reedDark: C(0x4e523b),
+    reedMid: C(0x63664b),
+    reedLight: C(0x777859),
+
+    meadowDeep: C(0x192416),
+    meadowDark: C(0x24331d),
+    meadowMid: C(0x304224),
+    meadowGreen: C(0x3b4f2a),
+    meadowBright: C(0x495e32),
+    meadowStalk: C(0x5d703b),
+    meadowTip: C(0x738549),
+    dirtDark: C(0x473522),
+    dirtLight: C(0x594128),
+
+    // Wildflower asters
+    stemDark: C(0x131c11),
+    stemGreen: C(0x21301b),
+    leafLight: C(0x3d522c),
+    flwShadow: C(0x3f3878),
+    flwDark: C(0x554ca1),
+    flwMid: C(0x7368c4),
+    flwLight: C(0x9087db),
+    flwBright: C(0xb2acef),
+    flwCenterD: C(0x80621e),
+    flwCenterM: C(0xba8d26),
+    flwCenterL: C(0xdeb030)
+  };
+
+  /* =========================================================================
+   * 1. BUILD STATIC BACKGROUND (`bg`): SKY, CLOUDS, MOUNTAINS, PINE RIDGE, LAKE
+   * ========================================================================= */
+  // 1A. Diagonal Twilight Sky with Characteristic 1px Parallel Striping
+  const skyBands = [
+    PAL.sky0, PAL.sky1, PAL.sky2, PAL.sky3,
+    PAL.sky4, PAL.sky5, PAL.sky6, PAL.sky7
+  ];
+  for (let y = 0; y < LAKE_Y; y++) {
+    for (let x = 0; x < W; x++) {
+      // Diagonal coordinate tilting up-right as in the reference image
+      const d = y + x * 0.23;
+      let idx = 0;
+      if (d < 13) idx = 0;
+      else if (d < 28) idx = 1;
+      else if (d < 40) idx = 2;
+      else if (d < 50) idx = 3;
+      else if (d < 60) idx = 4;
+      else if (d < 70) idx = 5;
+      else if (d < 82) idx = 6;
+      else idx = 7;
+
+      // Signature 1px parallel offset line just past each band transition
+      const boundaries = [13, 28, 40, 50, 60, 70, 82];
+      for (let b = 0; b < boundaries.length; b++) {
+        const dist = d - boundaries[b];
+        if (dist >= 1.2 && dist < 2.1) {
+          idx = b;
+          break;
+        }
+      }
+      bg[y * W + x] = skyBands[idx];
+    }
+  }
+
+  // 1B. Billowy Sunset & Twilight Clouds
+  // Warm golden-yellow lower right sky glow (x = 92..152, y = 48..76)
+  for (let y = 48; y < 78; y++) {
+    for (let x = 92; x < 156; x++) {
+      if (y > 60) bset(x, y, PAL.sunOrange);
+      else if (y > 53) bset(x, y, PAL.cldPeach);
+      else bset(x, y, PAL.cldCoral);
+    }
+  }
+  // Golden bands & two glowing sun-orbs above the right mountain peaks
+  bDisk(118, 66, 6, 3.2, PAL.sunGold);
+  bDisk(118, 66, 2.5, 2.2, PAL.sunBright);
+  bDisk(133, 67, 5, 3.2, PAL.sunGold);
+  bDisk(133, 67, 3.0, 2.5, PAL.sunBright);
+  for (let x = 98; x < 148; x++) {
+    if ((x + 1) % 3 !== 0) bset(x, 63, PAL.sunGold);
+    if (x > 103 && x < 145) bset(x, 69, PAL.cldCoral);
+  }
+
+  // Sculpted pixel cloud puffs across the sky
+  const cloudPuffs = [
+    // Upper-right & mid violet cloud bank
+    [118, 17, 14, 4, PAL.cldDark], [134, 15, 16, 5, PAL.cldDark], [150, 18, 12, 5, PAL.cldDark],
+    [98, 25, 12, 4, PAL.cldDark], [112, 24, 15, 5, PAL.cldMid], [128, 23, 14, 5, PAL.cldMid],
+    [144, 25, 16, 6, PAL.cldMid], [76, 30, 10, 3.5, PAL.cldMid], [92, 29, 12, 4.5, PAL.cldMid],
+
+    // Mid-sky orchid & magenta clouds around the crescent moon
+    [68, 36, 9, 3.5, PAL.cldOrchid], [84, 35, 13, 4.5, PAL.cldOrchid], [102, 34, 15, 5, PAL.cldOrchid],
+    [118, 34, 14, 5, PAL.cldOrchid], [136, 33, 15, 5.5, PAL.cldOrchid], [152, 35, 12, 5, PAL.cldOrchid],
+    [95, 40, 14, 4.5, PAL.cldPink], [112, 41, 13, 4.5, PAL.cldPink], [131, 41, 12, 4.5, PAL.cldPink],
+    [146, 40, 14, 5, PAL.cldPink],
+
+    // Left horizon pink/violet cloud puffs (above left trees)
+    [14, 42, 11, 4, PAL.cldMid], [28, 40, 10, 3.5, PAL.cldMid],
+    [8, 54, 10, 4, PAL.cldRose], [20, 55, 12, 4.5, PAL.cldRose], [33, 57, 9, 3.5, PAL.cldPink],
+    [12, 58, 8, 2.5, PAL.cldCoral], [24, 59, 9, 2.5, PAL.cldCoral],
+
+    // Right sunset rose, coral & purple cloud puffs above golden glow
+    [104, 49, 11, 3.5, PAL.cldRose], [118, 50, 12, 4, PAL.cldCoral], [135, 48, 10, 4, PAL.cldPink],
+    [148, 49, 12, 4.5, PAL.cldOrchid], [126, 55, 13, 4, PAL.cldPink], [140, 55, 12, 4.5, PAL.cldRose],
+    [114, 57, 9, 2.5, PAL.cldPeach], [130, 59, 10, 3, PAL.cldCoral], [144, 60, 9, 3, PAL.cldCoral]
+  ];
+  for (const [cx, cy, rx, ry, col] of cloudPuffs) {
+    bDisk(cx, cy, rx, ry, col);
+  }
+
+  // Crisp 5x5 White Crescent Moon at (123, 40)
+  const moonShape = [
+    '.www.',
+    'www..',
+    'www..',
+    'wwww.',
+    '.www.'
+  ];
+  bset(123, 37, PAL.moonGlow);
+  bset(121, 43, PAL.moonGlow);
+  for (let j = 0; j < 5; j++) {
+    for (let i = 0; i < 5; i++) {
+      if (moonShape[j][i] === 'w') bset(121 + i, 38 + j, PAL.moonWhite);
+    }
+  }
+
+  // 1C. Jagged Alpine Mountain Range (x = 10..145, y = 50..108)
+  // Precise ridge height control points matching the reference silhouette
+  const mtnPts = [
+    [0, 74], [14, 72], [22, 66], [30, 68], [37, 65], [44, 67], [49, 69],
+    [55, 62], [58, 65], [64, 59], [68, 57], [71, 60], [75, 56], [77, 61],
+    [82, 55], [87, 50], // Main sharp Matterhorn spire
+    [91, 55], [94, 62], [99, 65], [104, 69], [108, 73], [112, 71],
+    [118, 68], [125, 65], // Secondary right snow peak
+    [131, 68], [137, 71], [144, 76], [152, 82], [160, 85]
+  ];
+  function mtnTop(x) {
+    for (let i = 0; i < mtnPts.length - 1; i++) {
+      const [x0, y0] = mtnPts[i], [x1, y1] = mtnPts[i + 1];
+      if (x >= x0 && x <= x1) {
+        return y0 + (y1 - y0) * ((x - x0) / Math.max(1, x1 - x0));
+      }
+    }
+    return 85;
+  }
+
+  for (let x = 8; x < 148; x++) {
+    const top = Math.round(mtnTop(x));
+    for (let y = top; y < LAKE_Y; y++) {
+      const dy = y - top;
+      let col = PAL.mtnBase;
+
+      // Left rounded range (x < 52)
+      if (x < 52) {
+        col = (x < 26 || (x > 36 && x < 46)) ? PAL.mtnDark : PAL.mtnBase;
+        if (dy > 14 && (x % 5 === 0)) col = PAL.mtnDark;
+      }
+      // Central craggy peak & main spire (52 <= x <= 108)
+      else if (x <= 108) {
+        // Sunlit right facets of sub-peaks & main peak
+        const onMainRight = x >= 87 && x <= 106 && dy < (x - 85) * 1.35;
+        const onSubRight1 = x >= 68 && x <= 73 && dy < 7;
+        const onSubRight2 = x >= 75 && x <= 79 && dy < 7;
+
+        if (onMainRight) {
+          // Upper spire catches warm pink/coral sunset light; lower ridge has icy blue snow facets
+          if (y < 58 && x <= 92) col = (dx => dx < 2 ? PAL.mtnPink2 : PAL.mtnPink1)(x - 87);
+          else if ((x + y) % 4 === 0 && dy < 8) col = PAL.mtnSnow;
+          else if (dy < 6) col = PAL.mtnIce3;
+          else if (dy < 12) col = PAL.mtnIce2;
+          else col = PAL.mtnIce1;
+        } else if (onSubRight1 || onSubRight2) {
+          col = dy < 3 ? PAL.mtnPink1 : PAL.mtnIce2;
+        } else {
+          // Shadowed left & central faces with diagonal rock facets
+          const ridgeLine = Math.sin((x - 82) * 0.28 + dy * 0.15);
+          if (ridgeLine > 0.45) col = PAL.mtnMid;
+          else if (ridgeLine < -0.35) col = PAL.mtnDarkest;
+          else col = PAL.mtnDark;
+        }
+      }
+      // Right snow-streaked peak (x > 108)
+      else {
+        if (x >= 123 && dy < (140 - x) * 0.85) {
+          if (dy < 3 && x < 134) col = PAL.mtnPink1;
+          else if (dy < 7) col = PAL.mtnIce3;
+          else if (dy < 12) col = PAL.mtnIce2;
+          else col = PAL.mtnIce1;
+        } else {
+          col = x < 122 ? PAL.mtnBase : PAL.mtnDark;
+        }
+      }
+      bset(x, y, col);
+    }
+  }
+
+  // Distinct bright snow patches on the central peak matching the reference
+  const snowPatches = [
+    // Left sub-peak snow crescent (72, 62)
+    [72, 61, PAL.mtnSnow], [73, 62, PAL.mtnSnow], [74, 62, PAL.mtnIce3],
+    // Main peak collar snow patch (81..85, 61..63)
+    [83, 60, PAL.mtnSnow], [82, 61, PAL.mtnSnow], [83, 61, PAL.mtnSnow],
+    [80, 62, PAL.mtnSnow], [81, 62, PAL.mtnSnow],
+    // Mid-slope snow streak at (63..65, 79..81)
+    [65, 79, PAL.mtnSnow], [64, 80, PAL.mtnSnow], [63, 81, PAL.mtnIce3]
+  ];
+  for (const [sx, sy, scol] of snowPatches) bset(sx, sy, scol);
+
+  // 1D. Midground Dark Blue-Indigo Forested Foothills (y = 78..108)
+  for (let x = 35; x < 135; x++) {
+    // Back foothill hump (centered around x = 98, top = 78)
+    const hBack = Math.round(78 + Math.pow((x - 98) / 18, 2) * 5.5);
+    for (let y = Math.max(78, hBack); y < LAKE_Y; y++) {
+      bset(x, y, PAL.hill1);
+    }
+    // Front foothill hump (centered around x = 76, top = 85)
+    const hFront = Math.round(85 + Math.pow((x - 76) / 22, 2) * 6.5);
+    for (let y = Math.max(85, hFront); y < LAKE_Y; y++) {
+      bset(x, y, (y + x) % 7 === 0 ? PAL.hill3 : PAL.hill2);
+    }
+  }
+
+  // 1E. Steep Dark Pine Ridge on the Right (x = 64..160, y = 55..108)
+  const pinePts = [
+    [64, 108], [76, 102], [90, 96], [103, 90], [115, 83],
+    [127, 76], [134, 81], [142, 72], [151, 63], [160, 54]
+  ];
+  function pineTop(x) {
+    for (let i = 0; i < pinePts.length - 1; i++) {
+      const [x0, y0] = pinePts[i], [x1, y1] = pinePts[i + 1];
+      if (x >= x0 && x <= x1) {
+        return y0 + (y1 - y0) * ((x - x0) / Math.max(1, x1 - x0));
+      }
+    }
+    return 108;
+  }
+  for (let x = 64; x < W; x++) {
+    // Add 1-3px jagged pine treetop spikes along the ridge silhouette
+    const spike = ((x * 7) % 3 === 0) ? -2 : ((x % 2 === 0) ? -1 : 0);
+    const top = Math.round(pineTop(x)) + spike;
+    for (let y = Math.max(0, top); y < LAKE_Y; y++) {
+      const tex = (x % 4 === 0 && (y - top) > 4 && (y % 3 !== 0));
+      bset(x, y, tex ? PAL.pineTex : (y - top < 3 ? PAL.pineDark : PAL.pineDeep));
+    }
+  }
+
+  // 1F. Still Alpine Lake & Mirror Reflection (y = 108..154)
+  for (let y = LAKE_Y; y < 156; y++) {
+    const dy = y - LAKE_Y;
+    const srcY = Math.max(0, Math.min(LAKE_Y - 1, LAKE_Y - 1 - dy));
+    for (let x = 0; x < W; x++) {
+      // Horizontal ripple displacement near the edges of reflections
+      const rip = (dy % 2 === 0) ? Math.round(Math.sin(y * 1.7 + x * 0.2) * 1.2) : 0;
+      const sx = Math.max(0, Math.min(W - 1, x + rip));
+      const above = bg[srcY * W + sx];
+
+      let col = PAL.lakeMtn1;
+      if (above === PAL.pineDeep || above === PAL.pineDark || above === PAL.pineTex) {
+        col = PAL.pineDeep;
+      } else if (above === PAL.hill1 || above === PAL.hill2 || above === PAL.hill3) {
+        col = PAL.lakeHill;
+      } else if (
+        above === PAL.sunBright || above === PAL.sunGold || above === PAL.sunOrange ||
+        above === PAL.cldPeach || above === PAL.cldCoral || above === PAL.cldRose ||
+        above === PAL.cldPink || above === PAL.cldOrchid ||
+        above === PAL.sky5 || above === PAL.sky6 || above === PAL.sky7
+      ) {
+        // Golden-pink sunset reflection in the bottom-right corner of the lake!
+        if (x > 132 && y > 134) {
+          if (y < 143) col = (y % 2 === 0) ? PAL.sunGold : PAL.sunOrange;
+          else if (y < 147) col = PAL.cldCoral;
+          else col = PAL.cldPink;
+        } else {
+          col = PAL.lakeMtn2;
+        }
+      } else if (above === PAL.mtnMid || above === PAL.mtnIce1 || above === PAL.mtnIce2 || above === PAL.mtnIce3) {
+        col = PAL.lakeMtn2;
+      }
+      bset(x, y, col);
+    }
+  }
+
+  // Crisp Lavender-White Shoreline at y = 108..111
+  for (let x = 40; x < W; x++) {
+    bset(x, LAKE_Y, x < 118 ? PAL.waterLine1 : PAL.waterLine2);
+    bset(x, LAKE_Y + 1, x < 128 ? PAL.waterLine2 : PAL.waterLine3);
+    if (x > 46 && x < 152 && x % 7 !== 0) {
+      bset(x, LAKE_Y + 3, PAL.waterRipple);
+    }
+  }
+
+  /* =========================================================================
+   * 2. LEFT LEAFY TREES & SLOPING GREEN MEADOW BASE IN `bg`
+   * ========================================================================= */
+  // Meadow hill slope curve from (x = 0, y = 114) down to (x = 160, y = 152)
+  const meadowTop = x => {
+    if (x < 28) return 114 + (x / 28) * 6;
+    if (x < 95) return 120 + Math.pow((x - 28) / 67, 1.15) * 24;
+    return 144 + ((x - 95) / 65) * 8;
+  };
+
+  // Left Leafy Deciduous Trees (x = 0..45, y = 62..120)
+  const treeBlobs = [
+    [5, 68, 6, 6], [3, 76, 8, 8], [10, 77, 7, 7], [16, 76, 6, 6],
+    [4, 86, 9, 9], [13, 86, 9, 8], [22, 85, 7, 7], [29, 87, 6, 6],
+    [6, 96, 10, 9], [18, 95, 10, 9], [28, 95, 9, 8], [36, 98, 7, 7],
+    [10, 106, 12, 9], [24, 105, 11, 9], [35, 106, 9, 8], [41, 111, 6, 6]
+  ];
+  for (const [cx, cy, rx, ry] of treeBlobs) {
+    for (let y = cy - ry; y <= cy + ry; y++) {
+      for (let x = cx - rx; x <= cx + rx; x++) {
+        const d = Math.hypot((x - cx) / rx, (y - cy) / ry);
+        if (d <= 1.05 && hash(x * 3, y * 5) > (d - 0.65) * 1.8) {
+          // Leaf cluster shading (lighter olive on top-right of each puff)
+          let c = PAL.treeMid;
+          if (y - cy < -ry * 0.25 && x - cx > -rx * 0.2) c = PAL.treeHi;
+          else if (y - cy < ry * 0.15 && (x + y) % 2 === 0) c = PAL.treeLight;
+          else if (y - cy > ry * 0.25 || x < 5) c = PAL.treeDark;
+          bset(x, y, c);
+        }
+      }
+    }
+  }
+  // Fine top branches at (x = 2..11, y = 61..67)
+  const topTwigs = [[4,61],[5,62],[3,63],[6,63],[8,63],[2,64],[5,64],[7,64],[9,64]];
+  for (const [tx, ty] of topTwigs) bset(tx, ty, PAL.treeMid);
+
+  // Fill Sloping Foreground Meadow Base (y = meadowTop(x) .. H)
+  for (let x = 0; x < W; x++) {
+    const mTop = Math.round(meadowTop(x) + Math.sin(x * 0.7) * 0.8);
+    for (let y = mTop; y < H; y++) {
+      const dy = y - mTop;
+      const h = hash(x, y);
+      let c = PAL.meadowMid;
+
+      // Deep shadowed grass near the bottom among the dense flower stems
+      if (y > 175 && h < 0.55) c = PAL.meadowDeep;
+      else if (y > 162 && h < 0.45) c = PAL.meadowDark;
+      else if (dy < 6 && h < 0.4) c = PAL.meadowGreen;
+      else if (h < 0.22) c = PAL.meadowDark;
+      else if (h > 0.78) c = PAL.meadowGreen;
+
+      // Warm brown earth / path patches on the mid-right slope (matching reference)
+      const inPath1 = Math.hypot((x - 130) / 16, (y - 156) / 6) < 1;
+      const inPath2 = Math.hypot((x - 90) / 14, (y - 154) / 4) < 1;
+      const inPath3 = Math.hypot((x - 63) / 8, (y - 147) / 3) < 1;
+      if ((inPath1 || inPath2 || inPath3) && h < 0.68) {
+        c = h < 0.34 ? PAL.dirtDark : PAL.dirtLight;
+      }
+
+      bset(x, y, c);
+    }
+  }
+
+  /* =========================================================================
+   * 3. DYNAMIC & ANIMATED FOREGROUND ELEMENTS (STARS, REEDS, GRASS, ASTERS)
+   * ========================================================================= */
+  // Exact Star Positions from the Reference Artwork
+  const stars = [
+    { x: 23, y: 9, sz: 1, ph: 0.2 },
+    { x: 50, y: 9, sz: 1, ph: 1.4 },
+    { x: 54, y: 7, sz: 1, dim: true, ph: 2.1 },
+    { x: 58, y: 9, sz: 1, dim: true, ph: 3.0 },
+    { x: 130, y: 4, sz: 1, ph: 0.8 },
+    { x: 41, y: 23, sz: 2, ph: 2.6 }, // 2x2 bright star
+    { x: 146, y: 17, sz: 2, ph: 4.1 }, // 2x2 bright star
+    { x: 11, y: 32, sz: 1, ph: 1.9 },
+    { x: 57, y: 32, sz: 1, dim: true, ph: 5.0 },
+    { x: 62, y: 30, sz: 1, ph: 0.5 },
+    { x: 57, y: 36, sz: 1, ph: 3.7 },
+    { x: 60, y: 36, sz: 1, dim: true, ph: 1.1 },
+    { x: 83, y: 30, sz: 1, dim: true, ph: 2.9 },
+    { x: 87, y: 31, sz: 1, ph: 4.5 },
+    { x: 157, y: 29, sz: 1, dim: true, ph: 0.3 },
+    { x: 59, y: 48, sz: 1, ph: 3.3 }
+  ];
+
+  // Dense Cluster of Vertical Reeds on the Upper-Left Slope (x = 1..28, y = 104..126)
+  const reeds = [];
+  {
+    const r = rng(101);
+    for (let x = 1; x <= 27; x += 2) {
+      const base = 113 + Math.floor((x / 27) * 11 + (r() - 0.5) * 4);
+      const h = 7 + Math.floor(r() * 6);
+      reeds.push({ x, y: base, h, ph: r() * 6.28, light: r() > 0.45 });
+      if (r() < 0.65) {
+        reeds.push({ x: x + 1, y: base + 3, h: 5 + Math.floor(r() * 5), ph: r() * 6.28, light: false });
+      }
+    }
+  }
+
+  // Vertical Lighter-Green Grass Stalks Across the Meadow Slope
+  const grassStalks = [];
+  {
+    const r = rng(303);
+    for (let i = 0; i < 95; i++) {
+      const gx = 4 + Math.floor(r() * 152);
+      const mTop = meadowTop(gx);
+      const gy = Math.floor(mTop + 3 + r() * (186 - mTop));
+      const gh = 4 + Math.floor(r() * 8);
+      grassStalks.push({
+        x: gx,
+        y: gy,
+        h: gh,
+        ph: r() * 6.28,
+        bright: r() < 0.35
+      });
+    }
+  }
+
+  // Tiny Distant Wildflower Buds & White/Lavender Specks on the Mid Slope
+  const buds = [
+    // [x, y, type] — type 0: 1px white/pale dot, type 1: 2x2 violet bud, type 2: 3x3 small cross bud
+    [35, 148, 0], [38, 152, 0], [64, 156, 0], [105, 165, 0], [74, 152, 0],
+    [8, 159, 1], [15, 165, 1], [22, 155, 2], [35, 156, 1], [43, 153, 1],
+    [50, 160, 1], [75, 154, 1], [83, 162, 2], [81, 169, 1], [118, 162, 2],
+    [124, 168, 2], [148, 168, 2]
+  ];
+
+  // 21 Detailed Purple Aster / Daisy Blossoms Matching the Exact Positions & Sizes in the Reference
+  const flowers = [
+    // Upper-mid slope blooms
+    { x: 52, y: 147, rx: 5, ry: 4.5, petals: 7, ph: 0.4, stemH: 10 },
+    { x: 33, y: 163, rx: 5, ry: 4.5, petals: 8, ph: 1.1, stemH: 12 },
+    { x: 45, y: 169, rx: 4, ry: 3.0, petals: 6, ph: 2.0, stemH: 9 },
+    { x: 60, y: 171, rx: 3.5, ry: 3.0, petals: 5, ph: 2.8, stemH: 8 },
+    { x: 69, y: 168, rx: 6.5, ry: 5.0, petals: 9, ph: 0.9, stemH: 15 },
+
+    // Left foreground blooms
+    { x: 14, y: 171, rx: 7.5, ry: 6.5, petals: 11, ph: 1.6, stemH: 18 },
+    { x: 31, y: 183, rx: 4.5, ry: 4.0, petals: 7, ph: 3.2, stemH: 12 },
+    { x: 50, y: 181, rx: 6.0, ry: 5.5, petals: 9, ph: 2.4, stemH: 14 },
+    { x: 22, y: 194, rx: 5.5, ry: 5.0, petals: 8, ph: 0.7, stemH: 10, dark: true },
+    { x: 44, y: 194, rx: 8.5, ry: 6.0, petals: 12, ph: 1.9, stemH: 10 },
+    { x: 63, y: 190, rx: 5.0, ry: 4.5, petals: 8, ph: 4.0, stemH: 12, dark: true },
+
+    // Center-bottom & right foreground blooms
+    { x: 93, y: 180, rx: 8.5, ry: 5.5, petals: 12, ph: 1.3, stemH: 16 },
+    { x: 81, y: 199, rx: 9.0, ry: 6.0, petals: 12, ph: 2.7, stemH: 8 },
+    { x: 100, y: 193, rx: 6.5, ry: 5.0, petals: 9, ph: 3.5, stemH: 11 },
+    { x: 107, y: 201, rx: 5.0, ry: 4.0, petals: 8, ph: 0.2, stemH: 6, dark: true },
+
+    { x: 114, y: 173, rx: 4.5, ry: 3.5, petals: 7, ph: 2.2, stemH: 10 },
+    { x: 118, y: 184, rx: 10.0, ry: 6.5, petals: 13, ph: 0.8, stemH: 18 },
+    { x: 139, y: 174, rx: 8.5, ry: 6.0, petals: 11, ph: 1.7, stemH: 16 },
+    { x: 149, y: 175, rx: 3.5, ry: 3.0, petals: 6, ph: 3.9, stemH: 10 },
+    { x: 149, y: 182, rx: 4.5, ry: 3.5, petals: 7, ph: 2.5, stemH: 12 },
+    { x: 142, y: 192, rx: 9.5, ry: 6.0, petals: 12, ph: 1.1, stemH: 12 }
+  ];
+
+  // Draw a radial pixel-art purple aster blossom with dark/mid/bright petals and golden center
+  function drawAster(fl, swayX, swayY) {
+    const cx = Math.round(fl.x + swayX);
+    const cy = Math.round(fl.y + swayY);
+
+    // Draw dark green stem & arched basal leaves first
+    for (let s = 2; s <= fl.stemH; s++) {
+      const sx = Math.round(fl.x + swayX * (1 - s / fl.stemH));
+      const sy = Math.round(fl.y + s);
+      set(sx, sy, PAL.stemDark);
+      set(sx + 1, sy, PAL.stemGreen);
+    }
+    // Arched leaf blades near the stem
+    if (fl.rx >= 6) {
+      for (let l = 1; l <= 7; l++) {
+        set(cx - l, cy + 3 + (l >> 1), l < 4 ? PAL.leafLight : PAL.stemDark);
+        set(cx + l, cy + 4 + (l >> 1), l < 4 ? PAL.stemGreen : PAL.stemDark);
+      }
+    }
+
+    // Radiating pixel petals
+    const pDark = fl.dark ? PAL.flwShadow : PAL.flwDark;
+    const pMid = fl.dark ? PAL.flwDark : PAL.flwMid;
+    const pLight = fl.dark ? PAL.flwMid : PAL.flwLight;
+    const pTip = fl.dark ? PAL.flwLight : PAL.flwBright;
+
+    const n = fl.petals;
+    for (let k = 0; k < n; k++) {
+      const ang = (k / n) * Math.PI * 2 + fl.ph;
+      const cos = Math.cos(ang), sin = Math.sin(ang);
+      const len = Math.hypot(cos * fl.rx, sin * fl.ry);
+      const steps = Math.ceil(len * 1.3);
+
+      for (let s = 1; s <= steps; s++) {
+        const f = s / steps;
+        const px0 = Math.round(cx + cos * fl.rx * f);
+        const py0 = Math.round(cy + sin * fl.ry * f);
+
+        // Upper-left petals catch brighter periwinkle-lavender light; lower petals are deeper violet
+        let col = pMid;
+        if (f > 0.78) col = sin < 0.2 ? pTip : pLight;
+        else if (sin > 0.35 || k % 3 === 0) col = pDark;
+        else col = pLight;
+
+        set(px0, py0, col);
+        // Slightly thicker middle on larger foreground petals
+        if (fl.rx >= 6.5 && f > 0.3 && f < 0.75) {
+          set(px0 + (sin > 0 ? 1 : 0), py0, k % 2 === 0 ? pMid : pDark);
+        }
+      }
+    }
+
+    // Golden-ochre flower center disk
+    const cr = fl.rx >= 7 ? 2 : 1;
+    for (let dy = -cr; dy <= cr; dy++) {
+      for (let dx = -cr; dx <= cr; dx++) {
+        if (Math.abs(dx) + Math.abs(dy) <= cr + 1) {
+          let c = PAL.flwCenterM;
+          if (dx <= 0 && dy <= 0) c = PAL.flwCenterL;
+          else if (dy > 0) c = PAL.flwCenterD;
+          set(cx + dx, cy + dy, c);
+        }
+      }
+    }
+  }
+
+  /* =========================================================================
+   * 4. MAIN ANIMATION RENDER LOOP (CLAMPED DELTA-TIME)
+   * ========================================================================= */
+  function render(t) {
+    // 1. Copy static twilight landscape into active frame buffer
+    px.set(bg);
+
+    // 2. Twinkling Stars in the Twilight Sky
+    for (let i = 0; i < stars.length; i++) {
+      const s = stars[i];
+      const tw = Math.sin(t * 2.2 + s.ph);
+      if (s.sz === 2) {
+        const col = tw > -0.4 ? PAL.moonWhite : C(0xd6ccf5);
+        set(s.x, s.y, col);
+        set(s.x + 1, s.y, col);
+        set(s.x, s.y + 1, col);
+        set(s.x + 1, s.y + 1, col);
+      } else {
+        if (tw > -0.65) {
+          const col = s.dim
+            ? (tw > 0.3 ? C(0xd8c8f0) : C(0x9b8ec4))
+            : (tw > 0.1 ? PAL.moonWhite : C(0xd8c8f0));
+          set(s.x, s.y, col);
+        }
+      }
+    }
+
+    // 3. Subtle Shimmer on the Lake Horizon Line & Bottom-Right Golden Sunset Reflection
+    for (let x = 42; x < W; x++) {
+      const wave = Math.sin(t * 1.8 + x * 0.18);
+      if (wave > 0.55) {
+        set(x, LAKE_Y, PAL.waterLine1);
+      }
+      if (x > 48 && x < 150 && Math.sin(t * 1.4 - x * 0.25) > 0.45) {
+        set(x, LAKE_Y + 3, PAL.waterLine3);
+      }
+    }
+    // Gentle ripple animation on the golden-pink sunset reflection in the bottom-right lake corner
+    for (let y = 136; y < 151; y++) {
+      const shift = Math.round(Math.sin(t * 2.4 + y * 0.9) * 1.2);
+      const xStart = Math.max(134, 148 - (y - 135) * 1.1) + shift;
+      for (let x = Math.round(xStart); x < 151; x++) {
+        if (bg[y * W + x] === PAL.pineDeep) continue;
+        const c = y < 143
+          ? ((y + Math.floor(t * 3)) % 2 === 0 ? PAL.sunBright : PAL.sunGold)
+          : (y < 147 ? PAL.cldCoral : PAL.cldPink);
+        set(x, y, c);
+      }
+    }
+
+    // 4. Gently Swaying Reeds on the Upper-Left Slope
+    const breeze = Math.sin(t * 1.1) * 0.5 + 0.5;
+    for (let i = 0; i < reeds.length; i++) {
+      const rd = reeds[i];
+      const tipSway = Math.round(Math.sin(t * 1.6 + rd.ph) * (0.5 + breeze * 0.6));
+      for (let h = 0; h < rd.h; h++) {
+        const sx = rd.x + (h > rd.h * 0.6 ? tipSway : 0);
+        const sy = rd.y - h;
+        const col = rd.light
+          ? (h > rd.h - 3 ? PAL.reedLight : PAL.reedMid)
+          : (h > rd.h - 3 ? PAL.reedMid : PAL.reedDark);
+        set(sx, sy, col);
+      }
+    }
+
+    // 5. Swaying Vertical Grass Stalks Across the Meadow
+    for (let i = 0; i < grassStalks.length; i++) {
+      const gs = grassStalks[i];
+      const tip = Math.round(Math.sin(t * 1.5 + gs.ph + gs.x * 0.04) * (0.4 + breeze * 0.6));
+      for (let h = 0; h < gs.h; h++) {
+        const gx = gs.x + (h > gs.h * 0.55 ? tip : 0);
+        const gy = gs.y - h;
+        let col = PAL.meadowBright;
+        if (gs.bright) col = h > gs.h - 3 ? PAL.meadowTip : PAL.meadowStalk;
+        else if (h > gs.h - 2) col = PAL.meadowStalk;
+        set(gx, gy, col);
+      }
+    }
+
+    // 6. Small Distant Wildflower Buds & Specks on the Slope
+    for (let i = 0; i < buds.length; i++) {
+      const [bx, by, type] = buds[i];
+      const bob = Math.round(Math.sin(t * 1.7 + i) * 0.4);
+      if (type === 0) {
+        set(bx, by, C(0xd6d0f5));
+      } else if (type === 1) {
+        set(bx + bob, by, PAL.flwLight);
+        set(bx + 1 + bob, by, PAL.flwMid);
+        set(bx + bob, by + 1, PAL.flwDark);
+      } else {
+        set(bx + bob, by, PAL.flwCenterM);
+        set(bx - 1 + bob, by, PAL.flwLight);
+        set(bx + 1 + bob, by, PAL.flwLight);
+        set(bx + bob, by - 1, PAL.flwBright);
+        set(bx + bob, by + 1, PAL.flwDark);
+      }
+    }
+
+    // 7. Foreground Purple Wildflower Asters Swaying in the Twilight Breeze
+    for (let i = 0; i < flowers.length; i++) {
+      const fl = flowers[i];
+      const swayX = Math.sin(t * 1.4 + fl.ph + fl.x * 0.03) * (0.55 + breeze * 0.65);
+      const swayY = Math.cos(t * 2.0 + fl.ph) * 0.25;
+      drawAster(fl, swayX, swayY);
+    }
+
+    ctx.putImageData(img, 0, 0);
+  }
+
+  // Glitch-free animation loop with visibility reset
+  let lastFrame = 0;
+  let prevTime = performance.now();
+  let simTime = 0;
+
+  document.addEventListener('visibilitychange', () => {
+    if (!document.hidden) {
+      prevTime = performance.now();
+      lastFrame = 0;
+    }
+  });
+
+  function loop(now) {
+    requestAnimationFrame(loop);
+    if (now - lastFrame < 33) return;
+    lastFrame = now;
+
+    const dt = Math.min(0.04, Math.max(0.001, (now - prevTime) / 1000));
+    prevTime = now;
+    simTime += dt;
+
+    render(simTime);
+  }
+
+  requestAnimationFrame(loop);
+})();
+</script>
+</body>
+</html>

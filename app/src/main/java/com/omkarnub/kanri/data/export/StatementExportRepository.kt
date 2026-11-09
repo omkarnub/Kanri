@@ -25,6 +25,7 @@ sealed class ExportRange(val label: String) {
     object YearToDate : ExportRange("Year to Date")
     object AllTime : ExportRange("All Time")
     data class SpecificMonth(val year: Int, val month: Int) : ExportRange("Selected Month")
+    data class Custom(val startMillis: Long, val endMillis: Long) : ExportRange("Custom Range")
 }
 
 class StatementExportRepository(private val context: Context) {
@@ -67,7 +68,7 @@ class StatementExportRepository(private val context: Context) {
                         writer.flush()
                     }
                     ExportFormat.PDF -> {
-                        PdfStatementExporter.exportPdf(transactions, periodTitle, stream)
+                        PdfStatementExporter.exportPdf(context, transactions, periodTitle, stream)
                     }
                 }
             }
@@ -96,7 +97,7 @@ class StatementExportRepository(private val context: Context) {
                         writer.flush()
                     }
                     ExportFormat.PDF -> {
-                        PdfStatementExporter.exportPdf(transactions, periodTitle, stream)
+                        PdfStatementExporter.exportPdf(context, transactions, periodTitle, stream)
                     }
                 }
             }
@@ -118,6 +119,10 @@ class StatementExportRepository(private val context: Context) {
             ExportRange.YearToDate -> "YTD"
             ExportRange.AllTime -> "all_time"
             is ExportRange.SpecificMonth -> String.format(Locale.getDefault(), "%04d_%02d", range.year, range.month + 1)
+            is ExportRange.Custom -> {
+                val sdf = SimpleDateFormat("yyyyMMdd", Locale.getDefault())
+                "custom_${sdf.format(Date(range.startMillis))}_${sdf.format(Date(range.endMillis))}"
+            }
         }
         return "kanri_statement_${rangeTag}_${dateStamp}.${format.extension}"
     }
@@ -140,6 +145,10 @@ class StatementExportRepository(private val context: Context) {
                 cal.set(Calendar.YEAR, range.year)
                 cal.set(Calendar.MONTH, range.month)
                 SimpleDateFormat("MMMM yyyy", Locale.getDefault()).format(cal.time)
+            }
+            is ExportRange.Custom -> {
+                val sdf = SimpleDateFormat("dd MMM yyyy", Locale.getDefault())
+                "${sdf.format(Date(range.startMillis))} – ${sdf.format(Date(range.endMillis))}"
             }
         }
     }
@@ -210,6 +219,25 @@ class StatementExportRepository(private val context: Context) {
                 cal.set(Calendar.MILLISECOND, 999)
                 val end = cal.timeInMillis
                 Pair(start, end)
+            }
+            is ExportRange.Custom -> {
+                val startCal = Calendar.getInstance().apply {
+                    timeInMillis = range.startMillis
+                    set(Calendar.HOUR_OF_DAY, 0)
+                    set(Calendar.MINUTE, 0)
+                    set(Calendar.SECOND, 0)
+                    set(Calendar.MILLISECOND, 0)
+                }
+                val endCal = Calendar.getInstance().apply {
+                    timeInMillis = range.endMillis
+                    set(Calendar.HOUR_OF_DAY, 23)
+                    set(Calendar.MINUTE, 59)
+                    set(Calendar.SECOND, 59)
+                    set(Calendar.MILLISECOND, 999)
+                }
+                val s = minOf(startCal.timeInMillis, endCal.timeInMillis)
+                val e = maxOf(startCal.timeInMillis, endCal.timeInMillis)
+                Pair(s, e)
             }
         }
     }

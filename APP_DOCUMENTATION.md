@@ -988,7 +988,9 @@ $$\text{Savings Rate} = \frac{\text{Income} - \text{Spend}}{\text{Income}} \time
 
 ### 13.1 Vector PDF Statements (`PdfStatementExporter.kt`)
 - Uses native `android.graphics.pdf.PdfDocument`.
-- Renders multi-page vector statements with clean typography, spend breakdown tables, and opening/closing balance summaries.
+- **Clean Minimal Design & Official Kanri Logo**: Editorial letterhead styling with high-resolution vector extraction of the authentic `KANRI` Panchang wordmark (`R.drawable.panchang_dark`), sharp hairline rules (`#E2E8F0`), and multi-page pagination.
+- **Dynamic Date Ranges**: Supports full custom date ranges from any start date to any end date chosen via Material 3 `DateRangePicker` in `KanriGlassDatePickerDialog`.
+- **Currency-Aware**: Formats all transactions, executive summary cards, and category distributions using the user's primary currency (`CurrencyUtils.formatCurrency`).
 - Renders in under 500ms on-device without external dependencies or cloud conversion APIs.
 
 ### 13.2 RFC 4180 CSV Statements (`CsvExporter.kt`)
@@ -1127,8 +1129,8 @@ Behind all frosted surfaces runs a 3-layer visual backdrop composition:
 +-------------------------------------------------------+
 ```
 
-##### 8 Dynamic Background Shaders (`GlassBackgroundType`)
-Users can choose between 8 hardware-accelerated animated backgrounds loaded from `android_asset/backgrounds/`:
+##### 12 Dynamic Background Shaders (`GlassBackgroundType`)
+Users can choose between 12 hardware-accelerated animated backgrounds loaded from `android_asset/backgrounds/`:
 
 1. **Gemini Aurora (`aurora.html`)**: Mobile Google Gemini neural aurora featuring simultaneous multi-color fluid orbs smoothly morphing between Cycle 1 (`#7cff67`, `#22d3c5`, `#8f5cff`) and Cycle 2 (`#ff8a5c`, `#ff5c8a`, `#8a5cff`) across the screen.
 2. **Grain Gradient (`grain_gradient.html`)**: Diffuse multi-point color blurs with heavy organic analogue noise.
@@ -1136,8 +1138,12 @@ Users can choose between 8 hardware-accelerated animated backgrounds loaded from
 4. **Prism Swirl (`prism_gradient.html`)**: High-saturation chromatic dispersion swirls with fluid motion.
 5. **Cloudscape (`cloud_shader.html`)**: Volumetric procedural cloud density drift shaders.
 6. **Ink Ridges (`ink_ridges.html`)**: Topographic contour lines with pulsing fluid interference patterns.
-7. **Fuji & Sakura (`fuji_sakura.html`)**: Japanese aesthetic silhouette composition with falling cherry blossom physics.
+7. **Fuji & Sakura (`fuji_sakura.html`)**: 9:16 pixel hanging scroll artwork with Mt. Fuji, golden mist, pagoda, torii gate, koi fish, cranes, cat, and cherry blossom physics.
 8. **Sumi-e Mist (`sumi_e_mist.html`)**: Traditional monochrome ink wash painting with drifting watercolor mist.
+9. **Thistle Portico (`thistle_portico.html`)**: Gothic stone portico in wisteria bloom with castle vista & drifting petals.
+10. **Still Sunset Meadow (`sunset_meadow.html`)**: 3D voxel meadow with interactive grass, voxel flora & dynamic day/sunset/night cycle.
+11. **Twilight Meadow (`twilight_meadow.html`)**: Pixel art twilight landscape: crescent moon, jagged alpine peaks reflected in a still mountain lake, and sloping meadow with purple wildflower asters.
+12. **Tokyo Night (`tokyo_night.html`)**: Pixel art Tokyo night skyline vista with mountain bench, companion cat, neon city lights, and drifting petals.
 
 ##### Lifecycle & Performance Safeguards
 - **Lifecycle Awareness**: Observes `LocalLifecycleOwner`. The underlying `WebView` automatically invokes `onPause()` when Kanri enters the background or the screen turns off, suspending WebGL/requestAnimationFrame execution to achieve **zero background CPU/battery consumption**. Calls `onResume()` when returning to the foreground.

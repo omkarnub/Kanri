@@ -16,7 +16,7 @@ The settings architecture adheres to:
    - **Themes Sub-Window** (`ThemeSettingsScreen`):
      - Visual phone preview cards for `System`, `Light`, `Dark`, `AMOLED`, and `Glass`.
      - When `Glass` is selected:
-       - **Live Shader Backgrounds**: Minimalist, single-column vertical list view of 10 animated WebGL / Canvas backgrounds (`Gemini Aurora`, `Grain Gradient`, `Hero Geometric`, `Prism Swirl`, `Cloudscape`, `Ink Ridges`, `Fuji & Sakura`, `Sumi-e Mist`, `Thistle Portico`, `Still Sunset Meadow`).
+       - **Live Shader Backgrounds**: Minimalist, single-column vertical list view of 12 animated WebGL / Canvas backgrounds (`Gemini Aurora`, `Grain Gradient`, `Hero Geometric`, `Prism Swirl`, `Cloudscape`, `Ink Ridges`, `Fuji & Sakura` [9:16 pixel hanging scroll], `Sumi-e Mist`, `Thistle Portico`, `Still Sunset Meadow`, `Twilight Meadow` [pixel art lake & wildflowers], `Tokyo Night` [pixel art night vista & companion cat]).
          - **No Previews**: Removed gradient preview swatches for a clean, distraction-free typographic list view.
          - **Apply / Applied Button**: Each row features a dedicated right-aligned action button ("Apply" with outline when unselected, or filled "Applied" with a checkmark when active), allowing instant selection alongside direct row-tapping.
          - **Thistle Portico**: High-performance Canvas 2D scene with pointed Gothic arch, castle view, wisteria racemes swaying in the wind, falling petals, and luminous light shafts.

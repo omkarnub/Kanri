@@ -682,6 +682,12 @@ fun getShaderGradientBrush(type: GlassBackgroundType): Brush {
         GlassBackgroundType.SUNSET_MEADOW -> Brush.linearGradient(
             colors = listOf(Color(0xFFE2A8AE), Color(0xFFF8A68E), Color(0xFFFFCB8C), Color(0xFF8AAA18), Color(0xFF172604))
         )
+        GlassBackgroundType.TWILIGHT_MEADOW -> Brush.linearGradient(
+            colors = listOf(Color(0xFF12101B), Color(0xFF38234D), Color(0xFF8D5375), Color(0xFFE89A7A), Color(0xFF1E352C))
+        )
+        GlassBackgroundType.TOKYO_NIGHT -> Brush.linearGradient(
+            colors = listOf(Color(0xFF05010F), Color(0xFF1C1335), Color(0xFF5B2B6D), Color(0xFF9E4784), Color(0xFF00E5FF))
+        )
     }
 }
 
@@ -693,10 +699,12 @@ fun getShaderDescription(type: GlassBackgroundType): String {
         GlassBackgroundType.PRISM_GRADIENT -> "Dynamic refractive glass caustics"
         GlassBackgroundType.CLOUD_SHADER -> "Volumetric cumulus cloudscape"
         GlassBackgroundType.INK_RIDGES -> "Japanese ink wash topographical flow"
-        GlassBackgroundType.FUJI_SAKURA -> "Ethereal sakura dawn over Mt. Fuji"
+        GlassBackgroundType.FUJI_SAKURA -> "9:16 pixel hanging scroll: Mt. Fuji, golden mist, pagoda, torii gate & sakura blossoms"
         GlassBackgroundType.SUMI_E_MIST -> "Minimalist monochrome ink diffusion"
         GlassBackgroundType.THISTLE_PORTICO -> "Gothic stone portico in wisteria bloom with castle vista & drifting petals"
         GlassBackgroundType.SUNSET_MEADOW -> "3D voxel meadow with interactive grass, voxel flora & dynamic day/sunset/night cycle"
+        GlassBackgroundType.TWILIGHT_MEADOW -> "Pixel art twilight alpine lake with swaying wildflower asters & crescent moon"
+        GlassBackgroundType.TOKYO_NIGHT -> "Pixel art Tokyo night skyline with mountain bench, companion cat & neon city lights"
     }
 }
 

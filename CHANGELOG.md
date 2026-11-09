@@ -5,6 +5,29 @@ All notable changes to Kanri will be documented in this file.
 The format is based on [Keep a Changelog](https://keepachangelog.com/en/1.0.0/),
 and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0.html).
 
+## [1.8.0] - 2026-11-09
+
+### Added & Financial Statements
+- **Custom Date Range Financial Statements**:
+  - Added `ExportRange.Custom(startMillis, endMillis)` to `StatementExportRepository`.
+  - Added dedicated "Custom Range" chip in `ExportStatementSheet` with date range formatting (`dd MMM – dd MMM`).
+  - Integrated `KanriGlassDatePickerDialog` wrapping Material 3 `DateRangePicker` allowing users to pick custom date ranges from any start date to any end date.
+  - Generates custom period titles and safe filenames (e.g. `kanri_statement_custom_YYYYMMDD_YYYYMMDD.pdf`).
+- **Clean Minimal PDF Statements with Kanri Logo**:
+  - Re-engineered `PdfStatementExporter` with an Apple-grade, editorial letterhead design on a clean white canvas with subtle `#E2E8F0` hairline rules.
+  - High-res Kanri Vector Logo: Vector-renders the official `KANRI` Panchang mark from `R.drawable.panchang_dark` with dynamic non-transparent bounding box cropping for crisp vector branding in the statement header.
+  - Currency-Aware Formatting: Replaced hardcoded currency symbols with user's selected primary currency via `CurrencyUtils.formatCurrency`.
+  - Executive KPI Cards: Clean summary cards for Total Received (emerald), Total Spent (crimson), and Net Cash Flow with transaction counts and surplus/deficit badges.
+  - Expense Breakdown: Horizontal category cards with percentage progress bars.
+  - Ledger Table: Sleek transaction table with transfers (`⇄`), debits, credits, and multi-page pagination.
+- **New Pixel Art Animated Backgrounds**:
+  - Replaced `fuji_sakura.html` with new 9:16 pixel hanging scroll artwork featuring Mt. Fuji, golden mist, pagoda, torii gate, koi fish, cranes, and cherry blossom physics.
+  - Added `twilight_meadow.html` ("Twilight Meadow"): Pixel art twilight alpine lake with jagged moonlit peaks and swaying wildflower asters.
+  - Added `tokyo_night.html` ("Tokyo Night"): Pixel art Tokyo night skyline vista with mountain bench, companion cat, and city lights.
+  - Registered `TWILIGHT_MEADOW` and `TOKYO_NIGHT` in `GlassBackgroundType` and added custom color gradients and descriptions in `SettingsComponents.kt`.
+  - Tuned CSS with `object-fit: cover; width: 100vw; height: 100vh; image-rendering: pixelated;` for sharp, full-screen coverage across all phone aspect ratios.
+- Bumped version to `1.8.0` (Build 29).
+
 ## [1.7.0] - 2026-11-09
 
 ### Added & Fluid Motion Polish

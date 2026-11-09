@@ -1,436 +1,1145 @@
-<!doctype html>
-<html>
+<!DOCTYPE html>
+<html lang="en">
 <head>
-  <meta charset="utf-8">
-  <meta name="viewport" content="width=device-width, initial-scale=1, user-scalable=no">
-  <style>
-    * { margin: 0; padding: 0; box-sizing: border-box; }
-    html, body {
-      width: 100%;
-      height: 100%;
-      margin: 0;
-      padding: 0;
-      overflow: hidden;
-      background: #11100d;
-      pointer-events: none;
-      user-select: none;
-    }
-    #stage {
-      display: block;
-      width: 100vw;
-      height: 100vh;
-      object-fit: cover;
-      pointer-events: none;
-    }
-  </style>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover">
+<title>Fuji and Sakura – 9:16 Pixel Hanging Scroll</title>
+<style>
+  :root {
+    --ground: #11100d;
+    --paper: #eadfc8;
+  }
+  * { margin: 0; padding: 0; box-sizing: border-box; }
+  html, body {
+    margin: 0;
+    padding: 0;
+    width: 100%;
+    height: 100%;
+    background: var(--ground);
+    overflow: hidden;
+    user-select: none;
+    -webkit-user-select: none;
+    pointer-events: none;
+  }
+  canvas {
+    display: block;
+    width: 100vw;
+    height: 100vh;
+    object-fit: cover;
+    background: var(--paper);
+    image-rendering: -moz-crisp-edges;
+    image-rendering: -webkit-crisp-edges;
+    image-rendering: pixelated;
+    image-rendering: crisp-edges;
+    pointer-events: none;
+  }
+</style>
 </head>
 <body>
-<canvas id="stage" width="1080" height="1920" role="img" aria-label="Animated Japanese ink and wash painting: snow-capped Mount Fuji above golden mist and a still lake, framed by a cherry tree in bloom and a pine, with petals drifting and cranes in flight"></canvas>
+<canvas id="c" aria-label="Animated 9:16 pixel art Japanese hanging scroll: snow-capped Mount Fuji above golden mist and a still lake with a pagoda, torii gate, fishing boat, koi fish, cranes, sakura tree, sleeping cat, and drifting petals"></canvas>
 <script>
-(function () {
-  var W = 1080, H = 1920, TAU = Math.PI * 2, SHORE = 1330;
-  var cv = document.getElementById('stage');
-  var ctx = cv.getContext('2d');
-  var INK = '29,32,34', PAPER = '234,223,200';
-  var reduce = window.matchMedia && window.matchMedia('(prefers-reduced-motion: reduce)').matches;
-  var FUJI_X = 548, FUJI_TOP = 560, FUJI_BASE = 1200;
+(() => {
+  // 9:16 True Pixel Buffer Resolution (162 x 288)
+  const W = 162, H = 288, SHORE = 198, TAU = Math.PI * 2;
+  const FUJI_X = 83, FUJI_TOP = 82, FUJI_BASE = 178;
 
+  const cv = document.getElementById('c');
+  cv.width = W;
+  cv.height = H;
+  const ctx = cv.getContext('2d', { alpha: false });
+  const img = ctx.createImageData(W, H);
+  const px = new Uint32Array(img.data.buffer);
+  const bg = new Uint32Array(W * H);
+
+  // Convert 0xRRGGBB hex into ABGR 32-bit integer for little-endian ImageData buffer
+  const C = h => ((255 << 24) | ((h & 255) << 16) | (h & 0xff00) | ((h >> 16) & 255)) >>> 0;
+  const mk = o => Object.fromEntries(Object.entries(o).map(([k, v]) => [k, C(v)]));
+
+  // Unpack & blend ABGR colors for water reflections and translucent mist washes
+  const blend = (c1, c2, a) => {
+    const r1 = c1 & 255, g1 = (c1 >> 8) & 255, b1 = (c1 >> 16) & 255;
+    const r2 = c2 & 255, g2 = (c2 >> 8) & 255, b2 = (c2 >> 16) & 255;
+    const r = (r1 + (r2 - r1) * a) | 0;
+    const g = (g1 + (g2 - g1) * a) | 0;
+    const b = (b1 + (b2 - b1) * a) | 0;
+    return ((255 << 24) | (b << 16) | (g << 8) | r) >>> 0;
+  };
+
+  // 4x4 Ordered Bayer Dithering Matrix & Helpers
+  const BAY = [0, 8, 2, 10, 12, 4, 14, 6, 3, 11, 1, 9, 15, 7, 13, 5];
+  const bay = (x, y) => (BAY[(y & 3) * 4 + (x & 3)] + 0.5) / 16;
+  const ramp = (s, f, x, y) => {
+    f = f < 0 ? 0 : f > 1 ? 1 : f;
+    const t = f * (s.length - 1), i = Math.min(s.length - 2, Math.floor(t));
+    return bay(x & 255, y & 255) < t - i ? s[i + 1] : s[i];
+  };
+
+  // Deterministic Spatial Hash & Seeded PRNG
+  const hash = (x, y) => {
+    let h = Math.imul(x, 374761393) + Math.imul(y, 668265263);
+    h = Math.imul(h ^ (h >>> 13), 1274126177);
+    return ((h ^ (h >>> 16)) >>> 0) / 4294967296;
+  };
   function rng(seed) {
-    var a = seed >>> 0;
-    return function () {
+    let a = seed >>> 0;
+    return () => {
       a = (a + 0x6D2B79F5) >>> 0;
-      var t = a;
-      t = Math.imul(t ^ (t >>> 15), t | 1);
+      let t = Math.imul(a ^ (a >>> 15), a | 1);
       t ^= t + Math.imul(t ^ (t >>> 7), t | 61);
       return ((t ^ (t >>> 14)) >>> 0) / 4294967296;
     };
   }
-  function mk(w, h) { var c = document.createElement('canvas'); c.width = w; c.height = h; return c; }
+  const rnd = rng(2026);
 
-  function ridgeFn(seed, base, amp) {
-    var r = rng(seed), comps = [];
-    for (var k = 0; k < 5; k++) comps.push({ f: 0.0035 * Math.pow(1.85, k) * (0.8 + r() * 0.4), a: amp * Math.pow(0.5, k), p: r() * 6.28 });
-    return function (x) { var s = 0; for (var k = 0; k < comps.length; k++) s += comps[k].a * (0.5 + 0.5 * Math.sin(comps[k].f * x + comps[k].p)); return base - s; };
-  }
-
-  /* ---------- fuji silhouette ---------- */
-  function half(dy, side) {
-    return (36 + 790 * Math.pow(dy, 1.62)) * (side < 0 ? 0.97 : 1.04) + Math.sin(dy * 23) * 2.2 + Math.sin(dy * 57) * 1.2;
-  }
-  function fujiPath(g) {
-    var i, n = 90, dy;
-    g.beginPath();
-    for (i = 0; i <= n; i++) { dy = i / n; var y = FUJI_TOP + dy * (FUJI_BASE - FUJI_TOP); if (i === 0) g.moveTo(FUJI_X - half(dy, -1), y); else g.lineTo(FUJI_X - half(dy, -1), y); }
-    g.lineTo(FUJI_X - half(1, -1) - 60, FUJI_BASE + 200); g.lineTo(FUJI_X + half(1, 1) + 60, FUJI_BASE + 200);
-    for (i = n; i >= 0; i--) { dy = i / n; g.lineTo(FUJI_X + half(dy, 1), FUJI_TOP + dy * (FUJI_BASE - FUJI_TOP)); }
-    g.closePath();
-  }
-
-  /* ---------- static back: sky, sun, fuji, hills ---------- */
-  var back = mk(W, H), grain = mk(W, H);
-  (function () {
-    var g = back.getContext('2d'), r = rng(21), i;
-    var sky = g.createLinearGradient(0, 0, 0, SHORE);
-    sky.addColorStop(0, '#9fb0bf'); sky.addColorStop(0.3, '#c6cdd0'); sky.addColorStop(0.58, '#e6dccb'); sky.addColorStop(0.82, '#efd6c0'); sky.addColorStop(1, '#f0e1cc');
-    g.fillStyle = sky; g.fillRect(0, 0, W, H);
-    for (i = 0; i < 26; i++) {
-      var x = r() * W, y = r() * 1250, rad = 140 + r() * 320;
-      var rg = g.createRadialGradient(x, y, 0, x, y, rad);
-      rg.addColorStop(0, r() > 0.5 ? 'rgba(250,240,225,.22)' : 'rgba(120,140,160,.08)'); rg.addColorStop(1, 'rgba(0,0,0,0)');
-      g.fillStyle = rg; g.fillRect(x - rad, y - rad, rad * 2, rad * 2);
-    }
-    g.lineCap = 'round';
-    for (i = 0; i < 120; i++) {
-      var sy = r() * 1000, sx = r() * W, l = 140 + r() * 380;
-      g.strokeStyle = 'rgba(250,244,230,' + (0.04 + r() * 0.05) + ')'; g.lineWidth = 6 + r() * 16;
-      g.beginPath(); g.moveTo(sx, sy); g.lineTo(sx + l, sy + (r() - 0.5) * 8); g.stroke();
-    }
-    /* sun */
-    var sx0 = 850, sy0 = 420, sr = 98;
-    var halo = g.createRadialGradient(sx0, sy0, sr * 0.6, sx0, sy0, sr * 3.4);
-    halo.addColorStop(0, 'rgba(226,120,92,.30)'); halo.addColorStop(1, 'rgba(226,120,92,0)');
-    g.fillStyle = halo; g.fillRect(sx0 - sr * 4, sy0 - sr * 4, sr * 8, sr * 8);
-    var sd = g.createRadialGradient(sx0 - 12, sy0 - 12, 6, sx0, sy0, sr);
-    sd.addColorStop(0, 'rgba(208,84,60,.94)'); sd.addColorStop(1, 'rgba(182,56,42,.9)');
-    g.fillStyle = sd; g.beginPath(); g.arc(sx0, sy0, sr, 0, TAU); g.fill();
-
-    /* far hills */
-    function hills(seed, base, amp, a, col, trees) {
-      var y = ridgeFn(seed, base, amp), px, k, rr = rng(seed * 3);
-      g.save(); if ('filter' in g) g.filter = 'blur(1.4px)';
-      g.beginPath(); g.moveTo(-10, SHORE + 20);
-      for (px = -10; px <= W + 10; px += 5) g.lineTo(px, y(px));
-      g.lineTo(W + 10, SHORE + 20); g.closePath();
-      var gr = g.createLinearGradient(0, base - amp, 0, SHORE);
-      gr.addColorStop(0, 'rgba(' + col + ',' + a + ')'); gr.addColorStop(1, 'rgba(' + col + ',' + a * 0.75 + ')');
-      g.fillStyle = gr; g.fill(); g.restore();
-      for (k = 0; k < trees; k++) {
-        var tx = rr() * W, ty = y(tx) + 3, th = 14 + rr() * 22;
-        g.strokeStyle = 'rgba(' + INK + ',' + Math.min(0.75, a + 0.2) + ')'; g.lineWidth = 2;
-        g.beginPath(); g.moveTo(tx, ty); g.lineTo(tx, ty - th); g.stroke();
-        for (var b = 0; b < 3; b++) { g.beginPath(); g.moveTo(tx - 5 - b * 3, ty - th + b * (th / 3) + 3); g.lineTo(tx + 5 + b * 3, ty - th + b * (th / 3) + 3); g.stroke(); }
-      }
-    }
-    /* Fuji body */
-    var fc = mk(W, H), f = fc.getContext('2d');
-    f.save(); fujiPath(f); f.clip();
-    var body = f.createLinearGradient(0, FUJI_TOP, 0, FUJI_BASE);
-    body.addColorStop(0, '#a9b9cb'); body.addColorStop(0.3, '#7d92ac'); body.addColorStop(0.7, '#56708e'); body.addColorStop(1, '#3d546d');
-    f.fillStyle = body; f.fillRect(0, FUJI_TOP - 10, W, FUJI_BASE - FUJI_TOP + 220);
-    var side = f.createLinearGradient(FUJI_X - 500, 0, FUJI_X + 560, 0);
-    side.addColorStop(0, 'rgba(34,52,82,.38)'); side.addColorStop(0.45, 'rgba(34,52,82,.04)'); side.addColorStop(1, 'rgba(236,150,120,.30)');
-    f.fillStyle = side; f.fillRect(0, FUJI_TOP - 10, W, FUJI_BASE - FUJI_TOP + 220);
-    /* ridges below snow */
-    f.lineCap = 'round';
-    for (i = 0; i < 90; i++) {
-      var ry = 780 + r() * 330, dyy = (ry - FUJI_TOP) / (FUJI_BASE - FUJI_TOP);
-      var rx = FUJI_X + (r() * 2 - 1) * half(dyy, 1) * 0.95, ln = 80 + r() * 200;
-      var conv = (FUJI_X - rx) * 0.12;
-      f.strokeStyle = 'rgba(' + (r() > 0.4 ? '28,42,66' : '150,170,196') + ',' + (0.1 + r() * 0.16) + ')'; f.lineWidth = 3 + r() * 11;
-      f.beginPath(); f.moveTo(rx, ry); f.quadraticCurveTo(rx + conv * 0.5 + (r() - 0.5) * 14, ry + ln * 0.5, rx + conv + (r() - 0.5) * 10, ry + ln); f.stroke();
-    }
-    /* snow */
-    function snowline(x) { return 800 + 38 * Math.sin((x - FUJI_X) * 0.021) + 30 * Math.sin((x - FUJI_X) * 0.067 + 1.3) + 18 * Math.sin(x * 0.19); }
-    f.beginPath(); f.moveTo(0, 0); f.lineTo(0, snowline(0));
-    for (var sxl = 0; sxl <= W; sxl += 6) f.lineTo(sxl, snowline(sxl) + ((sxl / 6) % 3 === 0 ? 14 : 0));
-    f.lineTo(W, 0); f.closePath();
-    var sg = f.createLinearGradient(FUJI_X - 330, 0, FUJI_X + 340, 0);
-    sg.addColorStop(0, '#c4cfdc'); sg.addColorStop(0.35, '#eef0ee'); sg.addColorStop(0.7, '#fbf3ea'); sg.addColorStop(1, '#f6d9c8');
-    f.fillStyle = sg; f.fill();
-    for (i = 0; i < 70; i++) {
-      var gx = FUJI_X + (r() * 2 - 1) * 330, gy0 = FUJI_TOP + 30 + r() * 120;
-      if (gy0 > snowline(gx) - 20) continue;
-      var gl = 40 + r() * 110, bend = (FUJI_X - gx) * 0.06;
-      f.strokeStyle = 'rgba(70,92,125,' + (0.14 + r() * 0.2) + ')'; f.lineWidth = 2 + r() * 6;
-      f.beginPath(); f.moveTo(gx, gy0); f.quadraticCurveTo(gx + bend * 0.5, gy0 + gl * 0.5, gx + bend, Math.min(snowline(gx) + 90, gy0 + gl + 90)); f.stroke();
-    }
-    for (var gxx = FUJI_X - 330; gxx <= FUJI_X + 330; gxx += 12) {
-      if (r() < 0.62) {
-        var gy = snowline(gxx) - 6, gl2 = 30 + r() * 130, bd = (FUJI_X - gxx) * 0.07;
-        f.strokeStyle = 'rgba(234,238,240,' + (0.5 + r() * 0.4) + ')'; f.lineWidth = 3 + r() * 9;
-        f.beginPath(); f.moveTo(gxx, gy); f.quadraticCurveTo(gxx + bd * 0.5, gy + gl2 * 0.5, gxx + bd, gy + gl2); f.stroke();
-        f.strokeStyle = 'rgba(40,62,98,' + (0.18 + r() * 0.2) + ')'; f.lineWidth = 2 + r() * 4;
-        f.beginPath(); f.moveTo(gxx + 5, gy + 8); f.quadraticCurveTo(gxx + bd * 0.5 + 5, gy + gl2 * 0.5, gxx + bd + 4, gy + gl2 * 0.95); f.stroke();
-      }
-    }
-    f.restore();
-    g.save(); if ('filter' in g) g.filter = 'blur(0.9px)'; g.drawImage(fc, 0, 0); g.restore();
-    /* outline */
-    var side2, prev;
-    for (side2 = -1; side2 <= 1; side2 += 2) {
-      prev = null;
-      for (i = 0; i <= 120; i++) {
-        var d2 = i / 120, yy = FUJI_TOP + d2 * (FUJI_BASE - FUJI_TOP), xx = FUJI_X + side2 * half(d2, side2);
-        if (prev) { g.strokeStyle = 'rgba(' + INK + ',' + (0.16 + r() * 0.22) + ')'; g.lineWidth = 1.4 + r() * 2.2; g.beginPath(); g.moveTo(prev.x, prev.y); g.lineTo(xx, yy); g.stroke(); }
-        prev = { x: xx, y: yy };
-      }
-    }
-    g.strokeStyle = 'rgba(' + INK + ',.3)'; g.lineWidth = 2.4; g.beginPath(); g.moveTo(FUJI_X - half(0, -1), FUJI_TOP); g.lineTo(FUJI_X + half(0, 1), FUJI_TOP); g.stroke();
-    /* forest */
-    for (i = 0; i < 220; i++) {
-      var fx = r() * W, fy = 1090 + r() * 140;
-      g.strokeStyle = 'rgba(24,38,44,' + (0.12 + r() * 0.2) + ')'; g.lineWidth = 2 + r() * 4;
-      g.beginPath(); g.moveTo(fx, fy); g.lineTo(fx + 12 + r() * 30, fy + (r() - 0.5) * 4); g.stroke();
-    }
-    hills(5, 1150, 60, 0.22, '70,90,116', 0);
-    hills(9, 1262, 80, 0.5, '44,60,80', 26);
-    hills(14, 1322, 40, 0.78, '30,42,56', 40);
-
-    /* lake */
-    var lk = g.createLinearGradient(0, SHORE, 0, H);
-    lk.addColorStop(0, '#bcc8cd'); lk.addColorStop(0.4, '#8ea1ae'); lk.addColorStop(1, '#4f6577');
-    g.fillStyle = lk; g.fillRect(0, SHORE, W, H - SHORE);
-
-    var gg = grain.getContext('2d'), id = gg.createImageData(W, H), d = id.data;
-    for (var p = 0; p < d.length; p += 4) { var v = 212 + (r() * 43) | 0; d[p] = v; d[p + 1] = v - 4; d[p + 2] = v - 14; d[p + 3] = 255; }
-    gg.putImageData(id, 0, 0);
-    for (i = 0; i < 900; i++) {
-      var qx = r() * W, qy = r() * H, a = r() * TAU, fl = 10 + r() * 36;
-      gg.strokeStyle = 'rgba(120,100,70,' + (0.05 + r() * 0.07) + ')'; gg.lineWidth = 0.6 + r() * 0.8;
-      gg.beginPath(); gg.moveTo(qx, qy); gg.lineTo(qx + Math.cos(a) * fl, qy + Math.sin(a) * fl); gg.stroke();
-    }
-  })();
-
-  /* ---------- mist ---------- */
-  function mistStrip(seed, h, alpha, col) {
-    var c = mk(W, h), g = c.getContext('2d'), r = rng(seed);
-    for (var i = 0; i < 12; i++) {
-      var cx = r() * W, cy = h * (0.35 + r() * 0.3), rx = 220 + r() * 300, ry = 40 + r() * 80;
-      for (var k = -1; k <= 1; k++) {
-        g.save(); g.translate(cx + k * W, cy); g.scale(1, ry / rx);
-        var gr = g.createRadialGradient(0, 0, 0, 0, 0, rx);
-        gr.addColorStop(0, 'rgba(' + col + ',' + alpha + ')'); gr.addColorStop(1, 'rgba(' + col + ',0)');
-        g.fillStyle = gr; g.beginPath(); g.arc(0, 0, rx, 0, TAU); g.fill(); g.restore();
-      }
-    }
-    return c;
-  }
-  function bandStrip(seed, h, n) {
-    var c = mk(W, h), g = c.getContext('2d'), r = rng(seed);
-    for (var i = 0; i < n; i++) {
-      var cx = r() * W, cy = h * (0.2 + r() * 0.6), rx = 200 + r() * 260, ry = 16 + r() * 22;
-      for (var k = -1; k <= 1; k++) {
-        g.save(); g.translate(cx + k * W, cy);
-        var gr = g.createLinearGradient(-rx, 0, rx, 0);
-        gr.addColorStop(0, 'rgba(244,226,190,0)'); gr.addColorStop(0.2, 'rgba(246,232,200,.82)'); gr.addColorStop(0.8, 'rgba(246,232,200,.82)'); gr.addColorStop(1, 'rgba(244,226,190,0)');
-        g.fillStyle = gr; g.beginPath(); g.ellipse(0, 0, rx, ry, 0, 0, TAU); g.fill();
-        g.strokeStyle = 'rgba(200,160,100,.18)'; g.lineWidth = 2; g.beginPath(); g.ellipse(0, 3, rx * 0.86, ry * 0.9, 0, 0.1, Math.PI - 0.1); g.stroke();
-        g.restore();
-      }
-    }
-    return c;
-  }
-  var mists = [
-    { c: mistStrip(31, 360, 0.7, '244,236,222'), y: 1010, sp: 5 },
-    { c: mistStrip(32, 340, 0.78, '244,236,222'), y: 1180, sp: -8 },
-    { c: mistStrip(33, 300, 0.72, '244,236,222'), y: 1300, sp: 9 }
-  ];
-  var bands = [
-    { c: bandStrip(61, 240, 4), y: 900, sp: 7 },
-    { c: bandStrip(62, 240, 4), y: 1090, sp: -10 },
-    { c: bandStrip(63, 220, 3), y: 330, sp: 4 }
-  ];
-
-  /* ---------- trees ---------- */
-  function buildTree(o) {
-    var tc = mk(W, H), bc = mk(W, H), g = tc.getContext('2d'), b = bc.getContext('2d');
-    var r = rng(o.seed), br = rng(o.seed + 5), tips = [], mids = [], i;
-    function brush(x0, y0, cx, cy, x1, y1, w0, w1) {
-      var n = Math.max(8, Math.ceil(Math.hypot(x1 - x0, y1 - y0) / 2.2)), t, u, x, y, w;
-      for (i = 0; i <= n; i++) {
-        t = i / n; u = 1 - t;
-        x = u * u * x0 + 2 * u * t * cx + t * t * x1; y = u * u * y0 + 2 * u * t * cy + t * t * y1; w = w0 + (w1 - w0) * t;
-        g.fillStyle = 'rgba(' + INK + ',' + (0.5 + r() * 0.4) + ')';
-        g.beginPath(); g.arc(x + (r() - 0.5) * w * 0.12, y + (r() - 0.5) * w * 0.12, Math.max(0.8, w / 2), 0, TAU); g.fill();
-      }
-      if (w0 > 8) {
-        var nx = -(y1 - y0), ny = x1 - x0, nl = Math.hypot(nx, ny) || 1; nx /= nl; ny /= nl;
-        for (var s = 0; s < Math.min(9, w0 / 5); s++) {
-          var off = (r() - 0.5) * w0 * 0.7;
-          g.strokeStyle = 'rgba(' + PAPER + ',' + (0.14 + r() * 0.16) + ')'; g.lineWidth = 1 + r() * 1.4; g.lineCap = 'round'; g.beginPath();
-          for (var q = 0; q <= 14; q++) {
-            t = q / 14; u = 1 - t;
-            x = u * u * x0 + 2 * u * t * cx + t * t * x1; y = u * u * y0 + 2 * u * t * cy + t * t * y1;
-            var ww = (w0 + (w1 - w0) * t) / w0;
-            if (q === 0) g.moveTo(x + nx * off * ww, y + ny * off * ww); else g.lineTo(x + nx * off * ww, y + ny * off * ww);
-          }
-          g.stroke();
+  // Buffer Drawing Primitives
+  const bset = (x, y, c) => {
+    x = Math.round(x);
+    y = Math.round(y);
+    if (x >= 0 && x < W && y >= 0 && y < H) bg[y * W + x] = c;
+  };
+  const rect = (x, y, w, h, c) => {
+    for (let j = y; j < y + h; j++)
+      for (let i = x; i < x + w; i++)
+        if (i >= 0 && i < W && j >= 0 && j < H) bg[j * W + i] = c;
+  };
+  const set = (x, y, c) => {
+    x = Math.round(x);
+    y = Math.round(y);
+    if (x >= 0 && x < W && y >= 0 && y < H) px[y * W + x] = c;
+  };
+  const drect = (x, y, w, h, c) => {
+    for (let j = 0; j < h; j++)
+      for (let i = 0; i < w; i++)
+        set(x + i, y + j, c);
+  };
+  const halo = (x, y, w, h, r, c, k) => {
+    for (let j = -r; j < h + r; j++) {
+      for (let i = -r; i < w + r; i++) {
+        const dx = i < 0 ? -i : i >= w ? i - w + 1 : 0;
+        const dy = j < 0 ? -j : j >= h ? j - h + 1 : 0;
+        const d = Math.hypot(dx, dy);
+        if (d > 0 && d < r && bay((x + i) & 255, (y + j) & 255) < (1 - d / r) * k) {
+          set(x + i, y + j, c);
         }
       }
     }
-    function grow(x, y, ang, len, w, depth) {
-      var x1 = x + Math.cos(ang) * len, y1 = y + Math.sin(ang) * len, mx = (x + x1) / 2, my = (y + y1) / 2, nx = -Math.sin(ang), ny = Math.cos(ang);
-      var bend = (r() - 0.5) * len * 0.45, cx = mx + nx * bend, cy = my + ny * bend + (depth >= 3 ? len * 0.1 : 0), wEnd = Math.max(1.6, w * 0.62);
+  };
+
+  // Multi-harmonic mountain ridge generator
+  function ridgeFn(seed, base, amp) {
+    const r = rng(seed), comps = [];
+    for (let k = 0; k < 5; k++) {
+      comps.push({
+        f: 0.023 * Math.pow(1.85, k) * (0.8 + r() * 0.4),
+        a: amp * Math.pow(0.5, k),
+        p: r() * TAU
+      });
+    }
+    return x => {
+      let s = 0;
+      for (let k = 0; k < comps.length; k++) {
+        s += comps[k].a * (0.5 + 0.5 * Math.sin(comps[k].f * x + comps[k].p));
+      }
+      return base - s;
+    };
+  }
+
+  /* =========================================================================
+   * 1. PRE-RENDER STATIC SCENE INTO `bg` (SKY, SUN, FUJI, RIDGES, PAGODA, TORII)
+   * ========================================================================= */
+  const INK = C(0x1d2022), INK_SOFT = C(0x2f353a), PAPER = C(0xeadfc8);
+  const SKY = [
+    0x7e94a8, // Upper mineral slate-indigo
+    0x9eb0be, // Cool celadon grey-blue
+    0xc0cac8, // Pale mineral mist
+    0xdcd4c2, // Warm aged washi
+    0xead2bc, // Soft peach-gold horizon wash
+    0xf2dfc8  // Golden-cream lower sky
+  ].map(C);
+
+  for (let y = 0; y < SHORE; y++) {
+    for (let x = 0; x < W; x++) {
+      let f = Math.pow(y / SHORE, 1.08);
+      // Subtle horizontal sumi wash streaks
+      const wash = Math.sin(y * 0.35 + Math.sin(x * 0.06) * 2) * 0.025;
+      let col = ramp(SKY, f + wash, x, y);
+      // Washi paper grain flecks
+      if (hash(x * 3, y * 5) < 0.04) col = blend(col, C(0xd4c4a8), 0.35);
+      bg[y * W + x] = col;
+    }
+  }
+
+  // Giant Vermilion Rising Sun (Hinomaru) + Multi-Ring Dithered Atmospheric Halo
+  const SX0 = 124, SY0 = 64, SR = 15.2;
+  const SUN_HALO = [C(0xd96b52), C(0xe68d6c), C(0xedb08e)];
+  const SUN_CORE = [C(0xb83628), C(0xc94532), C(0xd85640)];
+  for (let y = Math.max(0, SY0 - 44); y < Math.min(SHORE, SY0 + 44); y++) {
+    for (let x = Math.max(0, SX0 - 44); x < Math.min(W, SX0 + 44); x++) {
+      const d = Math.hypot(x - SX0, y - SY0);
+      if (d <= SR) {
+        // Slightly mottled mineral vermilion sun disc
+        const sf = Math.hypot(x - (SX0 - 3), y - (SY0 - 3)) / (SR * 1.35);
+        bg[y * W + x] = ramp(SUN_CORE, 1 - sf, x, y);
+      } else if (d < SR * 2.8) {
+        const hf = 1 - (d - SR) / (SR * 1.8);
+        if (bay(x, y) < hf * 0.55) {
+          bg[y * W + x] = SUN_HALO[hf > 0.66 ? 0 : hf > 0.33 ? 1 : 2];
+        }
+      }
+    }
+  }
+
+  // Mount Fuji Volcanic Silhouette & Snow Cap
+  const halfFuji = (dy, side) =>
+    (5.5 + 118 * Math.pow(dy, 1.62)) * (side < 0 ? 0.97 : 1.04) +
+    Math.sin(dy * 23) * 0.4 + Math.sin(dy * 53) * 0.2;
+
+  const snowline = x =>
+    118 +
+    5.6 * Math.sin((x - FUJI_X) * 0.14) +
+    4.4 * Math.sin((x - FUJI_X) * 0.44 + 1.3) +
+    2.6 * Math.sin(x * 1.15);
+
+  const FUJI_BODY = [C(0x9ab0c4), C(0x748ca6), C(0x526b88), C(0x39506a), C(0x283a50)];
+  const FUJI_SNOW = [C(0xbecbd8), C(0xe4eaec), C(0xfbf4eb), C(0xf6d5c4)];
+
+  for (let y = FUJI_TOP; y <= FUJI_BASE; y++) {
+    const dy = (y - FUJI_TOP) / (FUJI_BASE - FUJI_TOP);
+    const xl = Math.round(FUJI_X - halfFuji(dy, -1));
+    const xr = Math.round(FUJI_X + halfFuji(dy, 1));
+
+    for (let x = Math.max(0, xl); x <= Math.min(W - 1, xr); x++) {
+      const sl = snowline(x) + (((x >> 1) % 3 === 0) ? 2.2 : 0);
+      const horiz = (x - xl) / Math.max(1, xr - xl); // 0 = left shadow, 1 = right sunlit flank
+
+      // Extra descending snow gullies / ribs below main snowline
+      const rib = Math.sin((x - FUJI_X) * (0.36 - dy * 0.12) + 0.7);
+      const inGully = y < sl + 14 && rib > 0.52 && bay(x, y) < (1 - (y - sl) / 14);
+
+      if (y <= sl || inGully) {
+        // Snow cap shaded from cool blue-grey left to warm sunlit cream-peach right
+        let c = ramp(FUJI_SNOW, horiz * 0.95, x, y);
+        // Indigo snow crevasse lines radiating from summit
+        const crev = Math.sin((x - FUJI_X) * (0.45 - dy * 0.18) + 1.9);
+        if (y > FUJI_TOP + 4 && crev > 0.76 && bay(x, y) < 0.65) {
+          c = C(0x587292);
+        }
+        bg[y * W + x] = c;
+      } else {
+        // Volcanic rock slope
+        let c = ramp(FUJI_BODY, dy, x, y);
+        // Left cool shadow vs Right warm vermilion-sunlit rim
+        if (horiz < 0.28 && bay(x, y) < (0.28 - horiz) * 2.2) {
+          c = blend(c, C(0x1f304c), 0.45);
+        } else if (horiz > 0.68 && bay(x, y) < (horiz - 0.68) * 2.1) {
+          c = blend(c, C(0xe89678), 0.38);
+        }
+        // Lower volcanic ridge streaks
+        if (rib > 0.62 && bay(x, y) < 0.45) {
+          c = blend(c, C(0x1c2a40), 0.4);
+        } else if (rib < -0.68 && bay(x, y) < 0.4) {
+          c = blend(c, C(0x9cb2cc), 0.35);
+        }
+        bg[y * W + x] = c;
+      }
+    }
+    // Crisp sumi-ink mountain contour lines on left & right slopes
+    if (xl >= 0 && xl < W && hash(xl, y) < 0.78) bg[y * W + xl] = C(0x2c3844);
+    if (xr >= 0 && xr < W && hash(xr, y) < 0.78) bg[y * W + xr] = C(0x2c3844);
+  }
+  // Summit crater ink cap line
+  rect(Math.round(FUJI_X - halfFuji(0, -1)), FUJI_TOP, Math.round(halfFuji(0, -1) + halfFuji(0, 1) + 1), 1, C(0x2c3844));
+
+  // Layered Distant Mountain Ridges & Tiny Sumi Pine Silhouettes
+  function drawRidge(seed, base, amp, cTop, cBot, pineCount, blossomChance) {
+    const fn = ridgeFn(seed, base, amp);
+    const r = rng(seed * 7);
+    const cols = [C(cTop), C(cBot)];
+    for (let x = 0; x < W; x++) {
+      const ry = Math.round(fn(x));
+      for (let y = Math.max(0, ry); y < SHORE; y++) {
+        bg[y * W + x] = ramp(cols, (y - ry) / Math.max(1, SHORE - ry), x, y);
+      }
+    }
+    // Tiny sumi-ink pine trees along the ridge crest
+    for (let k = 0; k < pineCount; k++) {
+      const tx = Math.floor(r() * W);
+      const ty = Math.round(fn(tx)) + 1;
+      const th = 3 + Math.floor(r() * 4);
+      const pcol = C(cTop === 0x1e2c3a ? 0x141c24 : 0x243444);
+      for (let h = 0; h < th; h++) bset(tx, ty - h, pcol);
+      for (let h = 1; h < th; h += 2) {
+        const bw = h === th - 1 ? 1 : 2;
+        for (let dx = -bw; dx <= bw; dx++) bset(tx + dx, ty - h, pcol);
+      }
+      // Distant hillside sakura blossom puffs
+      if (blossomChance > 0 && r() < blossomChance) {
+        const bx = tx + Math.round((r() - 0.5) * 4);
+        const by = ty + Math.floor(r() * 3);
+        bset(bx, by, C(0xe6aab8));
+        bset(bx + 1, by, C(0xf2cad4));
+        bset(bx, by - 1, C(0xf2cad4));
+      }
+    }
+    return fn;
+  }
+
+  drawRidge(5, 173, 9, 0x526882, 0x6c8096, 0, 0);
+  const midRidge = drawRidge(9, 188, 12, 0x32465c, 0x485c72, 28, 0.25);
+
+  // Easter Egg #1: Chureito Five-Story Crimson Pagoda (五重塔) on the Right Ridge
+  {
+    const px0 = 135, pyBase = Math.round(midRidge(px0)) + 2;
+    // Golden finial spire (Sorin)
+    for (let y = pyBase - 24; y < pyBase - 19; y++) bset(px0, y, C(0xd8a848));
+    bset(px0, pyBase - 25, C(0xf6dc86));
+    // 5 curved pagoda tiers
+    for (let tier = 0; tier < 5; tier++) {
+      const ty = pyBase - 19 + tier * 4;
+      const rw = 3 + (tier >> 1); // roof half-width
+      const bw = Math.max(1, rw - 2); // crimson body half-width
+      // Dark sumi-ink roof with upturned eaves
+      for (let dx = -rw; dx <= rw; dx++) {
+        const curve = Math.abs(dx) === rw ? -1 : 0;
+        bset(px0 + dx, ty + curve, INK);
+        if (Math.abs(dx) < rw) bset(px0 + dx, ty + 1, C(0x2c3238));
+      }
+      // Vermilion walls & warm window glint
+      for (let dx = -bw; dx <= bw; dx++) {
+        bset(px0 + dx, ty + 2, dx === 0 ? C(0xf2d8a8) : C(0xb8382a));
+        bset(px0 + dx, ty + 3, C(0x982a20));
+      }
+    }
+    // Blossom clouds hugging the pagoda base
+    const pBlossoms = [[-5, -2], [-4, -3], [4, -1], [5, -2], [-3, 0], [3, 0]];
+    for (const [dx, dy] of pBlossoms) {
+      bset(px0 + dx, pyBase + dy, C(0xebb4c0));
+      bset(px0 + dx + 1, pyBase + dy, C(0xd8889a));
+    }
+  }
+
+  // Near Shoreline Ridge
+  drawRidge(14, 196, 6, 0x1f2d3c, 0x2c3d4e, 36, 0.42);
+
+  // Easter Egg #2: Lakeside Vermilion Water Torii Gate (水上鳥居) on Left-Center Shore
+  {
+    const tx = 38, ty = SHORE - 1;
+    const V_RED = C(0xc83a2a), V_DARK = C(0x8e2418);
+    // Two vertical pillars in the shallow water
+    for (let y = ty - 9; y <= ty; y++) {
+      bset(tx - 3, y, y >= ty - 1 ? INK : V_RED);
+      bset(tx + 3, y, y >= ty - 1 ? INK : V_RED);
+    }
+    // Lower tie beam (Nuki)
+    for (let x = tx - 4; x <= tx + 4; x++) bset(x, ty - 7, V_DARK);
+    // Upper curved lintel (Kasagi) with upturned ink tips
+    for (let x = tx - 6; x <= tx + 6; x++) {
+      const up = Math.abs(x - tx) >= 5 ? -1 : 0;
+      bset(x, ty - 10 + up, INK);
+      bset(x, ty - 9 + up, V_RED);
+    }
+    // Center tablet (Gakuzuka)
+    bset(tx, ty - 8, C(0xe8c878));
+  }
+
+  // Top-Right Hanging Scroll Vertical Calligraphy Cartouche (短冊 / 題簽)
+  {
+    const cx = 148, cy = 10, cw = 9, ch = 32;
+    rect(cx, cy, cw, ch, C(0x2a2420));
+    rect(cx + 1, cy + 1, cw - 2, ch - 2, C(0xd86248)); // Vermilion-gold silk border
+    rect(cx + 2, cy + 2, cw - 4, ch - 4, C(0xf4ead8)); // Washi cartouche interior
+    // Pixel kanji strokes inside cartouche (富 嶽 櫻)
+    const glyphs = [
+      [4, 5], [3, 6], [4, 6], [5, 6], [3, 8], [5, 8], [4, 9], [3, 10], [5, 10],
+      [4, 13], [3, 14], [5, 14], [4, 15], [3, 17], [4, 17], [5, 17], [4, 18],
+      [3, 21], [5, 21], [4, 22], [3, 23], [4, 24], [5, 24], [3, 26], [5, 26]
+    ];
+    for (const [gx, gy] of glyphs) bset(cx + gx, cy + gy, INK);
+  }
+
+  /* =========================================================================
+   * 2. PROCEDURAL FOREGROUND SAKURA TREE, SHORE BANK & WINDSWEPT PINE
+   * ========================================================================= */
+  // Store tree bark, blossom clusters, and foreground shore into sparse pixel arrays for fast swaying
+  const trunkPixels = [];
+  const blossomClusters = [];
+  const foreBank = new Uint32Array(W * H); // 0 = transparent
+
+  const fset = (x, y, c) => {
+    x = Math.round(x);
+    y = Math.round(y);
+    if (x >= 0 && x < W && y >= 0 && y < H) foreBank[y * W + x] = c;
+  };
+
+  // Build Gnarled Left Sakura Tree & Overhanging Upper Bough
+  {
+    const trng = rng(2468);
+    const barkMap = new Uint32Array(W * H);
+    const tips = [], mids = [];
+
+    function brush(x0, y0, cx, cy, x1, y1, w0, w1) {
+      const steps = Math.max(12, Math.ceil(Math.hypot(x1 - x0, y1 - y0) * 1.8));
+      for (let i = 0; i <= steps; i++) {
+        const t = i / steps, u = 1 - t;
+        const x = u * u * x0 + 2 * u * t * cx + t * t * x1;
+        const y = u * u * y0 + 2 * u * t * cy + t * t * y1;
+        const rad = Math.max(0.55, (w0 + (w1 - w0) * t) * 0.5);
+        const rCeil = Math.ceil(rad);
+        for (let dy = -rCeil; dy <= rCeil; dy++) {
+          for (let dx = -rCeil; dx <= rCeil; dx++) {
+            if (Math.hypot(dx, dy) <= rad) {
+              const px = Math.round(x + dx), py = Math.round(y + dy);
+              if (px >= 0 && px < W && py >= 0 && py < H) {
+                // Sumi-ink bark with dry-brush (kasure) highlight streaks on right side of trunk
+                const kasure = rad > 2.2 && dx > 0 && hash(px, py) < 0.22;
+                barkMap[py * W + px] = kasure ? C(0x524c44) : (dx < -rad * 0.3 ? C(0x141618) : INK);
+              }
+            }
+          }
+        }
+      }
+    }
+
+    function grow(x, y, ang, len, w, depth, maxD, lean, ymax) {
+      const x1 = x + Math.cos(ang) * len;
+      const y1 = y + Math.sin(ang) * len;
+      const mx = (x + x1) * 0.5, my = (y + y1) * 0.5;
+      const nx = -Math.sin(ang), ny = Math.cos(ang);
+      const bend = (trng() - 0.5) * len * 0.45;
+      const cx = mx + nx * bend, cy = my + ny * bend + (depth >= 3 ? len * 0.1 : 0);
+      const wEnd = Math.max(0.8, w * 0.64);
       brush(x, y, cx, cy, x1, y1, w, wEnd);
-      tips.push({ x: x1, y: y1, d: depth }); mids.push({ x: cx, y: cy, d: depth });
-      if (depth >= o.maxDepth) return;
-      var nc = depth === 0 ? 3 : (r() < 0.26 ? 3 : 2), spread = depth === 0 ? 0.8 : 0.7;
-      for (var c = 0; c < nc; c++) {
-        var a = ang + (c - (nc - 1) / 2) * spread + (r() - 0.5) * 0.4 + o.lean;
-        if (y1 > o.ymax && Math.sin(a) > 0) continue;
-        var sa = Math.sin(a); if (sa > 0.5) a = a - (sa - 0.5) * 0.9;
-        grow(x1, y1, a, len * (0.7 + r() * 0.08), wEnd, depth + 1);
+      tips.push({ x: x1, y: y1, d: depth });
+      mids.push({ x: cx, y: cy, d: depth });
+      if (depth >= maxD) return;
+      const nc = depth === 0 ? 3 : (trng() < 0.28 ? 3 : 2);
+      const spread = depth === 0 ? 0.78 : 0.68;
+      for (let c = 0; c < nc; c++) {
+        let a = ang + (c - (nc - 1) / 2) * spread + (trng() - 0.5) * 0.38 + lean;
+        if (y1 > ymax && Math.sin(a) > 0) continue;
+        const sa = Math.sin(a);
+        if (sa > 0.5) a -= (sa - 0.5) * 0.9;
+        grow(x1, y1, a, len * (0.71 + trng() * 0.08), wEnd, depth + 1, maxD, lean, ymax);
       }
     }
-    if (o.trunk) brush(o.x - 6, o.y + 24, o.x - 30, o.y - 90, o.x - 8, o.y - 190, o.trunk, o.trunk * 0.8);
-    grow(o.sx, o.sy, o.ang, o.len, o.w, 0);
-    if (o.extra) grow(o.extra.x, o.extra.y, o.extra.ang, o.extra.len, o.extra.w, 1);
-    if (o.trunk) {
-      g.fillStyle = 'rgba(' + INK + ',.82)';
-      g.beginPath(); g.moveTo(o.x - 90, o.y + 30); g.quadraticCurveTo(o.x - 40, o.y - 20, o.x - 34, o.y - 90); g.lineTo(o.x + 26, o.y - 90); g.quadraticCurveTo(o.x + 36, o.y - 10, o.x + 110, o.y + 32); g.closePath(); g.fill();
-    }
-    function flower(x, y, s, rot) {
-      b.save(); b.translate(x, y); b.rotate(rot);
-      b.fillStyle = br() > 0.4 ? 'rgba(232,184,194,.9)' : 'rgba(246,222,224,.92)';
-      for (var k = 0; k < 5; k++) { b.save(); b.rotate(k * TAU / 5); b.beginPath(); b.ellipse(0, -s * 0.55, s * 0.33, s * 0.5, 0, 0, TAU); b.fill(); b.restore(); }
-      b.fillStyle = 'rgba(150,56,84,.8)'; b.beginPath(); b.arc(0, 0, s * 0.13, 0, TAU); b.fill();
-      b.restore();
-    }
-    function cluster(x, y, rad, count) {
-      if (x > o.xmax) return;
-      var wg = b.createRadialGradient(x, y, 0, x, y, rad * 1.5);
-      wg.addColorStop(0, 'rgba(222,146,162,.30)'); wg.addColorStop(0.6, 'rgba(230,164,178,.15)'); wg.addColorStop(1, 'rgba(230,164,178,0)');
-      b.fillStyle = wg; b.fillRect(x - rad * 1.6, y - rad * 1.6, rad * 3.2, rad * 3.2);
-      for (var k = 0; k < count; k++) { var a = br() * TAU, d = Math.pow(br(), 0.7) * rad; flower(x + Math.cos(a) * d, y + Math.sin(a) * d * 0.85, 8 + br() * 9, br() * TAU); }
-      for (k = 0; k < 4; k++) { b.fillStyle = 'rgba(' + INK + ',.5)'; b.beginPath(); b.arc(x + (br() - 0.5) * rad * 1.6, y + (br() - 0.5) * rad, 1.3 + br() * 1.6, 0, TAU); b.fill(); }
-    }
-    var n;
-    for (n = 0; n < mids.length; n++) if (mids[n].d >= o.cd - 1 && br() < 0.5) cluster(mids[n].x, mids[n].y, (40 + br() * 24) * o.cs, 11);
-    for (n = 0; n < tips.length; n++) if (tips[n].d >= o.cd) cluster(tips[n].x, tips[n].y + 8, (50 + br() * 30) * o.cs, 18);
-    for (n = 0; n < tips.length; n++) if (tips[n].d >= o.cd + 1 && br() < 0.5) cluster(tips[n].x + (br() - 0.5) * 50, tips[n].y + 44 + br() * 36, (36 + br() * 20) * o.cs, 9);
-    return { t: tc, b: bc, px: o.px, py: o.py };
-  }
-  var treeA = buildTree({ seed: 2468, x: 120, y: 1830, trunk: 74, sx: 112, sy: 1640, ang: -Math.PI / 2 + 0.3, len: 290, w: 56, maxDepth: 6, lean: 0.05, ymax: 1620, xmax: 640, cd: 4, cs: 0.95, px: 120, py: 1830, extra: { x: 118, y: 1590, ang: -Math.PI / 2 - 0.55, len: 190, w: 26 } });
-  var treeB = buildTree({ seed: 913, x: 0, y: 0, trunk: 0, sx: -70, sy: 40, ang: 0.34, len: 240, w: 26, maxDepth: 4, lean: 0.02, ymax: 9999, xmax: 560, cd: 3, cs: 0.9, px: -70, py: 40 });
 
-  /* ---------- foreground: bank, pine ---------- */
-  var fore = mk(W, H);
-  (function () {
-    var g = fore.getContext('2d'), r = rng(404), i;
-    var y = ridgeFn(61, 1790, 60);
-    g.beginPath(); g.moveTo(0, H); for (var px = 0; px <= 520; px += 5) g.lineTo(px, y(px) + (px > 380 ? (px - 380) * 0.9 : 0)); g.lineTo(520, H); g.closePath();
-    var gr = g.createLinearGradient(0, 1740, 0, H);
-    gr.addColorStop(0, 'rgba(' + INK + ',.6)'); gr.addColorStop(1, 'rgba(' + INK + ',.12)');
-    g.fillStyle = gr; g.fill(); g.lineCap = 'round';
-    for (i = 0; i < 60; i++) {
-      var gx = r() * 420, gy = y(gx) + 6 + r() * 80, gl = 14 + r() * 36;
-      g.strokeStyle = 'rgba(' + INK + ',' + (0.2 + r() * 0.3) + ')'; g.lineWidth = 1 + r() * 2;
-      g.beginPath(); g.moveTo(gx, gy); g.quadraticCurveTo(gx + (r() - 0.5) * 10, gy - gl * 0.5, gx + (r() - 0.5) * 24, gy - gl); g.stroke();
-    }
-    for (i = 0; i < 120; i++) { var qx = r() * 460, qy = y(qx) + 10 + r() * 130; g.fillStyle = 'rgba(232,170,184,' + (0.5 + r() * 0.4) + ')'; g.beginPath(); g.ellipse(qx, qy, 4 + r() * 5, 2.5 + r() * 2.5, r() * 3, 0, TAU); g.fill(); }
-    /* pine on the right shore */
-    var bx = 950, by = 1352;
-    g.strokeStyle = 'rgba(' + INK + ',.92)'; g.lineCap = 'round'; g.lineWidth = 18;
-    g.beginPath(); g.moveTo(bx + 60, by + 60); g.quadraticCurveTo(bx + 10, by - 40, bx - 30, by - 120); g.quadraticCurveTo(bx - 60, by - 170, bx - 20, by - 230); g.stroke();
-    g.lineWidth = 9; g.beginPath(); g.moveTo(bx - 30, by - 120); g.quadraticCurveTo(bx - 110, by - 140, bx - 170, by - 110); g.stroke();
-    g.beginPath(); g.moveTo(bx - 10, by - 190); g.quadraticCurveTo(bx + 60, by - 210, bx + 120, by - 190); g.stroke();
-    function pad(cx, cy, rad) {
-      for (var k = 0; k < 110; k++) {
-        var a = Math.PI + r() * Math.PI, d = Math.sqrt(r()) * rad, sx = cx + Math.cos(a) * d * 1.3, sy = cy + Math.sin(a) * d * 0.55 + rad * 0.15;
-        g.strokeStyle = 'rgba(' + INK + ',' + (0.4 + r() * 0.5) + ')'; g.lineWidth = 1.4 + r() * 1.4;
-        g.beginPath(); g.moveTo(sx, sy); g.lineTo(sx + Math.cos(a) * 14 + (r() - 0.5) * 6, sy + Math.sin(a) * 9); g.stroke();
+    // Main Gnarled Sakura Trunk rising from left foreground bank
+    brush(18, 276, 13, 260, 17, 244, 11.5, 8.8);
+    // Root flare on shore bank
+    brush(8, 280, 14, 272, 18, 264, 7.0, 5.0);
+    brush(29, 281, 22, 272, 18, 264, 6.5, 4.5);
+
+    grow(17, 244, -Math.PI / 2 + 0.28, 43, 8.4, 0, 5, 0.05, 242);
+    grow(18, 238, -Math.PI / 2 - 0.52, 29, 4.2, 1, 5, 0.04, 242);
+    // Upper-left overhanging bough
+    grow(-10, 8, 0.34, 36, 4.0, 0, 4, 0.02, 288);
+
+    // Pack bark pixels into a fast sparse list with sway weights
+    for (let y = 0; y < H; y++) {
+      for (let x = 0; x < W; x++) {
+        const c = barkMap[y * W + x];
+        if (c) {
+          const swayWeight = y < 120 ? (x + 12) / 95 : Math.max(0, (255 - y) / 150);
+          trunkPixels.push({ x, y, c, w: swayWeight });
+        }
       }
-      g.fillStyle = 'rgba(' + INK + ',.55)'; g.beginPath(); g.ellipse(cx, cy + rad * 0.12, rad * 1.1, rad * 0.3, 0, 0, TAU); g.fill();
     }
-    pad(bx - 20, by - 245, 90); pad(bx - 170, by - 112, 72); pad(bx + 118, by - 190, 76);
-    for (i = 0; i < 28; i++) {
-      var rx = 700 + r() * 380, ry = 1820 + r() * 100, rl = 90 + r() * 150;
-      g.strokeStyle = 'rgba(' + INK + ',' + (0.25 + r() * 0.35) + ')'; g.lineWidth = 1.4 + r() * 2.2;
-      g.beginPath(); g.moveTo(rx, ry + 60); g.quadraticCurveTo(rx + (r() - 0.5) * 30, ry - rl * 0.5, rx + (r() - 0.5) * 70, ry - rl); g.stroke();
-    }
-  })();
 
-  /* ---------- state ---------- */
-  var pr = rng(19), petals = [], i;
-  for (i = 0; i < 80; i++) petals.push({ x: pr() * W * 0.8, y: pr() * H, s: 6 + pr() * 9, v: 24 + pr() * 36, sw: 24 + pr() * 50, ph: pr() * 6.3, rs: 0.6 + pr() * 1.6 });
-  var cranes = [{ x0: 0.05, y: 520, s: 17, sc: 0.95, ph: 0 }, { x0: 0.14, y: 585, s: 17, sc: 0.7, ph: 1.5 }, { x0: 0.3, y: 480, s: 17, sc: 0.55, ph: 2.9 }];
-  function bird(g, x, y, sc, flap) {
-    g.save(); g.translate(x, y); g.scale(sc, sc);
-    g.strokeStyle = 'rgba(' + INK + ',.72)'; g.lineWidth = 3; g.lineCap = 'round';
-    g.beginPath(); g.moveTo(-34, flap * 10 + 6); g.quadraticCurveTo(-14, -12 - flap * 14, 0, 0); g.quadraticCurveTo(14, -12 - flap * 14, 34, flap * 10 + 6); g.stroke();
-    g.lineWidth = 5; g.beginPath(); g.moveTo(0, 0); g.lineTo(0, 9); g.stroke();
-    g.restore();
+    // Generate 6-tone Bayer-dithered Sakura Blossom Clusters on branch tips & mids
+    const SAKURA_PAL = [
+      C(0xb85c74), // Deep rose-carmine core shadow
+      C(0xd68498), // Mid mineral blossom pink
+      C(0xe6a6b4), // Classic sakura petal pink
+      C(0xf0c2cc), // Soft sunlit blossom
+      C(0xf7dce2), // Pale blush
+      C(0xfcf2f4)  // Crisp white-pink highlight
+    ];
+    const STAMEN = C(0x8c2d48);
+
+    function addCluster(cx, cy, rad) {
+      if (cx > 106) return;
+      const pts = [];
+      const rCeil = Math.ceil(rad);
+      for (let dy = -rCeil; dy <= rCeil; dy++) {
+        for (let dx = -rCeil; dx <= rCeil; dx++) {
+          const d = Math.hypot(dx, dy * 1.18);
+          if (d <= rad) {
+            const norm = d / rad;
+            // Rich organic edge breakup using Bayer + spatial hash
+            if (norm > 0.72 && bay((cx + dx) & 255, (cy + dy) & 255) > (1 - norm) * 3.4) continue;
+            // Shade from upper-right sunlit cream-pink to lower-left rose shadow
+            const light = ((dx - dy * 0.8) / rad) * 0.5 + 0.5;
+            let col = ramp(SAKURA_PAL, Math.min(1, Math.max(0, light * 0.85 + hash(cx + dx, cy + dy) * 0.25)), cx + dx, cy + dy);
+            // Tiny dark carmine flower centers scattered through the cluster
+            if (hash(cx + dx * 7, cy + dy * 11) < 0.045) col = STAMEN;
+            pts.push({ dx, dy, c: col });
+          }
+        }
+      }
+      const swayW = cy < 120 ? (cx + 12) / 85 : Math.max(0.15, (258 - cy) / 140);
+      blossomClusters.push({ cx: Math.round(cx), cy: Math.round(cy), w: swayW, ph: trng() * TAU, pts });
+    }
+
+    for (let n = 0; n < mids.length; n++) {
+      if (mids[n].d >= 2 && trng() < 0.65) {
+        addCluster(mids[n].x, mids[n].y, 6 + trng() * 4.5);
+      }
+    }
+    for (let n = 0; n < tips.length; n++) {
+      if (tips[n].d >= 2) {
+        addCluster(tips[n].x, tips[n].y + 1, 7.5 + trng() * 5.0);
+        if (trng() < 0.55) {
+          addCluster(tips[n].x + (trng() - 0.5) * 8, tips[n].y + 5 + trng() * 5, 5.5 + trng() * 3.5);
+        }
+      }
+    }
   }
 
-  function frame(t) {
-    var g = ctx, k, d;
-    g.globalCompositeOperation = 'source-over'; g.globalAlpha = 1;
-    g.drawImage(back, 0, 0);
+  // Build Foreground Left Bank, Mossy Stone Lantern, Right-Shore Matsu Pine & Reeds
+  {
+    const fr = rng(404);
+    const bankFn = ridgeFn(61, 267, 9);
+    const BANK_COLS = [C(0x181c1e), C(0x252a2c), C(0x353836)];
 
-    function strip(arr, n) { var m = arr[n], o = ((t * m.sp) % W + W) % W; g.drawImage(m.c, o - W, m.y - m.c.height / 2); g.drawImage(m.c, o, m.y - m.c.height / 2); }
-    strip(bands, 2);
-    for (k = 0; k < cranes.length; k++) {
-      var c = cranes[k], bx = W + 120 - ((t * c.s + c.x0 * (W + 300)) % (W + 300)), by = c.y + Math.sin(t * 0.4 + c.ph) * 16;
-      bird(g, bx, by, c.sc, Math.sin(t * 2 + c.ph));
-    }
-    strip(mists, 0); strip(bands, 0); strip(mists, 1); strip(bands, 1); strip(mists, 2);
-
-    /* lake reflection */
-    for (d = 0; d < 590; d += 3) {
-      g.globalAlpha = 0.5 * (1 - d / 590) + 0.04;
-      g.drawImage(back, 0, SHORE - d - 3, W, 3, Math.sin(t * 1.3 + d * 0.045) * (1.5 + d * 0.01), SHORE + d, W, 3);
-    }
-    g.globalAlpha = 1;
-    var wl = g.createLinearGradient(0, SHORE, 0, H);
-    wl.addColorStop(0, 'rgba(188,200,205,.35)'); wl.addColorStop(1, 'rgba(60,82,104,.5)');
-    g.fillStyle = wl; g.fillRect(0, SHORE, W, H - SHORE);
-    g.lineCap = 'round';
-    for (k = 0; k < 24; k++) {
-      var ly = SHORE + 26 + k * 24 + Math.sin(t * 0.3 + k) * 2, lx = ((k * 223) % 900) + Math.sin(t * 0.25 + k * 1.3) * 22, ll = 80 + ((k * 71) % 220);
-      g.strokeStyle = 'rgba(250,244,230,' + (0.07 + 0.09 * (0.5 + 0.5 * Math.sin(t * 0.8 + k))) + ')'; g.lineWidth = 1.6 + (k % 3);
-      g.beginPath(); g.moveTo(lx, ly); g.lineTo(lx + ll, ly); g.stroke();
-    }
-    for (k = 0; k < 14; k++) {
-      var gy = SHORE + 40 + k * 26, gw = 14 + k * 3 + Math.sin(t * 0.9 + k) * 6;
-      g.strokeStyle = 'rgba(226,120,92,' + (0.32 - k * 0.02) * (0.5 + 0.5 * Math.sin(t * 1.1 + k * 0.8)) + ')'; g.lineWidth = 3;
-      g.beginPath(); g.moveTo(850 - gw + Math.sin(t * 0.5 + k) * 6, gy); g.lineTo(850 + gw + Math.sin(t * 0.5 + k) * 6, gy); g.stroke();
+    for (let x = 0; x <= 82; x++) {
+      const topY = Math.round(bankFn(x) + (x > 56 ? (x - 56) * 0.92 : 0));
+      for (let y = Math.max(0, topY); y < H; y++) {
+        let c = ramp(BANK_COLS, (y - topY) / Math.max(1, H - topY), x, y);
+        // Mossy mineral green-grey highlights along the bank crest
+        if (y - topY < 4 && bay(x, y) < 0.45) c = C(0x34463a);
+        fset(x, y, c);
+      }
     }
 
-    /* boat */
-    g.save(); g.translate(560 + Math.sin(t * 0.22) * 6, 1478 + Math.sin(t * 0.9) * 1.6); g.scale(0.6, 0.6);
-    g.fillStyle = 'rgba(' + INK + ',.85)';
-    g.beginPath(); g.moveTo(-100, -4); g.quadraticCurveTo(0, 28, 100, -8); g.quadraticCurveTo(0, 6, -100, -4); g.fill();
-    g.beginPath(); g.moveTo(-18, -4); g.lineTo(-8, -50); g.lineTo(12, -50); g.lineTo(20, -4); g.closePath(); g.fill();
-    g.beginPath(); g.ellipse(2, -62, 20, 7, 0, 0, TAU); g.fill();
-    g.strokeStyle = 'rgba(' + INK + ',.85)'; g.lineWidth = 2.4; g.beginPath(); g.moveTo(8, -44); g.lineTo(110, -140); g.stroke();
-    g.restore();
-    g.strokeStyle = 'rgba(' + INK + ',.12)'; g.lineWidth = 2; g.beginPath(); g.moveTo(520, 1494); g.lineTo(610, 1494); g.stroke();
-
-    g.drawImage(fore, 0, 0);
-
-    var gust = Math.sin(t * 0.3) * 0.5 + 0.5;
-    [treeA, treeB].forEach(function (tr, n) {
-      g.save(); g.translate(tr.px, tr.py); g.rotate(Math.sin(t * 0.45 + n) * 0.003); g.translate(-tr.px, -tr.py); g.drawImage(tr.t, 0, 0); g.restore();
-      g.save(); g.translate(tr.px, tr.py); g.rotate(Math.sin(t * 0.55 + 0.4 + n) * 0.007 + Math.sin(t * 1.4 + n) * 0.002 * (0.4 + gust)); g.translate(-tr.px, -tr.py); g.drawImage(tr.b, 0, 0); g.restore();
-      g.save(); g.globalAlpha = 0.26; g.translate(tr.px, tr.py); g.rotate(Math.sin(t * 0.7 + 2.1 + n) * 0.009); g.translate(-tr.px, -tr.py); g.drawImage(tr.b, 3, 2); g.restore();
-    });
-    g.globalAlpha = 1;
-
-    var wind = 22 + gust * 48;
-    for (k = 0; k < petals.length; k++) {
-      var p = petals[k], py = (p.y + t * p.v) % (H + 80) - 40;
-      var px = (((p.x + Math.sin(t * 0.5 + p.ph) * p.sw + t * wind) % (W + 80)) + W + 80) % (W + 80) - 40;
-      g.save(); g.translate(px, py); g.rotate(t * 0.4 * p.rs + p.ph); g.scale(1, 0.35 + 0.65 * Math.abs(Math.cos(t * p.rs + p.ph)));
-      g.fillStyle = 'rgba(234,176,190,.88)'; g.beginPath(); g.ellipse(0, 0, p.s, p.s * 0.6, 0, 0, TAU); g.fill();
-      g.restore();
+    // Fallen sakura petals dotting the mossy bank
+    for (let i = 0; i < 42; i++) {
+      const qx = Math.floor(fr() * 68);
+      const topY = Math.round(bankFn(qx) + (qx > 56 ? (qx - 56) * 0.92 : 0));
+      const qy = topY + 2 + Math.floor(fr() * (H - topY - 3));
+      if (qy < H) {
+        fset(qx, qy, fr() > 0.4 ? C(0xe8a8b8) : C(0xf4ccd6));
+        if (fr() < 0.35) fset(qx + 1, qy, C(0xd68498));
+      }
     }
 
-    g.globalCompositeOperation = 'multiply'; g.globalAlpha = 0.5; g.drawImage(grain, 0, 0); g.globalAlpha = 1; g.globalCompositeOperation = 'source-over';
+    // Easter Egg #3: Traditional Mossy Stone Lantern (Ishidōrō / 石灯籠) on the Left Shore Bank
+    const lx = 46, ly = 266;
+    rect: {
+      const STONE_D = C(0x3a3e3c), STONE_M = C(0x585c56), STONE_L = C(0x787c72), MOSS = C(0x3e5c3e);
+      // Base pedestal & post
+      for (let dx = -3; dx <= 3; dx++) fset(lx + dx, ly, STONE_D);
+      for (let y = ly - 5; y < ly; y++) {
+        fset(lx - 1, y, STONE_D);
+        fset(lx, y, STONE_M);
+        fset(lx + 1, y, STONE_L);
+      }
+      // Middle platform (Chūdai)
+      for (let dx = -3; dx <= 3; dx++) fset(lx + dx, ly - 6, STONE_M);
+      // Firebox frame (Hibukuro) — light inside is animated in render()
+      for (let y = ly - 10; y <= ly - 7; y++) {
+        fset(lx - 2, y, STONE_D);
+        fset(lx + 2, y, STONE_M);
+      }
+      // Wide curved stone roof (Kasa) with green moss dabs
+      for (let dx = -5; dx <= 5; dx++) {
+        const up = Math.abs(dx) === 5 ? -1 : 0;
+        fset(lx + dx, ly - 11 + up, STONE_D);
+        if (Math.abs(dx) <= 4) fset(lx + dx, ly - 12, dx < 0 ? MOSS : STONE_M);
+      }
+      for (let dx = -2; dx <= 2; dx++) fset(lx + dx, ly - 13, dx === -1 ? MOSS : STONE_L);
+      fset(lx, ly - 14, STONE_L); // Jewel finial (Hōju)
+    }
 
-    g.save(); g.translate(930, 1790); g.rotate(-0.03);
-    g.fillStyle = 'rgba(184,56,42,.9)';
-    g.beginPath(); g.moveTo(0, 2); g.lineTo(54, 0); g.lineTo(53, 72); g.lineTo(1, 74); g.closePath(); g.fill();
-    g.strokeStyle = 'rgba(248,240,226,.92)'; g.lineWidth = 5; g.lineCap = 'round';
-    g.beginPath(); g.moveTo(14, 20); g.lineTo(40, 20); g.moveTo(27, 20); g.lineTo(27, 58); g.moveTo(13, 42); g.lineTo(41, 42); g.stroke();
-    g.restore();
+    // Windswept Right-Shore Matsu Pine (松) Framing the Right Side
+    function fbrush(x0, y0, cx, cy, x1, y1, w0, w1) {
+      const steps = Math.max(10, Math.ceil(Math.hypot(x1 - x0, y1 - y0) * 1.8));
+      for (let i = 0; i <= steps; i++) {
+        const t = i / steps, u = 1 - t;
+        const x = u * u * x0 + 2 * u * t * cx + t * t * x1;
+        const y = u * u * y0 + 2 * u * t * cy + t * t * y1;
+        const rad = Math.max(0.5, (w0 + (w1 - w0) * t) * 0.5);
+        const rC = Math.ceil(rad);
+        for (let dy = -rC; dy <= rC; dy++) {
+          for (let dx = -rC; dx <= rC; dx++) {
+            if (Math.hypot(dx, dy) <= rad) {
+              fset(x + dx, y + dy, dx > 0 && hash(x + dx, y + dy) < 0.25 ? C(0x3a322c) : INK);
+            }
+          }
+        }
+      }
+    }
+    const bx = 143, by = 203;
+    fbrush(bx + 10, by + 9, bx + 2, by - 6, bx - 5, by - 18, 3.2, 2.5);
+    fbrush(bx - 5, by - 18, bx - 9, by - 26, bx - 3, by - 35, 2.5, 1.8);
+    fbrush(bx - 5, by - 18, bx - 16, by - 21, bx - 26, by - 16, 1.8, 1.2);
+    fbrush(bx - 2, by - 29, bx + 9, by - 32, bx + 18, by - 29, 1.6, 1.1);
 
-    var veil = Math.max(0, 1 - t / 3.2);
-    if (veil > 0) { g.fillStyle = 'rgba(' + PAPER + ',' + veil * veil + ')'; g.fillRect(0, 0, W, H); }
+    // Layered Sumi- & Mineral-Green Pine Needle Pads
+    const PINE_COLS = [C(0x141a1c), C(0x1e2c2a), C(0x2b3e38)];
+    function pinePad(cx, cy, rx, ry) {
+      for (let dy = -ry - 2; dy <= ry; dy++) {
+        for (let dx = -rx - 2; dx <= rx + 2; dx++) {
+          const norm = Math.hypot(dx / rx, dy / ry);
+          if (norm <= 1.05) {
+            if (norm > 0.7 && bay((cx + dx) & 255, (cy + dy) & 255) > (1.08 - norm) * 2.8) continue;
+            // Upper needle cluster fan texture
+            const c = dy < 0 && bay((cx + dx) & 255, (cy + dy) & 255) < 0.48 ? PINE_COLS[2] : (dy > ry * 0.3 ? PINE_COLS[0] : PINE_COLS[1]);
+            fset(cx + dx, cy + dy, c);
+          }
+        }
+      }
+    }
+    pinePad(bx - 3, by - 37, 14, 5);
+    pinePad(bx - 25, by - 17, 11, 4);
+    pinePad(bx + 16, by - 29, 11, 4);
+    pinePad(bx - 12, by - 27, 9, 3);
   }
 
-  if (reduce) { frame(8); return; }
-  var t0 = performance.now();
-  function loop(now) { frame((now - t0) / 1000); requestAnimationFrame(loop); }
+  /* =========================================================================
+   * 3. DYNAMIC WORLD ENTITIES & GLITCH-FREE DELTA-TIME STATE
+   * ========================================================================= */
+  // Golden Cloud Bands (Kasumi) & Morning Mist Layers
+  const bands = [
+    { y: 50, h: 12, sp: 1.1, seed: 63, gold: true, a: 0.72 },
+    { y: 136, h: 16, sp: 1.6, seed: 61, gold: true, a: 0.78 },
+    { y: 164, h: 16, sp: -2.1, seed: 62, gold: true, a: 0.80 }
+  ];
+  const mists = [
+    { y: 152, h: 22, sp: 1.2, seed: 31, a: 0.62 },
+    { y: 177, h: 20, sp: -1.7, seed: 32, a: 0.70 },
+    { y: 193, h: 16, sp: 1.9, seed: 33, a: 0.65 }
+  ];
+
+  // Flock of 5 Red-Crowned Cranes (Tanchōzuru) flying across Mount Fuji
+  const cranes = [
+    { x: 18, y: 76, sp: 4.2, ph: 0.0, sc: 1 },
+    { x: 31, y: 82, sp: 4.2, ph: 1.1, sc: 1 },
+    { x: 43, y: 73, sp: 4.2, ph: 2.2, sc: 1 },
+    { x: 55, y: 86, sp: 4.2, ph: 3.1, sc: 0 },
+    { x: 66, y: 79, sp: 4.2, ph: 4.3, sc: 0 }
+  ];
+
+  // Easter Egg #4: Swimming Kohaku Koi Fish beneath the lake surface
+  const koiList = [
+    { x: 52, y: 236, vx: 3.2, vy: 0.4, ph: 0.0 },
+    { x: 112, y: 254, vx: -2.8, vy: -0.3, ph: 2.4 },
+    { x: 78, y: 268, vx: 2.5, vy: 0.25, ph: 4.7 }
+  ];
+
+  // Easter Egg #5: Floating Glowing Paper Water Lanterns (Tōrō nagashi)
+  const waterLanterns = [
+    { x: 28, y: 214, sp: 0.85, ph: 0.5 },
+    { x: 122, y: 228, sp: 0.70, ph: 3.2 }
+  ];
+
+  // Concentric Water Ripples (spawned by fishing line nibbles & koi fish)
+  let ripples = [];
+
+  // Easter Egg #6: Pair of Uguisu (Japanese Bush Warblers) perched on a sakura bough
+  const warblers = [
+    { bx: 43, by: 204, hop: 0, dir: 1, noteTimer: 1.2 },
+    { bx: 50, by: 201, hop: 0, dir: -1, noteTimer: 3.8 }
+  ];
+  let notes = [];
+
+  // Easter Egg #7: Sleeping Calico Cat at the Sakura Roots
+  let sleepZs = [], zTimer = 0;
+
+  // Foreground Shore Reeds (Right Bottom)
+  const reeds = Array.from({ length: 26 }, () => ({
+    x: 106 + Math.floor(rnd() * 55),
+    y: 274 + Math.floor(rnd() * 14),
+    h: 13 + Math.floor(rnd() * 20),
+    lean: (rnd() - 0.5) * 3.5,
+    ph: rnd() * TAU
+  }));
+
+  // 90 Airborne Sakura Petals — Updated Strictly via Clamped `dt` (Fixes Background-Tab Hurricane Glitch!)
+  const PETAL_COLS = [C(0xf9e2e7), C(0xf2c2ce), C(0xe6a0b2), C(0xd87c92)];
+  const petals = Array.from({ length: 90 }, () => ({
+    x: rnd() * W,
+    y: rnd() * H,
+    vx: 3.5 + rnd() * 5.5,
+    vy: 4.0 + rnd() * 5.8,
+    swAmp: 3.0 + rnd() * 5.0,
+    swFreq: 0.9 + rnd() * 1.4,
+    ph: rnd() * TAU,
+    spin: 1.5 + rnd() * 2.5,
+    sz: rnd() < 0.28 ? 2 : 1,
+    c: PETAL_COLS[Math.floor(rnd() * PETAL_COLS.length)]
+  }));
+
+  // Floating Sakura Petals resting and drifting on the lake surface
+  const waterPetals = Array.from({ length: 28 }, () => ({
+    x: rnd() * W,
+    y: SHORE + 4 + rnd() * (H - SHORE - 12),
+    sp: 0.9 + rnd() * 1.4,
+    ph: rnd() * TAU,
+    c: rnd() < 0.5 ? C(0xf2c6d0) : C(0xe49eb0)
+  }));
+
+  /* =========================================================================
+   * 4. HELPER RENDERING ROUTINES FOR LAYERED ELEMENTS
+   * ========================================================================= */
+  // Draw dithered horizontal cloud band or soft morning mist strip
+  function drawCloudLayer(layer, t) {
+    const r = rng(layer.seed);
+    const puffs = [];
+    for (let i = 0; i < 5; i++) {
+      puffs.push({
+        cx: r() * W,
+        cy: layer.y + (r() - 0.5) * layer.h * 0.55,
+        rx: 26 + r() * 36,
+        ry: layer.gold ? (2.5 + r() * 3.2) : (5.5 + r() * 7.5)
+      });
+    }
+    const shift = ((t * layer.sp) % W + W) % W;
+    const cCore = layer.gold ? C(0xf6e8c8) : C(0xf4ece0);
+    const cEdge = layer.gold ? C(0xe6cfa4) : C(0xe4dacc);
+    const cRim = C(0xc8a064);
+
+    const y0 = Math.max(0, Math.floor(layer.y - layer.h));
+    const y1 = Math.min(SHORE - 1, Math.ceil(layer.y + layer.h));
+
+    for (let y = y0; y <= y1; y++) {
+      for (let x = 0; x < W; x++) {
+        let dMin = 99;
+        for (let p = 0; p < puffs.length; p++) {
+          const pf = puffs[p];
+          let dx = (x - (pf.cx + shift)) % W;
+          if (dx < -W * 0.5) dx += W;
+          if (dx > W * 0.5) dx -= W;
+          const dy = y - pf.cy;
+          const d = Math.hypot(dx / pf.rx, dy / pf.ry);
+          if (d < dMin) dMin = d;
+        }
+        if (dMin < 1.0) {
+          const strength = (1 - dMin) * layer.a;
+          if (bay(x, y) < strength) {
+            px[y * W + x] = dMin < 0.55 ? cCore : cEdge;
+          } else if (layer.gold && dMin > 0.78 && dMin < 0.96 && y > layer.y && bay(x, y) < 0.25) {
+            px[y * W + x] = cRim;
+          }
+        }
+      }
+    }
+  }
+
+  // Draw animated pixel Red-Crowned Crane (Tanchōzuru)
+  function drawCrane(x, y, flap, small) {
+    const cx = Math.round(x), cy = Math.round(y);
+    const WHITE = C(0xfaf6ec), WING_TIP = INK, CROWN = C(0xd83228);
+    const wy = Math.round(flap * 2.2);
+    if (small) {
+      set(cx, cy, WHITE);
+      set(cx - 1, cy, CROWN);
+      set(cx - 2, cy + wy, WHITE);
+      set(cx + 2, cy + wy, WHITE);
+      set(cx - 3, cy + wy, WING_TIP);
+      set(cx + 3, cy + wy, WING_TIP);
+    } else {
+      // Body & outstretched neck
+      set(cx, cy, WHITE);
+      set(cx + 1, cy, WHITE);
+      set(cx - 1, cy, WHITE);
+      set(cx - 2, cy - 1, CROWN); // Red crown
+      set(cx - 3, cy - 1, INK);   // Beak
+      set(cx + 2, cy + 1, WING_TIP); // Tail feathers
+      // Arched wings flapping
+      for (let s = 1; s <= 4; s++) {
+        const dy = s <= 2 ? Math.round(-flap * s * 0.8) : Math.round(flap * (s - 1.5) * 0.9);
+        const col = s === 4 ? WING_TIP : WHITE;
+        set(cx - s, cy + dy, col);
+        set(cx + s, cy + dy, col);
+      }
+    }
+  }
+
+  // Draw Traditional Vermilion Hanko Artist Seal Stamp in Bottom-Right Corner
+  function drawHankoSeal() {
+    const sx = 140, sy = 263, sw = 10, sh = 13;
+    const SEAL_RED = C(0xb8382a), SEAL_INK = C(0xf8f0e2);
+    for (let j = 0; j < sh; j++) {
+      for (let i = 0; i < sw; i++) {
+        // slightly weathered edges like an authentic stone seal impression
+        if ((i === 0 || i === sw - 1 || j === 0 || j === sh - 1) && hash(i * 11, j * 17) < 0.18) continue;
+        set(sx + i, sy + j, SEAL_RED);
+      }
+    }
+    // Seal glyph inside (春 / Fuji-Sakura)
+    for (let i = 2; i <= 7; i++) {
+      set(sx + i, sy + 3, SEAL_INK);
+      set(sx + i, sy + 6, SEAL_INK);
+      set(sx + i, sy + 9, SEAL_INK);
+    }
+    for (let j = 3; j <= 10; j++) set(sx + 5, sy + j, SEAL_INK);
+    set(sx + 3, sy + 10, SEAL_INK);
+    set(sx + 7, sy + 10, SEAL_INK);
+  }
+
+  /* =========================================================================
+   * 5. MAIN FRAME UPDATE & PIXEL BUFFER RENDERING
+   * ========================================================================= */
+  function render(t, dt, revealProgress) {
+    // 1. Copy static sky, sun, Fuji, ridges, pagoda & torii gate into active buffer
+    px.set(bg);
+
+    // 2. High Golden Cloud Band + Flying Cranes
+    drawCloudLayer(bands[0], t);
+    for (let i = 0; i < cranes.length; i++) {
+      const c = cranes[i];
+      c.x -= c.sp * dt;
+      if (c.x < -12) c.x = W + 12;
+      const by = c.y + Math.sin(t * 0.8 + c.ph) * 2.2;
+      drawCrane(c.x, by, Math.sin(t * 3.4 + c.ph), c.sc === 0);
+    }
+
+    // 3. Mid & Low Golden Cloud Bands + Morning Mist Strips over Mount Fuji's base
+    drawCloudLayer(mists[0], t);
+    drawCloudLayer(bands[1], t);
+    drawCloudLayer(mists[1], t);
+    drawCloudLayer(bands[2], t);
+    drawCloudLayer(mists[2], t);
+
+    // 4. Real-Time Scanline Lake Reflection (Mirrors Sky, Sun, Fuji, Clouds, Pagoda & Torii)
+    const WATER_TOP = C(0x9eb0b8), WATER_DEEP = C(0x3b5266);
+    for (let y = SHORE; y < H; y++) {
+      const d = y - SHORE;
+      const depthF = d / (H - SHORE);
+      const srcY = Math.max(0, Math.min(SHORE - 1, Math.round(SHORE - 1 - d * 1.05)));
+      const waveShift = Math.round(Math.sin(t * 2.1 + d * 0.28) * (0.8 + depthF * 2.4));
+      const baseWater = ramp([WATER_TOP, C(0x6e8596), WATER_DEEP], depthF, 0, y);
+
+      for (let x = 0; x < W; x++) {
+        const sx = Math.max(0, Math.min(W - 1, x + waveShift));
+        const reflCol = px[srcY * W + sx];
+        // Blend mirrored scene with lake depth gradient
+        const reflStrength = Math.max(0.16, 0.62 * (1 - depthF * 0.85));
+        px[y * W + x] = blend(baseWater, reflCol, reflStrength);
+      }
+    }
+
+    // Shimmering Washi Water Wave Lines & Vermilion Sun Glint Column on Lake
+    for (let k = 0; k < 22; k++) {
+      const ly = SHORE + 3 + k * 4 + Math.round(Math.sin(t * 0.6 + k) * 0.6);
+      if (ly >= H) continue;
+      const lx = ((k * 37) % 130) + Math.round(Math.sin(t * 0.4 + k * 1.3) * 4);
+      const ll = 12 + ((k * 19) % 28);
+      const glint = Math.sin(t * 1.1 + k) > 0;
+      for (let i = 0; i < ll; i++) {
+        if (bay(lx + i, ly) < (glint ? 0.45 : 0.25)) {
+          set(lx + i, ly, C(0xf4ece0));
+        }
+      }
+    }
+    // Vermilion Sun Reflection Shimmer Bars under SX0 (x = 124)
+    for (let k = 0; k < 15; k++) {
+      const gy = SHORE + 5 + k * 4;
+      const gw = 2 + Math.floor(k * 0.35 + Math.sin(t * 1.4 + k) * 1.2);
+      const gx = SX0 + Math.round(Math.sin(t * 0.9 + k * 0.7) * 1.5);
+      for (let dx = -gw; dx <= gw; dx++) {
+        if (bay(gx + dx, gy) < 0.65 - k * 0.03) {
+          set(gx + dx, gy, k % 2 === 0 ? C(0xd96b52) : C(0xedb08e));
+        }
+      }
+    }
+
+    // 5. Swimming Kohaku Koi Fish & Concentric Water Ripples
+    for (let i = 0; i < koiList.length; i++) {
+      const k = koiList[i];
+      k.x += k.vx * dt;
+      k.y += Math.sin(t * 1.2 + k.ph) * 0.35 * dt * 10;
+      if (k.x < 18) { k.x = 18; k.vx = Math.abs(k.vx); }
+      if (k.x > 142) { k.x = 142; k.vx = -Math.abs(k.vx); }
+      const dir = k.vx >= 0 ? 1 : -1;
+      const kx = Math.round(k.x), ky = Math.round(k.y);
+      const wag = Math.round(Math.sin(t * 7 + k.ph));
+      // Koi head, white body, vermilion pattern, and wagging tail
+      set(kx, ky, C(0xf4ede2));
+      set(kx - dir, ky, C(0xd8462a));
+      set(kx - dir * 2, ky + (wag > 0 ? 1 : 0), C(0xf4ede2));
+      set(kx - dir * 3, ky + wag, C(0xd8462a));
+      if (hash(Math.floor(t * 3), i) < 0.015 && ripples.length < 6) {
+        ripples.push({ x: kx, y: ky, r: 0.5, maxR: 6 });
+      }
+    }
+
+    // Floating Sakura Petals on Lake Surface
+    for (let i = 0; i < waterPetals.length; i++) {
+      const wp = waterPetals[i];
+      wp.x = (wp.x + wp.sp * dt + W) % W;
+      const wy = Math.round(wp.y + Math.sin(t * 1.5 + wp.ph) * 0.5);
+      set(wp.x, wy, wp.c);
+    }
+
+    // Floating Glowing Paper Water Lanterns (Tōrō nagashi)
+    for (let i = 0; i < waterLanterns.length; i++) {
+      const wl = waterLanterns[i];
+      wl.x = (wl.x + wl.sp * dt + W) % W;
+      const lx = Math.round(wl.x), ly = Math.round(wl.y + Math.sin(t * 1.8 + wl.ph) * 0.6);
+      halo(lx - 1, ly - 2, 3, 3, 4, C(0xe89a48), 0.45);
+      drect(lx - 1, ly, 3, 1, C(0x3a2418));       // Wooden base
+      drect(lx - 1, ly - 2, 3, 2, C(0xffdfa0));   // Glowing paper sides
+      set(lx, ly - 1, C(0xfff8dc));               // Warm candle heart
+      // Warm reflection below lantern
+      set(lx, ly + 2, C(0xe89a48));
+      set(lx + (Math.sin(t * 4 + i) > 0 ? 1 : -1), ly + 3, C(0xd87a38));
+    }
+
+    // 6. Small Wooden Fishing Sampan Boat & Angler with Bamboo Rod
+    {
+      const bx = 86 + Math.round(Math.sin(t * 0.35) * 2.5);
+      const by = 221 + Math.round(Math.sin(t * 1.4) * 0.6);
+      // Subtle water shadow / wake under hull
+      for (let dx = -10; dx <= 10; dx++) {
+        if (bay(bx + dx, by + 2) < 0.5) set(bx + dx, by + 2, C(0x243442));
+      }
+      // Curved sampan hull
+      for (let dx = -9; dx <= 9; dx++) {
+        const curve = Math.abs(dx) >= 7 ? -1 : 0;
+        set(bx + dx, by + curve, INK);
+        if (Math.abs(dx) <= 7) set(bx + dx, by + 1 + curve, C(0x2c2622));
+      }
+      // Seated angler silhouette in cloak & wide bamboo kasa hat
+      drect(bx - 2, by - 4, 3, 4, INK);
+      for (let dx = -3; dx <= 3; dx++) set(bx - 1 + dx, by - 5, C(0x322c24));
+      set(bx - 1, by - 6, C(0x4a4236));
+      // Warm glowing bow lantern hanging off the front of the boat
+      const lx = bx - 9, ly = by - 2;
+      halo(lx, ly, 1, 1, 4, C(0xe88a38), 0.5);
+      set(lx, ly, C(0xffe8a8));
+      set(lx, by + 3, C(0xe89a48));
+      // Slender arched bamboo fishing rod & line dipping into water
+      for (let s = 0; s <= 11; s++) {
+        const rx = bx + 1 + s;
+        const ry = by - 3 - Math.round(s * 0.85 - (s * s) * 0.025);
+        set(rx, ry, INK);
+      }
+      const tipX = bx + 12, tipY = by - 9;
+      for (let ly2 = tipY + 1; ly2 <= by + 2; ly2++) {
+        if (bay(tipX, ly2) < 0.55) set(tipX, ly2, C(0xd8d0c0));
+      }
+      // Periodic fish nibble concentric ripples at the fishing line tip
+      if (Math.floor(t * 2) % 9 === 0 && ripples.length < 5) {
+        ripples.push({ x: tipX, y: by + 2, r: 0.5, maxR: 7.5 });
+      }
+    }
+
+    // Update & Draw Concentric Water Ripple Rings
+    ripples = ripples.filter(rp => (rp.r += dt * 3.8) < rp.maxR);
+    for (const rp of ripples) {
+      const fade = 1 - rp.r / rp.maxR;
+      for (let a = 0; a < 16; a++) {
+        const ang = (a / 16) * TAU;
+        const rx = Math.round(rp.x + Math.cos(ang) * rp.r * 1.6);
+        const ry = Math.round(rp.y + Math.sin(ang) * rp.r * 0.55);
+        if (ry >= SHORE && bay(rx & 255, ry & 255) < fade * 0.75) {
+          set(rx, ry, C(0xf4ece0));
+        }
+      }
+    }
+
+    // 7. Composite Foreground Shore Bank, Stone Lantern & Right-Shore Matsu Pine
+    for (let i = 0; i < W * H; i++) {
+      if (foreBank[i]) px[i] = foreBank[i];
+    }
+
+    // Animate flickering warm flame inside the Shore Stone Lantern (Ishidōrō)
+    {
+      const lx = 46, ly = 266;
+      const flick = 0.75 + 0.25 * Math.sin(t * 11) * Math.cos(t * 6.3);
+      halo(lx - 1, ly - 10, 3, 3, 7, C(0xe68a38), 0.45 * flick);
+      drect(lx - 1, ly - 9, 3, 2, C(0xffce78));
+      set(lx, ly - 8, C(0xfff6d8));
+    }
+
+    // Animate Sleeping Calico Cat curled up at the Sakura Tree Roots (x = 26, y = 269)
+    {
+      const cx = 26, cy = 269;
+      const breath = Math.sin(t * 2.2) > 0.35 ? -1 : 0;
+      const CAT_W = C(0xf6eee2), CAT_O = C(0xd8742a), CAT_B = C(0x282422), CAT_EAR = C(0xe694a4);
+      // Curled loaf body
+      for (let dy = -3; dy <= 0; dy++) {
+        for (let dx = -4; dx <= 4; dx++) {
+          if (Math.hypot(dx * 0.8, dy * 1.3) <= 3.3) {
+            let col = CAT_W;
+            if (dx < -1 && dy < -1) col = CAT_O;
+            else if (dx > 1 && dy <= -1) col = CAT_B;
+            set(cx + dx, cy + dy + (dy <= -2 ? breath : 0), col);
+          }
+        }
+      }
+      // Sleeping head tucked right & tiny pink ear
+      set(cx + 3, cy - 3 + breath, CAT_W);
+      set(cx + 2, cy - 4 + breath, CAT_EAR);
+      set(cx + 4, cy - 4 + breath, CAT_O);
+      // Gently curling tail on the left
+      const tailWag = Math.round(Math.sin(t * 1.8) * 0.7);
+      set(cx - 5, cy, CAT_B);
+      set(cx - 6, cy - 1 + tailWag, CAT_B);
+      // Floating pixel 'z' sleep bubbles
+      zTimer += dt;
+      if (zTimer > 2.2) {
+        zTimer = 0;
+        sleepZs.push({ x: cx + 4, y: cy - 6, a: 0 });
+      }
+      sleepZs = sleepZs.filter(z => (z.a += dt) < 2.0);
+      for (const z of sleepZs) {
+        const zx = Math.round(z.x + Math.sin(z.a * 3) * 1.2);
+        const zy = Math.round(z.y - z.a * 4.5);
+        if (bay(zx & 255, zy & 255) < 1.2 - z.a * 0.5) {
+          set(zx, zy, C(0xfbf4eb));
+          set(zx + 1, zy, C(0xfbf4eb));
+          set(zx, zy + 1, C(0xfbf4eb));
+          set(zx + 1, zy + 1, C(0xfbf4eb));
+        }
+      }
+    }
+
+    // Swaying Foreground Shore Reeds (Right Bottom)
+    const gust = Math.sin(t * 0.45) * 0.5 + 0.5;
+    for (let i = 0; i < reeds.length; i++) {
+      const rd = reeds[i];
+      const sway = Math.sin(t * 1.4 + rd.ph) * (1.2 + gust * 1.6);
+      for (let s = 0; s < rd.h; s++) {
+        const f = s / rd.h;
+        const rx = rd.x + (rd.lean + sway) * f * f;
+        const ry = rd.y - s;
+        set(rx, ry, s > rd.h - 3 ? C(0x4a4238) : INK);
+      }
+    }
+
+    // 8. Swaying Gnarled Sakura Tree Trunk, Branches, Uguisu Birds & Blossom Canopy
+    const branchSway = Math.sin(t * 0.65) * 1.2;
+    for (let i = 0; i < trunkPixels.length; i++) {
+      const tp = trunkPixels[i];
+      const sx = tp.x + Math.round(branchSway * tp.w * 0.45);
+      const sy = tp.y + Math.round(branchSway * tp.w * 0.25);
+      set(sx, sy, tp.c);
+    }
+
+    // Pair of Uguisu (Japanese Bush Warblers) hopping on the sakura branch
+    for (let i = 0; i < warblers.length; i++) {
+      const wb = warblers[i];
+      wb.noteTimer -= dt;
+      if (wb.noteTimer <= 0) {
+        wb.noteTimer = 3.2 + rnd() * 2.5;
+        wb.dir = -wb.dir;
+        notes.push({ x: wb.bx + wb.dir * 2, y: wb.by - 4, a: 0, c: i === 0 ? C(0xf2b8c6) : C(0xffe098) });
+      }
+      const hopY = Math.sin(t * 6 + i * 2) > 0.82 ? -1 : 0;
+      const wx = wb.bx + Math.round(branchSway * 0.2), wy = wb.by + hopY;
+      // Olive-green warbler back, cream belly, tail & beak
+      set(wx, wy, C(0x6e8446));
+      set(wx + wb.dir, wy - 1, C(0x7c9450));
+      set(wx, wy + 1, C(0xe6dec8));
+      set(wx - wb.dir, wy, C(0x4c5c30));
+      set(wx + wb.dir * 2, wy - 1, INK);
+    }
+    notes = notes.filter(n => (n.a += dt) < 1.6);
+    for (const n of notes) {
+      const nx = Math.round(n.x + Math.sin(n.a * 4) * 1.5);
+      const ny = Math.round(n.y - n.a * 5.5);
+      set(nx, ny, n.c);
+      set(nx + 1, ny - 1, n.c);
+      set(nx + 1, ny, n.c);
+    }
+
+    // Swaying Sakura Blossom Clusters
+    for (let i = 0; i < blossomClusters.length; i++) {
+      const cl = blossomClusters[i];
+      const dxSway = Math.round(Math.sin(t * 0.8 + cl.ph) * (0.6 + gust * 1.1) * cl.w);
+      const dySway = Math.round(Math.cos(t * 0.9 + cl.ph) * 0.6 * cl.w);
+      const pts = cl.pts;
+      for (let p = 0; p < pts.length; p++) {
+        set(cl.cx + pts[p].dx + dxSway, cl.cy + pts[p].dy + dySway, pts[p].c);
+      }
+    }
+
+    // 9. Glitch-Free Drifting Sakura Petals (Updated Incrementally via Clamped `dt`)
+    const windBoost = 1.0 + gust * 0.85;
+    for (let i = 0; i < petals.length; i++) {
+      const p = petals[i];
+      p.x += (p.vx * windBoost + Math.cos(t * p.swFreq + p.ph) * p.swAmp) * dt;
+      p.y += (p.vy + Math.sin(t * p.swFreq * 0.8 + p.ph) * 1.4) * dt;
+
+      // Seamless wrap around screen bounds
+      if (p.y > H + 6) {
+        p.y = -4;
+        p.x = rnd() * W * 0.85;
+      }
+      if (p.x > W + 6) p.x -= W + 10;
+      if (p.x < -6) p.x += W + 10;
+
+      const px0 = Math.round(p.x), py0 = Math.round(p.y);
+      set(px0, py0, p.c);
+      // 3D tumbling flutter animation (alternates between 1px and 2px/3px petal shapes)
+      const flutter = Math.sin(t * p.spin + p.ph);
+      if (p.sz === 2 && flutter > -0.2) {
+        set(px0 + (flutter > 0.4 ? 1 : 0), py0 + (flutter < 0.4 ? 1 : 0), C(0xfcf2f4));
+      }
+    }
+
+    // 10. Traditional Vermilion Hanko Seal Stamp in Bottom-Right Corner
+    drawHankoSeal();
+
+    // 11. Hanging Scroll Washi Dither-Dissolve Reveal Intro (Click/Tap Canvas to Replay)
+    if (revealProgress < 1) {
+      for (let i = 0; i < W * H; i++) {
+        const k = ikey[i];
+        if (k > revealProgress) {
+          px[i] = PAPER;
+        } else if (k > revealProgress - 0.035) {
+          px[i] = C(0xd89aa8);
+        }
+      }
+    }
+
+    ctx.putImageData(img, 0, 0);
+  }
+
+  // Precompute scroll-unroll dither reveal threshold map
+  const ikey = new Float32Array(W * H);
+  for (let y = 0; y < H; y++) {
+    for (let x = 0; x < W; x++) {
+      ikey[y * W + x] = hash(x + 7, y + 13) * 0.55 + (y / H) * 0.45;
+    }
+  }
+
+  // Clamped Delta-Time Loop + Visibility Reset (Eliminates Background-Tab Hurricane Glitch)
+  const INTRO_MS = 3200;
+  let t0 = performance.now();
+  let lastFrame = 0;
+  let prevTime = performance.now();
+  let simTime = 0;
+
+  document.addEventListener('visibilitychange', () => {
+    if (!document.hidden) {
+      prevTime = performance.now();
+      lastFrame = 0;
+    }
+  });
+
+  cv.addEventListener('pointerdown', () => {
+    t0 = performance.now();
+  });
+
+  function loop(now) {
+    requestAnimationFrame(loop);
+    if (now - lastFrame < 33) return; // Crisp ~30fps pixel-art cadence
+    lastFrame = now;
+
+    // Strictly clamp dt to max 40ms so background tab throttling never causes a speed spike
+    const dt = Math.min(0.04, Math.max(0.001, (now - prevTime) / 1000));
+    prevTime = now;
+    simTime += dt;
+
+    const e = Math.min(1, (now - t0) / INTRO_MS);
+    const revealProgress = e >= 1 ? 1 : (1 - Math.pow(1 - e, 2)) * 1.04;
+
+    render(simTime, dt, revealProgress);
+  }
+
   requestAnimationFrame(loop);
 })();
 </script>

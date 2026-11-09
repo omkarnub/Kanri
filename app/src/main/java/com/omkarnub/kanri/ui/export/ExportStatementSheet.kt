@@ -34,11 +34,14 @@ import androidx.compose.material.icons.filled.Download
 import androidx.compose.material.icons.filled.PictureAsPdf
 import androidx.compose.material.icons.filled.Share
 import androidx.compose.material.icons.filled.TableChart
+import androidx.compose.material.icons.outlined.DateRange
 import androidx.compose.material3.Button
 import androidx.compose.material3.ButtonDefaults
 import androidx.compose.material3.Card
 import androidx.compose.material3.CardDefaults
 import androidx.compose.material3.CircularProgressIndicator
+import androidx.compose.material3.DatePickerDefaults
+import androidx.compose.material3.DateRangePicker
 import androidx.compose.material3.ExperimentalMaterial3Api
 import androidx.compose.material3.FilterChip
 import androidx.compose.material3.FilterChipDefaults
@@ -46,10 +49,13 @@ import androidx.compose.material3.Icon
 import androidx.compose.material3.MaterialTheme
 import androidx.compose.material3.OutlinedButton
 import androidx.compose.material3.Text
+import androidx.compose.material3.TextButton
+import androidx.compose.material3.rememberDateRangePickerState
 import androidx.compose.material3.rememberModalBottomSheetState
 import com.omkarnub.kanri.ui.common.GlassLevel
 import com.omkarnub.kanri.ui.common.KanriGlassButton
 import com.omkarnub.kanri.ui.common.KanriGlassCard
+import com.omkarnub.kanri.ui.common.KanriGlassDatePickerDialog
 import com.omkarnub.kanri.ui.common.KanriModalBottomSheet
 import androidx.compose.runtime.Composable
 import androidx.compose.runtime.LaunchedEffect
@@ -74,6 +80,9 @@ import com.omkarnub.kanri.data.security.SecurityManager
 import com.omkarnub.kanri.ui.home.formatCurrency
 import com.omkarnub.kanri.util.rememberKanriHaptics
 import kotlinx.coroutines.launch
+import java.text.SimpleDateFormat
+import java.util.Date
+import java.util.Locale
 
 @OptIn(ExperimentalMaterial3Api::class)
 @Composable
@@ -96,6 +105,7 @@ fun ExportStatementSheet(
     var exportSuccessSummary by remember { mutableStateOf<ExportSummary?>(null) }
     var exportedUri by remember { mutableStateOf<Uri?>(null) }
     var errorMessage by remember { mutableStateOf<String?>(null) }
+    var showCustomDateRangePicker by remember { mutableStateOf(false) }
 
     // Load preview when range changes
     LaunchedEffect(selectedRange) {
@@ -385,6 +395,48 @@ fun ExportStatementSheet(
                         )
                     )
                 }
+
+                val isCustomSelected = selectedRange is ExportRange.Custom
+                FilterChip(
+                    selected = isCustomSelected,
+                    onClick = {
+                        haptics.tick()
+                        showCustomDateRangePicker = true
+                    },
+                    leadingIcon = {
+                        Icon(
+                            imageVector = Icons.Outlined.DateRange,
+                            contentDescription = "Pick Custom Date Range",
+                            modifier = Modifier.size(16.dp)
+                        )
+                    },
+                    label = {
+                        val customLabel = if (isCustomSelected) {
+                            val custom = selectedRange as ExportRange.Custom
+                            val sdf = SimpleDateFormat("dd MMM", Locale.getDefault())
+                            "${sdf.format(Date(custom.startMillis))} – ${sdf.format(Date(custom.endMillis))}"
+                        } else {
+                            "Custom Range…"
+                        }
+                        Text(
+                            text = customLabel,
+                            fontSize = 12.sp,
+                            fontWeight = if (isCustomSelected) FontWeight.Bold else FontWeight.Normal
+                        )
+                    },
+                    colors = FilterChipDefaults.filterChipColors(
+                        selectedContainerColor = MaterialTheme.colorScheme.primary,
+                        selectedLabelColor = MaterialTheme.colorScheme.onPrimary,
+                        containerColor = MaterialTheme.colorScheme.surfaceVariant,
+                        labelColor = MaterialTheme.colorScheme.onSurfaceVariant
+                    ),
+                    border = FilterChipDefaults.filterChipBorder(
+                        borderColor = MaterialTheme.colorScheme.outlineVariant,
+                        selectedBorderColor = MaterialTheme.colorScheme.primary,
+                        enabled = true,
+                        selected = isCustomSelected
+                    )
+                )
             }
 
             // Preview Info Card
@@ -466,6 +518,74 @@ fun ExportStatementSheet(
                 modifier = Modifier
                     .fillMaxWidth()
                     .height(50.dp)
+            )
+        }
+    }
+
+    if (showCustomDateRangePicker) {
+        val currentCustom = selectedRange as? ExportRange.Custom
+        val dateRangePickerState = rememberDateRangePickerState(
+            initialSelectedStartDateMillis = currentCustom?.startMillis,
+            initialSelectedEndDateMillis = currentCustom?.endMillis
+        )
+
+        KanriGlassDatePickerDialog(
+            onDismissRequest = { showCustomDateRangePicker = false },
+            confirmButton = {
+                TextButton(
+                    onClick = {
+                        val start = dateRangePickerState.selectedStartDateMillis
+                        val end = dateRangePickerState.selectedEndDateMillis
+                        if (start != null && end != null) {
+                            haptics.success()
+                            selectedRange = ExportRange.Custom(start, end)
+                        }
+                        showCustomDateRangePicker = false
+                    },
+                    enabled = dateRangePickerState.selectedStartDateMillis != null &&
+                            dateRangePickerState.selectedEndDateMillis != null
+                ) {
+                    Text("Apply", fontWeight = FontWeight.Bold)
+                }
+            },
+            dismissButton = {
+                TextButton(onClick = { showCustomDateRangePicker = false }) {
+                    Text("Cancel")
+                }
+            }
+        ) {
+            DateRangePicker(
+                state = dateRangePickerState,
+                title = {
+                    Text(
+                        text = "Select Statement Date Range",
+                        modifier = Modifier.padding(start = 24.dp, top = 16.dp),
+                        style = MaterialTheme.typography.titleMedium,
+                        fontWeight = FontWeight.Bold
+                    )
+                },
+                headline = {
+                    val start = dateRangePickerState.selectedStartDateMillis
+                    val end = dateRangePickerState.selectedEndDateMillis
+                    val sdf = SimpleDateFormat("dd MMM yyyy", Locale.getDefault())
+                    val headlineText = if (start != null && end != null) {
+                        "${sdf.format(Date(start))} – ${sdf.format(Date(end))}"
+                    } else if (start != null) {
+                        "${sdf.format(Date(start))} – Select end date"
+                    } else {
+                        "Select start and end date"
+                    }
+                    Text(
+                        text = headlineText,
+                        modifier = Modifier.padding(start = 24.dp, bottom = 12.dp),
+                        style = MaterialTheme.typography.bodyMedium,
+                        color = MaterialTheme.colorScheme.onSurfaceVariant
+                    )
+                },
+                showModeToggle = false,
+                colors = DatePickerDefaults.colors(
+                    containerColor = Color.Transparent
+                )
             )
         }
     }
