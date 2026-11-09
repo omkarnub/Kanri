@@ -1,87 +1,99 @@
-# Kanri Widget Subsystem & Triple Aesthetic Engine
+# Kanri Pixel DotTiles Widget System
 
 ## 1. Overview
-Kanri provides a comprehensive Android Home Screen widget suite and in-app 1:1 preview gallery, allowing users to choose between three distinctive visual languages:
-1. **iPhone Fluid (`WidgetStyle.IPHONE`)**: Apple Human Interface Guidelines (HIG) aesthetics with squircle continuous geometry, Cupertino vibrancy, and spring motion.
-2. **100x Apple Liquid Glass (`WidgetStyle.GLASS_100X`)**: Apple WWDC25 Liquid Glass materials elevated to 100x with high-specular rim reflections, ambient radial backlights, shimmering light gleams, and neon arcs.
-3. **Pixel DotTiles (`WidgetStyle.PIXEL_MATRIX`)**: Native port of the Louis Studios DotTiles specification, featuring 7-row dot-matrix font numerals, live jitter drift, tick sliders with marker blocks, stepped histograms, and dot timelines.
+Kanri's widget subsystem is unified around a single, cohesive visual language: **Pixel DotTiles** (7-row dot-matrix). Designed with precision, restraint, and obsessive detail, the system delivers 12 specialized home screen widgets rendered by a pure Canvas engine shared 1:1 between Android `RemoteViews` bitmaps and Jetpack Compose in-app previews.
 
 ---
 
-## 2. Supported Widgets
+## 2. Design System Foundations
 
-Kanri provides 8 standalone widgets:
-1. **Money Spent Today** (`MoneySpentTodayWidgetProvider`)
-   - Displays today's total debit expenditure and number of expenses.
-   - Shows hourly pacing hints and micro bar visual.
-2. **Wallet Balances** (`WalletBalanceWidgetProvider`)
-   - Live cash wallet and online bank balance breakdown and overall net worth.
-3. **Budget Ring Chart** (`BudgetRingWidgetProvider`)
-   - Circular progress ring comparing current month's spend against monthly budget limit.
-   - Features central left/over remaining amounts with dynamic color state.
-4. **Budget Progress Bar** (`BudgetProgressWidgetProvider`)
-   - Linear progress gauge displaying percent of budget used and remaining days in the budget cycle.
-5. **Savings Goals Ring** (`GoalsRingWidgetProvider`)
-   - Circular progress ring tracking progress towards the user's primary savings goal with custom emoji and percentage.
-6. **Lend & Borrow Dues** (`LendBorrowWidgetProvider`)
-   - Real-time ledger summary of receivables and payables with net balance status.
-7. **Quick Record** (`QuickAddWidgetProvider`)
-   - One-tap rapid action buttons to immediately launch Add Expense or Add Income sheets.
-8. **Split The Bill** (`SplitBillWidgetProvider`)
-   - Quick group bill splitting tool and calculator launcher.
-9. **Financial Sky Weather** (`FinancialWeatherWidgetProvider`)
-   - Living dot-matrix celestial sky tracking daytime sun arc, astronomical synodic moon phase, twinkling stars, and terrain hills.
-   - Ground status displays today's expenditure, safe-to-spend pacing, and financial climate condition (*"Clear Horizons"*, *"Golden Sunrise"*, *"Partly Cloudy"*, *"Stormy Outflow"*, *"Starry Calm"*).
-   - Bottom 7-day spending pulse table rendering daily expenditures across the past 7 days on a shared 20-dot scale, color-coded by budget pacing.
+### Palette
+The design system enforces a strict, zero-drift color palette exposed via `PixelTheme`:
+- **Tile Background**: `#08080A` (Deepest Obsidian)
+- **Inner Border**: 1px `#24FFFFFF` (14% frosted edge)
+- **Corner Radius**: `22dp`
+- **Tile Padding**: `14dp`
+- **Dot On (Primary)**: `#F2F2F5`
+- **Dot Dim (Inactive Grid)**: `#1E1E24`
+- **Dot Mid (Secondary Data & Labels)**: `#6B6B76`
+- **State Accents (strictly semantic, never decorative)**:
+  - **Mint (`#30D158`)**: Healthy budgets, positive receivables, goal completion, downward spending deltas.
+  - **Amber (`#FFB020`)**: Pacing warnings (70%–90% budget), pending reviews, active streak counters.
+  - **Coral (`#FF453A`)**: Over-budget (>90% or negative remaining), negative net worth, upward spending deltas.
+  - **Cyan (`#4DD0E1`)**: Today/current indicators, milestone targets, neutral pacing hints.
 
----
+### Layout Grammar
+Every tile strictly obeys a three-tiered layout grammar:
+1. **Top**: Small dot-matrix label (uppercase, `Dot Mid` `#6B6B76`, 5–7px tall).
+2. **Middle**: Hero value in large dot-matrix typography (dynamically auto-fitted to avoid overflow).
+3. **Bottom**: Exactly one visual primitive from the shared `DotVisuals` library.
 
-## 3. The Three Widget Design Systems
+### Dot-Matrix Typography (`DotMatrixFont`)
+- 7-row bitmap glyphs, 5 columns wide with 1 column spacing (tabular monospace digits).
+- Full glyph set: `0-9 A-Z : . , - + ₹ $ % / x k M L ▲ ▼ ✓ ·` and space.
+- Compact Indian number formatting: `₹850`, `₹1.2k`, `₹12.4k`, `₹1.2L`, `₹1.5Cr`.
+- Reveal progress parameter (`0f..1f`) driving dot-by-dot counting entry animations.
 
-### A. iPhone Fluid Style (`WidgetStyle.IPHONE`)
-- **Geometry**: Continuous squircle curvature (`24dp` radius) with 0.75dp hairline border.
-- **Color Palette**: Apple Dark Widget canvas (`#F01C1C1E`) with vibrant Cupertino accents:
-  - Apple Health Coral / Crimson: `#FF2D55` (Spends & Budgets)
-  - Apple Mint: `#30D158` (Income & Goals)
-  - Cupertino Electric Blue: `#0A84FF` (Wallets & Balances)
-  - Cupertino Indigo: `#5E5CE6` (Pacing & Cycle)
-- **Data Visuals**:
-  - Apple Fitness Activity concentric rings with overlapping shadow depth on Canvas.
-  - Apple Health micro bar charts with rounded pill caps.
-  - Apple Wallet dual card stack representation.
-- **Motion**: Fluid spring physics (`spring(dampingRatio = 0.75f, stiffness = 300f)`).
-
-### B. 100x Liquid Glass Style (`WidgetStyle.GLASS_100X`)
-- **Geometry**: Soft `24dp` corners with a 1.5dp high-specular gradient stroke (`rgba(255,255,255,0.60)` top to `rgba(255,255,255,0.05)` bottom).
-- **Surface**: Multi-layer frosted translucent gradient (`#30FFFFFF` down to `#0CFFFFFF`).
-- **Lighting & Specular Reflections**:
-  - Ambient radial colored backlight bloom behind main values and circular charts.
-  - Shimmering specular reflection sweep across the card surface.
-  - Radiant neon gradient arcs (Cyan `#00E5FF` to Emerald `#00E676`, Violet `#BF5AF2` to Cyan `#0A84FF`).
-  - Luminous glass buttons and frosted pills with specular inner borders.
-
-### C. Pixel DotTiles Style (`WidgetStyle.PIXEL_MATRIX`)
-- **Geometry**: Matte obsidian black glass tile (`#08080A`) with subtle 1px border (`#24FFFFFF`) and `22dp` corners.
-- **Typography**: 7-row dot-matrix font renderer (`DotMatrixFont`) supporting digits `0-9`, symbols `:`, `.`, `-`, `₹`, `$`, `%`, `k`, `M`, `/`.
-- **Motion & Micro-Interactions**:
-  - Pop-in dot radius easing on load.
-  - Numbers count up dot-by-dot on entry.
-  - Subtle periodic jitter drift every few seconds.
-- **Bottom Visuals**:
-  1. `Slider`: Row of fine ticks with a marker block (glow or fill mode).
-  2. `Steps`: Stepped histogram bar chart across the time axis.
-  3. `Dots`: Timeline with sized dots and faint hour slots.
-  4. `Blocks`: Sparse timeline blocks for session tracking.
-  5. `Rise`: Stepped 4-tier rise gauge.
+### Shared Visuals Library (`DotVisuals`)
+Reusable pure Canvas primitives:
+- **Slider**: Row of fine ticks with a marker block (glow or fill mode) and threshold color shifts.
+- **Steps**: Stepped histogram bars built of dot columns on a shared scale.
+- **Dots**: 24-slot timeline with dots sized by hourly expenditure and active slot markers.
+- **Blocks**: Sparse solid session blocks for pending review queue items (older items dimmer).
+- **Rise**: 4 to 6-tier stepped gauge for wallet asset split proportions.
+- **Grid**: Calendar dot grid with 5-level percentile quantization and today ring indicator.
+- **Arc**: Dotted celestial arc traversed by sun/moon.
+- **Icon**: 7x7 dot-matrix icons (`PLUS`, `MINUS`, `SPLIT`, `INBOX`, `FLAME`, `ARROW_UP`, `ARROW_DOWN`, `CHECK`, `SUN`, `MOON`).
 
 ---
 
-## 4. Settings Integration (`WidgetsScreen`)
+## 3. The 12 Final Widgets
 
-The in-app Widgets gallery is accessible from **Settings > Customisation > Widgets**:
-- **Segmented Style Switcher**: Toggle between ` iPhone Fluid`, `✦ 100x Glass`, and `⠶ Pixel DotTiles`.
-- **1:1 Live Previews**: All 8 widgets rendered with live device data from Room.
-- **Set as Active Widget Style**: One-tap action updating `WidgetPreferences` and triggering `KanriWidgetsUpdater.updateAllWidgets(context)`.
-- **Pin to Home Screen**: Uses `AppWidgetManager.requestPinAppWidget` to pin any chosen widget directly from the app.
-- **Tap to Replay**: Retriggers animations, spring bounces, and dot-matrix counts on demand.
+| # | Widget | Provider | Supported Sizes | Visual Primitive | Description |
+|---|--------|----------|-----------------|------------------|-------------|
+| 1 | **Today** | `TodayWidgetProvider` | 2x2, 4x2 | `Dots` timeline | Spent today, count of expenses, 24-hour dot pacing timeline, and average spend comparison. |
+| 2 | **Budget** | `BudgetWidgetProvider` | 2x1, 2x2, 4x2 | `Slider` | Remaining budget amount, % used, days left in cycle, and expected vs actual pacing marker. |
+| 3 | **Wallets** | `WalletsWidgetProvider` | 2x2, 4x2 | `Rise` | Cash, bank, and net worth balances with asset proportion stepped gauge. |
+| 4 | **Goals** | `GoalsWidgetProvider` | 2x2, 4x1 | `Slider` | Primary savings target progress, percentage saved, and 25/50/75/100% milestone ticks. |
+| 5 | **Dues** | `DuesWidgetProvider` | 2x2, 4x2 | `Steps` | Receivable (`GET`), payable (`OWE`), net balance, and overdue dues count. |
+| 6 | **Sky** | `SkyWidgetProvider` | 4x2 | `Arc` + `Steps` | Flagship financial weather: sun arc, astronomical moon phase, twinkling stars, terrain silhouette, climate status, and 7-day spend pulse. |
+| 7 | **Month Heatmap**| `HeatmapWidgetProvider` | 4x3, 4x2 | `Grid` | Calendar dot grid with 5 quantized percentile intensity levels and current day ring. |
+| 8 | **No-Spend Streak**| `StreakWidgetProvider` | 2x2, 4x1 | 30-dot row | Consecutive no-spend day streak, all-time best streak, and 30-day timeline. |
+| 9 | **Safe to Spend** | `SafeToSpendWidgetProvider` | 2x2, 4x1 | `Slider` | Remaining daily spending allowance until cycle end vs today's spend. |
+| 10 | **Review Inbox** | `ReviewInboxWidgetProvider` | 2x1, 2x2 | `Blocks` | Count of SMS-detected expenses awaiting categorization and pending amount. |
+| 11 | **Month Delta** | `MonthDeltaWidgetProvider` | 2x2, 4x2 | `Steps` | Spend so far this month compared to the exact same day last month with ▲ / ▼ delta %. |
+| 12 | **Quick Actions** | `QuickActionsWidgetProvider` | 4x1, 2x1 | `Icon` buttons | One-tap dot-icon action buttons for `+ EXPENSE`, `+ INCOME`, and `SPLIT BILL`. |
 
+---
+
+## 4. Rendering & Animation Architecture
+
+### Platform-Independent Canvas Rendering
+- Core rendering resides in `WidgetRenderer.kt`, drawing strictly to `android.graphics.Canvas`.
+- In Compose (`WidgetsScreen.kt`), previews invoke `WidgetRenderer` directly inside `Canvas { drawIntoCanvas { ... } }`, providing 100% identical pixel fidelity.
+- On the Home Screen, `BasePixelWidgetProvider` invokes `WidgetRenderer.renderToBitmap` to generate crisp, memory-capped bitmaps passed to `RemoteViews.setImageViewBitmap`.
+
+### Animation Tiers
+1. **In-App Preview Gallery (60 FPS Compose)**:
+   - Full-fidelity entrance animation: dot reveal progress via `Animatable` with `FastOutSlowIn` easing.
+   - Tap-to-replay on every card.
+   - Respects system `ANIMATOR_DURATION_SCALE == 0` (immediately snaps to final frame).
+2. **Home Screen (Rate-Limited Entrance Bursts)**:
+   - Zero battery drain: no endless timer loops.
+   - On data change (transaction insert/edit/delete, review resolved, midnight reset), a short burst of 10 frames at 85 ms intervals is rendered before resting on the final frame.
+   - Bursts are strictly rate-limited to at most one per 5 seconds per widget.
+   - Periodic 15-minute `WorkManager` refresh for `SkyWidgetProvider` keeps sun and astronomical moon positions accurate throughout the day and night.
+
+---
+
+## 5. Data Flow & Update Rules
+- All widget queries are centralized in `WidgetDataSource.kt`, using indexed Room aggregate queries.
+- `KanriWidgetsUpdater.updateAllWidgets(context)` updates only widgets that are actively placed on the user's home screen.
+- Deep links route through `KanriWidgetActions.kt` directly into target screens:
+  - Today / Month Delta / Heatmap → History & Transactions
+  - Budget / Safe to Spend → Budget Manager
+  - Wallets → Wallet Sheet
+  - Goals → Savings Goals
+  - Dues → Lend & Borrow
+  - Review Inbox → Needs Review Queue
+  - Quick Actions → Add Expense / Add Income / Split Bill

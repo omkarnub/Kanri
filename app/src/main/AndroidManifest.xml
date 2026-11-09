@@ -205,121 +205,160 @@
         </service>
 
 
-        <!-- 1. Budget Ring Chart Widget -->
+        <!-- 1. Today Spend Widget -->
         <receiver
-            android:name=".widget.BudgetRingWidgetProvider"
-            android:label="@string/widget_budget_ring_name"
+            android:name=".widget.providers.TodayWidgetProvider"
+            android:label="@string/widget_today_name"
             android:exported="true">
             <intent-filter>
                 <action android:name="android.appwidget.action.APPWIDGET_UPDATE" />
             </intent-filter>
             <meta-data
                 android:name="android.appwidget.provider"
-                android:resource="@xml/widget_budget_ring_info" />
+                android:resource="@xml/widget_today_info" />
         </receiver>
 
-        <!-- 2. Budget Progress Bar Widget -->
+        <!-- 2. Budget Widget -->
         <receiver
-            android:name=".widget.BudgetProgressWidgetProvider"
-            android:label="@string/widget_budget_progress_name"
+            android:name=".widget.providers.BudgetWidgetProvider"
+            android:label="@string/widget_budget_name"
             android:exported="true">
             <intent-filter>
                 <action android:name="android.appwidget.action.APPWIDGET_UPDATE" />
             </intent-filter>
             <meta-data
                 android:name="android.appwidget.provider"
-                android:resource="@xml/widget_budget_progress_info" />
+                android:resource="@xml/widget_budget_info" />
         </receiver>
 
-        <!-- 3. Lend and Borrow Dues Widget -->
+        <!-- 3. Wallets Widget -->
         <receiver
-            android:name=".widget.LendBorrowWidgetProvider"
-            android:label="@string/widget_lend_borrow_name"
+            android:name=".widget.providers.WalletsWidgetProvider"
+            android:label="@string/widget_wallets_name"
             android:exported="true">
             <intent-filter>
                 <action android:name="android.appwidget.action.APPWIDGET_UPDATE" />
             </intent-filter>
             <meta-data
                 android:name="android.appwidget.provider"
-                android:resource="@xml/widget_lend_borrow_info" />
+                android:resource="@xml/widget_wallets_info" />
         </receiver>
 
-        <!-- 4. Savings Goals Ring Widget -->
+        <!-- 4. Goals Widget -->
         <receiver
-            android:name=".widget.GoalsRingWidgetProvider"
-            android:label="@string/widget_goals_ring_name"
+            android:name=".widget.providers.GoalsWidgetProvider"
+            android:label="@string/widget_goals_name"
             android:exported="true">
             <intent-filter>
                 <action android:name="android.appwidget.action.APPWIDGET_UPDATE" />
             </intent-filter>
             <meta-data
                 android:name="android.appwidget.provider"
-                android:resource="@xml/widget_goals_ring_info" />
+                android:resource="@xml/widget_goals_info" />
         </receiver>
 
-        <!-- 5. Split The Bill Widget -->
+        <!-- 5. Dues Widget -->
         <receiver
-            android:name=".widget.SplitBillWidgetProvider"
-            android:label="@string/widget_split_bill_name"
+            android:name=".widget.providers.DuesWidgetProvider"
+            android:label="@string/widget_dues_name"
             android:exported="true">
             <intent-filter>
                 <action android:name="android.appwidget.action.APPWIDGET_UPDATE" />
             </intent-filter>
             <meta-data
                 android:name="android.appwidget.provider"
-                android:resource="@xml/widget_split_bill_info" />
+                android:resource="@xml/widget_dues_info" />
         </receiver>
 
-        <!-- 6. Quick Add Expense and Income Widget -->
+        <!-- 6. Sky Widget -->
         <receiver
-            android:name=".widget.QuickAddWidgetProvider"
-            android:label="@string/widget_quick_add_name"
+            android:name=".widget.providers.SkyWidgetProvider"
+            android:label="@string/widget_sky_name"
             android:exported="true">
             <intent-filter>
                 <action android:name="android.appwidget.action.APPWIDGET_UPDATE" />
             </intent-filter>
             <meta-data
                 android:name="android.appwidget.provider"
-                android:resource="@xml/widget_quick_add_info" />
+                android:resource="@xml/widget_sky_info" />
         </receiver>
 
-        <!-- 7. Money Spent Today Widget -->
+        <!-- 7. Month Heatmap Widget -->
         <receiver
-            android:name=".widget.MoneySpentTodayWidgetProvider"
-            android:label="@string/widget_spent_today_name"
+            android:name=".widget.providers.HeatmapWidgetProvider"
+            android:label="@string/widget_heatmap_name"
             android:exported="true">
             <intent-filter>
                 <action android:name="android.appwidget.action.APPWIDGET_UPDATE" />
             </intent-filter>
             <meta-data
                 android:name="android.appwidget.provider"
-                android:resource="@xml/widget_spent_today_info" />
+                android:resource="@xml/widget_heatmap_info" />
         </receiver>
 
-        <!-- 8. Cash & Online Wallet Balances Widget -->
+        <!-- 8. No-Spend Streak Widget -->
         <receiver
-            android:name=".widget.WalletBalanceWidgetProvider"
-            android:label="@string/widget_wallet_balance_name"
+            android:name=".widget.providers.StreakWidgetProvider"
+            android:label="@string/widget_streak_name"
             android:exported="true">
             <intent-filter>
                 <action android:name="android.appwidget.action.APPWIDGET_UPDATE" />
             </intent-filter>
             <meta-data
                 android:name="android.appwidget.provider"
-                android:resource="@xml/widget_wallet_balance_info" />
+                android:resource="@xml/widget_streak_info" />
         </receiver>
 
-        <!-- 9. Financial Sky Weather Widget -->
+        <!-- 9. Safe to Spend Widget -->
         <receiver
-            android:name=".widget.FinancialWeatherWidgetProvider"
-            android:label="@string/widget_financial_weather_name"
+            android:name=".widget.providers.SafeToSpendWidgetProvider"
+            android:label="@string/widget_safe_to_spend_name"
             android:exported="true">
             <intent-filter>
                 <action android:name="android.appwidget.action.APPWIDGET_UPDATE" />
             </intent-filter>
             <meta-data
                 android:name="android.appwidget.provider"
-                android:resource="@xml/widget_financial_weather_info" />
+                android:resource="@xml/widget_safe_to_spend_info" />
+        </receiver>
+
+        <!-- 10. Review Inbox Widget -->
+        <receiver
+            android:name=".widget.providers.ReviewInboxWidgetProvider"
+            android:label="@string/widget_review_inbox_name"
+            android:exported="true">
+            <intent-filter>
+                <action android:name="android.appwidget.action.APPWIDGET_UPDATE" />
+            </intent-filter>
+            <meta-data
+                android:name="android.appwidget.provider"
+                android:resource="@xml/widget_review_inbox_info" />
+        </receiver>
+
+        <!-- 11. Month Delta Widget -->
+        <receiver
+            android:name=".widget.providers.MonthDeltaWidgetProvider"
+            android:label="@string/widget_month_delta_name"
+            android:exported="true">
+            <intent-filter>
+                <action android:name="android.appwidget.action.APPWIDGET_UPDATE" />
+            </intent-filter>
+            <meta-data
+                android:name="android.appwidget.provider"
+                android:resource="@xml/widget_month_delta_info" />
+        </receiver>
+
+        <!-- 12. Quick Actions Widget -->
+        <receiver
+            android:name=".widget.providers.QuickActionsWidgetProvider"
+            android:label="@string/widget_quick_actions_name"
+            android:exported="true">
+            <intent-filter>
+                <action android:name="android.appwidget.action.APPWIDGET_UPDATE" />
+            </intent-filter>
+            <meta-data
+                android:name="android.appwidget.provider"
+                android:resource="@xml/widget_quick_actions_info" />
         </receiver>
 
         <provider

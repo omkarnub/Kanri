@@ -14,6 +14,7 @@ class KanriApplication : Application() {
         DailyReminderScheduler.init(this)
         com.omkarnub.kanri.util.CurrencyPreferences.getInstance(this)
         com.omkarnub.kanri.widget.MidnightWidgetResetWorker.schedule(this)
+        com.omkarnub.kanri.widget.providers.SkyWidgetProvider.schedulePeriodicRefresh(this)
         com.omkarnub.kanri.ui.notification.NotificationListenerWatchdogWorker.schedule(this)
         AppUpdateManager.createNotificationChannel(this)
         AppUpdateWorker.schedule(this)

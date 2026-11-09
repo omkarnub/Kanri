@@ -5,6 +5,34 @@ All notable changes to Kanri will be documented in this file.
 The format is based on [Keep a Changelog](https://keepachangelog.com/en/1.0.0/),
 and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0.html).
 
+## [1.12.0] - 2026-11-10
+
+### Rebuilt & Unified
+- **Single Pixel DotTiles Widget System**:
+  - Rebuilt the entire widget subsystem from scratch around ONE visual language: **Pixel DotTiles** (7-row dot-matrix).
+  - Completely deleted legacy iPhone Fluid and 100x Liquid Glass renderers, layouts, drawables, enums (`WidgetStyle`), style preferences, and style switcher UI.
+  - Established a unified design system in `com.omkarnub.kanri.widget.core`:
+    - Strict palette: Obsidian tile `#08080A`, 1px border `#24FFFFFF`, corner radius `22dp`, dot on `#F2F2F5`, dot dim `#1E1E24`, dot mid `#6B6B76`, semantic accents (mint `#30D158`, amber `#FFB020`, coral `#FF453A`, cyan `#4DD0E1`).
+    - 7-row compact array bitmap font (`DotMatrixFont`) with tabular monospace digits, reveal progress, and Indian compact currency formatting (`₹1.2k`, `₹12.4k`, `₹1.2L`, `₹1.5Cr`).
+    - Shared visuals library (`DotVisuals`): Slider, Steps, Dots, Blocks, Rise, Grid, Arc, 7x7 Icons.
+    - Pure Canvas engine (`WidgetRenderer`) shared 1:1 between home screen RemoteViews bitmaps and Jetpack Compose in-app previews.
+  - Final 12-widget lineup:
+    1. **Today Spend** (`TodayWidgetProvider`, 2x2, 4x2)
+    2. **Budget** (`BudgetWidgetProvider`, 2x1, 2x2, 4x2)
+    3. **Wallets** (`WalletsWidgetProvider`, 2x2, 4x2)
+    4. **Savings Goals** (`GoalsWidgetProvider`, 2x2, 4x1)
+    5. **Dues** (`DuesWidgetProvider`, 2x2, 4x2)
+    6. **Financial Sky** (`SkyWidgetProvider`, 4x2)
+    7. **Month Heatmap** (`HeatmapWidgetProvider`, 4x3, 4x2)
+    8. **No-Spend Streak** (`StreakWidgetProvider`, 2x2, 4x1)
+    9. **Safe to Spend** (`SafeToSpendWidgetProvider`, 2x2, 4x1)
+    10. **Review Inbox** (`ReviewInboxWidgetProvider`, 2x1, 2x2)
+    11. **Month Delta** (`MonthDeltaWidgetProvider`, 2x2, 4x2)
+    12. **Quick Actions** (`QuickActionsWidgetProvider`, 4x1, 2x1)
+  - Interactive Preview Gallery in `WidgetsScreen` categorized under *Money*, *Insights*, and *Actions* with size chips, 60fps animations, tap-to-replay, and pin-to-homescreen action.
+  - Comprehensive unit test suite covering font tabular measurement, compact currency formatting, streak calculations, safe-to-spend allowance, same-day month delta comparison, heatmap quantization, and astronomical moon phase math.
+- Bumped version to `1.12.0` (Build 36).
+
 ## [1.11.1] - 2026-11-09
 
 ### Added & Widgets

@@ -199,6 +199,22 @@ fun MainNavigationScreen(
                 openWalletSheetFromWidget = true
                 com.omkarnub.kanri.widget.KanriWidgetActions.consumeAction()
             }
+            com.omkarnub.kanri.widget.KanriWidgetActions.ACTION_OPEN_BUDGET,
+            com.omkarnub.kanri.widget.KanriWidgetActions.ACTION_OPEN_REVIEW,
+            com.omkarnub.kanri.widget.KanriWidgetActions.ACTION_OPEN_STREAK -> {
+                showSettingsScreen = false
+                showProfileScreen = false
+                showHistoryScreen = false
+                selectedTab = KanriTab.HOME
+                com.omkarnub.kanri.widget.KanriWidgetActions.consumeAction()
+            }
+            com.omkarnub.kanri.widget.KanriWidgetActions.ACTION_OPEN_TODAY,
+            com.omkarnub.kanri.widget.KanriWidgetActions.ACTION_OPEN_HEATMAP -> {
+                showSettingsScreen = false
+                showProfileScreen = false
+                showHistoryScreen = true
+                com.omkarnub.kanri.widget.KanriWidgetActions.consumeAction()
+            }
         }
     }
 

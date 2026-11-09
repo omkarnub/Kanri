@@ -105,8 +105,8 @@ Everything runs fully offline — there's no Kanri backend to breach, because th
     <td width="50%" valign="top">
       <img src="assets/feature-tools.svg" width="55" alt="Home screen widgets icon" /><br>
       <strong>Home screen & quick settings</strong><br>
-      Eight widgets across 3 distinct design systems (iPhone Fluid, 100x Apple Liquid Glass, and Pixel DotTiles) with 1:1 live interactive previews in Settings, and a Quick Settings tile for logging an expense from anywhere. Screen-off auto-lock re-secures the app with biometrics the moment the display turns off.<br><br>
-      <code>8 Android Widgets</code> <code>Triple Widget Styles</code> <code>Quick Settings Tile</code> <code>Biometric Lock</code>
+      Twelve glanceable widgets built on a unified Pixel DotTiles (7-row dot-matrix) design system with 1:1 live interactive previews in Settings, and a Quick Settings tile for logging an expense from anywhere. Screen-off auto-lock re-secures the app with biometrics the moment the display turns off.<br><br>
+      <code>12 DotTiles Widgets</code> <code>Pixel Design System</code> <code>Quick Settings Tile</code> <code>Biometric Lock</code>
     </td>
   </tr>
   <tr>
@@ -135,7 +135,7 @@ flowchart LR
     C --> D[(Room + SQLCipher<br/>AES-256, on-device)]
     D --> E[Budgets & 18+ insights]
     D --> F[Lend & borrow ledger]
-    D --> G[7 Home screen widgets & QS tile]
+    D --> G[12 Pixel DotTiles widgets & QS tile]
     D --> H[Savings milestones]
     D --> I[Client-side encrypted backups]
 ```

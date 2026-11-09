@@ -23,6 +23,11 @@ object KanriWidgetActions {
     const val ACTION_OPEN_LENDING = "com.omkarnub.kanri.action.OPEN_LENDING"
     const val ACTION_OPEN_HOME = "com.omkarnub.kanri.action.OPEN_HOME"
     const val ACTION_OPEN_WALLET = "com.omkarnub.kanri.action.OPEN_WALLET"
+    const val ACTION_OPEN_BUDGET = "com.omkarnub.kanri.action.OPEN_BUDGET"
+    const val ACTION_OPEN_REVIEW = "com.omkarnub.kanri.action.OPEN_REVIEW"
+    const val ACTION_OPEN_HEATMAP = "com.omkarnub.kanri.action.OPEN_HEATMAP"
+    const val ACTION_OPEN_STREAK = "com.omkarnub.kanri.action.OPEN_STREAK"
+    const val ACTION_OPEN_TODAY = "com.omkarnub.kanri.action.OPEN_TODAY"
 
     const val EXTRA_AMOUNT = "extra_split_amount"
     const val EXTRA_DESCRIPTION = "extra_split_description"

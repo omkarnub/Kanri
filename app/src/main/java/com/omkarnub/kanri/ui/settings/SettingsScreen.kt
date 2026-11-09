@@ -156,8 +156,7 @@ fun SettingsScreen(
     val currentIconStyle by themePrefs.appIconStyleFlow.collectAsState()
     val currentGlassBg by themePrefs.glassBackgroundFlow.collectAsState()
 
-    val widgetPrefs = remember { com.omkarnub.kanri.widget.WidgetPreferences.getInstance(context) }
-    val currentWidgetStyle by widgetPrefs.widgetStyleFlow.collectAsState()
+
 
     val securityPrefs = remember { SecurityPreferences.getInstance(context) }
     var isLockEnabled by remember { mutableStateOf(securityPrefs.isLockEnabled) }
@@ -884,11 +883,11 @@ fun SettingsScreen(
                 // Home Screen Widgets & 1:1 Previews
                 SettingsRow(
                     title = "Widgets",
-                    subtitle = "${currentWidgetStyle.displayName} • iPhone, 100x Glass & Pixel DotTiles",
+                    subtitle = "Pixel DotTiles • 12 Interactive Widgets",
                     icon = Icons.Default.Widgets,
                     trailing = {
                         Text(
-                            text = currentWidgetStyle.tag,
+                            text = "⠶ Pixel DotTiles",
                             fontFamily = GoogleSansFlex,
                             fontWeight = FontWeight.Bold,
                             fontSize = 12.sp,

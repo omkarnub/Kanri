@@ -3,17 +3,42 @@
     <!-- Google Sign-In: Replace with your Web Application Client ID from Google Cloud Console -->
     <string name="google_web_client_id">17780156416-fjke0vo6lf1uqfmjce9vg6rqbf4qclmm.apps.googleusercontent.com</string>
 
-    <string name="widget_budget_ring_name">Budget Ring Chart</string>
-    <string name="widget_budget_progress_name">Budget Progress Bar</string>
-    <string name="widget_lend_borrow_name">Lend &amp; Borrow Dues</string>
-    <string name="widget_goals_ring_name">Savings Goals Ring</string>
-    <string name="widget_split_bill_name">Split The Bill</string>
-    <string name="widget_quick_add_name">Quick Add Expense/Income</string>
-    <string name="widget_spent_today_name">Money Spent Today</string>
-    <string name="widget_wallet_balance_name">Cash &amp; Online Balances</string>
-    <string name="widget_wallet_balance_desc">Live cash wallet and online bank balance overview</string>
-    <string name="widget_financial_weather_name">Financial Sky Weather</string>
-    <string name="widget_financial_weather_desc">Live astronomical dot-matrix sky tracking your financial climate, safe-to-spend horizon and 7-day spend pulse</string>
+    <!-- 12 Pixel DotTiles Widgets -->
+    <string name="widget_today_name">Today Spend</string>
+    <string name="widget_today_desc">Spent today, expense count, and 24-hour dot pacing timeline</string>
+
+    <string name="widget_budget_name">Budget Tile</string>
+    <string name="widget_budget_desc">Remaining budget, percent used, and cycle pacing marker</string>
+
+    <string name="widget_wallets_name">Wallets</string>
+    <string name="widget_wallets_desc">Cash, bank, and net worth overview with proportion rise</string>
+
+    <string name="widget_goals_name">Savings Goal</string>
+    <string name="widget_goals_desc">Primary savings target progress and milestone slider</string>
+
+    <string name="widget_dues_name">Dues</string>
+    <string name="widget_dues_desc">Receivable, payable, net balance, and overdue alerts</string>
+
+    <string name="widget_sky_name">Financial Sky</string>
+    <string name="widget_sky_desc">Celestial sun and moon arc, terrain silhouette, and 7-day spend pulse</string>
+
+    <string name="widget_heatmap_name">Month Heatmap</string>
+    <string name="widget_heatmap_desc">Calendar dot grid showing daily spend intensity</string>
+
+    <string name="widget_streak_name">No-Spend Streak</string>
+    <string name="widget_streak_desc">Current no-spend streak and 30-day timeline dots</string>
+
+    <string name="widget_safe_to_spend_name">Safe to Spend</string>
+    <string name="widget_safe_to_spend_desc">Daily spending allowance until cycle end vs today spend</string>
+
+    <string name="widget_review_inbox_name">Review Inbox</string>
+    <string name="widget_review_inbox_desc">SMS detected transactions awaiting review and categorization</string>
+
+    <string name="widget_month_delta_name">Month Delta</string>
+    <string name="widget_month_delta_desc">Spend so far this month compared to same day last month</string>
+
+    <string name="widget_quick_actions_name">Quick Actions</string>
+    <string name="widget_quick_actions_desc">One-tap buttons to add expense, add income, or split a bill</string>
 
     <!-- Quick Settings Tile -->
     <string name="quick_add_tile_label">Quick Add</string>
