@@ -12,6 +12,8 @@
     <string name="widget_spent_today_name">Money Spent Today</string>
     <string name="widget_wallet_balance_name">Cash &amp; Online Balances</string>
     <string name="widget_wallet_balance_desc">Live cash wallet and online bank balance overview</string>
+    <string name="widget_financial_weather_name">Financial Sky Weather</string>
+    <string name="widget_financial_weather_desc">Live astronomical dot-matrix sky tracking your financial climate, safe-to-spend horizon and 7-day spend pulse</string>
 
     <!-- Quick Settings Tile -->
     <string name="quick_add_tile_label">Quick Add</string>

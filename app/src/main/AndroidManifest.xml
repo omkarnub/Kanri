@@ -309,6 +309,19 @@
                 android:resource="@xml/widget_wallet_balance_info" />
         </receiver>
 
+        <!-- 9. Financial Sky Weather Widget -->
+        <receiver
+            android:name=".widget.FinancialWeatherWidgetProvider"
+            android:label="@string/widget_financial_weather_name"
+            android:exported="true">
+            <intent-filter>
+                <action android:name="android.appwidget.action.APPWIDGET_UPDATE" />
+            </intent-filter>
+            <meta-data
+                android:name="android.appwidget.provider"
+                android:resource="@xml/widget_financial_weather_info" />
+        </receiver>
+
         <provider
             android:name="androidx.core.content.FileProvider"
             android:authorities="${applicationId}.fileprovider"

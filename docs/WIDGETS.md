@@ -29,6 +29,10 @@ Kanri provides 8 standalone widgets:
    - One-tap rapid action buttons to immediately launch Add Expense or Add Income sheets.
 8. **Split The Bill** (`SplitBillWidgetProvider`)
    - Quick group bill splitting tool and calculator launcher.
+9. **Financial Sky Weather** (`FinancialWeatherWidgetProvider`)
+   - Living dot-matrix celestial sky tracking daytime sun arc, astronomical synodic moon phase, twinkling stars, and terrain hills.
+   - Ground status displays today's expenditure, safe-to-spend pacing, and financial climate condition (*"Clear Horizons"*, *"Golden Sunrise"*, *"Partly Cloudy"*, *"Stormy Outflow"*, *"Starry Calm"*).
+   - Bottom 7-day spending pulse table rendering daily expenditures across the past 7 days on a shared 20-dot scale, color-coded by budget pacing.
 
 ---
 

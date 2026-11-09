@@ -1,4 +1,4 @@
-﻿package com.omkarnub.kanri.widget
+package com.omkarnub.kanri.widget
 
 import android.content.Context
 import android.graphics.Bitmap
@@ -11,7 +11,9 @@ import android.graphics.Shader
 import androidx.core.content.res.ResourcesCompat
 import com.omkarnub.kanri.R
 import com.omkarnub.kanri.util.CurrencyUtils
+import kotlin.math.PI
 import kotlin.math.cos
+import kotlin.math.max
 import kotlin.math.sin
 
 /**
@@ -555,5 +557,176 @@ object WidgetCanvasRenderer {
             }
             colOffset += glyphW + 1
         }
+    }
+
+    /**
+     * Renders the complete Financial Sky Weather scene & 7-Day Spend Pulse for RemoteViews.
+     */
+    fun renderFinancialWeather(
+        context: Context,
+        todaySpent: Double,
+        monthBudget: Double,
+        monthSpent: Double,
+        safeToSpendDaily: Double,
+        weekSpends: List<Pair<String, Double>>,
+        widthPx: Int = 600,
+        heightPx: Int = 360,
+        widgetStyle: WidgetStyle = WidgetPreferences.getInstance(context).widgetStyle
+    ): Bitmap {
+        val bitmap = Bitmap.createBitmap(widthPx, heightPx, Bitmap.Config.ARGB_8888)
+        val canvas = Canvas(bitmap)
+
+        val cal = java.util.Calendar.getInstance()
+        val hour = cal.get(java.util.Calendar.HOUR_OF_DAY) + cal.get(java.util.Calendar.MINUTE) / 60f
+        val isDay = hour in 7.5f..19.5f
+        val fontBold = ResourcesCompat.getFont(context, R.font.google_sans_bold)
+        val fontMedium = ResourcesCompat.getFont(context, R.font.google_sans_medium)
+
+        // 1. Sky Well (top 55% of height)
+        val skyHeight = heightPx * 0.52f
+        val skyRect = RectF(10f, 10f, widthPx - 10f, skyHeight)
+
+        val skyBgPaint = Paint(Paint.ANTI_ALIAS_FLAG).apply {
+            color = when (widgetStyle) {
+                WidgetStyle.PIXEL_MATRIX -> 0xFF050608.toInt()
+                WidgetStyle.GLASS_100X -> 0x22FFFFFF.toInt()
+                WidgetStyle.IPHONE -> 0x401C1C1E.toInt()
+            }
+            style = Paint.Style.FILL
+        }
+        canvas.drawRoundRect(skyRect, 18f, 18f, skyBgPaint)
+
+        // Celestial Body (Sun or Moon)
+        val td = ((hour - 7.5f) / 12f).coerceIn(0f, 1f)
+        val sunX = 30f + td * (widthPx - 80f)
+        val sunY = skyHeight * 0.40f - (sin(PI.toFloat() * td) * (skyHeight * 0.22f))
+
+        if (isDay) {
+            val sunPaint = Paint(Paint.ANTI_ALIAS_FLAG).apply {
+                color = when (widgetStyle) {
+                    WidgetStyle.GLASS_100X -> 0xFFFFD54F.toInt()
+                    WidgetStyle.IPHONE -> 0xFFFF9500.toInt()
+                    WidgetStyle.PIXEL_MATRIX -> 0xFFFFFFFF.toInt()
+                }
+                style = Paint.Style.FILL
+            }
+            canvas.drawCircle(sunX, sunY, 18f, sunPaint)
+
+            // Sun rays
+            val rayPaint = Paint(Paint.ANTI_ALIAS_FLAG).apply {
+                color = 0x66FFD54F.toInt()
+                style = Paint.Style.STROKE
+                strokeWidth = 3f
+            }
+            canvas.drawCircle(sunX, sunY, 26f, rayPaint)
+        } else {
+            // Moon disc
+            val moonPaint = Paint(Paint.ANTI_ALIAS_FLAG).apply {
+                color = 0xFFFFFFFF.toInt()
+                style = Paint.Style.FILL
+            }
+            canvas.drawCircle(sunX, sunY, 15f, moonPaint)
+
+            // Twinkling stars
+            val starPaint = Paint(Paint.ANTI_ALIAS_FLAG).apply {
+                color = 0xB3FFFFFF.toInt()
+                style = Paint.Style.FILL
+            }
+            val starOffsets = listOf(
+                Pair(50f, 25f), Pair(120f, 40f), Pair(220f, 20f),
+                Pair(380f, 35f), Pair(480f, 25f), Pair(540f, 45f)
+            )
+            for (st in starOffsets) {
+                canvas.drawCircle(st.first, st.second, 2.5f, starPaint)
+            }
+        }
+
+        // Horizon Hills
+        val hillPaint = Paint(Paint.ANTI_ALIAS_FLAG).apply {
+            color = when (widgetStyle) {
+                WidgetStyle.PIXEL_MATRIX -> 0xFF1C252C.toInt()
+                WidgetStyle.GLASS_100X -> 0x4400E5FF.toInt()
+                WidgetStyle.IPHONE -> 0x33FFFFFF.toInt()
+            }
+            style = Paint.Style.FILL
+        }
+        val hillPath = android.graphics.Path().apply {
+            moveTo(10f, skyHeight)
+            lineTo(10f, skyHeight - 16f)
+            quadTo(widthPx * 0.35f, skyHeight - 34f, widthPx * 0.65f, skyHeight - 14f)
+            quadTo(widthPx * 0.85f, skyHeight - 28f, widthPx - 10f, skyHeight - 10f)
+            lineTo(widthPx - 10f, skyHeight)
+            close()
+        }
+        canvas.drawPath(hillPath, hillPaint)
+
+        // Sky Text Overlay (Today's spend & condition)
+        val skyTextPaint = Paint(Paint.ANTI_ALIAS_FLAG).apply {
+            typeface = fontBold
+            color = 0xFFFFFFFF.toInt()
+            textSize = 22f
+        }
+        val conditionPaint = Paint(Paint.ANTI_ALIAS_FLAG).apply {
+            typeface = fontMedium
+            color = if (todaySpent > safeToSpendDaily * 1.5) 0xFFFF5252.toInt() else 0xFF00E676.toInt()
+            textSize = 15f
+            textAlign = Paint.Align.RIGHT
+        }
+        canvas.drawText("Today: " + CurrencyUtils.formatCurrency(todaySpent), 24f, skyHeight - 10f, skyTextPaint)
+        val cond = if (todaySpent > safeToSpendDaily * 1.5) "Stormy Spends" else if (isDay) "Clear Horizons" else "Starry Calm"
+        canvas.drawText(cond, widthPx - 24f, skyHeight - 10f, conditionPaint)
+
+        // 2. 7-Day Spending Pulse (bottom 45% of height)
+        val weekStartY = skyHeight + 22f
+        val pulseDays = if (weekSpends.isNotEmpty()) weekSpends.take(5) else listOf(
+            Pair("Mon", 450.0), Pair("Tue", 1200.0), Pair("Wed", 850.0), Pair("Thu", 1600.0), Pair("Today", todaySpent)
+        )
+        val maxSpend = max(safeToSpendDaily * 2.5, 3000.0)
+        val rowHeight = (heightPx - weekStartY - 6f) / pulseDays.size
+
+        val dayLabelPaint = Paint(Paint.ANTI_ALIAS_FLAG).apply {
+            typeface = fontMedium
+            color = 0x99FFFFFF.toInt()
+            textSize = 13f
+        }
+        val amountPaint = Paint(Paint.ANTI_ALIAS_FLAG).apply {
+            typeface = fontBold
+            color = 0xFFFFFFFF.toInt()
+            textSize = 13f
+            textAlign = Paint.Align.RIGHT
+        }
+
+        pulseDays.forEachIndexed { i, dayRecord ->
+            val rowY = weekStartY + i * rowHeight + rowHeight * 0.65f
+            canvas.drawText(dayRecord.first, 24f, rowY, dayLabelPaint)
+
+            // Dot scale bar (16 discrete dots)
+            val barStartX = 75f
+            val barEndX = widthPx - 95f
+            val barW = barEndX - barStartX
+            val totalDots = 16
+            val ratio = (dayRecord.second / maxSpend).coerceIn(0.0, 1.0).toFloat()
+            val litDots = (ratio * totalDots).toInt().coerceIn(1, totalDots)
+            val isOver = dayRecord.second > safeToSpendDaily
+
+            for (d in 0 until totalDots) {
+                val dx = barStartX + d * (barW / totalDots) + 3f
+                val isLit = d < litDots
+                val dotColor = if (isLit) {
+                    if (isOver) 0xFFFF5252.toInt() else 0xFF00E676.toInt()
+                } else {
+                    0x20FFFFFF.toInt()
+                }
+                val dotP = Paint(Paint.ANTI_ALIAS_FLAG).apply {
+                    color = dotColor
+                    style = Paint.Style.FILL
+                }
+                canvas.drawCircle(dx, rowY - 4f, if (isLit) 3.2f else 2.2f, dotP)
+            }
+
+            canvas.drawText(CurrencyUtils.formatCompactCurrency(dayRecord.second), widthPx - 24f, rowY, amountPaint)
+        }
+
+        return bitmap
     }
 }

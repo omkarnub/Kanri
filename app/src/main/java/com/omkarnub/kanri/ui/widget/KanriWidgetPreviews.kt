@@ -72,6 +72,7 @@ import com.omkarnub.kanri.util.CurrencyUtils
 import com.omkarnub.kanri.util.rememberKanriHaptics
 import com.omkarnub.kanri.widget.BudgetProgressWidgetProvider
 import com.omkarnub.kanri.widget.BudgetRingWidgetProvider
+import com.omkarnub.kanri.widget.FinancialWeatherWidgetProvider
 import com.omkarnub.kanri.widget.GoalsRingWidgetProvider
 import com.omkarnub.kanri.widget.LendBorrowWidgetProvider
 import com.omkarnub.kanri.widget.MoneySpentTodayWidgetProvider
@@ -80,6 +81,7 @@ import com.omkarnub.kanri.widget.SplitBillWidgetProvider
 import com.omkarnub.kanri.widget.WalletBalanceWidgetProvider
 import com.omkarnub.kanri.widget.WidgetStyle
 import kotlin.math.cos
+import kotlin.math.max
 import kotlin.math.sin
 
 /**
@@ -1822,6 +1824,171 @@ fun SplitBillWidgetPreview(
                     jitterMagnitude = 0,
                     onClick = { replayTrigger++ }
                 )
+            }
+        }
+    }
+}
+
+// =============================================================================
+// 9. FINANCIAL SKY WEATHER WIDGET PREVIEW
+// =============================================================================
+
+@Composable
+fun FinancialWeatherWidgetPreview(
+    style: WidgetStyle,
+    todaySpent: Double = 1450.0,
+    monthBudget: Double = 50000.0,
+    monthSpent: Double = 18500.0,
+    safeToSpendDaily: Double = 1250.0,
+    weekRecords: List<FinancialDayRecord> = emptyList(),
+    modifier: Modifier = Modifier
+) {
+    val context = LocalContext.current
+    val haptics = rememberKanriHaptics()
+    var replayTrigger by remember { mutableIntStateOf(0) }
+
+    val records = if (weekRecords.isNotEmpty()) weekRecords else listOf(
+        FinancialDayRecord("Mon", 450.0, safeToSpendDaily),
+        FinancialDayRecord("Tue", 1200.0, safeToSpendDaily),
+        FinancialDayRecord("Wed", 850.0, safeToSpendDaily),
+        FinancialDayRecord("Thu", 1600.0, safeToSpendDaily),
+        FinancialDayRecord("Fri", 1100.0, safeToSpendDaily),
+        FinancialDayRecord("Sat", 2400.0, safeToSpendDaily),
+        FinancialDayRecord("Today", todaySpent, safeToSpendDaily, isToday = true)
+    )
+
+    WidgetPreviewCardWrapper(
+        title = "Financial Sky Weather",
+        styleTag = style.tag,
+        onPin = {
+            haptics.click()
+            pinWidgetToHome(context, FinancialWeatherWidgetProvider::class.java)
+        },
+        onReplay = {
+            haptics.click()
+            replayTrigger++
+        },
+        modifier = modifier
+    ) {
+        when (style) {
+            WidgetStyle.PIXEL_MATRIX -> {
+                FinancialWeatherWidget(
+                    todaySpent = todaySpent,
+                    monthBudget = monthBudget,
+                    monthSpent = monthSpent,
+                    safeToSpendDaily = safeToSpendDaily,
+                    weekRecords = records,
+                    onClick = { replayTrigger++ }
+                )
+            }
+            WidgetStyle.IPHONE -> {
+                Box(
+                    modifier = Modifier
+                        .fillMaxWidth()
+                        .clip(RoundedCornerShape(26.dp))
+                        .background(Color(0xF01C1C1E))
+                        .border(1.dp, Color(0x26FFFFFF), RoundedCornerShape(26.dp))
+                        .padding(18.dp)
+                ) {
+                    Column(verticalArrangement = Arrangement.spacedBy(14.dp)) {
+                        Row(
+                            modifier = Modifier.fillMaxWidth(),
+                            horizontalArrangement = Arrangement.SpaceBetween,
+                            verticalAlignment = Alignment.CenterVertically
+                        ) {
+                            Column {
+                                Text(
+                                    "FINANCIAL CLIMATE",
+                                    fontWeight = FontWeight.Bold,
+                                    letterSpacing = 0.08.sp,
+                                    fontSize = 12.sp,
+                                    color = Color(0xFF0A84FF)
+                                )
+                                Text(
+                                    "Clear Horizons • Safe to spend",
+                                    fontSize = 11.sp,
+                                    color = Color(0x99FFFFFF)
+                                )
+                            }
+                            Text(
+                                "Live",
+                                fontSize = 11.sp,
+                                fontWeight = FontWeight.Bold,
+                                color = Color(0xFF30D158)
+                            )
+                        }
+
+                        FinancialSkyWell(
+                            todaySpent = todaySpent,
+                            safeToSpendDaily = safeToSpendDaily,
+                            replayTrigger = replayTrigger
+                        )
+
+                        FinancialWeekPulse(
+                            days = records,
+                            maxScale = max(safeToSpendDaily * 2.5, 3000.0)
+                        )
+                    }
+                }
+            }
+            WidgetStyle.GLASS_100X -> {
+                Box(
+                    modifier = Modifier
+                        .fillMaxWidth()
+                        .clip(RoundedCornerShape(26.dp))
+                        .background(
+                            Brush.verticalGradient(
+                                listOf(Color(0x30FFFFFF), Color(0x18FFFFFF), Color(0x0CFFFFFF))
+                            )
+                        )
+                        .border(
+                            1.5.dp,
+                            Brush.linearGradient(
+                                listOf(Color(0x99FFFFFF), Color(0x33FFFFFF), Color(0x0DFFFFFF))
+                            ),
+                            RoundedCornerShape(26.dp)
+                        )
+                        .padding(18.dp)
+                ) {
+                    Column(verticalArrangement = Arrangement.spacedBy(14.dp)) {
+                        Row(
+                            modifier = Modifier.fillMaxWidth(),
+                            horizontalArrangement = Arrangement.SpaceBetween,
+                            verticalAlignment = Alignment.CenterVertically
+                        ) {
+                            Column {
+                                Text(
+                                    "ATMOSPHERIC LEDGER",
+                                    fontWeight = FontWeight.Bold,
+                                    letterSpacing = 0.08.sp,
+                                    fontSize = 12.sp,
+                                    color = Color(0xCCFFFFFF)
+                                )
+                                Text(
+                                    "Astronomical Moon & Sun Horizon",
+                                    fontSize = 11.sp,
+                                    color = Color(0x99FFFFFF)
+                                )
+                            }
+                            Text(
+                                "Active",
+                                fontSize = 11.sp,
+                                color = Color(0xFF00E5FF)
+                            )
+                        }
+
+                        FinancialSkyWell(
+                            todaySpent = todaySpent,
+                            safeToSpendDaily = safeToSpendDaily,
+                            replayTrigger = replayTrigger
+                        )
+
+                        FinancialWeekPulse(
+                            days = records,
+                            maxScale = max(safeToSpendDaily * 2.5, 3000.0)
+                        )
+                    }
+                }
             }
         }
     }

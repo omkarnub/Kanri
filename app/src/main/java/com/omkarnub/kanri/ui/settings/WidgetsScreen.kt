@@ -65,6 +65,8 @@ import com.omkarnub.kanri.ui.theme.GoogleSansFlex
 import com.omkarnub.kanri.ui.theme.LocalKanriGlass
 import com.omkarnub.kanri.ui.widget.BudgetProgressWidgetPreview
 import com.omkarnub.kanri.ui.widget.BudgetRingWidgetPreview
+import com.omkarnub.kanri.ui.widget.FinancialDayRecord
+import com.omkarnub.kanri.ui.widget.FinancialWeatherWidgetPreview
 import com.omkarnub.kanri.ui.widget.GoalsRingWidgetPreview
 import com.omkarnub.kanri.ui.widget.LendBorrowWidgetPreview
 import com.omkarnub.kanri.ui.widget.QuickAddWidgetPreview
@@ -107,6 +109,7 @@ fun WidgetsScreen(
     var liveGoalSaved by remember { mutableDoubleStateOf(0.0) }
     var liveGoalTarget by remember { mutableDoubleStateOf(100000.0) }
     var liveDaysLeft by remember { mutableIntStateOf(15) }
+    var liveWeekRecords by remember { mutableStateOf<List<FinancialDayRecord>>(emptyList()) }
 
     LaunchedEffect(Unit) {
         withContext(Dispatchers.IO) {
@@ -175,6 +178,30 @@ fun WidgetsScreen(
                     liveGoalSaved = activeGoal.currentAmount
                     liveGoalTarget = activeGoal.targetAmount
                 }
+
+                // 5. Past 7 days records
+                val dayFormat = SimpleDateFormat("EEE", Locale.US)
+                val dayRecords = mutableListOf<FinancialDayRecord>()
+                val safeDaily = (liveBudgetLimit - liveMonthSpent).coerceAtLeast(0.0) / liveDaysLeft
+                for (offset in 6 downTo 1) {
+                    val dCal = Calendar.getInstance().apply {
+                        add(Calendar.DAY_OF_YEAR, -offset)
+                        set(Calendar.HOUR_OF_DAY, 0)
+                        set(Calendar.MINUTE, 0)
+                        set(Calendar.SECOND, 0)
+                        set(Calendar.MILLISECOND, 0)
+                    }
+                    val sStart = dCal.timeInMillis
+                    dCal.set(Calendar.HOUR_OF_DAY, 23)
+                    dCal.set(Calendar.MINUTE, 59)
+                    val sEnd = dCal.timeInMillis
+                    val dTx = db.transactionDao().getTransactionsWithCategoryBetweenSync(sStart, sEnd)
+                    val dSpend = dTx.filter { it.transaction.type.equals("DEBIT", ignoreCase = true) && !it.transaction.isTransfer }
+                        .sumOf { it.transaction.amount }
+                    dayRecords.add(FinancialDayRecord(dayFormat.format(dCal.time), dSpend, safeDaily))
+                }
+                dayRecords.add(FinancialDayRecord("Today", liveTodaySpent, safeDaily, isToday = true))
+                liveWeekRecords = dayRecords
             } catch (_: Exception) {}
         }
     }
@@ -407,7 +434,20 @@ fun WidgetsScreen(
                 }
             }
 
-            // 1. Spent Today Widget
+            // 1. Financial Sky Weather Widget (Dot Matrix Celestial Horizon & 7-Day Pulse)
+            item {
+                val safeDaily = (liveBudgetLimit - liveMonthSpent).coerceAtLeast(0.0) / liveDaysLeft
+                FinancialWeatherWidgetPreview(
+                    style = selectedStyle,
+                    todaySpent = if (liveTodaySpent > 0) liveTodaySpent else 1450.0,
+                    monthBudget = liveBudgetLimit,
+                    monthSpent = if (liveMonthSpent > 0) liveMonthSpent else 18500.0,
+                    safeToSpendDaily = if (safeDaily > 0) safeDaily else 1250.0,
+                    weekRecords = liveWeekRecords
+                )
+            }
+
+            // 2. Spent Today Widget
             item {
                 SpentTodayWidgetPreview(
                     style = selectedStyle,

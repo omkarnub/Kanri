@@ -1,0 +1,81 @@
+<?xml version="1.0" encoding="utf-8"?>
+<LinearLayout xmlns:android="http://schemas.android.com/apk/res/android"
+    android:id="@+id/widget_financial_weather_root"
+    android:layout_width="match_parent"
+    android:layout_height="match_parent"
+    android:background="@drawable/widget_bg_glass_100x"
+    android:orientation="vertical"
+    android:padding="14dp">
+
+    <!-- Header Row -->
+    <LinearLayout
+        android:id="@+id/widget_weather_header_row"
+        android:layout_width="match_parent"
+        android:layout_height="wrap_content"
+        android:gravity="center_vertical"
+        android:orientation="horizontal">
+
+        <TextView
+            android:id="@+id/widget_weather_title"
+            android:layout_width="0dp"
+            android:layout_height="wrap_content"
+            android:layout_weight="1"
+            android:fontFamily="@font/google_sans_bold"
+            android:letterSpacing="0.08"
+            android:text="FINANCIAL SKY"
+            android:textColor="#FFFFFF"
+            android:textSize="11sp"
+            android:textStyle="bold" />
+
+        <TextView
+            android:id="@+id/widget_weather_clock"
+            android:layout_width="wrap_content"
+            android:layout_height="wrap_content"
+            android:fontFamily="@font/google_sans_medium"
+            android:text="Live • 22:45"
+            android:textColor="#B300E676"
+            android:textSize="11sp" />
+    </LinearLayout>
+
+    <!-- Canvas Rendered Sky Well & 7-Day Pulse -->
+    <ImageView
+        android:id="@+id/widget_weather_canvas_image"
+        android:layout_width="match_parent"
+        android:layout_height="0dp"
+        android:layout_marginTop="6dp"
+        android:layout_marginBottom="4dp"
+        android:layout_weight="1"
+        android:contentDescription="Financial Weather Sky and 7-Day Pulse"
+        android:scaleType="fitCenter" />
+
+    <!-- Ground Status Row -->
+    <LinearLayout
+        android:id="@+id/widget_weather_footer_row"
+        android:layout_width="match_parent"
+        android:layout_height="wrap_content"
+        android:gravity="center_vertical"
+        android:orientation="horizontal">
+
+        <TextView
+            android:id="@+id/widget_weather_spent_text"
+            android:layout_width="0dp"
+            android:layout_height="wrap_content"
+            android:layout_weight="1"
+            android:fontFamily="@font/google_sans_bold"
+            android:text="Spent Today: ₹1,450"
+            android:textColor="#FFFFFF"
+            android:textSize="12sp"
+            android:textStyle="bold" />
+
+        <TextView
+            android:id="@+id/widget_weather_safe_text"
+            android:layout_width="wrap_content"
+            android:layout_height="wrap_content"
+            android:fontFamily="@font/google_sans_medium"
+            android:text="Safe ₹1,250/d"
+            android:textColor="#B3FFFFFF"
+            android:textSize="11sp" />
+    </LinearLayout>
+
+</LinearLayout>
+

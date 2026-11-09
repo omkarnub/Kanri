@@ -17,6 +17,7 @@ object KanriWidgetsUpdater {
             QuickAddWidgetProvider.updateAll(context)
             MoneySpentTodayWidgetProvider.updateAll(context)
             WalletBalanceWidgetProvider.updateAll(context)
+            FinancialWeatherWidgetProvider.updateAll(context)
         } catch (e: Exception) {
             com.omkarnub.kanri.data.crash.CrashLogger.logHandledException(
                 context, "KanriWidgetsUpdater.updateAllWidgets", e

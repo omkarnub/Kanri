@@ -5,6 +5,25 @@ All notable changes to Kanri will be documented in this file.
 The format is based on [Keep a Changelog](https://keepachangelog.com/en/1.0.0/),
 and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0.html).
 
+## [1.11.1] - 2026-11-09
+
+### Added & Widgets
+- **Financial Sky Weather Widget (`FinancialWeatherWidgetProvider` / `FinancialSkyScene`)**:
+  - Implemented the 9th Kanri home screen widget based on the dot-matrix Weather slab specification, adapted specifically for financial ledger intelligence.
+  - **Dot-Matrix Celestial Sky Well**:
+    - Astronomical sun arc stepping with time of day (sunrise 7:30 to sunset 19:30), stepped rays, and flying birds.
+    - True synodic astronomical moon phase calculations (`moonAge` and `isMoonLit`) with twinkling star field at night.
+    - Dot-matrix terrain contour hills on the horizon.
+    - Weather condition dynamically reflecting financial climate: *"Clear Horizons"*, *"Golden Sunrise"*, *"Partly Cloudy"*, *"Stormy Outflow"*, or *"Starry Calm"*.
+  - **7-Day Spending Pulse**:
+    - Replaces weather forecast with a 7-day financial pulse table.
+    - Displays daily expenditure across past 7 days on a shared 20-dot scale, colored by spending intensity (Green under budget, Amber moderate, Red heavy spend).
+  - **Available in All 3 Styles & Home Screen**:
+    - Supported across `iPhone Fluid`, `100x Apple Liquid Glass`, and `Pixel DotTiles`.
+    - Registered `FinancialWeatherWidgetProvider` for launcher placement.
+    - Added 1:1 interactive preview to `WidgetsScreen` in Settings.
+- Bumped version to `1.11.1` (Build 35).
+
 ## [1.11.0] - 2026-11-09
 
 ### Added & Widgets Recreation
