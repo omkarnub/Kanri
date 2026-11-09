@@ -5,7 +5,9 @@ import android.view.animation.PathInterpolator
 import androidx.activity.compose.setContent
 import androidx.activity.enableEdgeToEdge
 import androidx.compose.animation.core.CubicBezierEasing
+import androidx.compose.animation.core.Spring
 import androidx.compose.animation.core.animateFloatAsState
+import androidx.compose.animation.core.spring
 import androidx.compose.animation.core.tween
 import androidx.compose.foundation.layout.Box
 import androidx.compose.foundation.layout.fillMaxSize
@@ -15,6 +17,7 @@ import androidx.compose.runtime.getValue
 import androidx.compose.runtime.mutableStateOf
 import androidx.compose.runtime.remember
 import androidx.compose.runtime.setValue
+import androidx.compose.runtime.withFrameNanos
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.graphics.graphicsLayer
 import androidx.core.splashscreen.SplashScreen.Companion.installSplashScreen
@@ -25,6 +28,7 @@ import com.omkarnub.kanri.ui.navigation.MainNavigationScreen
 import com.omkarnub.kanri.ui.onboarding.OnboardingPreferences
 import com.omkarnub.kanri.ui.onboarding.OnboardingScreen
 import com.omkarnub.kanri.ui.security.LockScreen
+import com.omkarnub.kanri.ui.splash.KanriSplashScreen
 import com.omkarnub.kanri.ui.theme.AppIconManager
 import com.omkarnub.kanri.ui.theme.AppIconStyle
 import com.omkarnub.kanri.ui.theme.KanriTheme
@@ -42,34 +46,10 @@ open class MainActivity : FragmentActivity() {
 
     override fun onCreate(savedInstanceState: Bundle?) {
         val splashScreen = installSplashScreen()
-        val launchTime = System.currentTimeMillis()
-        splashScreen.setKeepOnScreenCondition {
-            !isAppReady && (System.currentTimeMillis() - launchTime < 1000L)
-        }
+        // Seamlessly transfer immediately to our animated Compose logo reveal splash screen
+        splashScreen.setKeepOnScreenCondition { false }
         splashScreen.setOnExitAnimationListener { splashScreenViewProvider ->
-            val splashView = splashScreenViewProvider.view
-            val iconView = splashScreenViewProvider.iconView
-            val easeOut = PathInterpolator(0.23f, 1f, 0.32f, 1f)
-
-            // 1. Elegantly lift and scale the branding wordmark as it dissolves
-            iconView?.animate()
-                ?.scaleX(1.10f)
-                ?.scaleY(1.10f)
-                ?.translationY(-resources.displayMetrics.density * 16f)
-                ?.alpha(0f)
-                ?.setDuration(320L)
-                ?.setInterpolator(easeOut)
-                ?.start()
-
-            // 2. Smoothly cross-fade the splash screen background
-            splashView.animate()
-                .alpha(0f)
-                .setDuration(380L)
-                .setInterpolator(easeOut)
-                .withEndAction {
-                    splashScreenViewProvider.remove()
-                }
-                .start()
+            splashScreenViewProvider.remove()
         }
 
         val themePrefs = ThemePreferences.getInstance(applicationContext)
@@ -121,72 +101,81 @@ open class MainActivity : FragmentActivity() {
 
         setContent {
             KanriTheme {
-                var contentVisible by remember { mutableStateOf(false) }
+                var isAppRendered by remember { mutableStateOf(false) }
+                var showSplashScreen by remember { mutableStateOf(true) }
+
                 LaunchedEffect(Unit) {
+                    withFrameNanos { }
+                    withFrameNanos { }
                     isAppReady = true
-                    contentVisible = true
+                    isAppRendered = true
                 }
 
-                val contentAlpha by animateFloatAsState(
-                    targetValue = if (contentVisible) 1f else 0.85f,
-                    animationSpec = tween(
-                        durationMillis = 380,
-                        easing = CubicBezierEasing(0.23f, 1f, 0.32f, 1f)
-                    ),
-                    label = "splashEntranceAlpha"
-                )
                 val contentScale by animateFloatAsState(
-                    targetValue = if (contentVisible) 1f else 0.98f,
-                    animationSpec = tween(
-                        durationMillis = 380,
-                        easing = CubicBezierEasing(0.23f, 1f, 0.32f, 1f)
+                    targetValue = if (!showSplashScreen) 1f else 0.96f,
+                    animationSpec = spring(
+                        dampingRatio = 0.82f,
+                        stiffness = Spring.StiffnessMediumLow
                     ),
-                    label = "splashEntranceScale"
+                    label = "splashContentScale"
                 )
 
-                Box(
-                    modifier = Modifier
-                        .fillMaxSize()
-                        .graphicsLayer {
-                            alpha = contentAlpha
-                            scaleX = contentScale
-                            scaleY = contentScale
-                        }
-                ) {
-                    com.omkarnub.kanri.ui.common.KanriBackdropHost {
-                        val onboardingPrefs = remember { OnboardingPreferences.getInstance(applicationContext) }
-                        val hasCompletedOnboarding by onboardingPrefs.hasCompletedFlow.collectAsState()
-                        var isTestingLock by remember { mutableStateOf(false) }
+                Box(modifier = Modifier.fillMaxSize()) {
+                    // 1. Main App Content (Rendered underneath with subtle scale-in upon reveal)
+                    Box(
+                        modifier = Modifier
+                            .fillMaxSize()
+                            .graphicsLayer {
+                                scaleX = contentScale
+                                scaleY = contentScale
+                            }
+                    ) {
+                        com.omkarnub.kanri.ui.common.KanriBackdropHost {
+                            val onboardingPrefs = remember { OnboardingPreferences.getInstance(applicationContext) }
+                            val hasCompletedOnboarding by onboardingPrefs.hasCompletedFlow.collectAsState()
+                            var isTestingLock by remember { mutableStateOf(false) }
 
-                        val isLocked by SecurityManager.isAppLocked.collectAsState()
+                            val isLocked by SecurityManager.isAppLocked.collectAsState()
 
-                        when {
-                            !hasCompletedOnboarding -> {
-                                OnboardingScreen(
-                                    onComplete = {
-                                        onboardingPrefs.hasCompletedOnboarding = true
-                                    }
-                                )
-                            }
-                            isLocked || isTestingLock -> {
-                                LockScreen(
-                                    onUnlocked = {
-                                        SecurityManager.unlock()
-                                        isTestingLock = false
-                                    }
-                                )
-                            }
-                            else -> {
-                                MainNavigationScreen(
-                                    onReplayOnboarding = {
-                                        onboardingPrefs.hasCompletedOnboarding = false
-                                    },
-                                    onTestLockScreen = {
-                                        isTestingLock = true
-                                    }
-                                )
+                            when {
+                                !hasCompletedOnboarding -> {
+                                    OnboardingScreen(
+                                        onComplete = {
+                                            onboardingPrefs.hasCompletedOnboarding = true
+                                        }
+                                    )
+                                }
+                                isLocked || isTestingLock -> {
+                                    LockScreen(
+                                        onUnlocked = {
+                                            SecurityManager.unlock()
+                                            isTestingLock = false
+                                        }
+                                    )
+                                }
+                                else -> {
+                                    MainNavigationScreen(
+                                        onReplayOnboarding = {
+                                            onboardingPrefs.hasCompletedOnboarding = false
+                                        },
+                                        onTestLockScreen = {
+                                            isTestingLock = true
+                                        }
+                                    )
+                                }
                             }
                         }
+                    }
+
+                    // 2. Animated Splash Screen Logo Reveal Overlay
+                    if (showSplashScreen) {
+                        KanriSplashScreen(
+                            isAppReady = isAppRendered,
+                            isLightMode = isLight,
+                            onSplashComplete = {
+                                showSplashScreen = false
+                            }
+                        )
                     }
                 }
             }

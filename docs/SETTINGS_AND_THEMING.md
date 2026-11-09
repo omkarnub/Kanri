@@ -111,7 +111,7 @@ Kanri adheres strictly to a modern, typographic, and vector-driven design langua
 
 ## 6. Splash Screen & Launch Flow Architecture
 
-Kanri uses Google's official Jetpack Splash Screen library (`androidx.core:core-splashscreen`):
+Kanri combines Google's Jetpack Splash Screen library (`androidx.core:core-splashscreen`) with an Apple-grade Compose logo reveal overlay (`KanriSplashScreen`):
 - **Theme Starting Styles**:
   - `Theme.Kanri.Starting` (Dark starting theme, inherits from `Theme.SplashScreen`)
   - `Theme.Kanri.Starting.Light` (Light starting theme, inherits from `Theme.SplashScreen`)
@@ -119,11 +119,10 @@ Kanri uses Google's official Jetpack Splash Screen library (`androidx.core:core-
   - `windowSplashScreenBackground`: Solid black (`#000000`) or cream (`#FEFAEC`).
   - `windowSplashScreenAnimatedIcon`: Centered vector branding (`@drawable/panchang_light` / `@drawable/panchang_dark`).
   - `android:windowSplashScreenIconBackgroundColor` is intentionally omitted, preventing the OS from rendering a circular disc / circular cutout behind the wordmark.
-- **Fluid Exit & Handover Choreography**:
-  - Initialized in `MainActivity.onCreate()` via `installSplashScreen()`.
-  - Conditioned with `splashScreen.setKeepOnScreenCondition { !isAppReady }` to guarantee the splash screen stays mounted until Compose initializes the first frame.
-  - Overridden via `splashScreen.setOnExitAnimationListener`:
-    - Wordmark floats slightly upward (-16dp) and scales (1.10x) as it dissolves over 320ms (`cubic-bezier(0.23, 1, 0.32, 1)`).
-    - Splash background cross-fades over 380ms.
-    - Compose content executes an in-sync entrance reveal (`scale 0.98 -> 1.0` and `alpha 0.85 -> 1.0` over 380ms) for a continuous, cinematic handover from splash into the app.
-- **Version**: Kanri `1.7.0` (Build 28).
+- **Cinematic Logo Reveal Animation (`KanriSplashScreen`)**:
+  - **Staggered Letter Slide-In**: The 5 vector letters (`K`, `A`, `N`, `R`, `I`) animate up through isolated clip rect boundaries from `+110%` to `0%` using `CubicBezierEasing(0.16f, 1f, 0.3f, 1f)` with staggered delays (220ms + index * 100ms).
+  - **Underline Rule Sweep**: An accent rule draws across beneath the mark from left to right (origin left-center) and then wipes away cleanly to the right (origin right-center) over 1250ms with `CubicBezierEasing(0.7f, 0f, 0.3f, 1f)`.
+  - **Render-Gated App Transition**: The splash screen stays mounted until the main application Compose hierarchy and databases are fully measured and rendered (confirmed via double `withFrameNanos`), guaranteeing zero blank flickers or layout jumps.
+  - **Fluid Staggered Exit**: Once rendering and the reveal conclude, the letters slide up and out staggered into the ceiling (`0%` -> `-110%`) while the splash overlay cross-fades out and the main app smoothly scales up with `KanriMotion.SnappySpring`.
+  - **Clean Unmount**: After exit transition completes, the splash composable is unmounted from the tree for zero runtime memory footprint.
+- **Version**: Kanri `1.9.0` (Build 32).

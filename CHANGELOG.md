@@ -5,6 +5,19 @@ All notable changes to Kanri will be documented in this file.
 The format is based on [Keep a Changelog](https://keepachangelog.com/en/1.0.0/),
 and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0.html).
 
+## [1.9.0] - 2026-11-09
+
+### Added & Motion Design
+- **Cinematic Logo Reveal Animated Splash Screen (`KanriSplashScreen`)**:
+  - Implemented the signature Apple-grade vector logo reveal animation based on official brand assets (`panchang_light` / `panchang_dark`).
+  - **Staggered Letter Slide-In**: Each of the 5 letters (`K`, `A`, `N`, `R`, `I`) animates up through an individual clip mask boundary from `translateY(+110%)` to `0%` with a smooth deceleration curve (`CubicBezierEasing(0.16f, 1f, 0.3f, 1f)`) and staggered delay (220ms + index * 100ms).
+  - **Animated Underline Sweep**: Thin accent rule draws across beneath the mark from left to right (origin left-center) and then wipes away cleanly to the right (origin right-center) with `CubicBezierEasing(0.7f, 0f, 0.3f, 1f)`.
+  - **Render-Gated App Transition**: Splash screen stays active until the main application Compose hierarchy and databases are fully rendered and measured (via double `withFrameNanos`), seamlessly transitioning only once the screen underneath is ready with zero blank flickers.
+  - **Fluid Staggered Exit & Content Scale-Up**: Upon render completion, the letters slide up and out staggered into the ceiling (`translateY(0%)` -> `-110%`) while the splash overlay dissolves (`alpha = 1f -> 0f`) and the main app smoothly scales in with `KanriMotion.SnappySpring`.
+  - **Clean Unmount**: After exit transition completes, the splash composable is completely removed from the composition to ensure 0 CPU/GPU memory footprint during regular app usage.
+  - **Theme-Aware Void**: Pure pitch black (`#000000`) void in Dark/Glass/AMOLED themes with warm cream ink (`#FDFAEE`), and soft cream (`#FEFAEC`) void with charcoal ink (`#121212`) in Light mode.
+- Bumped version to `1.9.0` (Build 32).
+
 ## [1.8.2] - 2026-11-09
 
 ### Fixed & UI Polish
