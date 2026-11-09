@@ -15,7 +15,11 @@ import androidx.compose.animation.core.spring
 import androidx.compose.animation.core.tween
 import androidx.compose.animation.fadeIn
 import androidx.compose.animation.fadeOut
+import androidx.compose.animation.scaleIn
+import androidx.compose.animation.scaleOut
 import androidx.compose.animation.togetherWith
+import com.omkarnub.kanri.ui.theme.KanriMotion
+import com.omkarnub.kanri.ui.theme.kanriPressFeedback
 import androidx.compose.runtime.DisposableEffect
 import androidx.compose.runtime.mutableFloatStateOf
 import androidx.compose.ui.geometry.Rect
@@ -351,7 +355,7 @@ fun ExpenseVisualizer(
                     Row(
                         modifier = Modifier
                             .clip(RoundedCornerShape(8.dp))
-                            .clickable { monthMenuExpanded = true }
+                            .kanriPressFeedback(pressedScale = 0.95f, onClick = { monthMenuExpanded = true })
                             .padding(horizontal = 8.dp, vertical = 5.dp),
                         verticalAlignment = Alignment.CenterVertically,
                         horizontalArrangement = Arrangement.spacedBy(4.dp)
@@ -424,8 +428,12 @@ fun ExpenseVisualizer(
                 AnimatedContent(
                     targetState = visualType,
                     transitionSpec = {
-                        fadeIn(animationSpec = tween(400, easing = FastOutSlowInEasing)) togetherWith
-                                fadeOut(animationSpec = tween(300, easing = FastOutSlowInEasing))
+                        (fadeIn(animationSpec = tween(220, easing = KanriMotion.EaseOut)) +
+                                scaleIn(initialScale = 0.96f, animationSpec = KanriMotion.SnappySpring))
+                            .togetherWith(
+                                fadeOut(animationSpec = tween(160, easing = KanriMotion.EaseOut)) +
+                                scaleOut(targetScale = 0.98f, animationSpec = tween(160, easing = KanriMotion.EaseOut))
+                            )
                     },
                     label = "visualizerTransition"
                 ) { targetType ->
@@ -485,7 +493,7 @@ fun ExpenseVisualizer(
                 Row(
                     modifier = Modifier
                         .clip(RoundedCornerShape(8.dp))
-                        .clickable { showEditBudgetDialog = true }
+                        .kanriPressFeedback(pressedScale = 0.95f, onClick = { showEditBudgetDialog = true })
                         .padding(horizontal = 14.dp, vertical = 6.dp),
                     verticalAlignment = Alignment.CenterVertically,
                     horizontalArrangement = Arrangement.spacedBy(6.dp)
@@ -510,7 +518,7 @@ fun ExpenseVisualizer(
                 Row(
                     modifier = Modifier
                         .clip(RoundedCornerShape(8.dp))
-                        .clickable { showVisualTypePicker = true }
+                        .kanriPressFeedback(pressedScale = 0.95f, onClick = { showVisualTypePicker = true })
                         .padding(horizontal = 14.dp, vertical = 6.dp),
                     verticalAlignment = Alignment.CenterVertically,
                     horizontalArrangement = Arrangement.spacedBy(6.dp)

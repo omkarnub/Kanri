@@ -429,36 +429,44 @@ fun LendingScreen(
                                     )
                                 }
                             } else {
-                                when (hubState.selectedTab) {
-                                    LendingTabOption.PEOPLE -> {
-                                        LendingPeopleView(
-                                            needsAttentionPeople = hubState.needsAttentionPeople,
-                                            activePeople = hubState.activePeople,
-                                            settledPeople = hubState.settledPeople,
-                                            isSettledExpanded = hubState.isSettledSectionExpanded,
-                                            onToggleSettled = {
-                                                haptics.tick()
-                                                hubViewModel.toggleSettledSection()
-                                            },
-                                            onPersonClick = { person ->
-                                                haptics.click()
-                                                hubViewModel.selectPerson(person.key)
-                                            }
-                                        )
-                                    }
-                                    LendingTabOption.TIMELINE -> {
-                                        LendingTimelineView(
-                                            timelineGroups = hubState.timelineGroups,
-                                            activeFilter = hubState.timelineFilter,
-                                            onFilterSelected = {
-                                                haptics.tick()
-                                                hubViewModel.setTimelineFilter(it)
-                                            },
-                                            onEntryClick = { entry ->
-                                                haptics.click()
-                                                selectedTransactionForDetail = entry
-                                            }
-                                        )
+                                AnimatedContent(
+                                    targetState = hubState.selectedTab,
+                                    transitionSpec = {
+                                        KanriMotion.tabTransition(isForward = targetState == LendingTabOption.TIMELINE)
+                                    },
+                                    label = "lendingTabTransition"
+                                ) { tab ->
+                                    when (tab) {
+                                        LendingTabOption.PEOPLE -> {
+                                            LendingPeopleView(
+                                                needsAttentionPeople = hubState.needsAttentionPeople,
+                                                activePeople = hubState.activePeople,
+                                                settledPeople = hubState.settledPeople,
+                                                isSettledExpanded = hubState.isSettledSectionExpanded,
+                                                onToggleSettled = {
+                                                    haptics.tick()
+                                                    hubViewModel.toggleSettledSection()
+                                                },
+                                                onPersonClick = { person ->
+                                                    haptics.click()
+                                                    hubViewModel.selectPerson(person.key)
+                                                }
+                                            )
+                                        }
+                                        LendingTabOption.TIMELINE -> {
+                                            LendingTimelineView(
+                                                timelineGroups = hubState.timelineGroups,
+                                                activeFilter = hubState.timelineFilter,
+                                                onFilterSelected = {
+                                                    haptics.tick()
+                                                    hubViewModel.setTimelineFilter(it)
+                                                },
+                                                onEntryClick = { entry ->
+                                                    haptics.click()
+                                                    selectedTransactionForDetail = entry
+                                                }
+                                            )
+                                        }
                                     }
                                 }
                             }

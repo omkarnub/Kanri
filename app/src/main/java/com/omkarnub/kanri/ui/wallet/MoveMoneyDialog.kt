@@ -1,5 +1,7 @@
 package com.omkarnub.kanri.ui.wallet
 
+import androidx.compose.animation.animateColorAsState
+import androidx.compose.animation.core.tween
 import androidx.compose.foundation.BorderStroke
 import androidx.compose.foundation.clickable
 import androidx.compose.foundation.layout.Arrangement
@@ -125,12 +127,55 @@ fun MoveMoneyDialog(
 
                 Spacer(modifier = Modifier.height(18.dp))
 
-                // Direction Toggle (Withdraw Cash vs Deposit to Bank)
+                // Direction Toggle (Withdraw Cash vs Deposit to Bank) with fluid Apple-grade color transitions
+                val isWithdraw = direction == TransferDirection.WITHDRAW_TO_CASH
+                val withdrawBg by animateColorAsState(
+                    targetValue = if (isWithdraw) MaterialTheme.colorScheme.primary else MaterialTheme.colorScheme.surfaceVariant,
+                    animationSpec = tween(180, easing = KanriMotion.EaseOut),
+                    label = "withdraw_bg"
+                )
+                val withdrawBorder by animateColorAsState(
+                    targetValue = if (isWithdraw) MaterialTheme.colorScheme.primary else MaterialTheme.colorScheme.outlineVariant,
+                    animationSpec = tween(180, easing = KanriMotion.EaseOut),
+                    label = "withdraw_border"
+                )
+                val withdrawText by animateColorAsState(
+                    targetValue = if (isWithdraw) MaterialTheme.colorScheme.onPrimary else MaterialTheme.colorScheme.onSurfaceVariant,
+                    animationSpec = tween(180, easing = KanriMotion.EaseOut),
+                    label = "withdraw_text"
+                )
+                val withdrawSubtext by animateColorAsState(
+                    targetValue = if (isWithdraw) MaterialTheme.colorScheme.onPrimary.copy(alpha = 0.8f) else MaterialTheme.colorScheme.onSurfaceVariant.copy(alpha = 0.6f),
+                    animationSpec = tween(180, easing = KanriMotion.EaseOut),
+                    label = "withdraw_subtext"
+                )
+
+                val isDeposit = direction == TransferDirection.DEPOSIT_TO_BANK
+                val depositBg by animateColorAsState(
+                    targetValue = if (isDeposit) MaterialTheme.colorScheme.primary else MaterialTheme.colorScheme.surfaceVariant,
+                    animationSpec = tween(180, easing = KanriMotion.EaseOut),
+                    label = "deposit_bg"
+                )
+                val depositBorder by animateColorAsState(
+                    targetValue = if (isDeposit) MaterialTheme.colorScheme.primary else MaterialTheme.colorScheme.outlineVariant,
+                    animationSpec = tween(180, easing = KanriMotion.EaseOut),
+                    label = "deposit_border"
+                )
+                val depositText by animateColorAsState(
+                    targetValue = if (isDeposit) MaterialTheme.colorScheme.onPrimary else MaterialTheme.colorScheme.onSurfaceVariant,
+                    animationSpec = tween(180, easing = KanriMotion.EaseOut),
+                    label = "deposit_text"
+                )
+                val depositSubtext by animateColorAsState(
+                    targetValue = if (isDeposit) MaterialTheme.colorScheme.onPrimary.copy(alpha = 0.8f) else MaterialTheme.colorScheme.onSurfaceVariant.copy(alpha = 0.6f),
+                    animationSpec = tween(180, easing = KanriMotion.EaseOut),
+                    label = "deposit_subtext"
+                )
+
                 Row(
                     modifier = Modifier.fillMaxWidth(),
                     horizontalArrangement = Arrangement.spacedBy(8.dp)
                 ) {
-                    val isWithdraw = direction == TransferDirection.WITHDRAW_TO_CASH
                     Surface(
                         modifier = Modifier
                             .weight(1f)
@@ -139,11 +184,8 @@ fun MoveMoneyDialog(
                                 onClick = { direction = TransferDirection.WITHDRAW_TO_CASH }
                             ),
                         shape = RoundedCornerShape(12.dp),
-                        color = if (isWithdraw) MaterialTheme.colorScheme.primary else MaterialTheme.colorScheme.surfaceVariant,
-                        border = BorderStroke(
-                            1.dp,
-                            if (isWithdraw) MaterialTheme.colorScheme.primary else MaterialTheme.colorScheme.outlineVariant
-                        )
+                        color = withdrawBg,
+                        border = BorderStroke(1.dp, withdrawBorder)
                     ) {
                         Column(
                             modifier = Modifier.padding(vertical = 10.dp, horizontal = 8.dp),
@@ -153,18 +195,17 @@ fun MoveMoneyDialog(
                                 text = "ATM / Withdraw",
                                 style = MaterialTheme.typography.bodyMedium,
                                 fontWeight = if (isWithdraw) FontWeight.Bold else FontWeight.Medium,
-                                color = if (isWithdraw) MaterialTheme.colorScheme.onPrimary else MaterialTheme.colorScheme.onSurfaceVariant
+                                color = withdrawText
                             )
                             Spacer(modifier = Modifier.height(2.dp))
                             Text(
                                 text = "Bank → Cash",
                                 style = MaterialTheme.typography.labelSmall,
-                                color = if (isWithdraw) MaterialTheme.colorScheme.onPrimary.copy(alpha = 0.8f) else MaterialTheme.colorScheme.onSurfaceVariant.copy(alpha = 0.6f)
+                                color = withdrawSubtext
                             )
                         }
                     }
 
-                    val isDeposit = direction == TransferDirection.DEPOSIT_TO_BANK
                     Surface(
                         modifier = Modifier
                             .weight(1f)
@@ -173,11 +214,8 @@ fun MoveMoneyDialog(
                                 onClick = { direction = TransferDirection.DEPOSIT_TO_BANK }
                             ),
                         shape = RoundedCornerShape(12.dp),
-                        color = if (isDeposit) MaterialTheme.colorScheme.primary else MaterialTheme.colorScheme.surfaceVariant,
-                        border = BorderStroke(
-                            1.dp,
-                            if (isDeposit) MaterialTheme.colorScheme.primary else MaterialTheme.colorScheme.outlineVariant
-                        )
+                        color = depositBg,
+                        border = BorderStroke(1.dp, depositBorder)
                     ) {
                         Column(
                             modifier = Modifier.padding(vertical = 10.dp, horizontal = 8.dp),
@@ -187,13 +225,13 @@ fun MoveMoneyDialog(
                                 text = "Deposit to Bank",
                                 style = MaterialTheme.typography.bodyMedium,
                                 fontWeight = if (isDeposit) FontWeight.Bold else FontWeight.Medium,
-                                color = if (isDeposit) MaterialTheme.colorScheme.onPrimary else MaterialTheme.colorScheme.onSurfaceVariant
+                                color = depositText
                             )
                             Spacer(modifier = Modifier.height(2.dp))
                             Text(
                                 text = "Cash → Bank",
                                 style = MaterialTheme.typography.labelSmall,
-                                color = if (isDeposit) MaterialTheme.colorScheme.onPrimary.copy(alpha = 0.8f) else MaterialTheme.colorScheme.onSurfaceVariant.copy(alpha = 0.6f)
+                                color = depositSubtext
                             )
                         }
                     }

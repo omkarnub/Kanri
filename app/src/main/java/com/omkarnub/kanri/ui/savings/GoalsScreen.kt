@@ -70,7 +70,12 @@ import java.text.SimpleDateFormat
 import java.util.Date
 import java.util.Locale
 
+import androidx.compose.animation.AnimatedVisibility
 import androidx.compose.animation.animateColorAsState
+import androidx.compose.animation.fadeIn
+import androidx.compose.animation.fadeOut
+import androidx.compose.animation.scaleIn
+import androidx.compose.animation.scaleOut
 import androidx.compose.animation.core.animateFloatAsState
 import androidx.compose.animation.core.spring
 import androidx.compose.animation.core.tween
@@ -564,22 +569,30 @@ fun GoalsScreen(
                                             maxLines = 1,
                                             overflow = TextOverflow.Ellipsis
                                         )
-                                        if (isFinished) {
-                                            Spacer(modifier = Modifier.width(6.dp))
-                                            Surface(
-                                                shape = RoundedCornerShape(6.dp),
-                                                color = MaterialTheme.colorScheme.surfaceVariant
-                                            ) {
-                                                Text(
-                                                    text = "Achieved!",
-                                                    modifier = Modifier.padding(horizontal = 6.dp, vertical = 2.dp),
-                                                    fontFamily = GoogleSansFlex,
-                                                    style = MaterialTheme.typography.labelSmall.copy(
-                                                        fontSize = 9.5.sp,
-                                                        fontWeight = FontWeight.Bold
-                                                    ),
-                                                    color = MaterialTheme.colorScheme.onSurface
-                                                )
+                                        AnimatedVisibility(
+                                            visible = isFinished,
+                                            enter = scaleIn(initialScale = 0.85f, animationSpec = KanriMotion.BouncySpring) +
+                                                    fadeIn(animationSpec = tween(180, easing = KanriMotion.EaseOut)),
+                                            exit = scaleOut(targetScale = 0.90f, animationSpec = tween(140, easing = KanriMotion.EaseOut)) +
+                                                    fadeOut(animationSpec = tween(140, easing = KanriMotion.EaseOut))
+                                        ) {
+                                            Row(verticalAlignment = Alignment.CenterVertically) {
+                                                Spacer(modifier = Modifier.width(6.dp))
+                                                Surface(
+                                                    shape = RoundedCornerShape(6.dp),
+                                                    color = MaterialTheme.colorScheme.surfaceVariant
+                                                ) {
+                                                    Text(
+                                                        text = "Achieved!",
+                                                        modifier = Modifier.padding(horizontal = 6.dp, vertical = 2.dp),
+                                                        fontFamily = GoogleSansFlex,
+                                                        style = MaterialTheme.typography.labelSmall.copy(
+                                                            fontSize = 9.5.sp,
+                                                            fontWeight = FontWeight.Bold
+                                                        ),
+                                                        color = MaterialTheme.colorScheme.onSurface
+                                                    )
+                                                }
                                             }
                                         }
                                     }

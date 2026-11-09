@@ -33,6 +33,7 @@ import androidx.compose.ui.graphics.Color
 import androidx.compose.ui.text.font.FontWeight
 import androidx.compose.ui.unit.dp
 import androidx.compose.ui.unit.sp
+import com.omkarnub.kanri.ui.theme.kanriPressFeedback
 import com.omkarnub.kanri.data.db.LendingWithRepayments
 import com.omkarnub.kanri.util.CurrencyUtils
 import java.text.SimpleDateFormat
@@ -191,7 +192,10 @@ fun TimelineRowItem(
         modifier = modifier
             .fillMaxWidth()
             .clip(RoundedCornerShape(14.dp))
-            .clickable(onClick = onClick)
+            .kanriPressFeedback(
+                pressedScale = 0.98f,
+                onClick = onClick
+            )
             .padding(horizontal = 6.dp, vertical = 10.dp),
         verticalAlignment = Alignment.CenterVertically,
         horizontalArrangement = Arrangement.SpaceBetween

@@ -126,4 +126,4 @@ Kanri uses Google's official Jetpack Splash Screen library (`androidx.core:core-
     - Wordmark floats slightly upward (-16dp) and scales (1.10x) as it dissolves over 320ms (`cubic-bezier(0.23, 1, 0.32, 1)`).
     - Splash background cross-fades over 380ms.
     - Compose content executes an in-sync entrance reveal (`scale 0.98 -> 1.0` and `alpha 0.85 -> 1.0` over 380ms) for a continuous, cinematic handover from splash into the app.
-- **Version**: Kanri `1.6.0` (Build 27).
+- **Version**: Kanri `1.7.0` (Build 28).

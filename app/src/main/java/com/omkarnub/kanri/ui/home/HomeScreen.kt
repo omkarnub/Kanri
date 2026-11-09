@@ -2,14 +2,24 @@ package com.omkarnub.kanri.ui.home
 
 import android.content.Intent
 import android.net.Uri
+import androidx.compose.animation.AnimatedContent
+import androidx.compose.animation.animateContentSize
+import androidx.compose.animation.fadeIn
+import androidx.compose.animation.fadeOut
+import androidx.compose.animation.scaleIn
+import androidx.compose.animation.togetherWith
 import androidx.compose.animation.core.Animatable
 import androidx.compose.animation.core.FastOutSlowInEasing
 import androidx.compose.animation.core.RepeatMode
+import androidx.compose.animation.core.Spring
 import androidx.compose.animation.core.animateFloat
 import androidx.compose.animation.core.animateFloatAsState
 import androidx.compose.animation.core.infiniteRepeatable
 import androidx.compose.animation.core.rememberInfiniteTransition
+import androidx.compose.animation.core.spring
 import androidx.compose.animation.core.tween
+import com.omkarnub.kanri.ui.theme.KanriMotion
+import com.omkarnub.kanri.ui.theme.kanriPressFeedback
 import androidx.compose.foundation.BorderStroke
 import androidx.compose.foundation.Canvas
 import androidx.compose.foundation.background
@@ -511,18 +521,16 @@ fun HomeScreen(
                 )
 
                 // =========================================================================
-                // 3.5. NEEDS-REVIEW BADGE (Visible only if count > 0)
+                // 3.5. NEEDS-REVIEW BADGE (Smoothly expands and collapses on resolution)
                 // =========================================================================
-                if (state.reviewCount > 0) {
-                    NeedsReviewCard(
-                        reviewCount = state.reviewCount,
-                        onClick = { showNeedsReviewSheet = true },
-                        modifier = Modifier.graphicsLayer {
-                            alpha = needsReviewEntrance.value
-                            translationY = (1f - needsReviewEntrance.value) * 16.dp.toPx()
-                        }
-                    )
-                }
+                NeedsReviewCard(
+                    reviewCount = state.reviewCount,
+                    onClick = { showNeedsReviewSheet = true },
+                    modifier = Modifier.graphicsLayer {
+                        alpha = needsReviewEntrance.value
+                        translationY = (1f - needsReviewEntrance.value) * 16.dp.toPx()
+                    }
+                )
 
                 // =========================================================================
                 // 4. MULTI-STYLE EXPENSE DATA VISUALIZER (RING, HALF-RING, BARS, PIE, DIGITAL)
@@ -724,20 +732,55 @@ private fun RecentTransactionsSection(
             }
         }
 
-        if (transactions.isEmpty()) {
-            EmptyTransactionsCard(onSeeMoreClick = onSeeMoreClick)
-        } else {
-            val tokens = LocalKanriGlass.current
-            if (tokens != null) {
-                KanriGlassCard(
-                    modifier = Modifier.fillMaxWidth(),
-                    level = GlassLevel.Blur,
-                    shape = RoundedCornerShape(tokens.cornerRadius)
-                ) {
+        AnimatedContent(
+            targetState = transactions.isEmpty(),
+            transitionSpec = {
+                (fadeIn(animationSpec = tween(220, easing = KanriMotion.EaseOut)) +
+                    scaleIn(initialScale = 0.96f, animationSpec = KanriMotion.SnappySpring))
+                    .togetherWith(fadeOut(animationSpec = tween(160, easing = KanriMotion.EaseOut)))
+            },
+            label = "home_transactions_state"
+        ) { isEmpty ->
+            if (isEmpty) {
+                EmptyTransactionsCard(onSeeMoreClick = onSeeMoreClick)
+            } else {
+                val tokens = LocalKanriGlass.current
+                if (tokens != null) {
+                    KanriGlassCard(
+                        modifier = Modifier.fillMaxWidth(),
+                        level = GlassLevel.Blur,
+                        shape = RoundedCornerShape(tokens.cornerRadius)
+                    ) {
+                        Column(
+                            modifier = Modifier
+                                .fillMaxWidth()
+                                .animateContentSize(
+                                    animationSpec = spring(
+                                        dampingRatio = 0.82f,
+                                        stiffness = Spring.StiffnessMediumLow
+                                    )
+                                )
+                                .padding(horizontal = 14.dp, vertical = 4.dp)
+                        ) {
+                            transactions.forEachIndexed { index, item ->
+                                TransactionListItem(
+                                    item = item,
+                                    onClick = { onTransactionClick(item) },
+                                    showDivider = index < transactions.size - 1
+                                )
+                            }
+                        }
+                    }
+                } else {
                     Column(
                         modifier = Modifier
                             .fillMaxWidth()
-                            .padding(horizontal = 14.dp, vertical = 4.dp)
+                            .animateContentSize(
+                                animationSpec = spring(
+                                    dampingRatio = 0.82f,
+                                    stiffness = Spring.StiffnessMediumLow
+                                )
+                            )
                     ) {
                         transactions.forEachIndexed { index, item ->
                             TransactionListItem(
@@ -746,18 +789,6 @@ private fun RecentTransactionsSection(
                                 showDivider = index < transactions.size - 1
                             )
                         }
-                    }
-                }
-            } else {
-                Column(
-                    modifier = Modifier.fillMaxWidth()
-                ) {
-                    transactions.forEachIndexed { index, item ->
-                        TransactionListItem(
-                            item = item,
-                            onClick = { onTransactionClick(item) },
-                            showDivider = index < transactions.size - 1
-                        )
                     }
                 }
             }
@@ -848,7 +879,11 @@ fun TransactionListItem(
         modifier = modifier
             .fillMaxWidth()
             .clip(RoundedCornerShape(8.dp))
-            .clickable(onClick = onClick)
+            .kanriPressFeedback(
+                pressedScale = 0.98f,
+                haptic = true,
+                onClick = onClick
+            )
     ) {
         Row(
             modifier = Modifier

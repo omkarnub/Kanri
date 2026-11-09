@@ -32,6 +32,7 @@ import androidx.compose.material3.Surface
 import androidx.compose.material3.Text
 import androidx.compose.material3.TextButton
 import androidx.compose.runtime.Composable
+import com.omkarnub.kanri.ui.theme.kanriPressFeedback
 import androidx.compose.runtime.LaunchedEffect
 import androidx.compose.runtime.getValue
 import androidx.compose.runtime.mutableDoubleStateOf
@@ -170,6 +171,7 @@ fun SetBudgetDialog(
                                 .size(40.dp)
                                 .clip(CircleShape)
                                 .background(MaterialTheme.colorScheme.surfaceContainerHigh)
+                                .kanriPressFeedback(pressedScale = 0.88f)
                         ) {
                             Icon(
                                 imageVector = Icons.Default.Remove,
@@ -287,6 +289,7 @@ fun SetBudgetDialog(
                                 .size(40.dp)
                                 .clip(CircleShape)
                                 .background(MaterialTheme.colorScheme.surfaceContainerHigh)
+                                .kanriPressFeedback(pressedScale = 0.88f)
                         ) {
                             Icon(
                                 imageVector = Icons.Default.Add,
@@ -315,15 +318,18 @@ fun SetBudgetDialog(
                             modifier = Modifier
                                 .weight(1f)
                                 .clip(RoundedCornerShape(10.dp))
-                                .clickable {
-                                    haptics.tick()
-                                    budgetAmount += inc
-                                    val str = budgetAmount.toLong().toString()
-                                    customText = str
-                                    customTextFieldValue = TextFieldValue(text = str, selection = TextRange(str.length))
-                                    isManualInput = false
-                                    isError = false
-                                }
+                                .kanriPressFeedback(
+                                    pressedScale = 0.94f,
+                                    haptic = true,
+                                    onClick = {
+                                        budgetAmount += inc
+                                        val str = budgetAmount.toLong().toString()
+                                        customText = str
+                                        customTextFieldValue = TextFieldValue(text = str, selection = TextRange(str.length))
+                                        isManualInput = false
+                                        isError = false
+                                    }
+                                )
                         ) {
                             Box(
                                 modifier = Modifier.padding(vertical = 8.dp),

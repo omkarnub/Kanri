@@ -1,11 +1,16 @@
 package com.omkarnub.kanri.ui.lending
 
 import androidx.compose.animation.AnimatedVisibility
+import androidx.compose.animation.core.Spring
 import androidx.compose.animation.core.animateFloatAsState
+import androidx.compose.animation.core.spring
+import androidx.compose.animation.core.tween
 import androidx.compose.animation.expandVertically
 import androidx.compose.animation.fadeIn
 import androidx.compose.animation.fadeOut
 import androidx.compose.animation.shrinkVertically
+import com.omkarnub.kanri.ui.theme.KanriMotion
+import com.omkarnub.kanri.ui.theme.kanriPressFeedback
 import androidx.compose.foundation.BorderStroke
 import androidx.compose.foundation.background
 import androidx.compose.foundation.border
@@ -299,6 +304,7 @@ fun LendingPeopleView(
             Column(verticalArrangement = Arrangement.spacedBy(8.dp)) {
                 val chevronRotation by animateFloatAsState(
                     targetValue = if (isSettledExpanded) 180f else 0f,
+                    animationSpec = spring(dampingRatio = 0.82f, stiffness = Spring.StiffnessMediumLow),
                     label = "settledChevron"
                 )
 
@@ -306,7 +312,10 @@ fun LendingPeopleView(
                     modifier = Modifier
                         .fillMaxWidth()
                         .clip(RoundedCornerShape(8.dp))
-                        .clickable(onClick = onToggleSettled)
+                        .kanriPressFeedback(
+                            pressedScale = 0.98f,
+                            onClick = onToggleSettled
+                        )
                         .padding(horizontal = 4.dp, vertical = 4.dp),
                     verticalAlignment = Alignment.CenterVertically,
                     horizontalArrangement = Arrangement.SpaceBetween
@@ -333,8 +342,10 @@ fun LendingPeopleView(
 
                 AnimatedVisibility(
                     visible = isSettledExpanded,
-                    enter = expandVertically() + fadeIn(),
-                    exit = shrinkVertically() + fadeOut()
+                    enter = expandVertically(animationSpec = spring(dampingRatio = 0.82f, stiffness = Spring.StiffnessMediumLow)) +
+                            fadeIn(animationSpec = tween(220, easing = KanriMotion.EaseOut)),
+                    exit = shrinkVertically(animationSpec = tween(200, easing = KanriMotion.EaseOut)) +
+                           fadeOut(animationSpec = tween(160, easing = KanriMotion.EaseOut))
                 ) {
                     KanriGlassCard(
                         modifier = Modifier.fillMaxWidth(),
@@ -375,7 +386,10 @@ fun PersonRowItem(
         modifier = modifier
             .fillMaxWidth()
             .clip(RoundedCornerShape(14.dp))
-            .clickable(onClick = onClick)
+            .kanriPressFeedback(
+                pressedScale = 0.98f,
+                onClick = onClick
+            )
             .padding(horizontal = 6.dp, vertical = 10.dp),
         verticalAlignment = Alignment.CenterVertically,
         horizontalArrangement = Arrangement.SpaceBetween

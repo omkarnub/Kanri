@@ -9,7 +9,11 @@ import androidx.compose.animation.core.tween
 import androidx.compose.animation.fadeIn
 import androidx.compose.animation.fadeOut
 import androidx.compose.animation.shrinkVertically
+import androidx.compose.animation.slideInHorizontally
+import androidx.compose.animation.slideOutHorizontally
 import androidx.compose.animation.togetherWith
+import com.omkarnub.kanri.ui.theme.KanriMotion
+import com.omkarnub.kanri.ui.theme.kanriPressFeedback
 import androidx.compose.foundation.BorderStroke
 import androidx.compose.foundation.background
 import androidx.compose.foundation.border
@@ -98,7 +102,6 @@ import com.omkarnub.kanri.ui.search.SearchFilterState
 import com.omkarnub.kanri.ui.search.SearchScreen
 import com.omkarnub.kanri.ui.search.TransactionTypeFilter
 import com.omkarnub.kanri.ui.theme.Panchang
-import com.omkarnub.kanri.ui.theme.KanriMotion
 import com.omkarnub.kanri.util.rememberKanriHaptics
 import kotlinx.coroutines.launch
 import java.time.LocalDate
@@ -338,12 +341,15 @@ fun MonthViewScreen(
                             horizontalArrangement = Arrangement.SpaceBetween,
                             verticalAlignment = Alignment.CenterVertically
                         ) {
-                            IconButton(onClick = {
-                                haptics.tick()
-                                monthViewModel.previousMonth()
-                                val prevYm = activeSelectedMonth.minusMonths(1)
-                                insightsViewModel.setRange(InsightsRange.Month(prevYm))
-                            }) {
+                            IconButton(
+                                onClick = {
+                                    haptics.tick()
+                                    monthViewModel.previousMonth()
+                                    val prevYm = activeSelectedMonth.minusMonths(1)
+                                    insightsViewModel.setRange(InsightsRange.Month(prevYm))
+                                },
+                                modifier = Modifier.kanriPressFeedback(pressedScale = 0.88f)
+                            ) {
                                 Icon(
                                     imageVector = Icons.AutoMirrored.Filled.ArrowBack,
                                     contentDescription = "Previous Month",
@@ -353,20 +359,46 @@ fun MonthViewScreen(
                             }
 
                             val dtf = DateTimeFormatter.ofPattern("MMMM yyyy")
-                            Text(
-                                text = activeSelectedMonth.format(dtf),
-                                style = MaterialTheme.typography.titleMedium.copy(
-                                    fontWeight = FontWeight.Bold,
-                                    color = MaterialTheme.colorScheme.onSurface
+                            AnimatedContent(
+                                targetState = activeSelectedMonth,
+                                transitionSpec = {
+                                    val isForward = targetState > initialState
+                                    if (isForward) {
+                                        (slideInHorizontally(initialOffsetX = { it / 3 }, animationSpec = tween(220, easing = KanriMotion.EaseOut)) +
+                                                fadeIn(animationSpec = tween(180, easing = KanriMotion.EaseOut)))
+                                            .togetherWith(
+                                                slideOutHorizontally(targetOffsetX = { -it / 3 }, animationSpec = tween(180, easing = KanriMotion.EaseOut)) +
+                                                        fadeOut(animationSpec = tween(140, easing = KanriMotion.EaseOut))
+                                            )
+                                    } else {
+                                        (slideInHorizontally(initialOffsetX = { -it / 3 }, animationSpec = tween(220, easing = KanriMotion.EaseOut)) +
+                                                fadeIn(animationSpec = tween(180, easing = KanriMotion.EaseOut)))
+                                            .togetherWith(
+                                                slideOutHorizontally(targetOffsetX = { it / 3 }, animationSpec = tween(180, easing = KanriMotion.EaseOut)) +
+                                                        fadeOut(animationSpec = tween(140, easing = KanriMotion.EaseOut))
+                                            )
+                                    }
+                                },
+                                label = "month_title_transition"
+                            ) { month ->
+                                Text(
+                                    text = month.format(dtf),
+                                    style = MaterialTheme.typography.titleMedium.copy(
+                                        fontWeight = FontWeight.Bold,
+                                        color = MaterialTheme.colorScheme.onSurface
+                                    )
                                 )
-                            )
+                            }
 
-                            IconButton(onClick = {
-                                haptics.tick()
-                                monthViewModel.nextMonth()
-                                val nextYm = activeSelectedMonth.plusMonths(1)
-                                insightsViewModel.setRange(InsightsRange.Month(nextYm))
-                            }) {
+                            IconButton(
+                                onClick = {
+                                    haptics.tick()
+                                    monthViewModel.nextMonth()
+                                    val nextYm = activeSelectedMonth.plusMonths(1)
+                                    insightsViewModel.setRange(InsightsRange.Month(nextYm))
+                                },
+                                modifier = Modifier.kanriPressFeedback(pressedScale = 0.88f)
+                            ) {
                                 Icon(
                                     imageVector = Icons.AutoMirrored.Filled.ArrowForward,
                                     contentDescription = "Next Month",

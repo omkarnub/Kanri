@@ -27,7 +27,9 @@ import androidx.compose.ui.unit.sp
 import com.omkarnub.kanri.ui.common.GlassLevel
 import com.omkarnub.kanri.ui.common.KanriGlassCard
 import com.omkarnub.kanri.ui.common.LocalHazeState
+import com.omkarnub.kanri.ui.theme.KanriMotion
 import com.omkarnub.kanri.ui.theme.LocalKanriGlass
+import com.omkarnub.kanri.ui.theme.kanriPressFeedback
 
 @Composable
 fun LendingSegmentedControl(
@@ -53,14 +55,14 @@ fun LendingSegmentedControl(
                 val selectedBg = tokens?.accent?.copy(alpha = 0.16f) ?: MaterialTheme.colorScheme.inverseSurface
                 val bgColor by animateColorAsState(
                     targetValue = if (isSelected) selectedBg else Color.Transparent,
-                    animationSpec = tween(durationMillis = 200, easing = FastOutSlowInEasing),
+                    animationSpec = tween(durationMillis = 200, easing = KanriMotion.EaseOut),
                     label = "tabBg"
                 )
                 val selectedText = tokens?.accent ?: MaterialTheme.colorScheme.inverseOnSurface
                 val unselectedText = tokens?.textSecondary ?: MaterialTheme.colorScheme.onSurfaceVariant
                 val textColor by animateColorAsState(
                     targetValue = if (isSelected) selectedText else unselectedText,
-                    animationSpec = tween(durationMillis = 200, easing = FastOutSlowInEasing),
+                    animationSpec = tween(durationMillis = 200, easing = KanriMotion.EaseOut),
                     label = "tabText"
                 )
 
@@ -69,7 +71,10 @@ fun LendingSegmentedControl(
                         .weight(1f)
                         .clip(RoundedCornerShape(10.dp))
                         .background(bgColor)
-                        .clickable { onTabSelected(tab) }
+                        .kanriPressFeedback(
+                            pressedScale = 0.96f,
+                            onClick = { onTabSelected(tab) }
+                        )
                         .padding(vertical = 10.dp),
                     contentAlignment = Alignment.Center
                 ) {

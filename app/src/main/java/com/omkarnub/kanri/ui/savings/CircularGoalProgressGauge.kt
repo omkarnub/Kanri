@@ -1,6 +1,8 @@
 ﻿package com.omkarnub.kanri.ui.savings
 
+import androidx.compose.animation.core.Spring
 import androidx.compose.animation.core.animateFloatAsState
+import androidx.compose.animation.core.spring
 import androidx.compose.animation.core.tween
 import androidx.compose.foundation.Canvas
 import androidx.compose.foundation.layout.Box
@@ -40,7 +42,10 @@ fun CircularGoalProgressGauge(
     val clampedRatio = (progressPercent / 100f).coerceIn(0f, 1f)
     val animatedProgress by animateFloatAsState(
         targetValue = clampedRatio,
-        animationSpec = tween(durationMillis = 800),
+        animationSpec = spring(
+            dampingRatio = 0.82f,
+            stiffness = Spring.StiffnessMediumLow
+        ),
         label = "GoalProgressAnimation"
     )
 

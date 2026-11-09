@@ -5,6 +5,36 @@ All notable changes to Kanri will be documented in this file.
 The format is based on [Keep a Changelog](https://keepachangelog.com/en/1.0.0/),
 and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0.html).
 
+## [1.7.0] - 2026-11-09
+
+### Added & Fluid Motion Polish
+- **Apple-Grade Fluid Spring Animations & Layout Transitions**:
+  - **Transaction List Item Transitions (`HomeScreen`)**:
+    - Wrapped recent transactions in `AnimatedContent` (`SnappySpring` + `EaseOut` crossfade) so toggling between empty and populated states transitions seamlessly.
+    - Added `.animateContentSize(spring(0.82f, Spring.StiffnessMediumLow))` to transaction columns, enabling smooth layout gliding when transactions are inserted or deleted without jarring jumps.
+    - Upgraded `TransactionListItem` with `kanriPressFeedback(pressedScale = 0.98f, haptic = true)` for tactile Apple-style spring press feedback on touch.
+  - **Needs-Review Card Collapse (`HomeScreen` & `NeedsReviewCard`)**:
+    - Replaced hard conditional render with smooth `expandVertically(spring(0.82f, Spring.StiffnessMediumLow))` on appearance and `shrinkVertically(tween(200, EaseOut))` on resolution, preventing feed jumping.
+  - **Directional Month Navigation Transitions (`MonthViewScreen`)**:
+    - Wrapped month title ("MMMM yyyy") in `AnimatedContent` with directional horizontal slide (`slideInHorizontally` + `slideOutHorizontally` + `EaseOut`) based on forward vs backward month selection.
+    - Added `kanriPressFeedback(pressedScale = 0.88f)` to month arrow buttons.
+  - **Physical Spring Gauge & Celebration Transitions (`GoalsScreen`)**:
+    - Upgraded `CircularGoalProgressGauge` from arbitrary 800ms tween to physical `spring(dampingRatio = 0.82f, stiffness = Spring.StiffnessMediumLow)`.
+    - Added celebratory `scaleIn(KanriMotion.BouncySpring)` + `fadeIn` entrance animation for the "Achieved!" milestone badge.
+  - **Fluid Segmented Indicator & Direction Toggle (`MoveMoneyDialog`)**:
+    - Implemented animated color transitions (`animateColorAsState` with `KanriMotion.EaseOut`) across background, border, text, and subtext when toggling between ATM/Withdraw and Deposit.
+  - **Tactile Quick Amount & Stepper Feedback (`SetBudgetDialog`)**:
+    - Added `kanriPressFeedback(pressedScale = 0.94f)` to all quick increment pills (`+10`, `+50`, `+500`, etc.) and `kanriPressFeedback(pressedScale = 0.88f)` to `[-]` and `[+]` stepping buttons.
+  - **Directional Tab Switching & Press Feedback (`LendingScreen`, `LendingPeopleView`, `LendingTimelineView`)**:
+    - Integrated `KanriMotion.tabTransition` across "People" and "Timeline" tabs for directional slide transitions with momentum.
+    - Added `kanriPressFeedback(pressedScale = 0.96f)` to `LendingSegmentedControl` tab options and `KanriMotion.EaseOut` color interpolation.
+    - Upgraded settled section expand/collapse in `LendingPeopleView` to spring-driven `expandVertically` / `shrinkVertically`.
+    - Added `kanriPressFeedback(pressedScale = 0.98f)` to `PersonRowItem` and timeline transaction cards.
+  - **Expense Visualizer Style Transitions & Tactile Controls (`ExpenseVisualizer`)**:
+    - Upgraded visualizer style switcher crossfade to `fadeIn(220, EaseOut) + scaleIn(0.96f, SnappySpring)` together with `fadeOut(160, EaseOut) + scaleOut(0.98f)`.
+    - Added `kanriPressFeedback(pressedScale = 0.95f)` to "Edit Budget", "View by", and month dropdown pills.
+- Bumped version to `1.7.0` (Build 28).
+
 ## [1.6.0] - 2026-11-09
 
 ### Added & Dynamic Enhancements

@@ -1,10 +1,14 @@
 package com.omkarnub.kanri.ui.home
 
 import androidx.compose.animation.AnimatedVisibility
+import androidx.compose.animation.expandVertically
 import androidx.compose.animation.fadeIn
 import androidx.compose.animation.fadeOut
-import androidx.compose.animation.slideInVertically
-import androidx.compose.animation.slideOutVertically
+import androidx.compose.animation.shrinkVertically
+import androidx.compose.animation.core.Spring
+import androidx.compose.animation.core.spring
+import androidx.compose.animation.core.tween
+import com.omkarnub.kanri.ui.theme.KanriMotion
 import androidx.compose.foundation.BorderStroke
 import androidx.compose.foundation.background
 import androidx.compose.foundation.clickable
@@ -49,8 +53,10 @@ fun NeedsReviewCard(
 
     AnimatedVisibility(
         visible = reviewCount > 0,
-        enter = fadeIn() + slideInVertically(initialOffsetY = { -it / 2 }),
-        exit = fadeOut() + slideOutVertically(targetOffsetY = { -it / 2 }),
+        enter = fadeIn(animationSpec = tween(220, easing = KanriMotion.EaseOut)) +
+                expandVertically(animationSpec = spring(dampingRatio = 0.82f, stiffness = Spring.StiffnessMediumLow)),
+        exit = fadeOut(animationSpec = tween(160, easing = KanriMotion.EaseOut)) +
+               shrinkVertically(animationSpec = tween(200, easing = KanriMotion.EaseOut)),
         modifier = modifier
     ) {
         val labelText = if (reviewCount == 1) {
