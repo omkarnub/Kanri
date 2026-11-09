@@ -111,7 +111,6 @@ import androidx.lifecycle.viewmodel.compose.viewModel
 import com.omkarnub.kanri.data.db.CategoryEntity
 import com.omkarnub.kanri.data.db.TransactionWithCategory
 import com.omkarnub.kanri.ui.backup.BackupRestoreSheet
-import com.omkarnub.kanri.ui.popup.InstantPopupSheet
 import com.omkarnub.kanri.ui.search.SearchScreen
 import com.omkarnub.kanri.ui.security.SecuritySettingsSheet
 import androidx.compose.material.icons.filled.Repeat
@@ -745,33 +744,11 @@ private fun RecentTransactionsSection(
                 EmptyTransactionsCard(onSeeMoreClick = onSeeMoreClick)
             } else {
                 val tokens = LocalKanriGlass.current
-                if (tokens != null) {
-                    KanriGlassCard(
-                        modifier = Modifier.fillMaxWidth(),
-                        level = GlassLevel.Blur,
-                        shape = RoundedCornerShape(tokens.cornerRadius)
-                    ) {
-                        Column(
-                            modifier = Modifier
-                                .fillMaxWidth()
-                                .animateContentSize(
-                                    animationSpec = spring(
-                                        dampingRatio = 0.82f,
-                                        stiffness = Spring.StiffnessMediumLow
-                                    )
-                                )
-                                .padding(horizontal = 14.dp, vertical = 4.dp)
-                        ) {
-                            transactions.forEachIndexed { index, item ->
-                                TransactionListItem(
-                                    item = item,
-                                    onClick = { onTransactionClick(item) },
-                                    showDivider = index < transactions.size - 1
-                                )
-                            }
-                        }
-                    }
-                } else {
+                KanriGlassCard(
+                    modifier = Modifier.fillMaxWidth(),
+                    level = GlassLevel.Blur,
+                    shape = RoundedCornerShape(tokens?.cornerRadius ?: 20.dp)
+                ) {
                     Column(
                         modifier = Modifier
                             .fillMaxWidth()
@@ -781,6 +758,7 @@ private fun RecentTransactionsSection(
                                     stiffness = Spring.StiffnessMediumLow
                                 )
                             )
+                            .padding(horizontal = 14.dp, vertical = 4.dp)
                     ) {
                         transactions.forEachIndexed { index, item ->
                             TransactionListItem(

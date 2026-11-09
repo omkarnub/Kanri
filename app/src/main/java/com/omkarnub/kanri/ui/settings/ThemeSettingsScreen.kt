@@ -429,13 +429,13 @@ private fun ShaderListItem(
 
     if (tokens != null) {
         KanriGlassCard(
-            level = if (isSelected) GlassLevel.Strong else GlassLevel.Flat,
+            level = if (isSelected) GlassLevel.Strong else GlassLevel.Blur,
             shape = RoundedCornerShape(14.dp),
             modifier = modifier
                 .fillMaxWidth()
                 .border(
-                    width = if (isSelected) 1.5.dp else 0.dp,
-                    color = if (isSelected) MaterialTheme.colorScheme.primary.copy(alpha = 0.6f) else Color.Transparent,
+                    width = if (isSelected) 1.5.dp else (tokens.borderWidth.takeIf { it > 0.dp } ?: 1.dp),
+                    color = if (isSelected) MaterialTheme.colorScheme.primary.copy(alpha = 0.7f) else (tokens.borderEnd.takeIf { it != Color.Transparent } ?: MaterialTheme.colorScheme.outlineVariant.copy(alpha = 0.35f)),
                     shape = RoundedCornerShape(14.dp)
                 )
         ) {

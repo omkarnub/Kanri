@@ -5,6 +5,25 @@ All notable changes to Kanri will be documented in this file.
 The format is based on [Keep a Changelog](https://keepachangelog.com/en/1.0.0/),
 and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0.html).
 
+## [1.8.2] - 2026-11-09
+
+### Fixed & UI Polish
+- **Removed Preview Payment Detection Popup from Settings**:
+  - Removed "Preview Payment Detection Popup" and testing triggers from `AutomationSettingsCard` in `SettingsComponents.kt` and cleaned up testing artifacts to ensure production polish.
+- **Frosted Blur Added to Live Shader Backgrounds & Theme Preview Cards**:
+  - Upgraded unselected live shader items in `ThemeSettingsScreen.kt` from `GlassLevel.Flat` (0 blur) to `GlassLevel.Blur` with subtle glass specular border, providing rich frosted blur to the entire live background list.
+  - Upgraded all 5 theme preview cards (`ThemePreviewCard` in `SettingsComponents.kt`) to utilize `KanriGlassCard(level = if (isSelected) GlassLevel.Strong else GlassLevel.Blur)` with specular borders and shadows in Glass theme.
+- **Added Frosted Glass Blur to Recent Transactions**:
+  - Updated `RecentTransactionsSection` on `HomeScreen.kt` to consistently wrap the transaction list in `KanriGlassCard(level = GlassLevel.Blur, shape = RoundedCornerShape(tokens?.cornerRadius ?: 20.dp))` across all themes with live frosted blur in Glass theme and elevated surface container card in non-glass modes.
+  - Wrapped recent transactions in `WalletSheet.kt` in `KanriGlassCard(level = GlassLevel.Blur)` for consistent frosted glass styling.
+- **Dynamic Variable Tint for Category Distribution Pill**:
+  - Replaced hardcoded `MaterialTheme.colorScheme.surfaceVariant.copy(alpha = 0.45f)` in `CategoryPreviewPill` and legend in `ExpenseVisualizer.kt` with variable tokens `tokens?.tintFlat` and `tokens?.borderEnd`, ensuring the pill dynamically follows the user's custom glass tint and lighting settings.
+- **Cleaned Budget Cycle Start Day Dialog**:
+  - Removed "POPULAR START DAYS" preset chips and `quickDays` list from `BudgetCycleStartDayDialog` in `SettingsComponents.kt`, simplifying the dialog to a clean selected day summary card and 1..28 slider.
+- **Lend & Borrow Search Contacts Bar Blur & Circular Edges**:
+  - Applied full circular pill radius (`RoundedCornerShape(26.dp)`) and frosted glass blur (`kanriGlass(level = GlassLevel.Blur)`) to the contact search bar in `LendingPeopleView.kt` with transparent container color and dynamic border.
+- Bumped version to `1.8.2` (Build 31).
+
 ## [1.8.1] - 2026-11-09
 
 ### Fixed

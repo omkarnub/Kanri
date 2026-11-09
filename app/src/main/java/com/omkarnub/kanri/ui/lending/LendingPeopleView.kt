@@ -50,6 +50,8 @@ import androidx.compose.runtime.setValue
 import androidx.compose.ui.Alignment
 import com.omkarnub.kanri.ui.common.GlassLevel
 import com.omkarnub.kanri.ui.common.KanriGlassCard
+import com.omkarnub.kanri.ui.common.kanriGlass
+import com.omkarnub.kanri.ui.theme.LocalKanriGlass
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.draw.clip
 import androidx.compose.ui.draw.rotate
@@ -108,6 +110,9 @@ fun LendingPeopleView(
         settledPeople.filter { matchesFilter(it) }
     }
 
+    val tokens = LocalKanriGlass.current
+    val searchShape = RoundedCornerShape(26.dp)
+
     Column(
         modifier = modifier.fillMaxWidth(),
         verticalArrangement = Arrangement.spacedBy(16.dp)
@@ -117,19 +122,21 @@ fun LendingPeopleView(
             OutlinedTextField(
                 value = searchQuery,
                 onValueChange = { searchQuery = it },
-                modifier = Modifier.fillMaxWidth(),
+                modifier = Modifier
+                    .fillMaxWidth()
+                    .kanriGlass(level = GlassLevel.Blur, shape = searchShape),
                 placeholder = {
                     Text(
                         text = "Search contacts...",
                         style = MaterialTheme.typography.bodyMedium.copy(fontSize = 13.5.sp),
-                        color = MaterialTheme.colorScheme.onSurfaceVariant.copy(alpha = 0.6f)
+                        color = (tokens?.textSecondary ?: MaterialTheme.colorScheme.onSurfaceVariant).copy(alpha = 0.6f)
                     )
                 },
                 leadingIcon = {
                     Icon(
                         imageVector = Icons.Default.Search,
                         contentDescription = "Search",
-                        tint = MaterialTheme.colorScheme.onSurfaceVariant,
+                        tint = tokens?.textSecondary ?: MaterialTheme.colorScheme.onSurfaceVariant,
                         modifier = Modifier.size(18.dp)
                     )
                 },
@@ -139,19 +146,19 @@ fun LendingPeopleView(
                             Icon(
                                 imageVector = Icons.Default.Close,
                                 contentDescription = "Clear",
-                                tint = MaterialTheme.colorScheme.onSurfaceVariant,
+                                tint = tokens?.textSecondary ?: MaterialTheme.colorScheme.onSurfaceVariant,
                                 modifier = Modifier.size(18.dp)
                             )
                         }
                     }
                 },
                 singleLine = true,
-                shape = RoundedCornerShape(14.dp),
+                shape = searchShape,
                 colors = OutlinedTextFieldDefaults.colors(
-                    focusedBorderColor = MaterialTheme.colorScheme.onSurface,
-                    unfocusedBorderColor = MaterialTheme.colorScheme.outlineVariant.copy(alpha = 0.6f),
-                    focusedContainerColor = MaterialTheme.colorScheme.surfaceVariant.copy(alpha = 0.25f),
-                    unfocusedContainerColor = MaterialTheme.colorScheme.surfaceVariant.copy(alpha = 0.15f)
+                    focusedBorderColor = tokens?.accent ?: MaterialTheme.colorScheme.primary,
+                    unfocusedBorderColor = tokens?.borderEnd ?: MaterialTheme.colorScheme.outlineVariant.copy(alpha = 0.5f),
+                    focusedContainerColor = Color.Transparent,
+                    unfocusedContainerColor = Color.Transparent
                 )
             )
 

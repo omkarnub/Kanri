@@ -804,10 +804,14 @@ private fun CategoryPreviewPill(
     alertColor: Color,
     onCategoryClick: () -> Unit
 ) {
+    val tokens = LocalKanriGlass.current
     Surface(
         shape = RoundedCornerShape(14.dp),
-        color = MaterialTheme.colorScheme.surfaceVariant.copy(alpha = 0.45f),
-        border = BorderStroke(0.5.dp, MaterialTheme.colorScheme.outlineVariant.copy(alpha = 0.5f)),
+        color = tokens?.tintFlat ?: MaterialTheme.colorScheme.surfaceVariant.copy(alpha = 0.45f),
+        border = BorderStroke(
+            tokens?.borderWidth ?: 0.5.dp,
+            tokens?.borderEnd ?: MaterialTheme.colorScheme.outlineVariant.copy(alpha = 0.5f)
+        ),
         modifier = Modifier
             .fillMaxWidth()
             .clip(RoundedCornerShape(14.dp))
@@ -1343,11 +1347,15 @@ private fun PieChartVisualizer(
 
         // Multiple Colorful Category Percentage Legend (Top 3)
         if (activeCategories.isNotEmpty() && monthSpent > 0.0) {
+            val tokens = LocalKanriGlass.current
             Box(modifier = Modifier.graphicsLayer { alpha = pillAlpha }) {
                 Surface(
                     shape = RoundedCornerShape(14.dp),
-                    color = MaterialTheme.colorScheme.surfaceVariant.copy(alpha = 0.45f),
-                    border = BorderStroke(0.5.dp, MaterialTheme.colorScheme.outlineVariant.copy(alpha = 0.5f)),
+                    color = tokens?.tintFlat ?: MaterialTheme.colorScheme.surfaceVariant.copy(alpha = 0.45f),
+                    border = BorderStroke(
+                        tokens?.borderWidth ?: 0.5.dp,
+                        tokens?.borderEnd ?: MaterialTheme.colorScheme.outlineVariant.copy(alpha = 0.5f)
+                    ),
                     modifier = Modifier
                         .fillMaxWidth()
                         .clip(RoundedCornerShape(14.dp))

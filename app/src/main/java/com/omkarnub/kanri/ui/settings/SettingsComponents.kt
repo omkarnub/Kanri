@@ -439,31 +439,7 @@ fun ThemePreviewCard(
         tokens?.borderEnd ?: MaterialTheme.colorScheme.outlineVariant.copy(alpha = 0.5f)
     }
 
-    Card(
-        modifier = modifier
-            .width(96.dp)
-            .clip(RoundedCornerShape(16.dp))
-            .selectable(
-                selected = isSelected,
-                onClick = {
-                    haptics.click()
-                    onClick()
-                },
-                role = Role.RadioButton
-            )
-            .semantics {
-                contentDescription = "${mode.label} theme"
-            },
-        shape = RoundedCornerShape(16.dp),
-        colors = CardDefaults.cardColors(
-            containerColor = if (isSelected) {
-                MaterialTheme.colorScheme.primary.copy(alpha = 0.08f)
-            } else {
-                tokens?.tintFlat ?: MaterialTheme.colorScheme.surfaceVariant.copy(alpha = 0.35f)
-            }
-        ),
-        border = BorderStroke(if (isSelected) 2.dp else 1.dp, cardBorderColor)
-    ) {
+    val cardContent = @Composable {
         Column(
             modifier = Modifier
                 .fillMaxWidth()
@@ -549,15 +525,15 @@ fun ThemePreviewCard(
                         Column(verticalArrangement = Arrangement.spacedBy(4.dp)) {
                             Box(
                                 modifier = Modifier
-                                    .size(width = 30.dp, height = 5.dp)
-                                    .clip(RoundedCornerShape(2.dp))
-                                    .background(barColor)
+                                .size(width = 30.dp, height = 5.dp)
+                                .clip(RoundedCornerShape(2.dp))
+                                .background(barColor)
                             )
                             Box(
                                 modifier = Modifier
-                                    .size(width = 46.dp, height = 3.dp)
-                                    .clip(RoundedCornerShape(1.5.dp))
-                                    .background(barColor.copy(alpha = 0.45f))
+                                .size(width = 46.dp, height = 3.dp)
+                                .clip(RoundedCornerShape(1.5.dp))
+                                .background(barColor.copy(alpha = 0.45f))
                             )
                             Spacer(modifier = Modifier.height(2.dp))
                             Row(horizontalArrangement = Arrangement.spacedBy(3.dp)) {
@@ -635,6 +611,62 @@ fun ThemePreviewCard(
                 maxLines = 1,
                 overflow = TextOverflow.Ellipsis
             )
+        }
+    }
+
+    if (tokens != null) {
+        KanriGlassCard(
+            level = if (isSelected) GlassLevel.Strong else GlassLevel.Blur,
+            shape = RoundedCornerShape(16.dp),
+            modifier = modifier
+                .width(96.dp)
+                .clip(RoundedCornerShape(16.dp))
+                .selectable(
+                    selected = isSelected,
+                    onClick = {
+                        haptics.click()
+                        onClick()
+                    },
+                    role = Role.RadioButton
+                )
+                .semantics {
+                    contentDescription = "${mode.label} theme"
+                }
+                .border(
+                    width = if (isSelected) 2.dp else (tokens.borderWidth.takeIf { it > 0.dp } ?: 1.dp),
+                    color = cardBorderColor,
+                    shape = RoundedCornerShape(16.dp)
+                )
+        ) {
+            cardContent()
+        }
+    } else {
+        Card(
+            modifier = modifier
+                .width(96.dp)
+                .clip(RoundedCornerShape(16.dp))
+                .selectable(
+                    selected = isSelected,
+                    onClick = {
+                        haptics.click()
+                        onClick()
+                    },
+                    role = Role.RadioButton
+                )
+                .semantics {
+                    contentDescription = "${mode.label} theme"
+                },
+            shape = RoundedCornerShape(16.dp),
+            colors = CardDefaults.cardColors(
+                containerColor = if (isSelected) {
+                    MaterialTheme.colorScheme.primary.copy(alpha = 0.08f)
+                } else {
+                    MaterialTheme.colorScheme.surfaceVariant.copy(alpha = 0.35f)
+                }
+            ),
+            border = BorderStroke(if (isSelected) 2.dp else 1.dp, cardBorderColor)
+        ) {
+            cardContent()
         }
     }
 }
@@ -1037,19 +1069,6 @@ fun PermissionsStatusOverview(
 
         SettingsDivider()
 
-        if (isOverlayAllowed) {
-            SettingsRow(
-                title = "Preview Payment Detection Popup",
-                subtitle = "Preview the floating glass popup for detected payments (₹380)",
-                icon = Icons.Default.Bolt,
-                onClick = {
-                    haptics.click()
-                    com.omkarnub.kanri.ui.popup.InstantPopupService.triggerTestPopup(context, isDebit = true)
-                }
-            )
-            SettingsDivider()
-        }
-
         // 5. Background Battery Exemption
         SettingsSwitchRow(
             title = "Background Battery Unrestricted",
@@ -1403,7 +1422,6 @@ fun BudgetCycleStartDialog(
 ) {
     var selectedDay by remember { mutableStateOf(currentDay) }
     val haptics = rememberKanriHaptics()
-    val quickDays = listOf(1, 5, 10, 15, 20, 25, 28)
 
     AlertDialog(
         onDismissRequest = onDismiss,
@@ -1449,53 +1467,6 @@ fun BudgetCycleStartDialog(
                             style = MaterialTheme.typography.bodySmall,
                             color = MaterialTheme.colorScheme.onSurfaceVariant
                         )
-                    }
-                }
-
-                // Quick presets
-                Text(
-                    text = "POPULAR START DAYS",
-                    style = MaterialTheme.typography.labelSmall.copy(
-                        fontFamily = Panchang,
-                        fontWeight = FontWeight.Bold
-                    ),
-                    color = MaterialTheme.colorScheme.primary
-                )
-
-                Row(
-                    modifier = Modifier
-                        .fillMaxWidth()
-                        .horizontalScroll(rememberScrollState()),
-                    horizontalArrangement = Arrangement.spacedBy(8.dp)
-                ) {
-                    quickDays.forEach { day ->
-                        val isSelected = selectedDay == day
-                        Surface(
-                            shape = RoundedCornerShape(10.dp),
-                            color = if (isSelected) MaterialTheme.colorScheme.primary else MaterialTheme.colorScheme.surfaceContainer,
-                            border = BorderStroke(
-                                1.dp,
-                                if (isSelected) MaterialTheme.colorScheme.primary else MaterialTheme.colorScheme.outlineVariant.copy(alpha = 0.4f)
-                            ),
-                            modifier = Modifier
-                                .clip(RoundedCornerShape(10.dp))
-                                .clickable {
-                                    haptics.tick()
-                                    selectedDay = day
-                                }
-                        ) {
-                            Box(
-                                modifier = Modifier.padding(horizontal = 14.dp, vertical = 8.dp),
-                                contentAlignment = Alignment.Center
-                            ) {
-                                Text(
-                                    text = if (day == 1) "1st (Default)" else "${day}th",
-                                    fontWeight = if (isSelected) FontWeight.Bold else FontWeight.Medium,
-                                    color = if (isSelected) MaterialTheme.colorScheme.onPrimary else MaterialTheme.colorScheme.onSurface,
-                                    fontSize = 12.sp
-                                )
-                            }
-                        }
                     }
                 }
 

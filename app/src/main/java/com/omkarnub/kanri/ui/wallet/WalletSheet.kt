@@ -369,28 +369,46 @@ fun WalletSheet(
 
             // Recent 5 transactions
             if (recentTransactions.isEmpty()) {
-                Box(
-                    modifier = Modifier
-                        .fillMaxWidth()
-                        .padding(vertical = 24.dp),
-                    contentAlignment = Alignment.Center
+                KanriGlassCard(
+                    level = GlassLevel.Blur,
+                    shape = RoundedCornerShape(tokens?.cornerRadius ?: 18.dp),
+                    modifier = Modifier.fillMaxWidth()
                 ) {
-                    Text(
-                        text = "No recent transactions",
-                        style = MaterialTheme.typography.bodySmall,
-                        color = MaterialTheme.colorScheme.onSurfaceVariant
-                    )
+                    Box(
+                        modifier = Modifier
+                            .fillMaxWidth()
+                            .padding(vertical = 24.dp),
+                        contentAlignment = Alignment.Center
+                    ) {
+                        Text(
+                            text = "No recent transactions",
+                            style = MaterialTheme.typography.bodySmall,
+                            color = MaterialTheme.colorScheme.onSurfaceVariant
+                        )
+                    }
                 }
             } else {
-                recentTransactions.take(5).forEach { item ->
-                    TransactionListItem(
-                        item = item,
-                        onClick = {
-                            haptics.click()
-                            onTransactionClick(item)
-                        },
-                        showDivider = true
-                    )
+                KanriGlassCard(
+                    level = GlassLevel.Blur,
+                    shape = RoundedCornerShape(tokens?.cornerRadius ?: 18.dp),
+                    modifier = Modifier.fillMaxWidth()
+                ) {
+                    Column(
+                        modifier = Modifier
+                            .fillMaxWidth()
+                            .padding(horizontal = 14.dp, vertical = 4.dp)
+                    ) {
+                        recentTransactions.take(5).forEachIndexed { index, item ->
+                            TransactionListItem(
+                                item = item,
+                                onClick = {
+                                    haptics.click()
+                                    onTransactionClick(item)
+                                },
+                                showDivider = index < recentTransactions.take(5).size - 1
+                            )
+                        }
+                    }
                 }
             }
         }
