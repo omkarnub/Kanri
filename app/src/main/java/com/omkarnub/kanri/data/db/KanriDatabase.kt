@@ -259,6 +259,9 @@ abstract class KanriDatabase : RoomDatabase() {
                 } catch (_: Throwable) {}
                 context.deleteDatabase("kanri_database")
                 context.deleteDatabase("kanri_database_plain.db")
+                try {
+                    context.getSharedPreferences("kanri_smart_rules_seed", Context.MODE_PRIVATE).edit().clear().apply()
+                } catch (_: Throwable) {}
             }
         }
 
@@ -396,9 +399,46 @@ abstract class KanriDatabase : RoomDatabase() {
                     if (toInsert.isNotEmpty()) {
                         catDao.insertCategories(toInsert)
                     }
+
+                    // 5. Seed expanded smart merchant auto-categorization rules
+                    seedPreseededSmartRules(context, catDao)
                 } catch (e: Throwable) {
                     Log.e("KanriDatabase", "Error seeding/cleaning categories", e)
                 }
+            }
+        }
+
+        private suspend fun seedPreseededSmartRules(context: Context, catDao: CategoryDao) {
+            try {
+                val prefs = context.getSharedPreferences("kanri_smart_rules_seed", Context.MODE_PRIVATE)
+                val currentVersion = 1
+                if (prefs.getInt("rules_seed_version", 0) < currentVersion) {
+                    val allCats = catDao.getAllCategoriesSync().associateBy { it.name.lowercase().trim() }
+                    val existingRules = catDao.getAllMappings().map { it.counterparty.lowercase().trim() }.toSet()
+                    val rulesToInsert = mutableListOf<CounterpartyCategoryMapEntity>()
+
+                    for ((keyword, targetCatName) in com.omkarnub.kanri.data.category.PreseededSmartRules.RULES) {
+                        val cleanKeyword = keyword.trim()
+                        if (cleanKeyword.lowercase() !in existingRules) {
+                            val cat = allCats[targetCatName.lowercase().trim()]
+                            if (cat != null) {
+                                rulesToInsert.add(
+                                    CounterpartyCategoryMapEntity(
+                                        counterparty = cleanKeyword,
+                                        categoryId = cat.id
+                                    )
+                                )
+                            }
+                        }
+                    }
+
+                    if (rulesToInsert.isNotEmpty()) {
+                        catDao.insertMappings(rulesToInsert)
+                    }
+                    prefs.edit().putInt("rules_seed_version", currentVersion).apply()
+                }
+            } catch (e: Throwable) {
+                Log.e("KanriDatabase", "Error seeding pre-seeded smart rules", e)
             }
         }
     }

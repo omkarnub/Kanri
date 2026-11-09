@@ -5,6 +5,31 @@ All notable changes to Kanri will be documented in this file.
 The format is based on [Keep a Changelog](https://keepachangelog.com/en/1.0.0/),
 and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0.html).
 
+## [1.10.0] - 2026-11-09
+
+### Added & Auto-Categorization
+- **Pre-Seeded Smart Auto-Categorization Engine (`PreseededSmartRules`)**:
+  - Implemented an extensive offline directory of smart categorization rules pre-seeded directly into Room's `counterparty_category_map` on app launch/update.
+  - Covers hundreds of domestic and international brands, apps, transport networks, and merchants across all major spending domains:
+    - **Railways & Metros**: IRCTC, Indian Railways, CRIS, UTS, and all 17 Indian metro networks (DMRC, Mumbai Metro, Namma Metro, CMRL, Maha Metro, Pune Metro, Kochi Metro, etc.) auto-mapped to *Train & Metro*.
+    - **Airlines & Airports**: IndiGo, Air India, Akasa, SpiceJet, Vistara, international carriers, major airport authorities (Adani, GMR, AAI), city airport codes (CSMIA Mumbai, IGI Delhi, KIA Bangalore, RGIA), duty free, and airport lounges auto-mapped to *Travel & Vacation*.
+    - **Cabs & Transit**: Uber, Ola, Rapido, Namma Yatri, BluSmart, inDrive, Jugnoo, and state bus transport corporations (BEST, DTC, BMTC, MSRTC, KSRTC) auto-mapped to *Auto / Taxi Fare*.
+    - **Fuel & Tolls**: Indian Oil, BPCL, HPCL, Shell, Nayara, Jio-bp, NETC FASTag, NHAI toll plazas, and EV charging networks auto-mapped to *Transport & Fuel*.
+    - **Food & Dining**: Swiggy, Zomato, Domino's, McDonald's, Starbucks, KFC, Burger King, Chaayos, CCD, Third Wave, Blue Tokai, cloud kitchens, and regional eateries auto-mapped to *Food & Dining*.
+    - **Groceries**: Blinkit, Zepto, BigBasket, Swiggy Instamart, DMart, Reliance Fresh/Smart, JioMart, Spencer's, Country Delight, Licious, and dairies (Amul, Mother Dairy, Nandini) auto-mapped to *Groceries*.
+    - **Shopping**: Amazon, Flipkart, Myntra, Ajio, Meesho, Nykaa, Tata CLiQ, Croma, Reliance Digital, Zudio, Westside, Decathlon, Lenskart, Tanishq, IKEA auto-mapped to *Shopping*.
+    - **Utilities & Bills**: Jio, Airtel, Vi, BSNL, power utilities (Tata Power, Adani Electricity, BESCOM, MSEDCL, BSES), piped gas (MGL, IGL), DTH, broadband, and water boards auto-mapped to *Bills & Utilities*.
+    - **Entertainment**: Netflix, Prime Video, Hotstar, JioCinema, BookMyShow, PVR INOX, Spotify, YouTube, gaming platforms (Steam, PlayStation, Xbox, BGMI) auto-mapped to *Entertainment*.
+    - **Health & Medical**: Apollo Pharmacy, 1mg, PharmEasy, Netmeds, MedPlus, diagnostics (Lal PathLabs, SRL, Thyrocare), and hospitals (Max, Fortis, Manipal, Medanta) auto-mapped to *Health & Medical*.
+    - **Education**: PhysicsWallah, Unacademy, Byju's, Coursera, Udemy, Allen, Aakash auto-mapped to *Education*.
+    - **Investments & Insurance**: Zerodha, Groww, Upstox, INDmoney, AMCs, LIC, health/general insurance (Star Health, Niva Bupa, HDFC ERGO) auto-mapped to *Investment & Savings*.
+    - **Rent & Society**: NoBroker, MyGate, Housing.com, society maintenance auto-mapped to *Rent & Maintenance*.
+    - **Personal Care**: Urban Company, Naturals, Lakme, Jawed Habib, Kaya, D2C grooming brands auto-mapped to *Personal Care*.
+    - **Gifts & Donations**: FNP, IGP, Ketto, Milaap, PM CARES, temple trusts auto-mapped to *Gifts & Donations*.
+  - **Full User Control**: Rules stay safely in the local Room database (`counterparty_category_map`). Users can search, filter, edit, or delete any auto-categorization rule inside the Merchant Rules screen (`SmartMerchantRulesScreen`). Deleted rules are never re-added automatically.
+  - **Automatic Detection**: Incoming SMS alerts and payment notifications auto-resolve the exact category without requiring manual input.
+- Bumped version to `1.10.0` (Build 33).
+
 ## [1.9.0] - 2026-11-09
 
 ### Added & Motion Design
@@ -16,10 +41,6 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
   - **Fluid Staggered Exit & Content Scale-Up**: Upon render completion, the letters slide up and out staggered into the ceiling (`translateY(0%)` -> `-110%`) while the splash overlay dissolves (`alpha = 1f -> 0f`) and the main app smoothly scales in with `KanriMotion.SnappySpring`.
   - **Clean Unmount**: After exit transition completes, the splash composable is completely removed from the composition to ensure 0 CPU/GPU memory footprint during regular app usage.
   - **Theme-Aware Void**: Pure pitch black (`#000000`) void in Dark/Glass/AMOLED themes with warm cream ink (`#FDFAEE`), and soft cream (`#FEFAEC`) void with charcoal ink (`#121212`) in Light mode.
-
-### Documentation
-- **SMS Detection, Parsing & Sorting Specification (`SMS_LOGIC.md` & `docs/SMS_LOGIC.md`)**:
-  - Documented end-to-end architecture covering cold-start manifest receiver (priority 999), multi-part PDU concatenation, negative filtering rules, balance vs amount disambiguation, merchant cleaning, 5-minute deduplication window, Truecaller-style floating popup (`InstantPopupCard`), and pattern support for all 59 financial institutions.
 - Bumped version to `1.9.0` (Build 32).
 
 ## [1.8.2] - 2026-11-09
