@@ -16,6 +16,10 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
   - **Fluid Staggered Exit & Content Scale-Up**: Upon render completion, the letters slide up and out staggered into the ceiling (`translateY(0%)` -> `-110%`) while the splash overlay dissolves (`alpha = 1f -> 0f`) and the main app smoothly scales in with `KanriMotion.SnappySpring`.
   - **Clean Unmount**: After exit transition completes, the splash composable is completely removed from the composition to ensure 0 CPU/GPU memory footprint during regular app usage.
   - **Theme-Aware Void**: Pure pitch black (`#000000`) void in Dark/Glass/AMOLED themes with warm cream ink (`#FDFAEE`), and soft cream (`#FEFAEC`) void with charcoal ink (`#121212`) in Light mode.
+
+### Documentation
+- **SMS Detection, Parsing & Sorting Specification (`SMS_LOGIC.md` & `docs/SMS_LOGIC.md`)**:
+  - Documented end-to-end architecture covering cold-start manifest receiver (priority 999), multi-part PDU concatenation, negative filtering rules, balance vs amount disambiguation, merchant cleaning, 5-minute deduplication window, Truecaller-style floating popup (`InstantPopupCard`), and pattern support for all 59 financial institutions.
 - Bumped version to `1.9.0` (Build 32).
 
 ## [1.8.2] - 2026-11-09
