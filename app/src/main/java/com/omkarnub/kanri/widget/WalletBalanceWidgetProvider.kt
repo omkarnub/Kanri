@@ -69,8 +69,16 @@ class WalletBalanceWidgetProvider : AppWidgetProvider() {
                         WalletBalanceCalculator.balances(map, txRows)
                     }
 
+                    val widgetStyle = WidgetPreferences.getInstance(context).widgetStyle
+                    val bgRes = when (widgetStyle) {
+                        WidgetStyle.IPHONE -> R.drawable.widget_bg_iphone
+                        WidgetStyle.PIXEL_MATRIX -> R.drawable.widget_bg_pixel
+                        WidgetStyle.GLASS_100X -> R.drawable.widget_bg_glass_100x
+                    }
+
                     for (widgetId in targetIds) {
                         val views = RemoteViews(context.packageName, R.layout.widget_wallet_balance)
+                        views.setInt(R.id.widget_wallet_balance_root, "setBackgroundResource", bgRes)
 
                         // Check resize dimensions
                         val options = appWidgetManager.getAppWidgetOptions(widgetId)

@@ -66,6 +66,7 @@ import androidx.compose.material.icons.filled.Tune
 import androidx.compose.material.icons.filled.Visibility
 import androidx.compose.material.icons.filled.VisibilityOff
 import androidx.compose.material.icons.filled.Warning
+import androidx.compose.material.icons.filled.Widgets
 import androidx.compose.material3.Button
 import androidx.compose.material3.ButtonDefaults
 import androidx.compose.material3.ExperimentalMaterial3Api
@@ -155,6 +156,9 @@ fun SettingsScreen(
     val currentIconStyle by themePrefs.appIconStyleFlow.collectAsState()
     val currentGlassBg by themePrefs.glassBackgroundFlow.collectAsState()
 
+    val widgetPrefs = remember { com.omkarnub.kanri.widget.WidgetPreferences.getInstance(context) }
+    val currentWidgetStyle by widgetPrefs.widgetStyleFlow.collectAsState()
+
     val securityPrefs = remember { SecurityPreferences.getInstance(context) }
     var isLockEnabled by remember { mutableStateOf(securityPrefs.isLockEnabled) }
 
@@ -187,6 +191,7 @@ fun SettingsScreen(
     var showThemeSettingsScreen by rememberSaveable { mutableStateOf(false) }
     var showGlassCustomizerScreen by rememberSaveable { mutableStateOf(false) }
     var showMerchantRulesScreen by rememberSaveable { mutableStateOf(false) }
+    var showWidgetsScreen by rememberSaveable { mutableStateOf(false) }
 
     var showCurrencyDialog by remember { mutableStateOf(false) }
     var showBudgetCycleDialog by remember { mutableStateOf(false) }
@@ -288,6 +293,14 @@ fun SettingsScreen(
     if (showMerchantRulesScreen) {
         SmartMerchantRulesScreen(
             onBack = { showMerchantRulesScreen = false },
+            modifier = modifier
+        )
+        return
+    }
+
+    if (showWidgetsScreen) {
+        WidgetsScreen(
+            onBack = { showWidgetsScreen = false },
             modifier = modifier
         )
         return
@@ -846,9 +859,9 @@ fun SettingsScreen(
             verticalArrangement = Arrangement.spacedBy(20.dp)
         ) {
             // =================================================================
-            // 1. APPEARANCE
+            // 1. CUSTOMISATION
             // =================================================================
-            SettingsGroup(title = "APPEARANCE") {
+            SettingsGroup(title = "CUSTOMISATION") {
                 val themeLabel = when (currentThemeMode) {
                     ThemeMode.SYSTEM -> "Follow System"
                     ThemeMode.LIGHT -> "Light Theme"
@@ -863,6 +876,28 @@ fun SettingsScreen(
                     onClick = {
                         haptics.click()
                         showThemeSettingsScreen = true
+                    }
+                )
+
+                SettingsDivider()
+
+                // Home Screen Widgets & 1:1 Previews
+                SettingsRow(
+                    title = "Widgets",
+                    subtitle = "${currentWidgetStyle.displayName} • iPhone, 100x Glass & Pixel DotTiles",
+                    icon = Icons.Default.Widgets,
+                    trailing = {
+                        Text(
+                            text = currentWidgetStyle.tag,
+                            fontFamily = GoogleSansFlex,
+                            fontWeight = FontWeight.Bold,
+                            fontSize = 12.sp,
+                            color = MaterialTheme.colorScheme.primary
+                        )
+                    },
+                    onClick = {
+                        haptics.click()
+                        showWidgetsScreen = true
                     }
                 )
 

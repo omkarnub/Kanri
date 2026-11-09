@@ -81,15 +81,24 @@ class BudgetRingWidgetProvider : AppWidgetProvider() {
                     .filter { it.transaction.type.equals("DEBIT", ignoreCase = true) && !it.transaction.isTransfer }
                     .sumOf { it.transaction.amount }
 
+                val widgetStyle = WidgetPreferences.getInstance(context).widgetStyle
+                val bgRes = when (widgetStyle) {
+                    WidgetStyle.IPHONE -> R.drawable.widget_bg_iphone
+                    WidgetStyle.PIXEL_MATRIX -> R.drawable.widget_bg_pixel
+                    WidgetStyle.GLASS_100X -> R.drawable.widget_bg_glass_100x
+                }
+
                 val ringBitmap = WidgetCanvasRenderer.renderBudgetRing(
                     context = context,
                     spent = monthSpent,
                     budget = budgetLimit,
-                    sizePx = 480
+                    sizePx = 480,
+                    style = widgetStyle
                 )
 
                 for (widgetId in targetIds) {
                     val views = RemoteViews(context.packageName, R.layout.widget_budget_ring)
+                    views.setInt(R.id.widget_budget_ring_root, "setBackgroundResource", bgRes)
 
                     // Check resize dimensions to adapt layout gracefully
                     val options = appWidgetManager.getAppWidgetOptions(widgetId)

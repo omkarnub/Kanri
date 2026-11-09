@@ -1,4 +1,4 @@
-﻿package com.omkarnub.kanri.data.db
+package com.omkarnub.kanri.data.db
 
 import android.content.Context
 import android.util.Log

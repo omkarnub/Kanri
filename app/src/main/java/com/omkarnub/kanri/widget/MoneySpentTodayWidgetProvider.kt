@@ -75,8 +75,16 @@ class MoneySpentTodayWidgetProvider : AppWidgetProvider() {
                 val debitTx = todayTx.filter { it.transaction.type.equals("DEBIT", ignoreCase = true) && !it.transaction.isTransfer }
                 val todaySpent = debitTx.sumOf { it.transaction.amount }
 
+                val widgetStyle = WidgetPreferences.getInstance(context).widgetStyle
+                val bgRes = when (widgetStyle) {
+                    WidgetStyle.IPHONE -> R.drawable.widget_bg_iphone
+                    WidgetStyle.PIXEL_MATRIX -> R.drawable.widget_bg_pixel
+                    WidgetStyle.GLASS_100X -> R.drawable.widget_bg_glass_100x
+                }
+
                 for (widgetId in targetIds) {
                     val views = RemoteViews(context.packageName, R.layout.widget_spent_today)
+                    views.setInt(R.id.widget_spent_today_root, "setBackgroundResource", bgRes)
 
                     // Check resize dimensions
                     val options = appWidgetManager.getAppWidgetOptions(widgetId)

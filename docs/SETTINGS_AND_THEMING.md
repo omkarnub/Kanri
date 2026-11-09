@@ -12,7 +12,7 @@ The settings architecture adheres to:
 
 ## 2. Information Architecture: 8 Functional Sections
 
-1. **Appearance**:
+1. **Customisation**:
    - **Themes Sub-Window** (`ThemeSettingsScreen`):
      - Visual phone preview cards for `System`, `Light`, `Dark`, `AMOLED`, and `Glass`.
      - When `Glass` is selected:
@@ -26,6 +26,16 @@ The settings architecture adheres to:
           - **Glass Tint (-1.0 to +1.0)**: Center-neutral slider (default `0.0f` = "No tint") allowing smooth adjustment to dark smoky obsidian glass (sliding left) or luminous crystalline white frost glass (sliding right), complete with quick-snap buttons (`Dark -50%`, `No tint 0%`, `Light +50%`). Both the content cards and the floating navigation dock actively follow this tint in real time.
           - **Border & Edge Shine (0% to 70%)**: Controls specular edge reflection intensity from fully off (0%) up to intense luminance across cards and dock.
           - **Corner Curvature (10 to 32 dp)**: Modifies corner radius dynamically across cards.
+   - **Widgets Sub-Window** (`WidgetsScreen`):
+     - Dedicated gallery for customising Android home screen widgets with 1:1 live interactive previews across three design styles:
+       1. **iPhone Fluid**: Apple HIG squircle geometry (`24dp`), Cupertino vibrant health tints (Coral, Mint, Electric Blue), activity rings with overlapping shadow depth on Canvas, and fluid spring animations.
+       2. **100x Liquid Glass**: Apple WWDC25 Liquid Glass specular reflections, top-rim shine gradient (60% to 5%), ambient radial colored backlight bloom, and glowing neon ring arcs.
+       3. **Pixel DotTiles**: Complete native port of the Louis Studios DotTiles specification, featuring 7-row dot-matrix font numerals, live jitter drift, tick sliders with marker blocks, stepped histograms, and dot timelines.
+     - **Actions**:
+       - Segmented style tab switcher (` iPhone Fluid` | `✦ 100x Glass` | `⠶ Pixel DotTiles`).
+       - "Set as Home Screen Widget Style" button applying the selected style across all 8 active home screen widgets.
+       - One-tap "Pin to Home Screen" shortcut on every preview card.
+       - Tap-to-replay animation trigger on any widget card.
    - **App Launcher Icon**: Toggle between Dark and Light activity aliases with confirmation dialog.
 
 2. **Wallets & Currency**:

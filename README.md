@@ -105,8 +105,8 @@ Everything runs fully offline — there's no Kanri backend to breach, because th
     <td width="50%" valign="top">
       <img src="assets/feature-tools.svg" width="55" alt="Home screen widgets icon" /><br>
       <strong>Home screen & quick settings</strong><br>
-      Seven widgets (today's spend, budget progress, budget ring, goals ring, lend/borrow, split bill, quick add) and a Quick Settings tile for logging an expense from anywhere. Screen-off auto-lock re-secures the app with biometrics the moment the display turns off.<br><br>
-      <code>7 Android Widgets</code> <code>Quick Settings Tile</code> <code>Biometric Lock</code>
+      Eight widgets across 3 distinct design systems (iPhone Fluid, 100x Apple Liquid Glass, and Pixel DotTiles) with 1:1 live interactive previews in Settings, and a Quick Settings tile for logging an expense from anywhere. Screen-off auto-lock re-secures the app with biometrics the moment the display turns off.<br><br>
+      <code>8 Android Widgets</code> <code>Triple Widget Styles</code> <code>Quick Settings Tile</code> <code>Biometric Lock</code>
     </td>
   </tr>
   <tr>

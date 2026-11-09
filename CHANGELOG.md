@@ -5,6 +5,44 @@ All notable changes to Kanri will be documented in this file.
 The format is based on [Keep a Changelog](https://keepachangelog.com/en/1.0.0/),
 and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0.html).
 
+## [1.11.0] - 2026-11-09
+
+### Added & Widgets Recreation
+- **Triple Widget Engine (iPhone Fluid, 100x Liquid Glass, Pixel DotTiles)**:
+  - Recreated all 8 Kanri home screen widgets across three distinct design systems:
+    1. **iPhone Fluid Style (`WidgetStyle.IPHONE`)**:
+       - Apple Human Interface Guidelines (HIG) aesthetics with continuous squircle corners (`24dp`), concentric borders, and Cupertino vibrant accents (Coral `#FF2D55`, Mint `#30D158`, Electric Blue `#0A84FF`, Indigo `#5E5CE6`).
+       - Apple Fitness Activity concentric progress rings with overlapping shadow depth on Canvas, Apple Health micro bar charts, and dual Apple Wallet card stack representation.
+       - Fluid spring physics animations (`spring(dampingRatio = 0.75f, stiffness = 300f)`).
+    2. **100x Liquid Glass Style (`WidgetStyle.GLASS_100X`)**:
+       - Elevated our glass widgets to 100x utilizing Apple WWDC25 Liquid Glass specular reflections and deep translucent layering.
+       - High-specular top-rim shine gradient (60% white top to 5% bottom edge), ambient radial colored backlight bloom behind main values and charts, shimmering reflection sweep animations, and glowing neon ring arcs (Cyan to Emerald, Violet to Indigo).
+    3. **Pixel DotTiles Style (`WidgetStyle.PIXEL_MATRIX`)**:
+       - Complete native Android & Compose port of the Louis Studios DotTiles specification.
+       - 7-row dot-matrix font renderer for numbers and glyphs (`0-9`, `:`, `.`, `-`, `₹`, `$`, `%`, `k`, `M`, `/`).
+       - Animated counting up dot-by-dot on entry, live organic jitter drifting every few seconds, and 5 distinct bottom data visuals: fine tick slider with marker block (glow/fill mode), stepped histogram, dot timeline, sparse blocks, and 4-tier rise gauge.
+       - Matte obsidian black glass tile (`#08080A`) with subtle 1px border.
+- **Dedicated Widgets Section in Settings (`WidgetsScreen`)**:
+  - Added dedicated **"Widgets"** entry in `SettingsScreen` under **`CUSTOMISATION`**.
+  - Opens `WidgetsScreen` featuring live 1:1 interactive previews of all 8 widgets:
+    1. **Money Spent Today**
+    2. **Cash & Online Wallet Balances**
+    3. **Budget Ring Chart**
+    4. **Budget Progress Bar**
+    5. **Savings Goals Ring**
+    6. **Lend & Borrow Dues**
+    7. **Quick Record Action Tiles**
+    8. **Split the Bill Calculator**
+  - **Interactive Features**:
+    - Top segmented style switcher (` iPhone Fluid` | `✦ 100x Glass` | `⠶ Pixel DotTiles`).
+    - One-tap "Set as Home Screen Widget Style" button applying the selected style across all home screen widgets via `KanriWidgetsUpdater` and persistent `WidgetPreferences`.
+    - One-tap "Pin to Home Screen" shortcut on every preview card utilizing `AppWidgetManager.requestPinAppWidget`.
+    - Tap-to-replay animation on any widget card with haptic feedback.
+- **Home Screen RemoteViews Dynamic Theming**:
+  - Added background drawables: `widget_bg_iphone.xml`, `widget_bg_glass_100x.xml`, and `widget_bg_pixel.xml`.
+  - Updated `WidgetCanvasRenderer` and all 8 `AppWidgetProvider` classes (`BudgetRingWidgetProvider`, `GoalsRingWidgetProvider`, `MoneySpentTodayWidgetProvider`, `WalletBalanceWidgetProvider`, `BudgetProgressWidgetProvider`, `LendBorrowWidgetProvider`, `QuickAddWidgetProvider`, `SplitBillWidgetProvider`) to dynamically apply background cards and canvas chart graphics based on `WidgetPreferences.widgetStyle`.
+- Bumped version to `1.11.0` (Build 34).
+
 ## [1.10.0] - 2026-11-09
 
 ### Added & Auto-Categorization

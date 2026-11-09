@@ -91,8 +91,16 @@ class BudgetProgressWidgetProvider : AppWidgetProvider() {
                 }
                 val isOver = monthSpent > budgetLimit
 
+                val widgetStyle = WidgetPreferences.getInstance(context).widgetStyle
+                val bgRes = when (widgetStyle) {
+                    WidgetStyle.IPHONE -> R.drawable.widget_bg_iphone
+                    WidgetStyle.PIXEL_MATRIX -> R.drawable.widget_bg_pixel
+                    WidgetStyle.GLASS_100X -> R.drawable.widget_bg_glass_100x
+                }
+
                 for (widgetId in targetIds) {
                     val views = RemoteViews(context.packageName, R.layout.widget_budget_progress)
+                    views.setInt(R.id.widget_budget_progress_root, "setBackgroundResource", bgRes)
 
                     // Check resize dimensions
                     val options = appWidgetManager.getAppWidgetOptions(widgetId)

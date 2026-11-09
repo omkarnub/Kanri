@@ -1149,3 +1149,4 @@ object PreseededSmartRules {
         "ISKCON" to "Gifts & Donations"
     )
 }
+
