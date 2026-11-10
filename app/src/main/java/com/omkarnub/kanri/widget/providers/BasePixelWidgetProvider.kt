@@ -48,8 +48,13 @@ abstract class BasePixelWidgetProvider<T : WidgetState> : AppWidgetProvider() {
         CoroutineScope(Dispatchers.IO).launch {
             try {
                 val state = loadState(context)
-                for (id in appWidgetIds) {
-                    renderFrame(context, appWidgetManager, id, state, progress = 1.0f)
+                val frames = 8
+                for (f in 1..frames) {
+                    val progress = f.toFloat() / frames
+                    for (id in appWidgetIds) {
+                        renderFrame(context, appWidgetManager, id, state, progress)
+                    }
+                    if (f < frames) delay(50L)
                 }
             } finally {
                 pendingResult.finish()
@@ -124,7 +129,7 @@ abstract class BasePixelWidgetProvider<T : WidgetState> : AppWidgetProvider() {
         fun <P : BasePixelWidgetProvider<T>, T : WidgetState> triggerUpdate(
             context: Context,
             providerClass: Class<P>,
-            playBurst: Boolean = false
+            playBurst: Boolean = true
         ) {
             val appWidgetManager = AppWidgetManager.getInstance(context)
             val component = ComponentName(context, providerClass)
@@ -140,13 +145,13 @@ abstract class BasePixelWidgetProvider<T : WidgetState> : AppWidgetProvider() {
                 val state = providerInstance.loadState(context)
 
                 if (allowBurst) {
-                    val frames = PixelMotion.BURST_FRAME_COUNT
+                    val frames = 8
                     for (f in 1..frames) {
                         val progress = f.toFloat() / frames
                         for (id in ids) {
                             providerInstance.renderFrame(context, appWidgetManager, id, state, progress)
                         }
-                        if (f < frames) delay(PixelMotion.BURST_FRAME_INTERVAL_MS)
+                        if (f < frames) delay(50L)
                     }
                 } else {
                     for (id in ids) {

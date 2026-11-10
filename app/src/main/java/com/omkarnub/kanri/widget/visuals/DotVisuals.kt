@@ -8,13 +8,14 @@ import android.graphics.RectF
 import androidx.core.graphics.PathParser
 import com.omkarnub.kanri.widget.core.PixelTheme
 import com.omkarnub.kanri.widget.font.PixelFont
+import kotlin.math.PI
 import kotlin.math.abs
-import kotlin.math.cos
 import kotlin.math.sin
 
 /**
  * Shared Pixel DotTiles visuals library.
- * Reusable Canvas primitives: Slider, Steps, Dots, Blocks, Rise, Grid, Arc, SkyScene, and Vector Icons.
+ * Reusable Canvas primitives: Slider, Steps, Dots, Blocks, Rise, Grid, Arc, and Vector Icons.
+ * Every visual fully supports smooth progress entry animations (0.0f -> 1.0f).
  */
 object DotVisuals {
 
@@ -87,7 +88,6 @@ object DotVisuals {
             fillPaint.color = color
             canvas.drawPath(transformed, fillPaint)
         } else {
-            // Clock special case or fallback
             if (icon == DotIcon.CLOCK) {
                 val cx = x + sizePx / 2f
                 val cy = y + sizePx / 2f
@@ -116,7 +116,8 @@ object DotVisuals {
     }
 
     /**
-     * Slider visual: row of fine vertical ticks with a marker block.
+     * Slider visual: row of fine vertical ticks with an animated marker block.
+     * Animates marker position and tick fill progress fluidly from 0 to [value].
      */
     fun drawSlider(
         canvas: Canvas,
@@ -128,26 +129,27 @@ object DotVisuals {
         trackColor: Int = PixelTheme.COLOR_DOT_DIM_INT,
         pacingMarker: Float? = null,
         labels: Pair<String, String>? = null,
-        density: Float = 2.5f
+        density: Float = 2.5f,
+        progress: Float = 1.0f
     ) {
-        val clampedVal = value.coerceIn(0f, 1f)
-        val tickWidth = (1.5f * density).coerceAtLeast(2f)
+        val animVal = (value.coerceIn(0f, 1f) * progress.coerceIn(0f, 1f))
+        val tickWidth = (1.5f * density).coerceAtLeast(1.8f)
         val tickHeight = bounds.height() * 0.55f
         val spacing = (bounds.width() - tickWidth) / (ticks - 1).coerceAtLeast(1)
-        val markerIndex = (clampedVal * (ticks - 1)).toInt()
+        val markerIndex = (animVal * (ticks - 1)).toInt()
 
-        val markerWidth = (7f * density).coerceAtLeast(tickWidth * 2f)
-        val markerHeight = bounds.height() * 0.85f
+        val markerWidth = (6.5f * density).coerceAtLeast(tickWidth * 2f)
+        val markerHeight = bounds.height() * 0.90f
 
         for (i in 0 until ticks) {
             val tx = bounds.left + i * spacing
             val dist = abs(i - markerIndex)
 
             val paintColor = when {
-                dist <= 1 -> markerColor
+                dist == 0 -> markerColor
                 mode == SliderMode.FILL && i < markerIndex -> markerColor
                 mode == SliderMode.GLOW && dist <= 4 -> {
-                    val alpha = ((1f - dist / 5f) * 255).toInt().coerceIn(40, 255)
+                    val alpha = ((1f - dist / 5f) * 255).toInt().coerceIn(35, 255)
                     (alpha shl 24) or (markerColor and 0x00FFFFFF)
                 }
                 else -> trackColor
@@ -157,10 +159,10 @@ object DotVisuals {
             if (dist == 0) {
                 val mx = tx - (markerWidth - tickWidth) / 2f
                 val my = bounds.centerY() - markerHeight / 2f
-                canvas.drawRoundRect(mx, my, mx + markerWidth, my + markerHeight, 3f * density, 3f * density, fillPaint)
+                canvas.drawRoundRect(mx, my, mx + markerWidth, my + markerHeight, 2.5f * density, 2.5f * density, fillPaint)
             } else {
                 val top = bounds.centerY() - tickHeight / 2f
-                canvas.drawRoundRect(tx, top, tx + tickWidth, top + tickHeight, 1.5f, 1.5f, fillPaint)
+                canvas.drawRoundRect(tx, top, tx + tickWidth, top + tickHeight, 1.2f * density, 1.2f * density, fillPaint)
             }
         }
 
@@ -168,13 +170,13 @@ object DotVisuals {
         if (pacingMarker != null) {
             val px = bounds.left + pacingMarker.coerceIn(0f, 1f) * (bounds.width() - tickWidth)
             fillPaint.color = PixelTheme.COLOR_CYAN_INT
-            canvas.drawCircle(px + tickWidth / 2f, bounds.top - 4f * density, 2.2f * density, fillPaint)
+            canvas.drawCircle(px + tickWidth / 2f, bounds.top - 3f * density, 2f * density, fillPaint)
         }
 
         // Left and right small captions
         if (labels != null) {
-            val labelY = bounds.bottom + 10f * density
-            val labelSize = 9.5f * density
+            val labelY = bounds.bottom + 9f * density
+            val labelSize = 9f * density
             PixelFont.drawLabel(canvas, labels.first, bounds.left, labelY, labelSize, PixelTheme.COLOR_DOT_MID_INT)
             PixelFont.drawRightLabel(canvas, labels.second, bounds.right, labelY, labelSize, PixelTheme.COLOR_DOT_MID_INT)
         }
@@ -182,6 +184,7 @@ object DotVisuals {
 
     /**
      * Stepped histogram bars built of dot columns.
+     * Animates column heights fluidly upward with [progress].
      */
     fun drawSteps(
         canvas: Canvas,
@@ -191,25 +194,27 @@ object DotVisuals {
         activeColor: Int = PixelTheme.COLOR_MINT_INT,
         dimColor: Int = PixelTheme.COLOR_DOT_DIM_INT,
         labels: Pair<String, String>? = null,
-        density: Float = 2.5f
+        density: Float = 2.5f,
+        progress: Float = 1.0f
     ) {
         if (data.isEmpty()) return
         val count = data.size
-        val dotPitch = (bounds.height() / maxDotsPerBar).coerceAtLeast(3f * density)
-        val dotRadius = dotPitch * 0.36f
+        val dotPitch = (bounds.height() / maxDotsPerBar).coerceAtLeast(2.5f * density)
+        val dotRadius = dotPitch * 0.35f
         val colSpacing = bounds.width() / count.coerceAtLeast(1)
 
         // Faint slot guide lines behind chart
-        strokePaint.color = 0x18FFFFFF
+        strokePaint.color = 0x14FFFFFF
         strokePaint.strokeWidth = 1f
         for (i in 0 until count) {
             val cx = bounds.left + i * colSpacing + colSpacing / 2f
             canvas.drawLine(cx, bounds.top, cx, bounds.bottom, strokePaint)
         }
 
+        val animProgress = progress.coerceIn(0f, 1f)
         for (i in 0 until count) {
             val cx = bounds.left + i * colSpacing + colSpacing / 2f
-            val barVal = data[i].coerceIn(0f, 1f)
+            val barVal = data[i].coerceIn(0f, 1f) * animProgress
             val litDots = (barVal * maxDotsPerBar).toInt()
 
             for (r in 0 until maxDotsPerBar) {
@@ -221,8 +226,8 @@ object DotVisuals {
         }
 
         if (labels != null) {
-            val labelY = bounds.bottom + 10f * density
-            val labelSize = 9.5f * density
+            val labelY = bounds.bottom + 9f * density
+            val labelSize = 9f * density
             PixelFont.drawLabel(canvas, labels.first, bounds.left, labelY, labelSize, PixelTheme.COLOR_DOT_MID_INT)
             PixelFont.drawRightLabel(canvas, labels.second, bounds.right, labelY, labelSize, PixelTheme.COLOR_DOT_MID_INT)
         }
@@ -230,6 +235,7 @@ object DotVisuals {
 
     /**
      * Dotted timeline across slots (e.g. 24 hours).
+     * Animates dots revealing and growing smoothly across slots with [progress].
      */
     fun drawDots(
         canvas: Canvas,
@@ -239,35 +245,42 @@ object DotVisuals {
         dotColor: Int = PixelTheme.COLOR_DOT_ON_INT,
         dimColor: Int = PixelTheme.COLOR_DOT_DIM_INT,
         labels: Pair<String, String>? = null,
-        density: Float = 2.5f
+        density: Float = 2.5f,
+        progress: Float = 1.0f
     ) {
         val slots = data.size.coerceAtLeast(1)
         val slotWidth = bounds.width() / slots
         val cy = bounds.centerY()
+        val animProgress = progress.coerceIn(0f, 1f)
 
         for (i in 0 until slots) {
             val cx = bounds.left + i * slotWidth + slotWidth / 2f
             val value = data[i]
 
-            if (value != null && value > 0f) {
-                val r = (1.8f + (value.coerceIn(0f, 1f) * 3.5f)) * density
+            // Sweep animation across the 24 hours
+            val slotThreshold = i.toFloat() / slots
+            val slotReveal = ((animProgress - slotThreshold) * slots).coerceIn(0f, 1f)
+
+            if (value != null && value > 0f && slotReveal > 0f) {
+                val r = (1.5f + (value.coerceIn(0f, 1f) * 3.2f)) * density * slotReveal
                 fillPaint.color = dotColor
                 canvas.drawCircle(cx, cy, r, fillPaint)
             } else {
                 fillPaint.color = dimColor
-                canvas.drawCircle(cx, cy, 1.2f * density, fillPaint)
+                canvas.drawCircle(cx, cy, 1.1f * density, fillPaint)
             }
 
-            if (i == activeSlotIndex) {
+            if (i == activeSlotIndex && animProgress > 0.4f) {
                 strokePaint.color = PixelTheme.COLOR_CYAN_INT
-                strokePaint.strokeWidth = 1.5f * density
-                canvas.drawCircle(cx, cy, 5.5f * density, strokePaint)
+                strokePaint.strokeWidth = 1.3f * density
+                val ringScale = ((animProgress - 0.4f) / 0.6f).coerceIn(0f, 1f)
+                canvas.drawCircle(cx, cy, 5f * density * ringScale, strokePaint)
             }
         }
 
         if (labels != null) {
-            val labelY = bounds.bottom + 10f * density
-            val labelSize = 9.5f * density
+            val labelY = bounds.bottom + 9f * density
+            val labelSize = 9f * density
             PixelFont.drawLabel(canvas, labels.first, bounds.left, labelY, labelSize, PixelTheme.COLOR_DOT_MID_INT)
             PixelFont.drawRightLabel(canvas, labels.second, bounds.right, labelY, labelSize, PixelTheme.COLOR_DOT_MID_INT)
         }
@@ -275,6 +288,7 @@ object DotVisuals {
 
     /**
      * Sparse solid session blocks (e.g. for Review Queue).
+     * Animates blocks filling in sequentially with [progress].
      */
     fun drawBlocks(
         canvas: Canvas,
@@ -283,17 +297,19 @@ object DotVisuals {
         maxSlots: Int = 12,
         activeColor: Int = PixelTheme.COLOR_AMBER_INT,
         dimColor: Int = PixelTheme.COLOR_DOT_DIM_INT,
-        density: Float = 2.5f
+        density: Float = 2.5f,
+        progress: Float = 1.0f
     ) {
         val total = maxSlots.coerceAtLeast(1)
         val gap = 3f * density
         val blockWidth = ((bounds.width() - (total - 1) * gap) / total).coerceAtLeast(2f)
+        val visibleCount = (count * progress.coerceIn(0f, 1f)).toInt()
 
         for (i in 0 until total) {
             val bx = bounds.left + i * (blockWidth + gap)
-            val isFilled = i < count
+            val isFilled = i < visibleCount
             if (isFilled) {
-                val fade = (1f - (i.toFloat() / total) * 0.5f)
+                val fade = (1f - (i.toFloat() / total) * 0.4f)
                 val alpha = (fade * 255).toInt().coerceIn(100, 255)
                 fillPaint.color = (alpha shl 24) or (activeColor and 0x00FFFFFF)
             } else {
@@ -305,6 +321,7 @@ object DotVisuals {
 
     /**
      * 4-tier to 6-tier stepped gauge / progress rise.
+     * Animates tiers rising smoothly with [progress].
      */
     fun drawRise(
         canvas: Canvas,
@@ -313,25 +330,28 @@ object DotVisuals {
         tiers: Int = 4,
         activeColor: Int = PixelTheme.COLOR_DOT_ON_INT,
         dimColor: Int = PixelTheme.COLOR_DOT_DIM_INT,
-        density: Float = 2.5f
+        density: Float = 2.5f,
+        progress: Float = 1.0f
     ) {
         val gap = 4f * density
         val tierWidth = (bounds.width() - (tiers - 1) * gap) / tiers
-        val activeTiers = (ratio.coerceIn(0f, 1f) * tiers).toInt()
+        val animRatio = ratio.coerceIn(0f, 1f) * progress.coerceIn(0f, 1f)
+        val activeTiers = (animRatio * tiers).toInt()
 
         for (t in 0 until tiers) {
             val tx = bounds.left + t * (tierWidth + gap)
-            val isLit = t < activeTiers || (t == 0 && ratio > 0.05f)
+            val isLit = t < activeTiers || (t == 0 && animRatio > 0.05f)
             val h = bounds.height() * ((t + 1).toFloat() / tiers)
             val top = bounds.bottom - h
 
             fillPaint.color = if (isLit) activeColor else dimColor
-            canvas.drawRoundRect(tx, top, tx + tierWidth, bounds.bottom, 2.5f * density, 2.5f * density, fillPaint)
+            canvas.drawRoundRect(tx, top, tx + tierWidth, bounds.bottom, 2f * density, 2f * density, fillPaint)
         }
     }
 
     /**
-     * Calendar or generic dot grid with day-of-week headers and per-cell intensity.
+     * Calendar dot grid with day-of-week headers and per-cell intensity.
+     * Animates intensity illuminating with [progress].
      */
     fun drawGrid(
         canvas: Canvas,
@@ -342,7 +362,8 @@ object DotVisuals {
         todayIndex: Int = -1,
         onColor: Int = PixelTheme.COLOR_MINT_INT,
         dimColor: Int = PixelTheme.COLOR_DOT_DIM_INT,
-        density: Float = 2.5f
+        density: Float = 2.5f,
+        progress: Float = 1.0f
     ) {
         val colWidth = bounds.width() / cols
         val rowHeight = bounds.height() / (rows + 1) // +1 for header row
@@ -355,11 +376,12 @@ object DotVisuals {
             PixelFont.drawLabel(
                 canvas, dayHeaders[c],
                 hx - 3f * density, headerY,
-                9f * density, PixelTheme.COLOR_DOT_MID_INT
+                8.5f * density, PixelTheme.COLOR_DOT_MID_INT
             )
         }
 
-        val dotRadius = (colWidth * 0.32f).coerceAtMost(rowHeight * 0.32f)
+        val dotRadius = (colWidth * 0.30f).coerceAtMost(rowHeight * 0.30f)
+        val animProgress = progress.coerceIn(0f, 1f)
 
         for (r in 0 until rows) {
             val cy = bounds.top + (r + 1.5f) * rowHeight
@@ -368,10 +390,10 @@ object DotVisuals {
                 if (index >= intensities.size) break
 
                 val cx = bounds.left + c * colWidth + colWidth / 2f
-                val intensity = intensities[index].coerceIn(0f, 1f)
+                val intensity = intensities[index].coerceIn(0f, 1f) * animProgress
 
                 if (intensity > 0f) {
-                    val alpha = (80 + intensity * 175).toInt().coerceIn(80, 255)
+                    val alpha = (70 + intensity * 185).toInt().coerceIn(70, 255)
                     fillPaint.color = (alpha shl 24) or (onColor and 0x00FFFFFF)
                     canvas.drawCircle(cx, cy, dotRadius, fillPaint)
                 } else {
@@ -379,48 +401,51 @@ object DotVisuals {
                     canvas.drawCircle(cx, cy, dotRadius * 0.65f, fillPaint)
                 }
 
-                if (index == todayIndex) {
+                if (index == todayIndex && animProgress > 0.5f) {
                     strokePaint.color = PixelTheme.COLOR_CYAN_INT
-                    strokePaint.strokeWidth = 1.5f * density
-                    canvas.drawCircle(cx, cy, dotRadius + 2.5f * density, strokePaint)
+                    strokePaint.strokeWidth = 1.3f * density
+                    canvas.drawCircle(cx, cy, dotRadius + 2f * density, strokePaint)
                 }
             }
         }
     }
 
     /**
-     * Dotted arc traversed by a celestial body (Weather / Sky widget).
+     * Parabolic celestial arc inside [bounds] (Weather / Sky widget).
+     * Uses strict parabolic formula x(t), y(t) to guarantee the celestial body
+     * stays 100% inside [bounds].
      */
     fun drawArc(
         canvas: Canvas,
-        centerX: Float,
-        centerY: Float,
-        radius: Float,
-        startAngleDeg: Float,
-        sweepAngleDeg: Float,
-        progress: Float,
-        dotCount: Int = 24,
+        bounds: RectF,
+        progress: Float, // 0..1 position of celestial body
+        dotCount: Int = 20,
         onColor: Int = PixelTheme.COLOR_AMBER_INT,
         dimColor: Int = PixelTheme.COLOR_DOT_DIM_INT,
         density: Float = 2.5f
     ) {
-        val markerIndex = (progress.coerceIn(0f, 1f) * (dotCount - 1)).toInt()
+        val animProgress = progress.coerceIn(0f, 1f)
+        val markerIndex = (animProgress * (dotCount - 1)).toInt()
+
+        val padX = 14f * density
+        val arcWidth = bounds.width() - 2 * padX
+        val baseHorizonY = bounds.bottom - 4f * density
+        val peakHeight = bounds.height() * 0.70f
 
         for (i in 0 until dotCount) {
-            val frac = i.toFloat() / (dotCount - 1)
-            val angleRad = Math.toRadians((startAngleDeg + frac * sweepAngleDeg).toDouble())
-            val x = centerX + radius * cos(angleRad).toFloat()
-            val y = centerY + radius * sin(angleRad).toFloat()
+            val t = i.toFloat() / (dotCount - 1)
+            val x = bounds.left + padX + t * arcWidth
+            val y = baseHorizonY - sin(PI * t).toFloat() * peakHeight
 
             if (i == markerIndex) {
                 fillPaint.color = onColor
-                canvas.drawCircle(x, y, 4.5f * density, fillPaint)
+                canvas.drawCircle(x, y, 3.8f * density, fillPaint)
                 strokePaint.color = onColor
-                strokePaint.strokeWidth = 1.5f * density
-                canvas.drawCircle(x, y, 7.5f * density, strokePaint)
+                strokePaint.strokeWidth = 1.2f * density
+                canvas.drawCircle(x, y, 6.2f * density, strokePaint)
             } else {
                 fillPaint.color = dimColor
-                canvas.drawCircle(x, y, 1.6f * density, fillPaint)
+                canvas.drawCircle(x, y, 1.2f * density, fillPaint)
             }
         }
     }

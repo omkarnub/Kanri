@@ -456,26 +456,15 @@ fun PixelWidgetCanvasPreview(
     val context = LocalContext.current
     val animProgress = remember { Animatable(0f) }
 
-    val animScale = Settings.Global.getFloat(
-        context.contentResolver,
-        Settings.Global.ANIMATOR_DURATION_SCALE,
-        1.0f
-    )
-    val animationsEnabled = animScale > 0f
-
     LaunchedEffect(replayTrigger, state) {
-        if (!animationsEnabled) {
-            animProgress.snapTo(1f)
-        } else {
-            animProgress.snapTo(0f)
-            animProgress.animateTo(
-                targetValue = 1f,
-                animationSpec = tween(
-                    durationMillis = PixelMotion.DURATION_ENTRY_MS,
-                    easing = PixelMotion.FastOutSlowIn
-                )
+        animProgress.snapTo(0f)
+        animProgress.animateTo(
+            targetValue = 1f,
+            animationSpec = tween(
+                durationMillis = PixelMotion.DURATION_ENTRY_MS,
+                easing = PixelMotion.FastOutSlowIn
             )
-        }
+        )
     }
 
     Canvas(

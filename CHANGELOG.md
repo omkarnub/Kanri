@@ -5,6 +5,35 @@ All notable changes to Kanri will be documented in this file.
 The format is based on [Keep a Changelog](https://keepachangelog.com/en/1.0.0/),
 and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0.html).
 
+## [1.12.2] - 2026-11-10
+
+### Fixed & Enhanced
+- **Zero-Overlap Widget Geometry & Fluid Animation System**:
+  - **Eliminated All Text-Visual Overlaps**:
+    - Architected strict adaptive vertical zones partitioning Header, Hero Metric, and Bottom Visual.
+    - Added compact height detection (`isCompactH`) for `2x1` and `4x1` widget configurations, dynamically scaling hero metric typography and omitting bottom axis labels to guarantee ample breathing room.
+    - Completely resolved Budget `2x1` overlap where remaining amount collided with slider ticks.
+    - Resolved Review Inbox `2x1` overlap where "Clear" collided with session blocks.
+    - Resolved Financial Sky celestial arc overflow by calculating strictly bounded parabolic trajectories `x(t), y(t)` inside the recessed well.
+  - **Comprehensive Fluid Animation Engine**:
+    - Added interactive `progress: Float = 1.0f` driving all `DotVisuals` primitives:
+      - **Slider**: Marker block slides from 0 to target position; lit ticks sweep in from left to right.
+      - **Steps**: Histogram bars grow fluidly upward from the baseline.
+      - **Dots**: 24-hour timeline dots sweep across with an expanding cyan ring for the active hour.
+      - **Blocks**: Review session blocks illuminate sequentially.
+      - **Rise**: Proportional stepped tiers rise cleanly step by step.
+      - **Grid**: Month calendar cells illuminate with animated intensity.
+      - **Arc**: Celestial sun/moon traverses its sky path smoothly.
+    - Enabled 60fps animations across all interactive preview cards in `WidgetsScreen`.
+    - Maintained 8-frame burst animation on home screen placement and updates in `BasePixelWidgetProvider`.
+  - **Dues (Lend & Borrow) Visual Polish**:
+    - Replaced 2-dot steps with a 6-tier stepped `DotVisuals.drawRise` gauge displaying Mint receivable ratio.
+  - **Today Dot Timeline Polish**:
+    - Refined vertical clearances between 24-hour timeline dots and bottom "00H" / "23H" labels.
+  - **Autonomous Emulator Verification**:
+    - Captured and visually verified live screenshots across all 12 widgets in the in-app gallery and on the real Android home screen.
+- Bumped version to `1.12.2` (Build 38).
+
 ## [1.12.1] - 2026-11-10
 
 ### Fixed & Enhanced

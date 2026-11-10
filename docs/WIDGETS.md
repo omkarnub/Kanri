@@ -1,6 +1,6 @@
 # Kanri Pixel DotTiles Widget System
 
-Current Version: **1.12.1** (Build 37)
+Current Version: **1.12.2** (Build 38)
 
 ## 1. Overview
 Kanri's widget subsystem is unified around a single, cohesive visual language: **Pixel DotTiles** (Nothing-inspired dot-matrix & tactile cards). Designed with precision, restraint, and obsessive detail, the system delivers 12 specialized home screen widgets rendered by a pure Canvas engine shared 1:1 between Android `RemoteViews` bitmaps and Jetpack Compose in-app previews.
@@ -11,9 +11,26 @@ Kanri's widget subsystem is unified around a single, cohesive visual language: *
 
 ### Typography & Fonts (`PixelFont` & `Ndot57`)
 - **Authentic Ndot57 Font**: Integrated official `Ndot57-Regular.otf` (`res/font/ndot57.otf`) for tabular dot-matrix numerals, percentages, and metrics.
-- **Clean Sans Typography**: High-contrast, clean system sans (`sans-serif-medium` / `sans-serif`) for headers, titles, subtitles, currency signs (`₹`), and axis labels. This follows the Louis Studios DotTiles & Weather specification.
-- **Indian Number System**: Automatic compact formatting (`₹850`, `₹12.4k`, `₹1.5L`, `₹1.2Cr`).
-- **No Text Distortion**: Replaced legacy `fitXY` with `fitCenter` and orientation-aware target sizing (`minW` x `maxH` in portrait), ensuring zero stretching, elongation, or distorted aspect ratios.
+- **Clean Sans Typography**: High-contrast, clean system sans (`sans-serif-medium` / `sans-serif`) for headers, titles, subtitles, currency signs (`₹`), and axis labels.
+- **Optical Indian Currency Alignment**: Sized and optically centered currency symbol (`₹`) with Ndot57 numerals, preventing tofu boxes and glyph clipping.
+- **Zero Distortion & Strict Proportions**: Scaled using `fitCenter` and orientation-aware target dimensions (`minW` x `maxH`), completely eliminating text elongation and stretched aspect ratios.
+
+### Layout Geometry & Zero Overlap Architecture
+- **Adaptive Vertical Zones**: Strict vertical zone boundaries partition Header, Middle Hero Metric, and Bottom Visual.
+- **Compact Height Detection (`isCompactH`)**: When container height is under `115dp` (e.g. `2x1` and `4x1`), hero text size scales dynamically and bottom tick labels are hidden so numbers and visual primitives never collide.
+- **Parabolic Arc Clamping**: The Financial Sky celestial arc strictly computes `x(t), y(t)` inside the recessed well bounds, preventing sun/moon markers from penetrating top or bottom borders.
+
+### Fluid Animation Engine (`DotVisuals` & `PixelMotion`)
+All visual primitives accept an interactive `progress: Float = 1.0f` parameter:
+- **Slider**: Marker block eases from 0 to target position while lit ticks sweep in from left to right.
+- **Steps**: Histogram bars grow smoothly upward from the axis baseline.
+- **Dots**: 24-hour dots sweep in sequentially with an expanding cyan indicator ring around the current hour.
+- **Blocks**: Session queue blocks illuminate consecutively.
+- **Rise**: 6-tier proportional staircase rises step by step.
+- **Grid**: Calendar dot matrix cells fade and intensify smoothly.
+- **Arc**: Celestial marker rides the parabolic arc trajectory.
+- **RemoteViews Frame Burst**: 8-frame burst animation on home screen placement and updates.
+- **Interactive In-App Previews**: 60fps Compose animation triggered on tap or replay.
 
 ### Palette
 The design system enforces a strict, zero-drift color palette exposed via `PixelTheme`:

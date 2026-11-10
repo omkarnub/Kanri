@@ -112,21 +112,42 @@ object PixelFont {
     }
 
     /**
-     * Splits formatted currency text like "-₹12.4k" into prefix "-₹" and number "12.4k".
+     * Splits formatted currency text like "-₹12.4k /d" into prefix ("-₹"), number ("12.4k"), and unit ("/d").
      */
-    fun splitCurrency(text: String): Pair<String, String> {
+    fun splitCurrencyAndUnit(text: String): Triple<String, String, String> {
         val trimmed = text.trim()
-        val hasMinus = trimmed.startsWith("-")
-        val withoutMinus = if (hasMinus) trimmed.substring(1) else trimmed
-        return if (withoutMinus.startsWith("₹")) {
-            val prefix = if (hasMinus) "-₹" else "₹"
-            Pair(prefix, withoutMinus.substring(1).trim())
+        val parts = trimmed.split(" ", limit = 2)
+        val mainToken = parts[0]
+        val unit = if (parts.size > 1) " " + parts[1] else ""
+
+        val hasMinus = mainToken.startsWith("-")
+        val withoutMinus = if (hasMinus) mainToken.substring(1) else mainToken
+
+        val prefix: String
+        val number: String
+        if (withoutMinus.startsWith("₹")) {
+            prefix = if (hasMinus) "-₹" else "₹"
+            number = withoutMinus.substring(1).trim()
         } else if (withoutMinus.startsWith("$")) {
-            val prefix = if (hasMinus) "-$" else "$"
-            Pair(prefix, withoutMinus.substring(1).trim())
+            prefix = if (hasMinus) "-$" else "$"
+            number = withoutMinus.substring(1).trim()
+        } else if (withoutMinus.startsWith("+")) {
+            prefix = "+"
+            number = withoutMinus.substring(1).trim()
+        } else if (hasMinus) {
+            prefix = "-"
+            number = withoutMinus.trim()
         } else {
-            Pair("", trimmed)
+            prefix = ""
+            number = mainToken.trim()
         }
+
+        return Triple(prefix, number, unit)
+    }
+
+    fun splitCurrency(text: String): Pair<String, String> {
+        val (prefix, number, unit) = splitCurrencyAndUnit(text)
+        return Pair(prefix, number + unit)
     }
 
     /**
@@ -166,7 +187,8 @@ object PixelFont {
     }
 
     /**
-     * Draws a hero financial metric using Ndot57 for digits and sans for currency sign.
+     * Draws a hero financial metric using Ndot57 for digits and sans for currency sign,
+     * optically centering baseline and cap-heights.
      */
     fun drawHeroMetric(
         canvas: Canvas,
@@ -178,7 +200,7 @@ object PixelFont {
         color: Int = PixelTheme.COLOR_DOT_ON_INT,
         progress: Float = 1.0f
     ) {
-        val (prefix, number) = splitCurrency(text)
+        val (prefix, number, unit) = splitCurrencyAndUnit(text)
         val ndotTf = getNdotTypeface(context)
 
         metricPaint.typeface = ndotTf
@@ -186,10 +208,17 @@ object PixelFont {
         metricPaint.color = color
 
         var currentX = x
+
+        // Optical baseline alignment for currency sign
         if (prefix.isNotEmpty()) {
+            val prefixSize = sizePx * 0.82f
             prefixPaint.color = color
-            prefixPaint.textSize = sizePx * 0.72f
-            canvas.drawText(prefix, currentX, baselineY, prefixPaint)
+            prefixPaint.textSize = prefixSize
+            val fmNdot = metricPaint.fontMetrics
+            val fmPrefix = prefixPaint.fontMetrics
+            // Align baselines with slight optical lift
+            val prefixBaseline = baselineY + (fmPrefix.descent - fmNdot.descent) * 0.3f
+            canvas.drawText(prefix, currentX, prefixBaseline, prefixPaint)
             currentX += prefixPaint.measureText(prefix) + (sizePx * 0.08f)
         }
 
@@ -201,6 +230,15 @@ object PixelFont {
             number.take(visibleChars)
         }
         canvas.drawText(displayText, currentX, baselineY, metricPaint)
+        currentX += metricPaint.measureText(displayText)
+
+        // Draw unit if present (e.g. " /d", " DAYS") in clean sans or ndot
+        if (unit.isNotEmpty()) {
+            val unitSize = sizePx * 0.55f
+            prefixPaint.color = PixelTheme.COLOR_DOT_MID_INT
+            prefixPaint.textSize = unitSize
+            canvas.drawText(unit, currentX + (sizePx * 0.05f), baselineY, prefixPaint)
+        }
     }
 
     /**
@@ -223,7 +261,8 @@ object PixelFont {
     }
 
     /**
-     * Draws a right-aligned label.
+     * Draws a right-aligned label. If [useNdot] is true, currency signs are cleanly
+     * separated in sans typography while digits use authentic Ndot57.
      */
     fun drawRightLabel(
         canvas: Canvas,
@@ -235,26 +274,68 @@ object PixelFont {
         useNdot: Boolean = false,
         context: Context? = null
     ) {
-        labelPaint.color = color
-        labelPaint.textSize = sizePx
-        labelPaint.typeface = if (useNdot) getNdotTypeface(context) else sansMedium
-        val w = labelPaint.measureText(text)
-        canvas.drawText(text, rightX - w, baselineY, labelPaint)
+        if (!useNdot) {
+            labelPaint.color = color
+            labelPaint.textSize = sizePx
+            labelPaint.typeface = sansMedium
+            val w = labelPaint.measureText(text)
+            canvas.drawText(text, rightX - w, baselineY, labelPaint)
+            return
+        }
+
+        val (prefix, number, unit) = splitCurrencyAndUnit(text)
+        val ndotTf = getNdotTypeface(context)
+
+        metricPaint.typeface = ndotTf
+        metricPaint.textSize = sizePx
+        metricPaint.color = color
+
+        prefixPaint.typeface = sansMedium
+        prefixPaint.color = color
+        prefixPaint.textSize = sizePx * 0.82f
+
+        var totalW = 0f
+        if (prefix.isNotEmpty()) {
+            totalW += prefixPaint.measureText(prefix) + (sizePx * 0.06f)
+        }
+        totalW += metricPaint.measureText(number)
+        if (unit.isNotEmpty()) {
+            prefixPaint.textSize = sizePx * 0.7f
+            totalW += prefixPaint.measureText(unit)
+        }
+
+        var currentX = rightX - totalW
+        if (prefix.isNotEmpty()) {
+            prefixPaint.textSize = sizePx * 0.82f
+            canvas.drawText(prefix, currentX, baselineY, prefixPaint)
+            currentX += prefixPaint.measureText(prefix) + (sizePx * 0.06f)
+        }
+        canvas.drawText(number, currentX, baselineY, metricPaint)
+        currentX += metricPaint.measureText(number)
+
+        if (unit.isNotEmpty()) {
+            prefixPaint.textSize = sizePx * 0.7f
+            canvas.drawText(unit, currentX, baselineY, prefixPaint)
+        }
     }
 
     /**
-     * Measures total width of a metric text (prefix + number) at [sizePx].
+     * Measures total width of a metric text at [sizePx].
      */
     fun measureMetricWidth(context: Context?, text: String, sizePx: Float): Float {
-        val (prefix, number) = splitCurrency(text)
+        val (prefix, number, unit) = splitCurrencyAndUnit(text)
         var total = 0f
         if (prefix.isNotEmpty()) {
-            prefixPaint.textSize = sizePx * 0.72f
+            prefixPaint.textSize = sizePx * 0.82f
             total += prefixPaint.measureText(prefix) + (sizePx * 0.08f)
         }
         metricPaint.typeface = getNdotTypeface(context)
         metricPaint.textSize = sizePx
         total += metricPaint.measureText(number)
+        if (unit.isNotEmpty()) {
+            prefixPaint.textSize = sizePx * 0.55f
+            total += prefixPaint.measureText(unit) + (sizePx * 0.05f)
+        }
         return total
     }
 }
