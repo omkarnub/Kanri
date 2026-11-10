@@ -14,9 +14,9 @@ object PixelTheme {
     const val COLOR_BORDER_INT: Int = 0x45FFFFFF
     const val COLOR_BORDER_HIGHLIGHT_INT: Int = 0x75FFFFFF
     const val COLOR_BORDER_LOWLIGHT_INT: Int = 0x24FFFFFF
-    const val COLOR_DOT_ON_INT: Int = 0xFFF2F2F5.toInt()
-    const val COLOR_DOT_DIM_INT: Int = 0xFF1E1E24.toInt()
-    const val COLOR_DOT_MID_INT: Int = 0xFF6B6B76.toInt()
+    const val COLOR_DOT_ON_INT: Int = 0xFFF2F2F2.toInt()
+    const val COLOR_DOT_DIM_INT: Int = 0xFF1E1E1E.toInt()
+    const val COLOR_DOT_MID_INT: Int = 0xFF6B6B6B.toInt()
 
     // State Accents (Canvas)
     const val COLOR_MINT_INT: Int = 0xFF30D158.toInt()
@@ -25,12 +25,12 @@ object PixelTheme {
     const val COLOR_CYAN_INT: Int = 0xFF4DD0E1.toInt()
 
     // --- Jetpack Compose Colors ---
-    val ColorBg = Color(0xFF08080A)
+    val ColorBg = Color(0xFF080808)
     val ColorBorder = Color(0x45FFFFFF)
     val ColorBorderHighlight = Color(0x75FFFFFF)
-    val ColorDotOn = Color(0xFFF2F2F5)
-    val ColorDotDim = Color(0xFF1E1E24)
-    val ColorDotMid = Color(0xFF6B6B76)
+    val ColorDotOn = Color(0xFFF2F2F2)
+    val ColorDotDim = Color(0xFF1E1E1E)
+    val ColorDotMid = Color(0xFF6B6B6B)
 
     // State Accents (Compose)
     val ColorMint = Color(0xFF30D158)

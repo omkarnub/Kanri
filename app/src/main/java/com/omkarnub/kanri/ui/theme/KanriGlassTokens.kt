@@ -193,7 +193,7 @@ fun computeAdaptedAccentColor(baseColor: Color, tintLightness: Float): Color {
 
 fun createCustomGlassTokens(c: GlassCustomization): KanriGlassTokens {
     val lightness = c.tintLightness.coerceIn(-1.0f, 1.0f)
-    val darkBase = Color(0xFF0A0B10)
+    val darkBase = Color(0xFF0D0D0D)
     val whiteBase = Color(0xFFFFFFFF)
 
     // Tint calculation:
@@ -211,8 +211,8 @@ fun createCustomGlassTokens(c: GlassCustomization): KanriGlassTokens {
             val base = lerpColor(whiteBase, darkBase, (0.4f + d * 0.6f))
             tintBlur = base.copy(alpha = (0.06f + d * 0.40f).coerceIn(0.04f, 0.65f))
             tintFlat = Color.Black.copy(alpha = (0.08f + d * 0.35f).coerceIn(0.05f, 0.50f))
-            tintStrong = Color(0xFF0C0D14).copy(alpha = (0.28f + d * 0.55f).coerceIn(0.20f, 0.90f))
-            fallbackSurface = Color(0xFF0A0B10).copy(alpha = (0.80f + d * 0.16f).coerceIn(0.70f, 0.96f))
+            tintStrong = Color(0xFF0F0F0F).copy(alpha = (0.28f + d * 0.55f).coerceIn(0.20f, 0.90f))
+            fallbackSurface = Color(0xFF0D0D0D).copy(alpha = (0.80f + d * 0.16f).coerceIn(0.70f, 0.96f))
         }
         lightness > 0.04f -> {
             val l = lightness.coerceIn(0f, 1f)
@@ -226,7 +226,7 @@ fun createCustomGlassTokens(c: GlassCustomization): KanriGlassTokens {
             tintBlur = Color.White.copy(alpha = 0.08f)
             tintFlat = Color.White.copy(alpha = 0.08f)
             tintStrong = Color.White.copy(alpha = 0.16f)
-            fallbackSurface = Color(0xFF14151B).copy(alpha = 0.80f)
+            fallbackSurface = Color(0xFF141414).copy(alpha = 0.80f)
         }
     }
 
@@ -263,9 +263,9 @@ fun createCustomGlassTokens(c: GlassCustomization): KanriGlassTokens {
 val GlassTokens = KanriGlassTokens(
     isDark = true,
     backdropGradient = listOf(
-        Color(0xFF0B0B0E),
-        Color(0xFF121216),
-        Color(0xFF08080A)
+        Color(0xFF0B0B0B),
+        Color(0xFF121212),
+        Color(0xFF080808)
     ),
     blobs = listOf(
         GlassBlob(
@@ -294,13 +294,13 @@ val GlassTokens = KanriGlassTokens(
     borderEnd = Color.White.copy(alpha = 0.05f),
     edgeHairline = Color.Transparent,
     shadow = Color.Black.copy(alpha = 0.035f),
-    textPrimary = Color(0xFFF5F5F7),
-    textSecondary = Color(0xFFF5F5F7).copy(alpha = 0.70f),
-    textTertiary = Color(0xFFF5F5F7).copy(alpha = 0.44f),
-    accent = Color(0xFFF5F5F7),
-    onAccent = Color(0xFF121214),
+    textPrimary = Color(0xFFF5F5F5),
+    textSecondary = Color(0xFFF5F5F5).copy(alpha = 0.70f),
+    textTertiary = Color(0xFFF5F5F5).copy(alpha = 0.44f),
+    accent = Color(0xFFF5F5F5),
+    onAccent = Color(0xFF121212),
     credit = Color(0xFFFFFFFF),
-    debit = Color(0xFFC8C8D2),
+    debit = Color(0xFFCCCCCC),
     track = Color.White.copy(alpha = 0.10f),
     borderWidth = 0.8.dp,
     cornerRadius = 20.dp,

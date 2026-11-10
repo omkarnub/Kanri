@@ -2,6 +2,8 @@ package com.omkarnub.kanri.ui.theme
 
 import android.app.Activity
 import android.os.Build
+import androidx.compose.foundation.text.selection.LocalTextSelectionColors
+import androidx.compose.foundation.text.selection.TextSelectionColors
 import androidx.compose.material3.MaterialTheme
 import androidx.compose.material3.darkColorScheme
 import androidx.compose.material3.dynamicDarkColorScheme
@@ -139,7 +141,7 @@ private val KanriGlassColorScheme = darkColorScheme(
     surfaceDim = Color.White.copy(alpha = 0.04f),
     surfaceBright = Color.White.copy(alpha = 0.12f),
     inverseSurface = Color(0xFFEDEDED),
-    inverseOnSurface = Color(0xFF111114),
+    inverseOnSurface = Color(0xFF121212),
     outline = GlassTokens.borderStart,
     outlineVariant = GlassTokens.borderEnd
 )
@@ -230,21 +232,36 @@ fun KanriTheme(
                 insetsController.isAppearanceLightStatusBars = !isDark
                 insetsController.isAppearanceLightNavigationBars = !isDark
 
-                val windowBackdrop = when (resolvedThemeMode) {
-                    ThemeMode.GLASS -> android.graphics.Color.parseColor("#0B0B0E")
-                    ThemeMode.AMOLED -> android.graphics.Color.BLACK
-                    ThemeMode.DARK -> android.graphics.Color.parseColor("#121212")
-                    ThemeMode.LIGHT -> android.graphics.Color.parseColor("#FEFAEC")
-                    ThemeMode.SYSTEM -> if (!isDark) android.graphics.Color.parseColor("#FEFAEC") else android.graphics.Color.parseColor("#121212")
+                val isQuickEntry = view.context.javaClass.simpleName == "QuickEntryActivity" ||
+                        view.context.packageName?.let { view.context.javaClass.name.contains("QuickEntryActivity") } == true
+
+                if (isQuickEntry) {
+                    window.setBackgroundDrawable(android.graphics.drawable.ColorDrawable(android.graphics.Color.TRANSPARENT))
+                } else {
+                    val windowBackdrop = when (resolvedThemeMode) {
+                        ThemeMode.GLASS -> android.graphics.Color.parseColor("#0B0B0E")
+                        ThemeMode.AMOLED -> android.graphics.Color.BLACK
+                        ThemeMode.DARK -> android.graphics.Color.parseColor("#121212")
+                        ThemeMode.LIGHT -> android.graphics.Color.parseColor("#FEFAEC")
+                        ThemeMode.SYSTEM -> if (!isDark) android.graphics.Color.parseColor("#FEFAEC") else android.graphics.Color.parseColor("#121212")
+                    }
+                    window.setBackgroundDrawable(android.graphics.drawable.ColorDrawable(windowBackdrop))
                 }
-                window.setBackgroundDrawable(android.graphics.drawable.ColorDrawable(windowBackdrop))
             }
         }
     }
 
+    val textSelectionColors = remember(isDark) {
+        TextSelectionColors(
+            handleColor = if (isDark) Color(0xFFE5E5E5) else Color(0xFF171717),
+            backgroundColor = (if (isDark) Color.White else Color.Black).copy(alpha = 0.28f)
+        )
+    }
+
     CompositionLocalProvider(
         LocalKanriGlass provides glassTokens,
-        LocalIsDarkTheme provides isDark
+        LocalIsDarkTheme provides isDark,
+        LocalTextSelectionColors provides textSelectionColors
     ) {
         MaterialTheme(
             colorScheme = colorScheme,

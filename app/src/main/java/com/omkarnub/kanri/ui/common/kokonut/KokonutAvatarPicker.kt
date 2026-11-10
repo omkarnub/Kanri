@@ -63,6 +63,7 @@ import androidx.compose.ui.geometry.Offset
 import androidx.compose.ui.geometry.Size
 import androidx.compose.ui.graphics.Color
 import androidx.compose.ui.graphics.Path
+import androidx.compose.ui.graphics.SolidColor
 import androidx.compose.ui.graphics.StrokeCap
 import androidx.compose.ui.graphics.StrokeJoin
 import androidx.compose.ui.graphics.asImageBitmap
@@ -201,7 +202,7 @@ val AVATAR_SHIRTS = listOf(
     FaceRgb(244, 244, 245)
 )
 
-val AVATAR_INK = Color(0xFF18181B)
+val AVATAR_INK = Color(0xFF121212)
 
 fun avatarRound2(v: Double): Float = ((v * 100.0).roundToInt() / 100.0).toFloat()
 fun avatarRound2(v: Float): Float = ((v * 100f).roundToInt() / 100f)
@@ -1080,6 +1081,7 @@ fun KokonutAvatarPicker(
                     value = displayName,
                     onValueChange = { if (it.length <= 32) displayName = it },
                     singleLine = true,
+                    cursorBrush = SolidColor(if (dark) Color(0xFFE5E5E5) else Color(0xFF171717)),
                     textStyle = TextStyle(
                         fontSize = 14.sp,
                         fontFamily = GoogleSansFlex,

@@ -96,7 +96,7 @@ fun CategoryDetailScreen(
     val tokens = LocalKanriGlass.current
 
     val isDark = tokens?.isDark ?: (MaterialTheme.colorScheme.surface.luminance() < 0.5f)
-    val titleTextColor = if (isDark) Color.White else Color(0xFF141418)
+    val titleTextColor = if (isDark) Color.White else Color(0xFF141414)
 
     Scaffold(
         modifier = modifier.fillMaxSize(),

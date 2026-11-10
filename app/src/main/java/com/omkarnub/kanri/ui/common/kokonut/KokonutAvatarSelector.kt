@@ -312,8 +312,8 @@ fun KokonutAvatarSelectorDialog(
                     .height(48.dp),
                 shape = RoundedCornerShape(14.dp),
                 colors = ButtonDefaults.buttonColors(
-                    containerColor = if (tokens?.isDark == true) Color(0xFFEDEDED) else Color(0xFF18181B),
-                    contentColor = if (tokens?.isDark == true) Color(0xFF111114) else Color.White
+                    containerColor = if (tokens?.isDark == true) Color(0xFFEDEDED) else Color(0xFF171717),
+                    contentColor = if (tokens?.isDark == true) Color(0xFF121212) else Color.White
                 )
             ) {
                 Text(

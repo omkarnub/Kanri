@@ -66,7 +66,7 @@ fun GrainGradientBackground(
             when (effectiveTheme) {
                 ThemeMode.AMOLED -> {
                     // Crisp AMOLED: pure black base with a subtle soft deep ambient spotlight
-                    val glowColor = Color(0xFF16161B).copy(alpha = (0.22f + boost).coerceAtMost(0.40f))
+                    val glowColor = Color(0xFF161616).copy(alpha = (0.22f + boost).coerceAtMost(0.40f))
                     drawCircle(
                         brush = Brush.radialGradient(
                             colors = listOf(glowColor, Color.Transparent),
@@ -109,7 +109,7 @@ fun GrainGradientBackground(
 
             // 3. Subtle ambient brightness pulse on transaction arrival
             if (boost > 0f) {
-                val pulseTint = if (effectiveTheme == ThemeMode.LIGHT) Color.White else Color(0xFFD4D4D8)
+                val pulseTint = if (effectiveTheme == ThemeMode.LIGHT) Color.White else Color(0xFFD4D4D4)
                 drawCircle(
                     brush = Brush.radialGradient(
                         colors = listOf(pulseTint.copy(alpha = boost * 0.25f), Color.Transparent),

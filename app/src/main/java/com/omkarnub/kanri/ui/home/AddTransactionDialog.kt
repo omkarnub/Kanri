@@ -643,7 +643,10 @@ fun AddTransactionDialog(
                                             focusedBorderColor = MaterialTheme.colorScheme.onSurface,
                                             unfocusedBorderColor = MaterialTheme.colorScheme.outlineVariant,
                                             focusedTextColor = MaterialTheme.colorScheme.onSurface,
-                                            unfocusedTextColor = MaterialTheme.colorScheme.onSurface
+                                            unfocusedTextColor = MaterialTheme.colorScheme.onSurface,
+                                            cursorColor = MaterialTheme.colorScheme.onSurface,
+                                            focusedLabelColor = MaterialTheme.colorScheme.onSurface,
+                                            unfocusedLabelColor = MaterialTheme.colorScheme.onSurfaceVariant
                                         )
                                     )
 

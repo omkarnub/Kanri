@@ -233,7 +233,7 @@ object BrandFormatter {
             else -> PolishedBrandTag(
                 title = if (isWalletConfigured) "Online Account" else "Digital Payment",
                 icon = Icons.Default.AccountBalanceWallet,
-                badgeTint = Color(0xFFD4D4D8)
+                badgeTint = Color(0xFFD4D4D4)
             )
         }
     }

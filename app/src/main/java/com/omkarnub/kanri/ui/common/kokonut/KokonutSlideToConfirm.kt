@@ -423,7 +423,7 @@ fun KokonutSlideToConfirm(
             val targetInkBgColor = if (isDone) {
                 if (dark) confirmationType.darkColor else confirmationType.lightColor
             } else {
-                if (dark) Color(0xFFF2F2F5) else Zinc900
+                if (dark) Color(0xFFF2F2F2) else Zinc900
             }
 
             val animatedInkBgColor by animateColorAsState(
@@ -517,7 +517,7 @@ fun KokonutSlideToConfirm(
             }
 
             // 4. Draggable Thumb (Circle 48dp)
-            val targetThumbBg = if (isDone) Color.White else (if (dark) Color(0xFFF2F2F5) else Zinc900)
+            val targetThumbBg = if (isDone) Color.White else (if (dark) Color(0xFFF2F2F2) else Zinc900)
             val animatedThumbBg by animateColorAsState(
                 targetValue = targetThumbBg,
                 animationSpec = tween(240, easing = SLIDE_EASE_OUT),

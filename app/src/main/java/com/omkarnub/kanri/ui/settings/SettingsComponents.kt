@@ -399,7 +399,7 @@ fun ThemePreviewCard(
             Color(0xFF121212), // Charcoal Base
             Color(0xFF222222), // Elevated Card
             Color(0xFF333333), // Border
-            Color(0xFFF2F2F5), // Off-White
+            Color(0xFFF2F2F2), // Off-White
             Color(0xFF1A1A1A)  // Dock
         )
         ThemeMode.AMOLED -> listOf(
@@ -688,7 +688,7 @@ fun getShaderGradientBrush(type: GlassBackgroundType): Brush {
             )
         )
         GlassBackgroundType.GRAIN_GRADIENT -> Brush.linearGradient(
-            colors = listOf(Color(0xFF18181B), Color(0xFF27272A), Color(0xFF3F3F46), Color(0xFF18181B))
+            colors = listOf(Color(0xFF171717), Color(0xFF262626), Color(0xFF404040), Color(0xFF171717))
         )
         GlassBackgroundType.HERO_GEOMETRIC -> Brush.linearGradient(
             colors = listOf(Color(0xFF0B132B), Color(0xFF1C2541), Color(0xFF3A506B), Color(0xFF0B132B))
@@ -700,7 +700,7 @@ fun getShaderGradientBrush(type: GlassBackgroundType): Brush {
             colors = listOf(Color(0xFF0C4A6E), Color(0xFF0284C7), Color(0xFF38BDF8), Color(0xFF075985))
         )
         GlassBackgroundType.INK_RIDGES -> Brush.linearGradient(
-            colors = listOf(Color(0xFF09090B), Color(0xFF18181B), Color(0xFF27272A), Color(0xFF09090B))
+            colors = listOf(Color(0xFF0A0A0A), Color(0xFF171717), Color(0xFF262626), Color(0xFF0A0A0A))
         )
         GlassBackgroundType.FUJI_SAKURA -> Brush.linearGradient(
             colors = listOf(Color(0xFF3B0764), Color(0xFF701A75), Color(0xFFDB2777), Color(0xFFF472B6))

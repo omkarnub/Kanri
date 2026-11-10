@@ -6,8 +6,8 @@ import androidx.compose.ui.graphics.Color
 val CreamSplashBackground = Color(0xFFFAF9F5) // Refined lighter soft cream (not pure white)
 val MonochromeBlack = Color(0xFF000000)
 
-// Off-white for dark mode white components (replaces harsh pure white #FFFFFF)
-val DarkOffWhite = Color(0xFFF2F2F5)
+// Off-white for dark mode white components (pure neutral monochrome, zero blue undertone)
+val DarkOffWhite = Color(0xFFF2F2F2)
 
 // Minimalist Dark Palette (Base #121212)
 val DarkBackground = Color(0xFF121212)

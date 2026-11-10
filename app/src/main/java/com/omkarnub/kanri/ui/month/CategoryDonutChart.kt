@@ -113,7 +113,7 @@ fun CategoryDonutChart(
             Color(0xFF14B8A6),
             Color(0xFFF97316),
             Color(0xFF6366F1),
-            Color(0xFF71717A)
+            Color(0xFF737373)
         )
     }
 
@@ -124,7 +124,7 @@ fun CategoryDonutChart(
                     name = "No spending",
                     amount = 0.0,
                     change = 0.0,
-                    color = Color(0xFF71717A)
+                    color = Color(0xFF737373)
                 )
             )
         } else {

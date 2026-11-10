@@ -157,7 +157,7 @@ fun KanriFloatingDock(
                     val l = lightness.coerceIn(0f, 1f)
                     Color.White.copy(alpha = (0.15f + l * 0.38f).coerceIn(0.10f, 0.55f))
                 }
-                else -> (if (tokens.isDark) Color.White else Color(0xFF18181B)).copy(alpha = 0.12f)
+                else -> (if (tokens.isDark) Color.White else Color(0xFF171717)).copy(alpha = 0.12f)
             }
 
             val glassHazeStyle = remember(tokens.tintLightness, tokens.blurRadius, tokens.isDark, dockBg, dockTint) {
@@ -486,7 +486,7 @@ private fun DockAddButton(
                 val l = lightness.coerceIn(0f, 1f)
                 Color.White.copy(alpha = (0.16f + l * 0.38f).coerceIn(0.12f, 0.58f))
             }
-            else -> (if (tokens.isDark) Color.White else Color(0xFF18181B)).copy(alpha = 0.15f)
+            else -> (if (tokens.isDark) Color.White else Color(0xFF171717)).copy(alpha = 0.15f)
         }
 
         val glassHazeStyle = remember(tokens.tintLightness, tokens.blurRadius, tokens.isDark, dockBg, dockTint) {

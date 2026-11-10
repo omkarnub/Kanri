@@ -515,8 +515,13 @@ fun SplitExpenseEntryDialog(
                                                 imeAction = ImeAction.Next
                                             ),
                                             colors = OutlinedTextFieldDefaults.colors(
-                                                focusedBorderColor = MaterialTheme.colorScheme.primary,
-                                                unfocusedBorderColor = MaterialTheme.colorScheme.outlineVariant
+                                                focusedBorderColor = MaterialTheme.colorScheme.onSurface,
+                                                unfocusedBorderColor = MaterialTheme.colorScheme.outlineVariant,
+                                                focusedTextColor = MaterialTheme.colorScheme.onSurface,
+                                                unfocusedTextColor = MaterialTheme.colorScheme.onSurface,
+                                                cursorColor = MaterialTheme.colorScheme.onSurface,
+                                                focusedLabelColor = MaterialTheme.colorScheme.onSurface,
+                                                unfocusedLabelColor = MaterialTheme.colorScheme.onSurfaceVariant
                                             ),
                                             modifier = Modifier.fillMaxWidth(),
                                             shape = RoundedCornerShape(14.dp)
@@ -671,6 +676,15 @@ fun SplitExpenseEntryDialog(
                                                             )
                                                         },
                                                         singleLine = true,
+                                                        colors = OutlinedTextFieldDefaults.colors(
+                                                            focusedBorderColor = MaterialTheme.colorScheme.onSurface,
+                                                            unfocusedBorderColor = MaterialTheme.colorScheme.outlineVariant,
+                                                            focusedTextColor = MaterialTheme.colorScheme.onSurface,
+                                                            unfocusedTextColor = MaterialTheme.colorScheme.onSurface,
+                                                            cursorColor = MaterialTheme.colorScheme.onSurface,
+                                                            focusedLabelColor = MaterialTheme.colorScheme.onSurface,
+                                                            unfocusedLabelColor = MaterialTheme.colorScheme.onSurfaceVariant
+                                                        ),
                                                         modifier = Modifier.fillMaxWidth(),
                                                         shape = RoundedCornerShape(12.dp)
                                                     )
@@ -734,6 +748,15 @@ fun SplitExpenseEntryDialog(
                                                         )
                                                     },
                                                     singleLine = true,
+                                                    colors = OutlinedTextFieldDefaults.colors(
+                                                        focusedBorderColor = MaterialTheme.colorScheme.onSurface,
+                                                        unfocusedBorderColor = MaterialTheme.colorScheme.outlineVariant,
+                                                        focusedTextColor = MaterialTheme.colorScheme.onSurface,
+                                                        unfocusedTextColor = MaterialTheme.colorScheme.onSurface,
+                                                        cursorColor = MaterialTheme.colorScheme.onSurface,
+                                                        focusedLabelColor = MaterialTheme.colorScheme.onSurface,
+                                                        unfocusedLabelColor = MaterialTheme.colorScheme.onSurfaceVariant
+                                                    ),
                                                     modifier = Modifier.fillMaxWidth(),
                                                     shape = RoundedCornerShape(12.dp)
                                                 )

@@ -195,13 +195,13 @@ fun Modifier.kanriGlass(
                 val frostBgColor = when {
                     lightness < -0.04f -> {
                         val d = (-lightness).coerceIn(0f, 1f)
-                        lerpColor(Color(0xFF14151E), Color(0xFF06070A), d)
+                        lerpColor(Color(0xFF141414), Color(0xFF060606), d)
                     }
                     lightness > 0.04f -> {
                         val l = lightness.coerceIn(0f, 1f)
-                        lerpColor(Color(0xFF14151E), Color(0xFFFAF9F6), l)
+                        lerpColor(Color(0xFF141414), Color(0xFFFAF9F6), l)
                     }
-                    else -> if (tokens.isDark) Color(0xFF14151E) else Color(0xFFFAF9F5)
+                    else -> if (tokens.isDark) Color(0xFF141414) else Color(0xFFFAF9F5)
                 }
                 val frostBgAlpha = when {
                     lightness < -0.04f -> {
@@ -266,8 +266,8 @@ fun Modifier.kanriGlass(
                         val d = -lightness
                         Brush.verticalGradient(
                             listOf(
-                                Color(0xFF1C1D24).copy(alpha = (0.42f + d * 0.40f).coerceIn(0.25f, 0.90f)),
-                                Color(0xFF0C0D12).copy(alpha = (0.55f + d * 0.38f).coerceIn(0.30f, 0.95f))
+                                Color(0xFF1C1C1C).copy(alpha = (0.42f + d * 0.40f).coerceIn(0.25f, 0.90f)),
+                                Color(0xFF0C0C0C).copy(alpha = (0.55f + d * 0.38f).coerceIn(0.30f, 0.95f))
                             )
                         )
                     }
@@ -316,9 +316,9 @@ fun Modifier.kanriGlass(
             GlassLevel.Strong -> {
                 val lightness = tokens.tintLightness.coerceIn(-1f, 1f)
                 val strongBgColor = when {
-                    lightness < -0.04f -> Color(0xFF0A0B10)
+                    lightness < -0.04f -> Color(0xFF0A0A0A)
                     lightness > 0.04f -> Color(0xFFFFFFFF)
-                    else -> if (tokens.isDark) Color(0xFF14151B) else Color(0xFFFAF9F5)
+                    else -> if (tokens.isDark) Color(0xFF141414) else Color(0xFFFAF9F5)
                 }
                 val strongBgAlpha = when {
                     lightness < -0.04f -> (0.68f + (-lightness) * 0.25f).coerceIn(0.50f, 0.96f)
@@ -351,7 +351,7 @@ fun Modifier.kanriGlass(
                 // Fixed 50dp blur and 10% dark tint for Amount Pad, Transaction Details, and Summary Drawer
                 val fixedBlur = 50.dp
                 val fixedTint = Color.Black.copy(alpha = 0.10f)
-                val baseBg = if (tokens.isDark) Color(0xFF14151B).copy(alpha = 0.85f) else Color(0xFFFAF9F5).copy(alpha = 0.88f)
+                val baseBg = if (tokens.isDark) Color(0xFF141414).copy(alpha = 0.85f) else Color(0xFFFAF9F5).copy(alpha = 0.88f)
 
                 if (isBlurCapable && currentHaze != null) {
                     baseModifier.hazeEffect(
@@ -562,13 +562,13 @@ fun getKanriGlassTheme(
             val dockBgColor = when {
                 lightness < -0.04f -> {
                     val d = (-lightness).coerceIn(0f, 1f)
-                    lerpColor(Color(0xFF14151F), Color(0xFF06070A), d)
+                    lerpColor(Color(0xFF141414), Color(0xFF060606), d)
                 }
                 lightness > 0.04f -> {
                     val l = lightness.coerceIn(0f, 1f)
-                    lerpColor(Color(0xFF14151F), Color(0xFFFAF9F6), l)
+                    lerpColor(Color(0xFF141414), Color(0xFFFAF9F6), l)
                 }
-                else -> if (tokens.isDark) Color(0xFF14151F) else Color(0xFFFAF9F5)
+                else -> if (tokens.isDark) Color(0xFF141414) else Color(0xFFFAF9F5)
             }
             val dockBgAlpha = when {
                 lightness < -0.04f -> {
@@ -877,7 +877,7 @@ fun KanriModalBottomSheet(
         containerColor = Color.Transparent,
         contentColor = tokens?.textPrimary ?: MaterialTheme.colorScheme.onSurface,
         scrimColor = if (tokens != null) {
-            if (tokens.isDark) Color.Black.copy(alpha = 0.45f) else Color(0xFF12182B).copy(alpha = 0.30f)
+            if (tokens.isDark) Color.Black.copy(alpha = 0.45f) else Color(0xFF141414).copy(alpha = 0.30f)
         } else BottomSheetDefaults.ScrimColor,
         shape = shape,
         dragHandle = null,
@@ -1009,7 +1009,7 @@ fun KanriGlassDialog(
         }
 
         val dialogBg = if (tokens != null) {
-            if (tokens.isDark) Color(0xFF14151B).copy(alpha = 0.72f)
+            if (tokens.isDark) Color(0xFF141414).copy(alpha = 0.72f)
             else Color(0xFFFAF9F5).copy(alpha = 0.78f)
         } else {
             MaterialTheme.colorScheme.surface
@@ -1123,8 +1123,8 @@ fun kanriPrimaryButtonColors(): ButtonColors {
     val tokens = LocalKanriGlass.current
     return if (tokens != null) {
         ButtonDefaults.buttonColors(
-            containerColor = if (tokens.isDark) Color(0xFFEDEDED) else Color(0xFF18181B),
-            contentColor = if (tokens.isDark) Color(0xFF111114) else Color.White,
+            containerColor = if (tokens.isDark) Color(0xFFEDEDED) else Color(0xFF171717),
+            contentColor = if (tokens.isDark) Color(0xFF121212) else Color.White,
             disabledContainerColor = if (tokens.isDark) Color.White.copy(alpha = 0.12f) else Color.Black.copy(alpha = 0.08f),
             disabledContentColor = if (tokens.isDark) Color.White.copy(alpha = 0.38f) else Color.Black.copy(alpha = 0.35f)
         )

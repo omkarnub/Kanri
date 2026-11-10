@@ -5,6 +5,22 @@ All notable changes to Kanri will be documented in this file.
 The format is based on [Keep a Changelog](https://keepachangelog.com/en/1.0.0/),
 and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0.html).
 
+## [1.13.2] - 2026-11-11
+
+### Fixed & Refined
+- **Quick Entry Theme Synchronization & Transparency**:
+  - `QuickEntryActivity` respects the active app theme (`ThemeMode.DARK`, `AMOLED`, `LIGHT`, `GLASS`, `SYSTEM`) and keeps the window background fully transparent (`ColorDrawable(Color.TRANSPARENT)`).
+  - Dimmed scrim (`0.55f`) overlays directly on top of the user's home screen wallpaper without an opaque backdrop override from `KanriTheme`.
+- **Eliminated Cool Blue/Slate Undertones Across Dark Mode**:
+  - Replaced Tailwind Zinc palette in `KokonutSpendingRing.kt` with a pure neutral monochrome scale (equal RGB: `#0A0A0A` through `#FAFAFA`).
+  - Neutralized `DarkOffWhite` in `Color.kt` and `PixelTheme.kt` from `0xFFF2F2F5` (cool slate) to `0xFFF2F2F2` (pure monochrome off-white).
+  - Neutralized `AVATAR_BACKGROUNDS` (replaced slate/mist with charcoal/silver neutral monochrome pairs), `AVATAR_HAIRS`, `AVATAR_SHIRTS`, and `AVATAR_INK` (`0xFF121212`) in `KokonutAvatarPicker.kt`.
+  - Added pure monochrome `cursorBrush` to the Display Name `BasicTextField` in `KokonutAvatarPicker.kt`.
+  - Provided `LocalTextSelectionColors` globally in `KanriTheme` with pure monochrome handle and highlight colors.
+  - Specified explicit monochrome text field colors (`cursorColor`, `focusedBorderColor`, `focusedLabelColor`) in `AddTransactionDialog.kt` and `SplitExpenseEntryDialog.kt`.
+  - Neutralized dark base and fallback surfaces in `KanriGlassTokens.kt`, `KanriGlass.kt`, `WidgetsScreen.kt`, and `SettingsComponents.kt`.
+- Bumped version to `1.13.2` (Build 41).
+
 ## [1.13.1] - 2026-11-11
 
 ### Changed & Refined

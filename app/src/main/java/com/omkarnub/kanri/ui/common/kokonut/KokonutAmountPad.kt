@@ -341,7 +341,7 @@ fun KokonutAmountPad(
                     RollingAmountDisplay(
                         rawInput = rawInput,
                         fontSize = 54.sp,
-                        color = if (isEmpty) (if (dark) Color(0xFF383838) else Zinc300) else (tokens?.textPrimary ?: if (dark) Color(0xFFF2F2F5) else Zinc900),
+                        color = if (isEmpty) (if (dark) Color(0xFF383838) else Zinc300) else (tokens?.textPrimary ?: if (dark) Color(0xFFF2F2F2) else Zinc900),
                         dark = dark
                     )
                 }
@@ -453,7 +453,7 @@ fun KokonutAmountPad(
                     if (dark) Color(0xFF161616) else Zinc100
                 }
             } else {
-                if (dark) Color(0xFFF2F2F5) else Zinc900
+                if (dark) Color(0xFFF2F2F2) else Zinc900
             }
             val btnTextColor = if (isEmpty) {
                 if (dark) Color(0xFF757575) else Zinc400
@@ -631,7 +631,7 @@ private fun TactileKeypadKey(
                     imageVector = Icons.AutoMirrored.Filled.Backspace,
                     contentDescription = "Delete",
                     tint = if (isPressed) {
-                        tokens?.textPrimary ?: if (dark) Color(0xFFF2F2F5) else Zinc900
+                        tokens?.textPrimary ?: if (dark) Color(0xFFF2F2F2) else Zinc900
                     } else {
                         tokens?.textSecondary ?: if (dark) Color(0xFFA6A6A6) else Zinc500
                     },
@@ -643,7 +643,7 @@ private fun TactileKeypadKey(
                     fontSize = 24.sp,
                     fontFamily = GoogleSansFlex,
                     fontWeight = FontWeight.SemiBold,
-                    color = tokens?.textPrimary ?: if (dark) Color(0xFFF2F2F5) else Zinc900
+                    color = tokens?.textPrimary ?: if (dark) Color(0xFFF2F2F2) else Zinc900
                 )
             }
         }

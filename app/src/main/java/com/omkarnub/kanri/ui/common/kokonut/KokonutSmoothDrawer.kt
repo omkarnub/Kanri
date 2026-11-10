@@ -296,7 +296,7 @@ fun KokonutSmoothDrawer(
                                 fontSize = 13.sp,
                                 fontFamily = GoogleSansFlex,
                                 fontWeight = FontWeight.SemiBold,
-                                color = tokens?.textPrimary ?: if (dark) Color(0xFFF2F2F5) else Zinc900,
+                                color = tokens?.textPrimary ?: if (dark) Color(0xFFF2F2F2) else Zinc900,
                                 maxLines = 1,
                                 overflow = TextOverflow.Ellipsis
                             )

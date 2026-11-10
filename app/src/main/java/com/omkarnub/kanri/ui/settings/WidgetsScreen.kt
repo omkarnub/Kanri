@@ -302,7 +302,7 @@ fun WidgetGalleryCard(info: WidgetInfo) {
         modifier = Modifier
             .fillMaxWidth()
             .clip(RoundedCornerShape(20.dp))
-            .background(Color(0xFF111218))
+            .background(Color(0xFF141414))
             .border(1.dp, Color(0x22FFFFFF), RoundedCornerShape(20.dp))
             .padding(16.dp)
     ) {
@@ -351,7 +351,7 @@ fun WidgetGalleryCard(info: WidgetInfo) {
                 .clip(RoundedCornerShape(16.dp))
                 .background(
                     Brush.verticalGradient(
-                        colors = listOf(Color(0xFF181B26), Color(0xFF0A0C10))
+                        colors = listOf(Color(0xFF1C1C1C), Color(0xFF0E0E0E))
                     )
                 )
                 .clickable {
@@ -423,7 +423,7 @@ fun WidgetGalleryCard(info: WidgetInfo) {
                 },
                 shape = RoundedCornerShape(12.dp),
                 colors = ButtonDefaults.buttonColors(
-                    containerColor = Color(0xFF1E222D),
+                    containerColor = Color(0xFF242424),
                     contentColor = PixelTheme.ColorDotOn
                 ),
                 contentPadding = PaddingValues(horizontal = 12.dp, vertical = 6.dp)

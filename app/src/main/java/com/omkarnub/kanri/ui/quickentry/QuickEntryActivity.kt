@@ -40,6 +40,7 @@ class QuickEntryActivity : ComponentActivity() {
     override fun onCreate(savedInstanceState: Bundle?) {
         super.onCreate(savedInstanceState)
         enableEdgeToEdge()
+        window.setBackgroundDrawable(android.graphics.drawable.ColorDrawable(android.graphics.Color.TRANSPARENT))
 
         val action = intent?.action ?: KanriWidgetActions.ACTION_ADD_EXPENSE
         val isIncome = action == KanriWidgetActions.ACTION_ADD_INCOME
