@@ -11,7 +11,7 @@ class TodayWidgetProvider : BasePixelWidgetProvider<TodayWidgetState>() {
         return WidgetDataSource.getTodayState(context)
     }
 
-    override fun getClickAction(): String = KanriWidgetActions.ACTION_OPEN_TODAY
+    override fun getClickAction(): String = KanriWidgetActions.ACTION_ADD_EXPENSE
 
     companion object {
         fun updateAll(context: Context, playBurst: Boolean = false) {

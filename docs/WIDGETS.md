@@ -1,6 +1,6 @@
 # Kanri Pixel DotTiles Widget System
 
-Current Version: **1.12.2** (Build 38)
+Current Version: **1.13.0** (Build 39)
 
 ## 1. Overview
 Kanri's widget subsystem is unified around a single, cohesive visual language: **Pixel DotTiles** (Nothing-inspired dot-matrix & tactile cards). Designed with precision, restraint, and obsessive detail, the system delivers 12 specialized home screen widgets rendered by a pure Canvas engine shared 1:1 between Android `RemoteViews` bitmaps and Jetpack Compose in-app previews.
@@ -32,10 +32,14 @@ All visual primitives accept an interactive `progress: Float = 1.0f` parameter:
 - **RemoteViews Frame Burst**: 8-frame burst animation on home screen placement and updates.
 - **Interactive In-App Previews**: 60fps Compose animation triggered on tap or replay.
 
-### Palette
+### Palette & Corner Specular Highlights
 The design system enforces a strict, zero-drift color palette exposed via `PixelTheme`:
 - **Tile Background**: `#08080A` (Deep Obsidian Glass)
-- **Inner Border**: 1px `#24FFFFFF` (14% frosted edge)
+- **Inner Border & Corner Rim**:
+  - `COLOR_BORDER_HIGHLIGHT_INT = 0x75FFFFFF` (46% opacity specular top edge and upper corner highlights)
+  - `COLOR_BORDER_LOWLIGHT_INT = 0x24FFFFFF` (14% frosted bottom edge)
+  - Drawn via `LinearGradient(0, 0, 0, height)` shader with inset `tileRect` (`strokeWidth / 2f + 0.8f`) to eliminate any canvas corner clipping.
+  - Secondary inner specular highlight arc along top-left and top-right radii for luminous corner depth.
 - **Corner Radius**: `22dp`
 - **Tile Padding**: `14dp`
 - **Dot On (Primary)**: `#F2F2F5`
@@ -109,16 +113,26 @@ Reusable pure Canvas primitives:
    - Bursts are strictly rate-limited to at most one per 5 seconds per widget.
    - Periodic 15-minute `WorkManager` refresh for `SkyWidgetProvider` keeps sun and astronomical moon positions accurate throughout the day and night.
 
+### Launcher Previews (System Widget Picker)
+- Modern Android launchers (Pixel Launcher, Samsung One UI) display previews in the "Add widgets" sheet.
+- Each widget provider configures a dedicated 1:1 preview in `res/xml/widget_*_info.xml` via `android:previewImage="@drawable/widget_preview_*"`.
+- High-fidelity preview drawables reside in `res/drawable-nodpi/` rendered directly from the pure Canvas engine, providing pixel-accurate previews before placement.
+- `android:previewLayout` attributes are omitted so the launcher never falls back to an inaccurate generic placeholder.
+
 ---
 
 ## 5. Data Flow & Update Rules
 - All widget queries are centralized in `WidgetDataSource.kt`, using indexed Room aggregate queries.
 - `KanriWidgetsUpdater.updateAllWidgets(context)` updates only widgets that are actively placed on the user's home screen.
-- Deep links route through `KanriWidgetActions.kt` directly into target screens:
-  - Today / Month Delta / Heatmap → History & Transactions
-  - Budget / Safe to Spend → Budget Manager
+- **Floating Quick Entry Workflow (No Main App Opening)**:
+  - Tapping **Expense**, **Income**, or **Split** on `QuickActionsWidgetProvider`, or tapping the **Today** or **Safe to Spend** widgets, deep-links directly to `QuickEntryActivity.kt`.
+  - Configured with `Theme.Kanri.QuickEntry`, `excludeFromRecents="true"`, and `taskAffinity=""`.
+  - Renders the tactile Compose numpad and full manual transaction workflow (`AddTransactionDialog` / `SplitExpenseEntryDialog`) as a transparent floating sheet directly over the home screen.
+  - Transactions save instantly to Room DB, trigger an 8-frame burst widget refresh across all placed widgets (`KanriWidgetsUpdater.updateAllWidgets(applicationContext, playBurst = true)`), show a brief confirmation toast, and dismiss without launching `MainActivity`.
+- Other widget deep links route through `KanriWidgetActions.kt` directly into target screens:
+  - Month Delta / Heatmap → History & Transactions
+  - Budget → Budget Manager
   - Wallets → Wallet Sheet
   - Goals → Savings Goals
   - Dues → Lend & Borrow
   - Review Inbox → Needs Review Queue
-  - Quick Actions → Add Expense / Add Income / Split Bill

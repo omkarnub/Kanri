@@ -145,7 +145,22 @@
                 android:resource="@xml/shortcuts" />
         </activity>
 
-
+        <!-- Quick Manual Entry Dialog Activity (Floating numpad directly on home screen) -->
+        <activity
+            android:name=".ui.quickentry.QuickEntryActivity"
+            android:exported="true"
+            android:theme="@style/Theme.Kanri.QuickEntry"
+            android:taskAffinity=""
+            android:excludeFromRecents="true"
+            android:launchMode="singleTask"
+            android:windowSoftInputMode="adjustResize">
+            <intent-filter>
+                <action android:name="com.omkarnub.kanri.action.ADD_EXPENSE" />
+                <action android:name="com.omkarnub.kanri.action.ADD_INCOME" />
+                <action android:name="com.omkarnub.kanri.action.SPLIT_BILL" />
+                <category android:name="android.intent.category.DEFAULT" />
+            </intent-filter>
+        </activity>
 
         <service
             android:name=".ui.popup.InstantPopupService"

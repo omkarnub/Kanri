@@ -11,7 +11,7 @@ class SafeToSpendWidgetProvider : BasePixelWidgetProvider<SafeToSpendWidgetState
         return WidgetDataSource.getSafeToSpendState(context)
     }
 
-    override fun getClickAction(): String = KanriWidgetActions.ACTION_OPEN_BUDGET
+    override fun getClickAction(): String = KanriWidgetActions.ACTION_ADD_EXPENSE
 
     companion object {
         fun updateAll(context: Context, playBurst: Boolean = false) {

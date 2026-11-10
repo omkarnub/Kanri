@@ -87,10 +87,21 @@ object KanriWidgetActions {
         action: String,
         requestCode: Int
     ): PendingIntent {
-        val intent = (context.packageManager.getLaunchIntentForPackage(context.packageName)
-            ?: Intent(context, MainActivityDarkDark::class.java)).apply {
-            this.action = action
-            flags = Intent.FLAG_ACTIVITY_NEW_TASK or Intent.FLAG_ACTIVITY_CLEAR_TOP or Intent.FLAG_ACTIVITY_SINGLE_TOP
+        val intent = if (
+            action == ACTION_ADD_EXPENSE ||
+            action == ACTION_ADD_INCOME ||
+            action == ACTION_SPLIT_BILL
+        ) {
+            Intent(context, com.omkarnub.kanri.ui.quickentry.QuickEntryActivity::class.java).apply {
+                this.action = action
+                flags = Intent.FLAG_ACTIVITY_NEW_TASK or Intent.FLAG_ACTIVITY_CLEAR_TOP
+            }
+        } else {
+            (context.packageManager.getLaunchIntentForPackage(context.packageName)
+                ?: Intent(context, MainActivityDarkDark::class.java)).apply {
+                this.action = action
+                flags = Intent.FLAG_ACTIVITY_NEW_TASK or Intent.FLAG_ACTIVITY_CLEAR_TOP or Intent.FLAG_ACTIVITY_SINGLE_TOP
+            }
         }
         return PendingIntent.getActivity(
             context,

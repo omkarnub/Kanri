@@ -5,6 +5,27 @@ All notable changes to Kanri will be documented in this file.
 The format is based on [Keep a Changelog](https://keepachangelog.com/en/1.0.0/),
 and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0.html).
 
+## [1.13.0] - 2026-11-11
+
+### Added & Enhanced
+- **Interactive Stepper Component & Onboarding Slider Integration**:
+  - Created `com.omkarnub.kanri.ui.common.stepper.Stepper.kt` implementing the React Stepper design system in idiomatic Jetpack Compose.
+  - Supports `StepItem`, `StepperVariant` (`CIRCLE`, `CIRCLE_ALT`, `LINE`), `StepperOrientation` (`HORIZONTAL`, `VERTICAL`), and `StepperSize` (`SM`, `MD`, `LG`).
+  - Features smooth animated checkmark transitions (`scaleIn + fadeIn`), animated horizontal connector lines (`animateColorAsState`), interactive step clicks with haptic feedback, and error/loading states.
+  - Integrated persistent top Stepper navigation header across all onboarding slides (Profile, SMS, Apps, Overlay, Battery, Alerts, Lock) in `OnboardingScreen.kt` with live step counter (`STEP X OF 7 · LABEL`), back button, and removed redundant bottom dots.
+- **Widget Corner Border Highlight Engine**:
+  - Updated `PixelTheme.kt` with `COLOR_BORDER_HIGHLIGHT_INT = 0x75FFFFFF` (46% opacity) and `COLOR_BORDER_LOWLIGHT_INT = 0x24FFFFFF`.
+  - In `WidgetRenderer.kt`, inset `tileRect` by `strokeWidth / 2f + 0.8f` to eliminate canvas edge clipping on rounded corners, applied a top-to-bottom specular `LinearGradient` shader, and added a secondary inner specular rim along upper corners for luminous edge visibility.
+- **Launcher System Widget Picker Previews**:
+  - Exported authentic 1:1 previews for all 12 widgets into `res/drawable-nodpi/` (`widget_preview_*.png`).
+  - Configured `android:previewImage` across all 12 `<appwidget-provider>` XML info files.
+  - Cleaned up `widget_tile_canvas.xml` and removed `android:previewLayout` so the launcher displays the unique authentic preview for every widget.
+- **Home Screen Floating Quick Entry Modal**:
+  - Created `QuickEntryActivity.kt` styled with transparent `Theme.Kanri.QuickEntry`, `excludeFromRecents="true"`, and `taskAffinity=""`.
+  - Tapping "Expense" / "Income" / "Split" on `QuickActionsWidgetProvider`, or tapping the `Today` or `SafeToSpend` widgets directly, brings up the tactile numpad and manual transaction dialog immediately over the user's home screen without opening `MainActivity`.
+  - Saves directly to Room database, plays burst animation update across all widgets, displays quick toast, and dismisses back to the launcher instantly.
+- Bumped version to `1.13.0` (Build 39).
+
 ## [1.12.2] - 2026-11-10
 
 ### Fixed & Enhanced

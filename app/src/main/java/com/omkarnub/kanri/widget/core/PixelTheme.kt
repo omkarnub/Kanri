@@ -11,7 +11,9 @@ object PixelTheme {
 
     // --- Android 32-bit ARGB Color Ints (Canvas rendering) ---
     const val COLOR_BG_INT: Int = 0xFF08080A.toInt()
-    const val COLOR_BORDER_INT: Int = 0x24FFFFFF
+    const val COLOR_BORDER_INT: Int = 0x45FFFFFF
+    const val COLOR_BORDER_HIGHLIGHT_INT: Int = 0x75FFFFFF
+    const val COLOR_BORDER_LOWLIGHT_INT: Int = 0x24FFFFFF
     const val COLOR_DOT_ON_INT: Int = 0xFFF2F2F5.toInt()
     const val COLOR_DOT_DIM_INT: Int = 0xFF1E1E24.toInt()
     const val COLOR_DOT_MID_INT: Int = 0xFF6B6B76.toInt()
@@ -24,7 +26,8 @@ object PixelTheme {
 
     // --- Jetpack Compose Colors ---
     val ColorBg = Color(0xFF08080A)
-    val ColorBorder = Color(0x24FFFFFF)
+    val ColorBorder = Color(0x45FFFFFF)
+    val ColorBorderHighlight = Color(0x75FFFFFF)
     val ColorDotOn = Color(0xFFF2F2F5)
     val ColorDotDim = Color(0xFF1E1E24)
     val ColorDotMid = Color(0xFF6B6B76)

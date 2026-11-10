@@ -3,8 +3,10 @@ package com.omkarnub.kanri.widget.render
 import android.content.Context
 import android.graphics.Bitmap
 import android.graphics.Canvas
+import android.graphics.LinearGradient
 import android.graphics.Paint
 import android.graphics.RectF
+import android.graphics.Shader
 import com.omkarnub.kanri.widget.core.ClimateStatus
 import com.omkarnub.kanri.widget.core.PacingStatus
 import com.omkarnub.kanri.widget.core.PixelTheme
@@ -44,9 +46,13 @@ object WidgetRenderer {
 
     private val borderPaint by lazy {
         Paint(Paint.ANTI_ALIAS_FLAG).apply {
-            color = PixelTheme.COLOR_BORDER_INT
             style = Paint.Style.STROKE
-            strokeWidth = 2f
+        }
+    }
+
+    private val innerRimPaint by lazy {
+        Paint(Paint.ANTI_ALIAS_FLAG).apply {
+            style = Paint.Style.STROKE
         }
     }
 
@@ -76,10 +82,46 @@ object WidgetRenderer {
         val cornerRadius = (20f * density).coerceAtMost(heightPx * 0.25f)
         val padding = (12f * density).coerceIn(8f * density, 16f * density)
 
-        // Draw tile background with 1px inner border
-        val tileRect = RectF(1.5f, 1.5f, widthPx - 1.5f, heightPx - 1.5f)
+        // Calculate stroke and insets so corners and edges are 100% inside canvas buffer
+        val strokeWidthPx = (1.5f * density).coerceIn(2.5f, 5f)
+        val inset = strokeWidthPx / 2f + 0.8f
+        val tileRect = RectF(inset, inset, widthPx - inset, heightPx - inset)
+
+        // 1. Solid Obsidian tile background
         canvas.drawRoundRect(tileRect, cornerRadius, cornerRadius, bgPaint)
+
+        // 2. Tactile outer border with top-rim and corner specular highlight
+        borderPaint.strokeWidth = strokeWidthPx
+        borderPaint.shader = LinearGradient(
+            0f, inset,
+            0f, heightPx - inset,
+            intArrayOf(
+                PixelTheme.COLOR_BORDER_HIGHLIGHT_INT,
+                PixelTheme.COLOR_BORDER_INT,
+                PixelTheme.COLOR_BORDER_LOWLIGHT_INT
+            ),
+            floatArrayOf(0f, 0.40f, 1f),
+            Shader.TileMode.CLAMP
+        )
         canvas.drawRoundRect(tileRect, cornerRadius, cornerRadius, borderPaint)
+        borderPaint.shader = null
+
+        // 3. Subtle secondary inner corner shine along upper edge
+        val innerRimInset = inset + 1.2f * density
+        if (widthPx > innerRimInset * 2 && heightPx > innerRimInset * 2) {
+            val innerRect = RectF(innerRimInset, innerRimInset, widthPx - innerRimInset, heightPx - innerRimInset)
+            val innerRadius = (cornerRadius - 1.2f * density).coerceAtLeast(4f)
+            innerRimPaint.strokeWidth = 1f * density
+            innerRimPaint.shader = LinearGradient(
+                0f, innerRimInset,
+                0f, innerRimInset + 24f * density,
+                intArrayOf(0x30FFFFFF, 0x00FFFFFF),
+                floatArrayOf(0f, 1f),
+                Shader.TileMode.CLAMP
+            )
+            canvas.drawRoundRect(innerRect, innerRadius, innerRadius, innerRimPaint)
+            innerRimPaint.shader = null
+        }
 
         // Save canvas for subtle ambient jitter drift if enabled
         canvas.save()

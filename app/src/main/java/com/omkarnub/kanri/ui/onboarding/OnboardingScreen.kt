@@ -1,4 +1,4 @@
-﻿package com.omkarnub.kanri.ui.onboarding
+package com.omkarnub.kanri.ui.onboarding
 
 import android.Manifest
 import android.graphics.BitmapFactory
@@ -41,7 +41,12 @@ import androidx.compose.foundation.shape.CircleShape
 import androidx.compose.foundation.shape.RoundedCornerShape
 import androidx.compose.foundation.text.KeyboardActions
 import androidx.compose.foundation.text.KeyboardOptions
+import androidx.compose.material.icons.automirrored.filled.ArrowBack
 import androidx.compose.material.icons.automirrored.filled.ArrowForward
+import com.omkarnub.kanri.ui.common.stepper.StepItem
+import com.omkarnub.kanri.ui.common.stepper.Stepper
+import com.omkarnub.kanri.ui.common.stepper.StepperSize
+import com.omkarnub.kanri.ui.common.stepper.StepperVariant
 import androidx.compose.material.icons.filled.AccountBalanceWallet
 import androidx.compose.material.icons.filled.Bolt
 import androidx.compose.material.icons.filled.CameraAlt
@@ -221,13 +226,106 @@ fun OnboardingScreen(
         onComplete()
     }
 
-    // Main container — smooth horizontal slide AnimatedContent between slides
-    Box(
-        modifier = modifier
-            .fillMaxSize()
-            .background(MaterialTheme.colorScheme.background)
-    ) {
-        AnimatedContent(
+    val haptics = rememberKanriHaptics()
+    val onboardingSteps = remember {
+        listOf(
+            StepItem(id = "profile", label = "Profile", icon = Icons.Default.Person),
+            StepItem(id = "sms", label = "SMS", icon = Icons.Default.Sms),
+            StepItem(id = "notifications", label = "Apps", icon = Icons.Default.AccountBalanceWallet),
+            StepItem(id = "overlay", label = "Overlay", icon = Icons.Default.Bolt),
+            StepItem(id = "battery", label = "Battery", icon = Icons.Default.PowerSettingsNew),
+            StepItem(id = "alerts", label = "Alerts", icon = Icons.Default.Notifications),
+            StepItem(id = "lock", label = "Lock", icon = Icons.Default.Fingerprint)
+        )
+    }
+
+    if (currentSlide == 0) {
+        HeroSlide(
+            onGetStarted = {
+                haptics.click()
+                currentSlide = 1
+            }
+        )
+    } else {
+        Column(
+            modifier = modifier
+                .fillMaxSize()
+                .background(MaterialTheme.colorScheme.background)
+                .statusBarsPadding()
+        ) {
+            // Persistent top Stepper header for each slider
+            Row(
+                modifier = Modifier
+                    .fillMaxWidth()
+                    .padding(horizontal = 16.dp, vertical = 10.dp),
+                verticalAlignment = Alignment.CenterVertically
+            ) {
+                IconButton(
+                    onClick = {
+                        haptics.click()
+                        currentSlide--
+                    },
+                    modifier = Modifier.size(36.dp)
+                ) {
+                    Icon(
+                        imageVector = Icons.AutoMirrored.Filled.ArrowBack,
+                        contentDescription = "Back",
+                        tint = MaterialTheme.colorScheme.onSurface.copy(alpha = 0.8f),
+                        modifier = Modifier.size(20.dp)
+                    )
+                }
+
+                Spacer(modifier = Modifier.width(6.dp))
+
+                Stepper(
+                    steps = onboardingSteps,
+                    activeStep = currentSlide - 1,
+                    onStepClick = { stepIndex ->
+                        haptics.tick()
+                        currentSlide = stepIndex + 1
+                    },
+                    size = StepperSize.SM,
+                    showLabels = false,
+                    modifier = Modifier.weight(1f)
+                )
+            }
+
+            // Step Indicator Badge
+            val currentStepItem = onboardingSteps.getOrNull(currentSlide - 1)
+            Row(
+                modifier = Modifier
+                    .fillMaxWidth()
+                    .padding(horizontal = 24.dp, vertical = 2.dp),
+                horizontalArrangement = Arrangement.SpaceBetween,
+                verticalAlignment = Alignment.CenterVertically
+            ) {
+                Text(
+                    text = "STEP $currentSlide OF ${onboardingSteps.size}",
+                    fontFamily = GoogleSansFlex,
+                    fontWeight = FontWeight.Bold,
+                    fontSize = 10.5.sp,
+                    letterSpacing = 1.5.sp,
+                    color = MaterialTheme.colorScheme.onSurface.copy(alpha = 0.45f)
+                )
+                if (currentStepItem?.label != null) {
+                    Text(
+                        text = currentStepItem.label.uppercase(),
+                        fontFamily = GoogleSansFlex,
+                        fontWeight = FontWeight.SemiBold,
+                        fontSize = 10.5.sp,
+                        letterSpacing = 1.2.sp,
+                        color = MaterialTheme.colorScheme.primary
+                    )
+                }
+            }
+
+            // Main container for active slide
+            Box(
+                modifier = Modifier
+                    .weight(1f)
+                    .fillMaxWidth()
+            ) {
+                AnimatedContent(
             targetState = currentSlide,
             transitionSpec = {
                 if (targetState > initialState) {
@@ -254,10 +352,6 @@ fun OnboardingScreen(
             modifier = Modifier.fillMaxSize()
         ) { slide ->
             when (slide) {
-                0 -> HeroSlide(
-                    onGetStarted = { currentSlide = 1 }
-                )
-
                 1 -> ProfileSetupSlide(
                     onContinue = { currentSlide = 2 }
                 )
@@ -375,6 +469,8 @@ fun OnboardingScreen(
             }
         }
     }
+}
+}
 }
 
 // ─── Slide 0: Redesigned Hero / Know Where Every Rupee Went ───────────────
@@ -827,35 +923,6 @@ private fun PermissionSlide(
                 .padding(horizontal = 32.dp, vertical = 36.dp),
             horizontalAlignment = Alignment.CenterHorizontally
         ) {
-            // Dot indicators (only for permission slides: index 2,3,4)
-            Row(
-                horizontalArrangement = Arrangement.spacedBy(8.dp),
-                verticalAlignment = Alignment.CenterVertically
-            ) {
-                for (i in 2 until totalSlides) {
-                    val isActive = slideIndex == i
-                    val dotWidth by animateDpAsState(
-                        targetValue = if (isActive) 20.dp else 6.dp,
-                        animationSpec = spring(stiffness = Spring.StiffnessMediumLow),
-                        label = "dot_width"
-                    )
-                    val dotAlpha by animateFloatAsState(
-                        targetValue = if (isActive) 1f else 0.3f,
-                        animationSpec = tween(300),
-                        label = "dot_alpha"
-                    )
-                    Box(
-                        modifier = Modifier
-                            .height(6.dp)
-                            .width(dotWidth)
-                            .alpha(dotAlpha)
-                            .clip(RoundedCornerShape(3.dp))
-                            .background(MaterialTheme.colorScheme.onBackground)
-                    )
-                }
-            }
-
-            Spacer(modifier = Modifier.height(24.dp))
 
             // Next button
             Button(

@@ -11,6 +11,7 @@
         android:layout_height="match_parent"
         android:scaleType="fitCenter"
         android:adjustViewBounds="true"
+        android:src="@drawable/widget_preview_quick_actions"
         android:contentDescription="@string/app_name" />
 
     <LinearLayout
