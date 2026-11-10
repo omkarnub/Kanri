@@ -1,6 +1,6 @@
 # Kanri Pixel DotTiles Widget System
 
-Current Version: **1.13.0** (Build 39)
+Current Version: **1.13.1** (Build 40)
 
 ## 1. Overview
 Kanri's widget subsystem is unified around a single, cohesive visual language: **Pixel DotTiles** (Nothing-inspired dot-matrix & tactile cards). Designed with precision, restraint, and obsessive detail, the system delivers 12 specialized home screen widgets rendered by a pure Canvas engine shared 1:1 between Android `RemoteViews` bitmaps and Jetpack Compose in-app previews.
@@ -32,14 +32,10 @@ All visual primitives accept an interactive `progress: Float = 1.0f` parameter:
 - **RemoteViews Frame Burst**: 8-frame burst animation on home screen placement and updates.
 - **Interactive In-App Previews**: 60fps Compose animation triggered on tap or replay.
 
-### Palette & Corner Specular Highlights
+### Palette & Surface Treatment
 The design system enforces a strict, zero-drift color palette exposed via `PixelTheme`:
-- **Tile Background**: `#08080A` (Deep Obsidian Glass)
-- **Inner Border & Corner Rim**:
-  - `COLOR_BORDER_HIGHLIGHT_INT = 0x75FFFFFF` (46% opacity specular top edge and upper corner highlights)
-  - `COLOR_BORDER_LOWLIGHT_INT = 0x24FFFFFF` (14% frosted bottom edge)
-  - Drawn via `LinearGradient(0, 0, 0, height)` shader with inset `tileRect` (`strokeWidth / 2f + 0.8f`) to eliminate any canvas corner clipping.
-  - Secondary inner specular highlight arc along top-left and top-right radii for luminous corner depth.
+- **Tile Background**: `#08080A` (Pure Deep Obsidian Glass)
+- **Borderless Surface**: Clean, unoutlined dark cards allowing typography, dot-matrix numerals, and glowing visual primitives to stand out without competing white borders.
 - **Corner Radius**: `22dp`
 - **Tile Padding**: `14dp`
 - **Dot On (Primary)**: `#F2F2F5`

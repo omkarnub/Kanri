@@ -5,6 +5,15 @@ All notable changes to Kanri will be documented in this file.
 The format is based on [Keep a Changelog](https://keepachangelog.com/en/1.0.0/),
 and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0.html).
 
+## [1.13.1] - 2026-11-11
+
+### Changed & Refined
+- **Removed Widget Outlines & White Border Strokes**:
+  - Removed all white border stroke and inner rim specular highlights from `WidgetRenderer.kt`, drawing pure solid Obsidian `#08080A` tile backgrounds across all 12 widgets.
+  - Removed stroke outline from `app/src/main/res/drawable/widget_bg_pixel.xml`.
+  - Re-exported all 12 launcher preview assets (`widget_preview_*.png`) in `res/drawable-nodpi/` to reflect the borderless aesthetic in the home screen widget picker.
+- Bumped version to `1.13.1` (Build 40).
+
 ## [1.13.0] - 2026-11-11
 
 ### Added & Enhanced
