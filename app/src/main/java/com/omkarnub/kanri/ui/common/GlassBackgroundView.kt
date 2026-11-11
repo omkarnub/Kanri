@@ -1,6 +1,7 @@
 package com.omkarnub.kanri.ui.common
 
 import android.annotation.SuppressLint
+import android.view.MotionEvent
 import android.view.View
 import android.view.ViewGroup
 import android.webkit.WebSettings
@@ -120,7 +121,12 @@ fun GlassShaderBackground(
                 isFocusable = false
                 isVerticalScrollBarEnabled = false
                 isHorizontalScrollBarEnabled = false
-                setOnTouchListener { _, _ -> true }
+                setOnTouchListener { view, event ->
+                    if (event.action == MotionEvent.ACTION_UP) {
+                        view.performClick()
+                    }
+                    true
+                }
                 loadUrl("file:///android_asset/backgrounds/${backgroundType.fileName}")
             }
         },

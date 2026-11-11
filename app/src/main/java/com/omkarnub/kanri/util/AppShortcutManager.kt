@@ -88,6 +88,21 @@ object AppShortcutManager {
         }
     }
 
+    fun reportShortcutUsage(context: Context, action: String?) {
+        val shortcutId = when (action) {
+            KanriWidgetActions.ACTION_ADD_EXPENSE -> "shortcut_add_expense"
+            KanriWidgetActions.ACTION_ADD_INCOME -> "shortcut_add_income"
+            KanriWidgetActions.ACTION_SPLIT_BILL -> "shortcut_split_bill"
+            KanriWidgetActions.ACTION_OPEN_LENDING -> "shortcut_lend_borrow"
+            else -> return
+        }
+        try {
+            ShortcutManagerCompat.reportShortcutUsed(context, shortcutId)
+        } catch (_: Exception) {
+            // Best effort dynamic shortcut usage signal
+        }
+    }
+
     /**
      * Checks if the system supports directly requesting to add the Quick Settings Tile (Android 13+ / API 33+).
      */

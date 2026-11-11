@@ -5,7 +5,6 @@ import android.app.NotificationManager
 import android.app.PendingIntent
 import android.content.Context
 import android.content.Intent
-import android.os.Build
 import androidx.core.app.NotificationCompat
 import androidx.work.CoroutineWorker
 import androidx.work.WorkerParameters
@@ -92,17 +91,15 @@ class DailyReminderWorker(
     }
 
     private fun ensureChannel() {
-        if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.O) {
-            val channel = NotificationChannel(
-                CHANNEL_ID,
-                "Daily Reminders",
-                NotificationManager.IMPORTANCE_DEFAULT
-            ).apply {
-                description = "End-of-day reminders to categorize transactions and track expenses"
-            }
-            val nm = applicationContext.getSystemService(Context.NOTIFICATION_SERVICE) as NotificationManager
-            nm.createNotificationChannel(channel)
+        val channel = NotificationChannel(
+            CHANNEL_ID,
+            "Daily Reminders",
+            NotificationManager.IMPORTANCE_DEFAULT
+        ).apply {
+            description = "End-of-day reminders to categorize transactions and track expenses"
         }
+        val nm = applicationContext.getSystemService(Context.NOTIFICATION_SERVICE) as NotificationManager
+        nm.createNotificationChannel(channel)
     }
 
     private fun getLaunchPendingIntent(notificationId: Int): PendingIntent {

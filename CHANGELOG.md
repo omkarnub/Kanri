@@ -5,6 +5,19 @@ All notable changes to Kanri will be documented in this file.
 The format is based on [Keep a Changelog](https://keepachangelog.com/en/1.0.0/),
 and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0.html).
 
+## [1.18.11] - 2026-11-11
+
+### Changed & Fixed (Phase 4 Build Configuration & Compiler/Lint Hygiene)
+- **Zero Compiler Warnings & Actionable Release Lint Cleanup**:
+  - Updated `CrashLogger` thread ID capture for Android 16+ (`Build.VERSION_CODES.BAKLAVA`) and migrated `TransactionDetailScreen` clipboard copy actions from deprecated `LocalClipboardManager` to `LocalClipboard` + `ClipEntry`.
+  - Scoped legacy `EncryptedSharedPreferences` / `MasterKey` deprecation suppressions cleanly with retention notes in `DatabaseKeyManager` and `CloudBackupPreferences` to preserve existing encrypted keys across upgrades (`0` Kotlin compiler warnings across debug, release, and unit-test compilations).
+  - Fixed `InlinedApi` crash risk in `InstantPopupService` by gating `FOREGROUND_SERVICE_TYPE_SPECIAL_USE` behind `Build.VERSION_CODES.UPSIDE_DOWN_CAKE` (API 34+).
+  - Added launcher shortcut activation tracking (`AppShortcutManager.reportShortcutUsage`) from `MainActivity`, fixed `ClickableViewAccessibility` (`performClick()`) on `GlassBackgroundView` and `OnboardingScreen` WebViews, extracted hardcoded `widget_quick_actions.xml` content descriptions into string resources, set `android:baselineAligned="false"`, removed redundant `AndroidManifest` activity labels, eliminated `VisibleForTests` constructor leakage in `LendingHubViewModel`, removed `UnnecessaryArrayInit` lambdas in `WidgetDataSource`/`WidgetState`, and removed 26 redundant `ObsoleteSdkInt` (`< M/N/O`) checks under `minSdk = 26`.
+- **Version Catalog & Build Caching Hygiene**:
+  - Upgraded `androidx.biometric` (`1.2.0-alpha05` → `1.1.0`) and `androidx.security:security-crypto` (`1.1.0-alpha06` → `1.1.0`) to stable releases and migrated all inline dependencies (`haze`, `datastore-preferences`, `org.json:json`) into `gradle/libs.versions.toml`.
+  - Enabled `org.gradle.caching=true` in `gradle.properties` alongside `org.gradle.configuration-cache=true`, and declared explicit `debug` (`isDebuggable = true`) and `release` (`isDebuggable = false`) build type blocks in `app/build.gradle.kts`.
+- Bumped version to `1.18.11` (Build 62).
+
 ## [1.18.10] - 2026-11-11
 
 ### Changed & Optimized (Phase 3 Pre-Release Size & Performance Pass)

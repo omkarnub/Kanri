@@ -1,3 +1,7 @@
+// EncryptedSharedPreferences/MasterKey deprecated in security-crypto 1.1.0; retained intentionally
+// so existing installs keep seamless access to stored SQLCipher passphrases without migration loss.
+@file:Suppress("DEPRECATION")
+
 package com.omkarnub.kanri.data.db
 
 import android.content.Context

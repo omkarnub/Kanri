@@ -1,11 +1,10 @@
-﻿package com.omkarnub.kanri.data.lending
+package com.omkarnub.kanri.data.lending
 
 import android.app.NotificationChannel
 import android.app.NotificationManager
 import android.app.PendingIntent
 import android.content.Context
 import android.content.Intent
-import android.os.Build
 import androidx.core.app.NotificationCompat
 import androidx.work.CoroutineWorker
 import androidx.work.WorkerParameters
@@ -102,16 +101,14 @@ class LendingReminderWorker(
     ) {
         val notificationManager = applicationContext.getSystemService(Context.NOTIFICATION_SERVICE) as NotificationManager
 
-        if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.O) {
-            val channel = NotificationChannel(
-                CHANNEL_ID,
-                "Lend & Borrow Reminders",
-                NotificationManager.IMPORTANCE_HIGH
-            ).apply {
-                description = "Alerts for upcoming and overdue loan and debt due dates"
-            }
-            notificationManager.createNotificationChannel(channel)
+        val channel = NotificationChannel(
+            CHANNEL_ID,
+            "Lend & Borrow Reminders",
+            NotificationManager.IMPORTANCE_HIGH
+        ).apply {
+            description = "Alerts for upcoming and overdue loan and debt due dates"
         }
+        notificationManager.createNotificationChannel(channel)
 
         val openIntent = com.omkarnub.kanri.ui.theme.AppIconManager.createLauncherIntent(applicationContext).apply {
             action = com.omkarnub.kanri.widget.KanriWidgetActions.ACTION_OPEN_LENDING

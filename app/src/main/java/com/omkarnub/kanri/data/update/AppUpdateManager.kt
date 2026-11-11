@@ -6,7 +6,6 @@ import android.app.PendingIntent
 import android.content.Context
 import android.content.Intent
 import android.net.Uri
-import android.os.Build
 import android.provider.Settings
 import androidx.core.app.NotificationCompat
 import androidx.core.content.FileProvider
@@ -42,18 +41,16 @@ class AppUpdateManager private constructor() {
         }
 
         fun createNotificationChannel(context: Context) {
-            if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.O) {
-                val channel = NotificationChannel(
-                    CHANNEL_ID,
-                    "App Updates",
-                    NotificationManager.IMPORTANCE_HIGH
-                ).apply {
-                    description = "Notifications for new Kanri app versions"
-                    enableVibration(true)
-                }
-                val nm = context.getSystemService(Context.NOTIFICATION_SERVICE) as? NotificationManager
-                nm?.createNotificationChannel(channel)
+            val channel = NotificationChannel(
+                CHANNEL_ID,
+                "App Updates",
+                NotificationManager.IMPORTANCE_HIGH
+            ).apply {
+                description = "Notifications for new Kanri app versions"
+                enableVibration(true)
             }
+            val nm = context.getSystemService(Context.NOTIFICATION_SERVICE) as? NotificationManager
+            nm?.createNotificationChannel(channel)
         }
     }
 
@@ -296,15 +293,13 @@ class AppUpdateManager private constructor() {
                 return Result.failure(Exception("Update file not found"))
             }
 
-            if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.O) {
-                if (!context.packageManager.canRequestPackageInstalls()) {
-                    val settingsIntent = Intent(Settings.ACTION_MANAGE_UNKNOWN_APP_SOURCES).apply {
-                        data = Uri.parse("package:${context.packageName}")
-                        flags = Intent.FLAG_ACTIVITY_NEW_TASK
-                    }
-                    context.startActivity(settingsIntent)
-                    return Result.failure(SecurityException("UNKNOWN_SOURCES_PERMISSION_REQUIRED"))
+            if (!context.packageManager.canRequestPackageInstalls()) {
+                val settingsIntent = Intent(Settings.ACTION_MANAGE_UNKNOWN_APP_SOURCES).apply {
+                    data = Uri.parse("package:${context.packageName}")
+                    flags = Intent.FLAG_ACTIVITY_NEW_TASK
                 }
+                context.startActivity(settingsIntent)
+                return Result.failure(SecurityException("UNKNOWN_SOURCES_PERMISSION_REQUIRED"))
             }
 
             val apkUri = FileProvider.getUriForFile(

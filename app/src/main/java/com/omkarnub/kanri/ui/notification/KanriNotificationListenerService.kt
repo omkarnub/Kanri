@@ -5,7 +5,6 @@ import android.content.ComponentName
 import android.content.Context
 import android.content.Intent
 import android.content.pm.PackageManager
-import android.os.Build
 import android.service.notification.NotificationListenerService
 import android.service.notification.StatusBarNotification
 import android.util.Log
@@ -59,16 +58,13 @@ class KanriNotificationListenerService : NotificationListenerService() {
             val componentName = ComponentName(context, KanriNotificationListenerService::class.java)
             Log.i(TAG, "Requesting rebind for NotificationListenerService: $componentName")
 
-            // Method 1: On API 24+, call requestRebind directly
-            if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.N) {
-                try {
-                    requestRebind(componentName)
-                    if (com.omkarnub.kanri.BuildConfig.DEBUG) {
-                        Log.d(TAG, "requestRebind invoked successfully for $componentName")
-                    }
-                } catch (e: Exception) {
-                    Log.e(TAG, "requestRebind failed, proceeding to component toggle fallback", e)
+            try {
+                requestRebind(componentName)
+                if (com.omkarnub.kanri.BuildConfig.DEBUG) {
+                    Log.d(TAG, "requestRebind invoked successfully for $componentName")
                 }
+            } catch (e: Exception) {
+                Log.e(TAG, "requestRebind failed, proceeding to component toggle fallback", e)
             }
 
             // Method 2: Toggle component enabled state to force NotificationManagerService to re-evaluate
@@ -213,11 +209,7 @@ class KanriNotificationListenerService : NotificationListenerService() {
                                     putExtra(InstantPopupService.EXTRA_BANK, result.entity.bank)
                                     putExtra(InstantPopupService.EXTRA_SOURCE_TYPE, result.entity.sourceType)
                                 }
-                                if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.O) {
-                                    applicationContext.startForegroundService(popupIntent)
-                                } else {
-                                    applicationContext.startService(popupIntent)
-                                }
+                                applicationContext.startForegroundService(popupIntent)
                             } catch (fgsEx: Exception) {
                                 Log.w(TAG, "Failed to start overlay service, falling back to notification", fgsEx)
                                 InstantPopupNotificationHelper.showInstantTransactionNotification(

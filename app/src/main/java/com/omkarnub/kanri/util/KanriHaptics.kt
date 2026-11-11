@@ -86,28 +86,21 @@ class KanriHaptics private constructor(
 
             if (isHaptic) {
                 // HAPTICS ONLY: Crisp high-definition dual impulse
-                if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.O) {
-                    val timings = longArrayOf(0, 8, 40, 12)
-                    val amplitudes = intArrayOf(0, 70, 0, 140)
-                    val effect = VibrationEffect.createWaveform(timings, amplitudes, -1)
-                    vibrateWithTouchUsage(vibrator, effect)
-                    return
-                }
+                val timings = longArrayOf(0, 8, 40, 12)
+                val amplitudes = intArrayOf(0, 70, 0, 140)
+                val effect = VibrationEffect.createWaveform(timings, amplitudes, -1)
+                vibrateWithTouchUsage(vibrator, effect)
+                return
             } else {
                 // UNSUPPORTED MOTOR: Ultra-soft, whisper-quiet micro pulses (never buzzes)
                 try {
                     composeHaptic?.performHapticFeedback(HapticFeedbackType.TextHandleMove)
                 } catch (_: Exception) {}
 
-                if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.O) {
-                    val timings = longArrayOf(0, 4, 45, 5)
-                    val effect = VibrationEffect.createWaveform(timings, -1)
-                    vibrateWithTouchUsage(vibrator, effect)
-                    return
-                } else {
-                    @Suppress("DEPRECATION")
-                    vibrator.vibrate(longArrayOf(0, 4, 45, 5), -1)
-                }
+                val timings = longArrayOf(0, 4, 45, 5)
+                val effect = VibrationEffect.createWaveform(timings, -1)
+                vibrateWithTouchUsage(vibrator, effect)
+                return
             }
         } catch (_: Exception) {
             composeHaptic?.performHapticFeedback(HapticFeedbackType.LongPress)
@@ -133,7 +126,7 @@ class KanriHaptics private constructor(
                     val effect = VibrationEffect.createPredefined(VibrationEffect.EFFECT_DOUBLE_CLICK)
                     vibrateWithTouchUsage(vibrator, effect)
                     return
-                } else if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.O) {
+                } else {
                     val timings = longArrayOf(0, 12, 35, 12)
                     val amplitudes = intArrayOf(0, 100, 0, 100)
                     val effect = VibrationEffect.createWaveform(timings, amplitudes, -1)
@@ -146,15 +139,10 @@ class KanriHaptics private constructor(
                     composeHaptic?.performHapticFeedback(HapticFeedbackType.TextHandleMove)
                 } catch (_: Exception) {}
 
-                if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.O) {
-                    val timings = longArrayOf(0, 6, 40, 6)
-                    val effect = VibrationEffect.createWaveform(timings, -1)
-                    vibrateWithTouchUsage(vibrator, effect)
-                    return
-                } else {
-                    @Suppress("DEPRECATION")
-                    vibrator.vibrate(longArrayOf(0, 6, 40, 6), -1)
-                }
+                val timings = longArrayOf(0, 6, 40, 6)
+                val effect = VibrationEffect.createWaveform(timings, -1)
+                vibrateWithTouchUsage(vibrator, effect)
+                return
             }
         } catch (_: Exception) {
             composeHaptic?.performHapticFeedback(HapticFeedbackType.LongPress)
@@ -180,7 +168,7 @@ class KanriHaptics private constructor(
                         val effect = VibrationEffect.createPredefined(predefinedEffect)
                         vibrateWithTouchUsage(vibrator, effect)
                         return
-                    } else if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.O && vibrator.hasAmplitudeControl()) {
+                    } else if (vibrator.hasAmplitudeControl()) {
                         val effect = VibrationEffect.createOneShot(richDurationMs, richAmplitude)
                         vibrateWithTouchUsage(vibrator, effect)
                         return
@@ -192,15 +180,9 @@ class KanriHaptics private constructor(
                         composeHaptic?.performHapticFeedback(composeType)
                     } catch (_: Exception) {}
 
-                    if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.O) {
-                        val effect = VibrationEffect.createOneShot(softVibrateMs, VibrationEffect.DEFAULT_AMPLITUDE)
-                        vibrateWithTouchUsage(vibrator, effect)
-                        return
-                    } else {
-                        @Suppress("DEPRECATION")
-                        vibrator.vibrate(softVibrateMs)
-                        return
-                    }
+                    val effect = VibrationEffect.createOneShot(softVibrateMs, VibrationEffect.DEFAULT_AMPLITUDE)
+                    vibrateWithTouchUsage(vibrator, effect)
+                    return
                 }
             }
         } catch (_: Exception) {
@@ -228,9 +210,7 @@ class KanriHaptics private constructor(
         fun isHapticSupported(vibrator: Vibrator): Boolean {
             if (!vibrator.hasVibrator()) return false
 
-            val hasAmplitude = if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.O) {
-                vibrator.hasAmplitudeControl()
-            } else false
+            val hasAmplitude = vibrator.hasAmplitudeControl()
 
             val supportsEffects = if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.R) {
                 try {
@@ -256,14 +236,12 @@ class KanriHaptics private constructor(
                     .setUsage(VibrationAttributes.USAGE_TOUCH)
                     .build()
                 vibrator.vibrate(effect, attrs)
-            } else if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.O) {
+            } else {
                 val audioAttrs = AudioAttributes.Builder()
                     .setContentType(AudioAttributes.CONTENT_TYPE_SONIFICATION)
                     .setUsage(AudioAttributes.USAGE_ASSISTANCE_SONIFICATION)
                     .build()
                 vibrator.vibrate(effect, audioAttrs)
-            } else {
-                vibrator.vibrate(effect)
             }
         }
 

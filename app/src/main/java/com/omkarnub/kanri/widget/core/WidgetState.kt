@@ -139,7 +139,7 @@ data class SkyWidgetState(
 data class HeatmapWidgetState(
     val monthName: String = "",
     val monthTotal: Double = 0.0,
-    val dailyIntensities: FloatArray = FloatArray(35) { 0f },
+    val dailyIntensities: FloatArray = FloatArray(35),
     val todayCellIndex: Int = -1,
     val maxActiveCellIndex: Int = -1,
     override val accessibleDescription: String = "Calendar spend heatmap"

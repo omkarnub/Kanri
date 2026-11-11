@@ -1,4 +1,8 @@
-﻿package com.omkarnub.kanri.data.cloud
+// EncryptedSharedPreferences/MasterKey deprecated in security-crypto 1.1.0; retained intentionally
+// to preserve existing user cloud backup credentials and settings across updates.
+@file:Suppress("DEPRECATION")
+
+package com.omkarnub.kanri.data.cloud
 
 import android.content.Context
 import android.content.SharedPreferences

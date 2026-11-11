@@ -78,6 +78,7 @@ open class MainActivity : FragmentActivity() {
 
         SecurityManager.init(applicationContext)
         com.omkarnub.kanri.widget.KanriWidgetActions.handleIntent(intent)
+        com.omkarnub.kanri.util.AppShortcutManager.reportShortcutUsage(applicationContext, intent?.action)
         if (intent.getBooleanExtra(com.omkarnub.kanri.data.update.AppUpdateManager.EXTRA_SHOW_UPDATE_POPUP, false)) {
             com.omkarnub.kanri.data.update.AppUpdateManager.getInstance(applicationContext).triggerUpdatePopup()
         }
@@ -193,6 +194,7 @@ open class MainActivity : FragmentActivity() {
         super.onNewIntent(intent)
         setIntent(intent)
         com.omkarnub.kanri.widget.KanriWidgetActions.handleIntent(intent)
+        com.omkarnub.kanri.util.AppShortcutManager.reportShortcutUsage(applicationContext, intent.action)
         if (intent.getBooleanExtra(com.omkarnub.kanri.data.update.AppUpdateManager.EXTRA_SHOW_UPDATE_POPUP, false)) {
             com.omkarnub.kanri.data.update.AppUpdateManager.getInstance(applicationContext).triggerUpdatePopup()
         }

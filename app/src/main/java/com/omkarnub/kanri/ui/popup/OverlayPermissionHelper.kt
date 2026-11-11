@@ -4,46 +4,39 @@ import android.content.ActivityNotFoundException
 import android.content.Context
 import android.content.Intent
 import android.net.Uri
-import android.os.Build
 import android.provider.Settings
 import android.widget.Toast
 
 object OverlayPermissionHelper {
 
     fun canDrawOverlays(context: Context): Boolean {
-        return if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.M) {
-            Settings.canDrawOverlays(context)
-        } else {
-            true
-        }
+        return Settings.canDrawOverlays(context)
     }
 
     fun requestOverlayPermission(context: Context) {
-        if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.M) {
-            val intent = Intent(
-                Settings.ACTION_MANAGE_OVERLAY_PERMISSION,
-                Uri.parse("package:${context.packageName}")
-            ).apply {
-                addFlags(Intent.FLAG_ACTIVITY_NEW_TASK)
-            }
+        val intent = Intent(
+            Settings.ACTION_MANAGE_OVERLAY_PERMISSION,
+            Uri.parse("package:${context.packageName}")
+        ).apply {
+            addFlags(Intent.FLAG_ACTIVITY_NEW_TASK)
+        }
+        try {
+            context.startActivity(intent)
+        } catch (_: ActivityNotFoundException) {
             try {
-                context.startActivity(intent)
-            } catch (_: ActivityNotFoundException) {
-                try {
-                    val detailsIntent = Intent(
-                        Settings.ACTION_APPLICATION_DETAILS_SETTINGS,
-                        Uri.parse("package:${context.packageName}")
-                    ).apply {
-                        addFlags(Intent.FLAG_ACTIVITY_NEW_TASK)
-                    }
-                    context.startActivity(detailsIntent)
-                } catch (_: ActivityNotFoundException) {
-                    Toast.makeText(
-                        context,
-                        "Open Android Settings > Apps > Kanri to allow display over other apps",
-                        Toast.LENGTH_LONG
-                    ).show()
+                val detailsIntent = Intent(
+                    Settings.ACTION_APPLICATION_DETAILS_SETTINGS,
+                    Uri.parse("package:${context.packageName}")
+                ).apply {
+                    addFlags(Intent.FLAG_ACTIVITY_NEW_TASK)
                 }
+                context.startActivity(detailsIntent)
+            } catch (_: ActivityNotFoundException) {
+                Toast.makeText(
+                    context,
+                    "Open Android Settings > Apps > Kanri to allow display over other apps",
+                    Toast.LENGTH_LONG
+                ).show()
             }
         }
     }

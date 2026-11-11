@@ -3,7 +3,6 @@ package com.omkarnub.kanri.receiver
 import android.content.BroadcastReceiver
 import android.content.Context
 import android.content.Intent
-import android.os.Build
 import android.provider.Telephony
 import android.util.Log
 import com.omkarnub.kanri.data.crash.CrashLogger
@@ -130,11 +129,7 @@ class SmsReceiver : BroadcastReceiver() {
                                             putExtra(InstantPopupService.EXTRA_SOURCE_TYPE, entity.sourceType)
                                             putExtra(InstantPopupService.EXTRA_RAW_SMS, entity.rawSms)
                                         }
-                                        if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.O) {
-                                            context.startForegroundService(serviceIntent)
-                                        } else {
-                                            context.startService(serviceIntent)
-                                        }
+                                        context.startForegroundService(serviceIntent)
                                     } catch (fgsEx: Exception) {
                                         Log.w(TAG, "Failed to start overlay service, falling back to notification", fgsEx)
                                         InstantPopupNotificationHelper.showInstantTransactionNotification(

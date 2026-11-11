@@ -101,11 +101,7 @@ class InstantPopupService : Service() {
                 putExtra(EXTRA_SOURCE_TYPE, "UPI")
                 putExtra(EXTRA_RAW_SMS, if (isDebit) "Sent Rs.380.00 to Swiggy on 09-Nov-26 via UPI. Avl Bal Rs.14,620.00" else "Received Rs.1250.00 from Rahul. Avl Bal Rs.28,750.00")
             }
-            if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.O) {
-                context.startForegroundService(intent)
-            } else {
-                context.startService(intent)
-            }
+            context.startForegroundService(intent)
         }
     }
 
@@ -126,7 +122,7 @@ class InstantPopupService : Service() {
             .setSilent(true)
             .build()
 
-        if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.Q) {
+        if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.UPSIDE_DOWN_CAKE) {
             startForeground(
                 NOTIFICATION_ID,
                 notification,
@@ -204,12 +200,7 @@ class InstantPopupService : Service() {
         val params = WindowManager.LayoutParams(
             WindowManager.LayoutParams.MATCH_PARENT,
             WindowManager.LayoutParams.MATCH_PARENT,
-            if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.O) {
-                WindowManager.LayoutParams.TYPE_APPLICATION_OVERLAY
-            } else {
-                @Suppress("DEPRECATION")
-                WindowManager.LayoutParams.TYPE_PHONE
-            },
+            WindowManager.LayoutParams.TYPE_APPLICATION_OVERLAY,
             WindowManager.LayoutParams.FLAG_LAYOUT_IN_SCREEN,
             PixelFormat.TRANSLUCENT
         ).apply {
@@ -541,18 +532,16 @@ class InstantPopupService : Service() {
     }
 
     private fun createNotificationChannel() {
-        if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.O) {
-            val channel = NotificationChannel(
-                CHANNEL_ID,
-                "Kanri Instant Overlay Service",
-                NotificationManager.IMPORTANCE_MIN
-            ).apply {
-                description = "Runs the instant floating transaction overlay"
-                setShowBadge(false)
-            }
-            val manager = getSystemService(NotificationManager::class.java)
-            manager?.createNotificationChannel(channel)
+        val channel = NotificationChannel(
+            CHANNEL_ID,
+            "Kanri Instant Overlay Service",
+            NotificationManager.IMPORTANCE_MIN
+        ).apply {
+            description = "Runs the instant floating transaction overlay"
+            setShowBadge(false)
         }
+        val manager = getSystemService(NotificationManager::class.java)
+        manager?.createNotificationChannel(channel)
     }
 
     private class OverlayLifecycleOwner : LifecycleOwner, ViewModelStoreOwner, SavedStateRegistryOwner {

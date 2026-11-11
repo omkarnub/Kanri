@@ -4,6 +4,7 @@ import android.Manifest
 import android.content.Intent
 import android.os.Build
 import android.provider.Settings
+import android.view.MotionEvent
 import android.view.View
 import android.view.ViewGroup
 import android.webkit.JavascriptInterface
@@ -503,7 +504,12 @@ fun OnboardingScreen(
                             isFocusable = false
                             isVerticalScrollBarEnabled = false
                             isHorizontalScrollBarEnabled = false
-                            setOnTouchListener { _, _ -> false }
+                            setOnTouchListener { view, event ->
+                                if (event.action == MotionEvent.ACTION_UP) {
+                                    view.performClick()
+                                }
+                                false
+                            }
                             loadUrl("file:///android_asset/backgrounds/shan_shui_onboarding.html")
                         }
                     },

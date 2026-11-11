@@ -2,7 +2,6 @@ package com.omkarnub.kanri.ui.settings
 
 import android.appwidget.AppWidgetManager
 import android.content.ComponentName
-import android.os.Build
 import android.provider.Settings
 import android.widget.Toast
 import androidx.activity.compose.BackHandler
@@ -490,7 +489,7 @@ fun PixelWidgetCanvasPreview(
 
 private fun pinWidgetToHome(context: android.content.Context, providerClass: Class<*>) {
     val appWidgetManager = AppWidgetManager.getInstance(context)
-    if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.O && appWidgetManager.isRequestPinAppWidgetSupported) {
+    if (appWidgetManager.isRequestPinAppWidgetSupported) {
         val component = ComponentName(context, providerClass)
         appWidgetManager.requestPinAppWidget(component, null, null)
         Toast.makeText(context, "Pinned widget request sent to launcher", Toast.LENGTH_SHORT).show()

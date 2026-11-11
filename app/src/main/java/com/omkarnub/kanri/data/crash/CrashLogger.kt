@@ -132,7 +132,13 @@ object CrashLogger {
             appendLine("Fingerprint: ${Build.FINGERPRINT}")
             appendLine("-----------------------------------------")
             appendLine("THREAD INFORMATION")
-            appendLine("Thread ID: ${thread?.id ?: -1}")
+            val threadId = if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.BAKLAVA) {
+                thread?.threadId() ?: -1L
+            } else {
+                @Suppress("DEPRECATION")
+                thread?.id ?: -1L
+            }
+            appendLine("Thread ID: $threadId")
             appendLine("Thread Name: ${thread?.name ?: "Unknown"}")
             appendLine("-----------------------------------------")
             appendLine("EXCEPTION DETAILS")

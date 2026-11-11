@@ -1,4 +1,4 @@
-﻿package com.omkarnub.kanri.ui.lending
+package com.omkarnub.kanri.ui.lending
 
 import android.app.Application
 import androidx.lifecycle.AndroidViewModel
@@ -25,12 +25,16 @@ import java.util.Calendar
 import java.util.Date
 import java.util.Locale
 
-class LendingHubViewModel @JvmOverloads constructor(
+class LendingHubViewModel internal constructor(
     application: Application,
-    private val savedStateHandle: SavedStateHandle = SavedStateHandle(),
+    private val savedStateHandle: SavedStateHandle,
     dao: LendingDao? = null,
     private val timeProvider: () -> Long = { System.currentTimeMillis() }
 ) : AndroidViewModel(application) {
+    constructor(
+        application: Application,
+        savedStateHandle: SavedStateHandle
+    ) : this(application, savedStateHandle, null)
 
     private val db: KanriDatabase = KanriDatabase.getDatabase(application)
     private val lendingDao: LendingDao = dao ?: db.lendingDao()

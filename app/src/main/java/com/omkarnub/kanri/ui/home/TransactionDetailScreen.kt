@@ -1,5 +1,6 @@
 package com.omkarnub.kanri.ui.home
 
+import android.content.ClipData
 import android.widget.Toast
 import androidx.activity.compose.BackHandler
 import androidx.compose.animation.AnimatedVisibility
@@ -82,10 +83,10 @@ import androidx.compose.runtime.setValue
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.draw.clip
-import androidx.compose.ui.platform.LocalClipboardManager
+import androidx.compose.ui.platform.LocalClipboard
 import androidx.compose.ui.platform.LocalContext
 import androidx.compose.ui.platform.LocalSoftwareKeyboardController
-import androidx.compose.ui.text.AnnotatedString
+import androidx.compose.ui.platform.toClipEntry
 import androidx.compose.ui.text.font.FontFamily
 import androidx.compose.ui.text.font.FontWeight
 import androidx.compose.ui.text.input.ImeAction
@@ -117,6 +118,7 @@ import com.omkarnub.kanri.util.rememberKanriHaptics
 import java.text.SimpleDateFormat
 import java.util.Date
 import java.util.Locale
+import kotlinx.coroutines.launch
 
 /**
  * Full-window transaction detail page:
@@ -138,7 +140,8 @@ fun TransactionDetailScreen(
     BackHandler(onBack = onBack)
 
     val context = LocalContext.current
-    val clipboardManager = LocalClipboardManager.current
+    val clipboard = LocalClipboard.current
+    val coroutineScope = rememberCoroutineScope()
     val haptics = rememberKanriHaptics()
 
     val txWithCategoryFlow = remember(transactionId) {
@@ -859,7 +862,9 @@ fun TransactionDetailScreen(
                                     {
                                         IconButton(
                                             onClick = {
-                                                clipboardManager.setText(AnnotatedString(tx.refNo))
+                                                coroutineScope.launch {
+                                                    clipboard.setClipEntry(ClipData.newPlainText("Reference", tx.refNo).toClipEntry())
+                                                }
                                                 haptics.click()
                                                 Toast.makeText(context, "Reference number copied", Toast.LENGTH_SHORT).show()
                                             },
@@ -1008,7 +1013,9 @@ fun TransactionDetailScreen(
 
                                     IconButton(
                                         onClick = {
-                                            clipboardManager.setText(AnnotatedString(tx.rawSms))
+                                            coroutineScope.launch {
+                                                clipboard.setClipEntry(ClipData.newPlainText("SMS", tx.rawSms).toClipEntry())
+                                            }
                                             haptics.click()
                                             Toast.makeText(context, "SMS text copied", Toast.LENGTH_SHORT).show()
                                         },

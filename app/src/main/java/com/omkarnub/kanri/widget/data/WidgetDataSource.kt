@@ -72,7 +72,7 @@ object WidgetDataSource {
         val expenseCount = todayTxs.size
 
         // Hourly spend breakdown across 24 hours
-        val hourlyBuckets = DoubleArray(24) { 0.0 }
+        val hourlyBuckets = DoubleArray(24)
         val itemCal = Calendar.getInstance()
         for (tx in todayTxs) {
             itemCal.timeInMillis = tx.timestamp
@@ -418,7 +418,7 @@ object WidgetDataSource {
         val monthTotal = monthTxs.sumOf { it.amount }
 
         // Day spend map
-        val dailyMap = DoubleArray(daysInMonth + 1) { 0.0 }
+        val dailyMap = DoubleArray(daysInMonth + 1)
         val itemCal = Calendar.getInstance()
         for (tx in monthTxs) {
             itemCal.timeInMillis = tx.timestamp
@@ -432,7 +432,7 @@ object WidgetDataSource {
         val p50 = if (nonZeroSpends.isNotEmpty()) nonZeroSpends[(nonZeroSpends.size * 0.50).toInt()] else 300.0
         val p75 = if (nonZeroSpends.isNotEmpty()) nonZeroSpends[(nonZeroSpends.size * 0.75).toInt()] else 800.0
 
-        val grid = FloatArray(35) { 0f }
+        val grid = FloatArray(35)
         for (d in 1..daysInMonth) {
             val cellIdx = startOffset + d - 1
             if (cellIdx in 0..34) {

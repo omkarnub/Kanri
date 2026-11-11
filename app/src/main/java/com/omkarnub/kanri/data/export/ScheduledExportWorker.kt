@@ -1,11 +1,10 @@
-﻿package com.omkarnub.kanri.data.export
+package com.omkarnub.kanri.data.export
 
 import android.app.NotificationChannel
 import android.app.NotificationManager
 import android.app.PendingIntent
 import android.content.Context
 import android.content.Intent
-import android.os.Build
 import android.util.Log
 import androidx.core.app.NotificationCompat
 import androidx.core.content.FileProvider
@@ -86,16 +85,14 @@ class ScheduledExportWorker(
     private fun fireCompletionNotification(exportedFile: File, periodLabel: String) {
         val notificationManager = applicationContext.getSystemService(Context.NOTIFICATION_SERVICE) as NotificationManager
 
-        if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.O) {
-            val channel = NotificationChannel(
-                CHANNEL_ID,
-                "Kanri Scheduled Exports",
-                NotificationManager.IMPORTANCE_HIGH
-            ).apply {
-                description = "Notifications for automatic scheduled PDF & CSV statement exports"
-            }
-            notificationManager.createNotificationChannel(channel)
+        val channel = NotificationChannel(
+            CHANNEL_ID,
+            "Kanri Scheduled Exports",
+            NotificationManager.IMPORTANCE_HIGH
+        ).apply {
+            description = "Notifications for automatic scheduled PDF & CSV statement exports"
         }
+        notificationManager.createNotificationChannel(channel)
 
         val fileUri = try {
             FileProvider.getUriForFile(

@@ -17,6 +17,7 @@
     <LinearLayout
         android:layout_width="match_parent"
         android:layout_height="match_parent"
+        android:baselineAligned="false"
         android:orientation="horizontal"
         android:weightSum="3">
 
@@ -27,7 +28,7 @@
             android:layout_weight="1"
             android:clickable="true"
             android:focusable="true"
-            android:contentDescription="Add Expense" />
+            android:contentDescription="@string/shortcut_add_expense_short" />
 
         <FrameLayout
             android:id="@+id/btn_action_income"
@@ -36,7 +37,7 @@
             android:layout_weight="1"
             android:clickable="true"
             android:focusable="true"
-            android:contentDescription="Add Income" />
+            android:contentDescription="@string/shortcut_add_income_short" />
 
         <FrameLayout
             android:id="@+id/btn_action_split"
@@ -45,6 +46,6 @@
             android:layout_weight="1"
             android:clickable="true"
             android:focusable="true"
-            android:contentDescription="Split Bill" />
+            android:contentDescription="@string/shortcut_split_bill_short" />
     </LinearLayout>
 </FrameLayout>
