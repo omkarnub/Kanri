@@ -21,8 +21,6 @@ app/release/
 skills-lock.json
 *.png
 !app/src/main/res/**/*.png
-!qa_screenshots/**
 !docs/screenshots/*.png
 scratch/
-/NEW BACKGROUNDS/
 
