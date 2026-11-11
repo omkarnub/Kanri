@@ -5,6 +5,14 @@ All notable changes to Kanri will be documented in this file.
 The format is based on [Keep a Changelog](https://keepachangelog.com/en/1.0.0/),
 and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0.html).
 
+## [1.18.7] - 2026-11-11
+
+### Changed & Refined
+- **Centered Lower-River Permission Placement (`PaintingPermissionView`, Steps 2–7)**:
+  - Shifted painting-integrated permission titles, captions, frosted glass Enable pill, and Skip action from the asymmetric top-left sky down to a centered band in the calm lower river foreground below the sampan boat.
+  - Elevated `boatY` across Scenes 2–7 (`1272..1295`) and raised Scene 6's cove lotus pads (`y = 1385..1440`) so the entire mountain vista, birds, calligraphy, boat, and Easter eggs sit completely unobstructed above the permission prompt.
+- Bumped version to `1.18.7` (Build 58).
+
 ## [1.18.6] - 2026-11-11
 
 ### Added

@@ -1,13 +1,17 @@
 # Kanri Onboarding & Stepper System
 
-Current Version: **1.18.6** (Build 57)
+Current Version: **1.18.7** (Build 58)
 
 ## 1. Overview
 The Kanri onboarding experience guides new users through permissions, personal profile configuration, and security settings with transparency, privacy assurances, and immediate tactile feedback.
 
+In version 1.18.7:
+- **Centered Lower-River Painting Integration (`PaintingPermissionView`)**:
+  - Slides 2 through 7 center each permission's title, caption, frosted dark glass Enable pill (`Continue` if already granted), and compact `Skip` link cleanly over the calm lower river foreground (`Alignment.BottomCenter`), aligned with the centered progress header and comfortably within thumb reach.
+  - Raised the sampan boat lane on Scenes 2–7 (`boatY = 1272..1295`) and Scene 6 cove lotus pads so the entire mountain panorama, birds, red seal, boat, and Easter eggs remain unobstructed above the prompt.
+
 In version 1.18.6:
-- **Top-Left Painting-Integrated Permission Prompts (`PaintingPermissionView`)**:
-  - Slides 2 through 7 shift each permission's title and caption directly into the open top-left sky of the living Shan Shui painting (`Alignment.TopStart`, capped clear of the top-right vertical calligraphy and cinnabar seal).
+- **Painting-Integrated Permission Flow (`PaintingPermissionView`)**:
   - Replaces multi-button stacks with a single frosted dark glass Enable button (switching to `"Continue"` if returning on an already-granted step) paired cleanly beside a compact `"Skip"` action button.
 - **Automatic Transition on Permission Grant**:
   - Tapping Enable on Slides 2–7 arms `awaitAutoAdvanceForStep`. Whether granted inline via OS permission dialog, enabled in Android Settings and returning via `ON_RESUME`, or toggled in-app on Step 7, Kanri briefly flashes the emerald checkmark feedback (`520ms`) and automatically advances to the next slide.

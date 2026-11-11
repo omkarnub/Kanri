@@ -928,7 +928,7 @@ private data class PermissionStepConfig(
 
 /**
  * Slides 2 to 7: Minimalist permission title, caption, primary action, and small Skip button
- * painted directly onto the open top-left sky of the living Shan Shui canvas.
+ * anchored cleanly in the calm open lower river foreground below the sampan boat.
  */
 @Composable
 private fun PaintingPermissionView(
@@ -949,62 +949,56 @@ private fun PaintingPermissionView(
     Box(
         modifier = Modifier
             .fillMaxSize()
-            .padding(start = 24.dp, end = 24.dp, top = 22.dp),
-        contentAlignment = Alignment.TopStart
+            .padding(start = 24.dp, end = 24.dp, bottom = 14.dp),
+        contentAlignment = Alignment.BottomCenter
     ) {
         Column(
-            modifier = Modifier.fillMaxWidth(),
-            horizontalAlignment = Alignment.Start
+            modifier = Modifier
+                .widthIn(max = 360.dp)
+                .fillMaxWidth(),
+            horizontalAlignment = Alignment.CenterHorizontally
         ) {
-            // Keep heading & caption left-weighted so they stay clear of top-right calligraphy & seal
-            Column(
-                modifier = Modifier
-                    .fillMaxWidth(0.78f)
-                    .widthIn(max = 300.dp),
-                horizontalAlignment = Alignment.Start
-            ) {
-                Text(
-                    text = config.title,
-                    fontFamily = GoogleSansFlex,
-                    fontSize = 25.sp,
-                    lineHeight = 30.sp,
-                    fontWeight = FontWeight.Bold,
-                    color = Color(0xFF121418),
-                    textAlign = TextAlign.Start,
-                    letterSpacing = (-0.4).sp,
-                    style = TextStyle(
-                        shadow = Shadow(
-                            color = Color(0xFFEFEAE0).copy(alpha = 0.92f),
-                            offset = Offset.Zero,
-                            blurRadius = 10f
-                        )
+            Text(
+                text = config.title,
+                fontFamily = GoogleSansFlex,
+                fontSize = 24.sp,
+                lineHeight = 30.sp,
+                fontWeight = FontWeight.Bold,
+                color = Color(0xFF121418),
+                textAlign = TextAlign.Center,
+                letterSpacing = (-0.4).sp,
+                style = TextStyle(
+                    shadow = Shadow(
+                        color = Color(0xFFEFEAE0).copy(alpha = 0.94f),
+                        offset = Offset.Zero,
+                        blurRadius = 12f
                     )
                 )
+            )
 
-                Spacer(modifier = Modifier.height(8.dp))
+            Spacer(modifier = Modifier.height(6.dp))
 
-                Text(
-                    text = config.description,
-                    fontFamily = GoogleSansFlex,
-                    fontSize = 14.sp,
-                    lineHeight = 20.sp,
-                    color = Color(0xFF282D37),
-                    textAlign = TextAlign.Start,
-                    style = TextStyle(
-                        shadow = Shadow(
-                            color = Color(0xFFEFEAE0).copy(alpha = 0.94f),
-                            offset = Offset.Zero,
-                            blurRadius = 10f
-                        )
+            Text(
+                text = config.description,
+                fontFamily = GoogleSansFlex,
+                fontSize = 14.sp,
+                lineHeight = 20.sp,
+                color = Color(0xFF282D37),
+                textAlign = TextAlign.Center,
+                style = TextStyle(
+                    shadow = Shadow(
+                        color = Color(0xFFEFEAE0).copy(alpha = 0.94f),
+                        offset = Offset.Zero,
+                        blurRadius = 10f
                     )
                 )
-            }
+            )
 
             Spacer(modifier = Modifier.height(18.dp))
 
             Row(
                 verticalAlignment = Alignment.CenterVertically,
-                horizontalArrangement = Arrangement.spacedBy(8.dp)
+                horizontalArrangement = Arrangement.spacedBy(10.dp)
             ) {
                 Button(
                     onClick = {
@@ -1015,8 +1009,8 @@ private fun PaintingPermissionView(
                         }
                     },
                     shape = RoundedCornerShape(50),
-                    contentPadding = PaddingValues(horizontal = 18.dp, vertical = 10.dp),
-                    modifier = Modifier.height(44.dp),
+                    contentPadding = PaddingValues(horizontal = 22.dp, vertical = 12.dp),
+                    modifier = Modifier.height(48.dp),
                     colors = ButtonDefaults.buttonColors(
                         containerColor = if (isGranted) Color(0xFF1B5E20).copy(alpha = 0.88f)
                         else Color(0xFF141416).copy(alpha = 0.84f),
@@ -1042,7 +1036,7 @@ private fun PaintingPermissionView(
                         text = primaryLabel,
                         fontFamily = GoogleSansFlex,
                         fontWeight = FontWeight.SemiBold,
-                        fontSize = 13.5.sp,
+                        fontSize = 14.sp,
                         maxLines = 1,
                         color = Color.White
                     )
@@ -1052,19 +1046,19 @@ private fun PaintingPermissionView(
                     TextButton(
                         onClick = onRequestSkip,
                         modifier = Modifier.height(44.dp),
-                        contentPadding = PaddingValues(horizontal = 10.dp, vertical = 8.dp)
+                        contentPadding = PaddingValues(horizontal = 12.dp, vertical = 8.dp)
                     ) {
                         Text(
                             text = "Skip",
                             fontFamily = GoogleSansFlex,
-                            fontSize = 13.sp,
+                            fontSize = 13.5.sp,
                             fontWeight = FontWeight.Medium,
                             color = Color(0xFF3E444F),
                             style = TextStyle(
                                 shadow = Shadow(
-                                    color = Color(0xFFEFEAE0).copy(alpha = 0.92f),
+                                    color = Color(0xFFEFEAE0).copy(alpha = 0.94f),
                                     offset = Offset.Zero,
-                                    blurRadius = 8f
+                                    blurRadius = 10f
                                 )
                             )
                         )
