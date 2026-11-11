@@ -5,6 +5,30 @@ All notable changes to Kanri will be documented in this file.
 The format is based on [Keep a Changelog](https://keepachangelog.com/en/1.0.0/),
 and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0.html).
 
+## [1.18.0] - 2026-11-11
+
+### Added
+- **Rebuilt Onboarding Workflow & 100% ChapterPlayer Intro Animation**:
+  - Rebuilt the entire first-time user onboarding slider workflow from scratch in `OnboardingScreen.kt` and `KanriIntroLogo.kt`.
+  - **Screen Fade-In & Synchronized Painting**:
+    - The screen dissolves from darkness/paper upon launch without any sudden UI flashing.
+    - The Shan Shui living scroll background (`shan_shui_onboarding.html`) executes its 1:1 master landscape painting (Twin Peaks & Misty Promontory) with foreground UI hidden until the ink bloom finishes.
+    - Integrated a two-way JavaScript bridge (`AndroidBridge.onPaintingFinished` and `AndroidBridge.onGlideFinished`) plus an autonomous safety timeout ensuring Compose and the HTML5 canvas stay in perfect lockstep.
+  - **100% Identical Louis Studios ChapterPlayer Intro Animation**:
+    - Implemented ChapterPlayer's exact mathematical formulas on Jetpack Compose Canvas:
+      1. *Mark Landing*: Kanri monogram emblem (`kanriicon.svg`) lands at center with exponential ease (`eExpo(seg(lt, 0, 0.60))`, scale $1.55\times \to 1.0\times$).
+      2. *Settle to Lockup*: Smoothly glides to left lockup position with cubic Hermite ease (`eInOut(seg(lt, 0.85, 1.70))`).
+      3. *Kinetic Typography*: Panchang letters K-A-N-R-I rise and sharpen beside the emblem with $35\text{ms}$ stagger and $700\text{ms}$ duration (`dy = (1 - eExpo(p)) * size * 0.55`).
+      4. *Masked Subtitle*: "FINANCIAL SERENITY / Know where every rupee went" reveals from behind a clipped mask (`p = seg(lt, 2.15, 2.95)`).
+      5. *Living Frame Push-In*: Continuous slow push-in ($1 + 0.03 \cdot eInOut(seg(lt, 0, 5))$) keeping the held frame alive.
+    - Synchronized "Get Started" button entrance at $lt \ge 2.95\text{s}$.
+  - **Sequential Two-Phase Transitions**:
+    - Tapping "Get Started" triggers ChapterPlayer's exit easing ($\Delta y = -eInOut(out) \cdot 14\text{px}$, $\alpha = 1 - eInOut(out)$), fading out the hero UI *first*.
+    - Only once the UI is completely clear does the living scroll background progress to Scene 2 (`setOnboardingStep(1)`).
+    - Avatar Picker card (`KokonutAvatarPicker`) fades in smoothly when arriving at Scene 2.
+    - Unified the same card fade-out $\to$ background glide $\to$ card fade-in choreography across all remaining steps (Steps 1–7) with bidirectional back-navigation.
+- Bumped version to `1.18.0` (Build 51).
+
 ## [1.17.1] - 2026-11-11
 
 ### Added

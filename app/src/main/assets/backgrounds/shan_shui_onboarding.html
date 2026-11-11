@@ -2377,6 +2377,12 @@
           const elapsed = timestamp - scenePaintStartTime[i];
           const dur = Math.max(400, scenePaintDuration[i]);
           scenePaintProgress[i] = Math.min(1.0, elapsed / dur);
+          if (scenePaintProgress[i] >= 1.0) {
+            scenePaintActive[i] = 0;
+            if (window.AndroidBridge && typeof window.AndroidBridge.onPaintingFinished === 'function') {
+              try { window.AndroidBridge.onPaintingFinished(i); } catch (e) { console.error(e); }
+            }
+          }
         }
       }
 
@@ -2414,6 +2420,9 @@
 
         if (rawT >= 1.0) {
           nav.inTransition = false;
+          if (window.AndroidBridge && typeof window.AndroidBridge.onGlideFinished === 'function') {
+            try { window.AndroidBridge.onGlideFinished(currentStep); } catch (e) { console.error(e); }
+          }
         }
       } else {
         for (let i = 0; i < 4; i++) {

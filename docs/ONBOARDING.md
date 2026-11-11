@@ -1,16 +1,17 @@
 # Kanri Onboarding & Stepper System
 
-Current Version: **1.17.0** (Build 49)
+Current Version: **1.18.0** (Build 51)
 
 ## 1. Overview
 The Kanri onboarding experience guides new users through permissions, personal profile configuration, and security settings with transparency, privacy assurances, and immediate tactile feedback.
 
-In version 1.17.0, the onboarding flow features:
-- An interactive Jetpack Compose **Stepper** navigation architecture inspired by modern accessible Stepper design patterns.
-- An edge-to-edge **Panoramic Shan Shui Living Scroll Background** (`shan_shui_onboarding.html`) with 8 sceneries synchronized with the user's progress through the onboarding steps.
-- A **ChapterPlayer Scene 0 Kinetic Intro Logo** (`KanriIntroLogo.kt`) featuring the official geometric Kanri monogram emblem with center landing, smooth lockup settle, staggered letter reveals, tagline fade, and subtle organic breathing.
-- **Unobstructed Living Scroll on Slide 0**: The Hero slide presents an open vista where Scene 0 of the living scroll landscape paints completely unobstructed behind the kinetic brand entrance.
-- **Direct First-Time Flow**: Bypasses the splash screen on initial install so users immediately enter the living scroll atmosphere upon launch.
+In version 1.18.0, the onboarding flow is completely rebuilt from scratch:
+- **Two-Way JavaScript Bridge**: `AndroidBridge.onPaintingFinished(step)` and `AndroidBridge.onGlideFinished(step)` synchronize the HTML5 canvas living scroll with Compose state.
+- **Screen Fade-In & Synchronized Painting**: Background paints Scene 0 ink washes (3800ms) with foreground UI hidden until the ink bloom finishes.
+- **100% Identical Louis Studios ChapterPlayer Intro Animation**: `KanriIntroLogo.kt` directly implements the mathematical equations and timing from Louis Studios' `ChapterPlayer` (emblem center landing, cubic Hermite lockup settle, kinetic Panchang letter emergence, masked subtitle reveal, and living push-in).
+- **Sequential Two-Phase Transitions**: Tapping **Get Started** or **Continue** fades out the current UI first before progressing the background camera glide.
+- **Unified Slider Rhythm Across All Steps**: Step cards (Avatar Picker, SMS, Apps, Overlay, Battery, Alerts, Lock) enter and exit with matching fade and subtle scale transforms.
+- **Interactive Stepper Navigation**: Steps 1 through 7 feature the top `Stepper` header with haptic navigation and back button support.
 
 ---
 
