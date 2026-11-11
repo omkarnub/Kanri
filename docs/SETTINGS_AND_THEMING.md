@@ -73,6 +73,12 @@ The settings architecture adheres to:
 4. **Rules & Categories**:
    - Smart Merchant Rules sub-screen (keyword -> category auto-mapping).
    - Custom Categories management (create, edit, delete with 30+ custom icons).
+   - **Category Order Customization** (`CategoryReorderSheet`):
+     - Interactive modal sheet allowing users to customize which categories show first and last.
+     - Move Up / Move Down buttons for quick reordering.
+     - "Reset" button to restore factory standard category sequence.
+     - Backed by Room DB `display_order` column on `CategoryEntity` (`MIGRATION_11_12`).
+     - Directly powers category ordering across `CategoryPickerSheet` and transaction detail screens.
 
 5. **Permissions & System Detection**:
    - Modern **toggle switches** with real-time status and system deep-links for:

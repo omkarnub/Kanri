@@ -5,6 +5,37 @@ All notable changes to Kanri will be documented in this file.
 The format is based on [Keep a Changelog](https://keepachangelog.com/en/1.0.0/),
 and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0.html).
 
+## [1.16.0] - 2026-11-11
+
+### Fixed
+- **Promotional Cashback & Offer Notification Hallucinations**:
+  - Filtered promotional cashback offers, marketing banners, and coupon notifications from Amazon, Flipkart, PhonePe, Google Pay, and Paytm (e.g., "Cashback offer: Flat ₹250 on Amazon Pay on recharge", "Win scratch cards", "Offer valid till midnight").
+  - Enforced `isConfirmedCashbackOrReward` verification in `NotificationParser.kt`: cashback and rewards are only parsed as `CREDIT` when explicit, unambiguous credit verbs are present ("credited", "received", "added to your", etc.). Bare marketing keywords without verified deposits are rejected.
+  - Added `PKG_FLIPKART` (`com.flipkart.android`) support with strict marketing offer filtering in `NotificationParser.kt` and `SmsParser.kt`.
+
+### Added
+- **Custom Category Ordering in Settings (`CategoryReorderSheet`)**:
+  - Added new **"Category Order"** control under *Settings > Rules & Categories*.
+  - Users can prioritize categories with tactile Move Up / Move Down buttons, reset back to factory defaults at any time, or add new custom categories.
+  - Added `display_order` column to Room database `categories` table with seamless database migration `MIGRATION_11_12` (Database v11 → v12).
+  - Updated category pickers across transaction entry and search sheets to sort with user-defined priority.
+- **8-Step Panoramic Shan Shui Living Scroll Onboarding Background**:
+  - Added edge-to-edge animated East-Asian living scroll (`shan_shui_onboarding.html`) with 8 sceneries synchronized with onboarding steps:
+    - Step 0: *Twin Peaks & Dawn Clouds* (Hero)
+    - Step 1: *Scholar's Pine & Mountain Brook* (Profile)
+    - Step 2: *Cloud Gorge Waterfalls & Rising Mist* (SMS Detection)
+    - Step 3: *Cinnabar Plum with 4 Swallows* (Payment Apps)
+    - Step 4: *Glowing Moonbridge with Silver Lanterns* (Overlay)
+    - Step 5: *Bamboo Sanctuary & Fireflies* (Battery Optimization)
+    - Step 6: *Sunset Pavilion Ripples & Gold Horizon* (Spending Alerts)
+    - Step 7: *Sacred Pagoda & Mountain Constellations* (Biometric Lock)
+  - Completely stripped HUD elements, controls, and audio listeners for a pure wallpaper loop with transparent background touch passthrough.
+  - Added live paper theme synchronization matching app light/dark appearance.
+- **ChapterPlayer Kinetic Intro Logo Animation (`KanriIntroLogo`)**:
+  - Replaced static hero icon with ChapterPlayer-inspired kinetic monogram mark landing large (`scale 2.2 -> 1.0`) with exponential ease (`CubicBezierEasing(0.16f, 1f, 0.3f, 1f)`).
+  - Animated Panchang typography with staggered letter rises (`K-A-N-R-I`, 75ms delay each) and tagline reveal ("FINANCIAL SERENITY / Know where every rupee went.").
+- Bumped version to `1.16.0` (Build 48).
+
 ## [1.15.0] - 2026-11-11
 
 ### Added

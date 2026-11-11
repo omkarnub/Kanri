@@ -29,7 +29,7 @@ import androidx.room.migration.Migration
         SavingsGoalContributionEntity::class,
         WalletBalanceEntity::class
     ],
-    version = 11,
+    version = 12,
     exportSchema = false
 )
 abstract class KanriDatabase : RoomDatabase() {
@@ -124,26 +124,33 @@ abstract class KanriDatabase : RoomDatabase() {
             }
         }
 
+        val MIGRATION_11_12 = object : Migration(11, 12) {
+            override fun migrate(db: SupportSQLiteDatabase) {
+                db.execSQL("ALTER TABLE categories ADD COLUMN display_order INTEGER NOT NULL DEFAULT 0")
+                db.execSQL("UPDATE categories SET display_order = id WHERE display_order = 0")
+            }
+        }
+
         val DEFAULT_CATEGORIES = listOf(
-            CategoryEntity(name = "Auto / Taxi Fare", colorHex = "#F59E0B", iconName = "taxi"),
-            CategoryEntity(name = "Food & Dining", colorHex = "#FF7043", iconName = "restaurant"),
-            CategoryEntity(name = "Train & Metro", colorHex = "#0284C7", iconName = "train"),
-            CategoryEntity(name = "Other", colorHex = "#8D6E63", iconName = "category"),
-            CategoryEntity(name = "Groceries", colorHex = "#4CAF50", iconName = "shopping_cart"),
-            CategoryEntity(name = "Shopping", colorHex = "#AB47BC", iconName = "shopping_bag"),
-            CategoryEntity(name = "Bills & Utilities", colorHex = "#FFA726", iconName = "receipt"),
-            CategoryEntity(name = "Transport & Fuel", colorHex = "#29B6F6", iconName = "directions_car"),
-            CategoryEntity(name = "Entertainment", colorHex = "#EC4899", iconName = "sports_esports"),
-            CategoryEntity(name = "Health & Medical", colorHex = "#EF5350", iconName = "local_hospital"),
-            CategoryEntity(name = "Salary & Income", colorHex = "#26A69A", iconName = "payments"),
-            CategoryEntity(name = "Investment & Savings", colorHex = "#10B981", iconName = "trending_up"),
-            CategoryEntity(name = "Education", colorHex = "#8B5CF6", iconName = "school"),
-            CategoryEntity(name = "Cash & ATM", colorHex = "#78909C", iconName = "local_atm"),
-            CategoryEntity(name = "Rent & Maintenance", colorHex = "#6366F1", iconName = "home"),
-            CategoryEntity(name = "Personal Care", colorHex = "#F43F5E", iconName = "fitness"),
-            CategoryEntity(name = "Gifts & Donations", colorHex = "#D946EF", iconName = "gift"),
-            CategoryEntity(name = "Travel & Vacation", colorHex = "#06B6D4", iconName = "flight"),
-            CategoryEntity(name = "Lend & Borrow", colorHex = "#30A46C", iconName = "payments")
+            CategoryEntity(name = "Auto / Taxi Fare", colorHex = "#F59E0B", iconName = "taxi", displayOrder = 1),
+            CategoryEntity(name = "Food & Dining", colorHex = "#FF7043", iconName = "restaurant", displayOrder = 2),
+            CategoryEntity(name = "Train & Metro", colorHex = "#0284C7", iconName = "train", displayOrder = 3),
+            CategoryEntity(name = "Other", colorHex = "#8D6E63", iconName = "category", displayOrder = 4),
+            CategoryEntity(name = "Groceries", colorHex = "#4CAF50", iconName = "shopping_cart", displayOrder = 5),
+            CategoryEntity(name = "Shopping", colorHex = "#AB47BC", iconName = "shopping_bag", displayOrder = 6),
+            CategoryEntity(name = "Bills & Utilities", colorHex = "#FFA726", iconName = "receipt", displayOrder = 7),
+            CategoryEntity(name = "Transport & Fuel", colorHex = "#29B6F6", iconName = "directions_car", displayOrder = 8),
+            CategoryEntity(name = "Entertainment", colorHex = "#EC4899", iconName = "sports_esports", displayOrder = 9),
+            CategoryEntity(name = "Health & Medical", colorHex = "#EF5350", iconName = "local_hospital", displayOrder = 10),
+            CategoryEntity(name = "Salary & Income", colorHex = "#26A69A", iconName = "payments", displayOrder = 11),
+            CategoryEntity(name = "Investment & Savings", colorHex = "#10B981", iconName = "trending_up", displayOrder = 12),
+            CategoryEntity(name = "Education", colorHex = "#8B5CF6", iconName = "school", displayOrder = 13),
+            CategoryEntity(name = "Cash & ATM", colorHex = "#78909C", iconName = "local_atm", displayOrder = 14),
+            CategoryEntity(name = "Rent & Maintenance", colorHex = "#6366F1", iconName = "home", displayOrder = 15),
+            CategoryEntity(name = "Personal Care", colorHex = "#F43F5E", iconName = "fitness", displayOrder = 16),
+            CategoryEntity(name = "Gifts & Donations", colorHex = "#D946EF", iconName = "gift", displayOrder = 17),
+            CategoryEntity(name = "Travel & Vacation", colorHex = "#06B6D4", iconName = "flight", displayOrder = 18),
+            CategoryEntity(name = "Lend & Borrow", colorHex = "#30A46C", iconName = "payments", displayOrder = 19)
         )
 
         fun getDatabase(context: Context): KanriDatabase {
@@ -163,7 +170,7 @@ abstract class KanriDatabase : RoomDatabase() {
                     KanriDatabase::class.java,
                     "kanri_database"
                 )
-                    .addMigrations(MIGRATION_5_6, MIGRATION_6_7, MIGRATION_7_8, MIGRATION_8_9, MIGRATION_9_10, MIGRATION_10_11)
+                    .addMigrations(MIGRATION_5_6, MIGRATION_6_7, MIGRATION_7_8, MIGRATION_8_9, MIGRATION_9_10, MIGRATION_10_11, MIGRATION_11_12)
                     .fallbackToDestructiveMigration(dropAllTables = false)
                     .addCallback(object : Callback() {
                         override fun onCreate(db: SupportSQLiteDatabase) {

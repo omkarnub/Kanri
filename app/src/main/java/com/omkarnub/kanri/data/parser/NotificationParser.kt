@@ -12,6 +12,7 @@ object NotificationParser {
     const val PKG_BHIM = "in.org.npci.upiapp"
     const val PKG_AMAZON_IN = "in.amazon.mShop.android.shopping"
     const val PKG_AMAZON_GLOBAL = "com.amazon.mShop.android.shopping"
+    const val PKG_FLIPKART = "com.flipkart.android"
     const val PKG_CRED = "com.dreamplug.androidapp"
     const val PKG_NAVI = "com.naviapp"
     const val PKG_JUPITER = "money.jupiter"
@@ -125,9 +126,20 @@ object NotificationParser {
     private val NON_TRANSACTIONAL_KEYWORDS = listOf(
         "otp", "verification code", "security code",
         "due in", "payment due", "bill due", "reminder", "bill generated",
-        "win up to", "earn up to", "cashback up to", "chance to win",
-        "flat 50%", "discount", "voucher", "offer valid", "limited period",
-        "recharge now", "apply now", "spin and win", "scratch card awaits",
+        // Promotional / Offers / Marketing / Discounts
+        "win up to", "earn up to", "cashback up to", "chance to win", "chance to earn",
+        "flat 50%", "discount", "voucher", "offer valid", "limited period", "limited time",
+        "recharge now", "apply now", "spin and win", "spin & win", "scratch card", "scratch and win",
+        "scratch & win", "scratch card awaits", "cashback offer", "cashback offers",
+        "get cashback", "get flat", "earn cashback", "avail cashback", "win cashback",
+        "claim cashback", "unlock cashback", "flat cashback", "cashback awaits",
+        "cashback on recharge", "cashback on bill", "cashback on your next", "cashback on next",
+        "cashback on first", "cashback on every", "cashback on any", "cashback for you",
+        "offer:", "special offer", "festive offer",
+        "exclusive offer", "mega offer", "use coupon", "use code", "promo code", "coupon code",
+        "reward points", "rewards points", "reward point", "congratulations! you can win",
+        "congratulations! you are eligible", "pay & get", "shop & get", "recharge & get",
+        "up to ₹", "upto ₹", "up to rs", "upto rs", "flat ₹", "flat rs",
         "rate your", "complete your profile", "check your credit score",
         // Failed / Declined / Cancelled filters (Fix for Flaw 1)
         "failed", "declined", "unsuccessful", "cancelled", "canceled",
@@ -201,15 +213,14 @@ object NotificationParser {
         }
 
         // 2. Detect Debit vs Credit
+        val isCashbackCredit = isConfirmedCashbackOrReward(lower)
         val isCreditExplicit = lower.contains("received") ||
             lower.contains("credited") ||
             lower.contains("sent you") ||
             lower.contains("sent to you") ||
             lower.contains("paid you") ||
             lower.contains("added to your") ||
-            lower.contains("cashback") ||
-            lower.contains("you won") ||
-            lower.contains("reward") ||
+            isCashbackCredit ||
             lower.contains("refund") ||
             lower.contains("fampaid") ||
             lower.contains("#fampaid") ||
@@ -236,7 +247,7 @@ object NotificationParser {
             isDebitExplicit && !isCreditExplicit -> TransactionType.DEBIT
             isCreditExplicit && isDebitExplicit -> {
                 // Priority check for inbound money indicators (e.g. FamPay, received, sent you)
-                if (lower.contains("received") || lower.contains("credited") || lower.contains("sent you") || lower.contains("sent to you") || lower.contains("paid you") || lower.contains("refund") || lower.contains("cashback") || lower.contains("fampaid") || lower.contains("you got")) {
+                if (lower.contains("received") || lower.contains("credited") || lower.contains("sent you") || lower.contains("sent to you") || lower.contains("paid you") || lower.contains("refund") || isCashbackCredit || lower.contains("fampaid") || lower.contains("you got")) {
                     TransactionType.CREDIT
                 } else {
                     TransactionType.DEBIT
@@ -284,12 +295,25 @@ object NotificationParser {
         return null
     }
 
+    private fun isConfirmedCashbackOrReward(lower: String): Boolean {
+        val hasCashbackOrReward = lower.contains("cashback") || lower.contains("reward") || lower.contains("scratch card")
+        if (!hasCashbackOrReward) return false
+
+        // Must have confirmation of money transferred / credited
+        return lower.contains("credited") ||
+            lower.contains("received") ||
+            lower.contains("added to your") ||
+            lower.contains("transferred to") ||
+            lower.contains("deposited") ||
+            (lower.contains("you won") && !lower.contains("win up to") && !lower.contains("chance to win"))
+    }
+
     private fun extractCreditCounterparty(title: String, text: String, lower: String): String {
         val boundedText = if (text.length > 300) text.take(300) else text
         val boundedTitle = if (title.length > 150) title.take(150) else title
 
-        // Check for cashback / rewards first
-        if (lower.contains("cashback") || lower.contains("you won") || lower.contains("reward")) {
+        // Check for confirmed cashback / rewards first
+        if (isConfirmedCashbackOrReward(lower)) {
             return "Cashback & Rewards"
         }
 

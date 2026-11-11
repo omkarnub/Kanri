@@ -19,5 +19,8 @@ data class CategoryEntity(
     val iconName: String,
 
     @ColumnInfo(name = "is_custom", defaultValue = "0")
-    val isCustom: Boolean = false
+    val isCustom: Boolean = false,
+
+    @ColumnInfo(name = "display_order", defaultValue = "0")
+    val displayOrder: Int = 0
 )

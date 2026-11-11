@@ -336,14 +336,34 @@ object SmsParser {
             return true
         }
 
-        // 7. Promotional / Loans / Marketing
+        // 7. Promotional / Loans / Marketing / Cashback Offers
         if (lower.contains("pre-approved loan") ||
             lower.contains("pre-approved personal loan") ||
             lower.contains("apply now") ||
             lower.contains("win cash") ||
             lower.contains("cashback offer") ||
-            lower.contains("congratulations! you are eligible") ||
-            lower.contains("scratch card awaits")
+            lower.contains("cashback offers") ||
+            lower.contains("get cashback") ||
+            lower.contains("earn cashback") ||
+            lower.contains("avail cashback") ||
+            lower.contains("win cashback") ||
+            lower.contains("claim cashback") ||
+            lower.contains("unlock cashback") ||
+            lower.contains("flat cashback") ||
+            lower.contains("cashback awaits") ||
+            lower.contains("cashback on ") ||
+            lower.contains("cashback for you") ||
+            lower.contains("spin & win") ||
+            lower.contains("scratch card awaits") ||
+            lower.contains("use coupon") ||
+            lower.contains("use code") ||
+            lower.contains("promo code") ||
+            lower.contains("coupon code") ||
+            lower.contains("up to ₹") ||
+            lower.contains("upto ₹") ||
+            lower.contains("flat ₹") ||
+            lower.contains("flat rs") ||
+            lower.contains("congratulations! you are eligible")
         ) {
             return true
         }

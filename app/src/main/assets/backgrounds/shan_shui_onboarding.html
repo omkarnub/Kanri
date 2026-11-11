@@ -1,0 +1,2973 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no, viewport-fit=cover" />
+  <title>Shan Shui Living Scroll — 8-Scenery Panoramic Android Onboarding Background (Gemini Argon 4 Edition)</title>
+    <link rel="preconnect" href="https://fonts.googleapis.com">
+  <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+  <link href="https://fonts.googleapis.com/css2?family=Cormorant+Garamond:ital,wght@0,500;0,600;0,700;1,500&family=Inter:wght@300;400;500;600&family=Noto+Serif+JP:wght@300;500;700&family=Zhi+Mang+Xing&display=swap" rel="stylesheet">
+  <style>
+    :root {
+      --bg-outer: #141311;
+      --xuan-light: #efeae0;
+      --xuan-dark: #0d1015;
+      --cinnabar: #c43b38;
+    }
+
+    * {
+      box-sizing: border-box;
+      -webkit-tap-highlight-color: transparent;
+      user-select: none;
+    }
+
+    html, body {
+      margin: 0;
+      padding: 0;
+      width: 100%;
+      height: 100%;
+      overflow: hidden;
+      background-color: var(--bg-outer);
+      font-family: 'Inter', -apple-system, BlinkMacSystemFont, sans-serif;
+      color: #24221f;
+    }
+
+    .font-serif-east {
+      font-family: 'Noto Serif JP', 'Cormorant Garamond', Georgia, serif;
+    }
+
+    .font-calligraphy {
+      font-family: 'Zhi Mang Xing', 'Noto Serif JP', serif;
+    }
+
+    #viewport-wrapper {
+      position: relative;
+      width: 100vw;
+      height: 100vh;
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      background: radial-gradient(circle at 50% 45%, #24211e 0%, #0b0a09 100%);
+    }
+
+    #stage-container {
+      position: relative;
+      width: 100%;
+      height: 100%;
+      overflow: hidden;
+      background-color: #efeae0;
+      transition: box-shadow 0.5s ease, border-radius 0.4s ease;
+    }
+
+    #stage-container {
+      position: absolute;
+      inset: 0;
+      width: 100% !important;
+      height: 100% !important;
+      border-radius: 0 !important;
+      box-shadow: none !important;
+      aspect-ratio: unset !important;
+    }
+    .dev-hud, #mock-android-ui, #btn-restore-hud {
+      display: none !important;
+    }
+    #interaction-layer {
+      pointer-events: none !important;
+    }
+
+    canvas.layer-canvas {
+      position: absolute;
+      inset: 0;
+      width: 100%;
+      height: 100%;
+      display: block;
+      pointer-events: none;
+    }
+
+    /* True SVG Capillary Ink-Bleed Filter applied to the wet-wash scenery canvas */
+    #wet-scenery-canvas {
+      filter: url(#xuan-capillary-bleed);
+      will-change: transform;
+    }
+
+    /* Crisp dry-brush & detail canvas for boat, birds, seals, and fine Cunfa strokes */
+    #detail-scene-canvas {
+      filter: url(#sumi-dry-brush);
+      will-change: transform;
+    }
+
+    /* Paper grain multiply overlay so ink pigment sits inside the mulberry fibers */
+    #paper-grain-overlay {
+      position: absolute;
+      inset: 0;
+      z-index: 4;
+      pointer-events: none;
+      mix-blend-mode: multiply;
+      opacity: 0.42;
+    }
+
+    body.dark-theme-ui #paper-grain-overlay {
+      mix-blend-mode: soft-light;
+      opacity: 0.28;
+    }
+
+    #interaction-layer {
+      position: absolute;
+      inset: 0;
+      z-index: 10;
+      cursor: grab;
+    }
+    #interaction-layer:active {
+      cursor: grabbing;
+    }
+
+    /* Translucent Washi/Xuan Glass Controls */
+    .hud-glass {
+      background: rgba(243, 239, 230, 0.85);
+      backdrop-filter: blur(14px);
+      -webkit-backdrop-filter: blur(14px);
+      border: 1px solid rgba(45, 52, 60, 0.15);
+      color: #23272d;
+      box-shadow: 0 10px 30px rgba(28, 25, 20, 0.13);
+    }
+
+    body.dark-theme-ui .hud-glass {
+      background: rgba(15, 19, 25, 0.82);
+      border: 1px solid rgba(255, 255, 255, 0.13);
+      color: #e6e3dc;
+      box-shadow: 0 12px 34px rgba(0, 0, 0, 0.58);
+    }
+
+    .step-node {
+      transition: all 0.32s cubic-bezier(0.22, 1, 0.36, 1);
+    }
+    .step-node.active {
+      transform: translateY(-2px);
+    }
+
+    body.webview-mode .dev-hud,
+    body.hud-hidden .dev-hud {
+      opacity: 0 !important;
+      pointer-events: none !important;
+      transform: translateY(14px);
+    }
+
+    #paper-vignette {
+      position: absolute;
+      inset: 0;
+      pointer-events: none;
+      z-index: 5;
+      box-shadow: inset 0 0 75px rgba(132, 114, 88, 0.22);
+      transition: box-shadow 0.6s ease;
+    }
+  </style>
+</head>
+<body>
+
+  <!-- ============================================================================ -->
+  <!-- REAL SVG WATERCOLOR & CAPILLARY INK-BLEED FILTER PIPELINE                    -->
+  <!-- Creates genuine feathered wet ink edges, paper fiber bleed & dry-brush tooth -->
+  <!-- ============================================================================ -->
+  <svg width="0" height="0" style="position:absolute; pointer-events:none;" aria-hidden="true">
+    <defs>
+      <!-- Wet-on-Wet Capillary Bleed Filter for Mountains, Mist, Hills & Distant Washes -->
+      <filter id="xuan-capillary-bleed" x="-5%" y="-5%" width="110%" height="110%" color-interpolation-filters="sRGB">
+        <!-- Coarse paper absorbency turbulence -->
+        <feTurbulence type="fractalNoise" baseFrequency="0.018 0.022" numOctaves="3" seed="17" result="coarseNoise" />
+        <!-- Fine mulberry fiber capillary fringe -->
+        <feTurbulence type="fractalNoise" baseFrequency="0.085 0.095" numOctaves="2" seed="42" result="fineFiber" />
+        <feBlend in="coarseNoise" in2="fineFiber" mode="multiply" result="combinedFiber" />
+        <!-- Organic wet-edge capillary displacement -->
+        <feDisplacementMap in="SourceGraphic" in2="combinedFiber" scale="6.5" xChannelSelector="R" yChannelSelector="G" result="bleedArt" />
+        <!-- Slight pigment softening at wet boundaries -->
+        <feGaussianBlur in="bleedArt" stdDeviation="0.45" result="softBleed" />
+        <feMerge>
+          <feMergeNode in="softBleed" />
+        </feMerge>
+      </filter>
+
+      <!-- Subtle Sumi Bristle & Feibai (Flying White) Filter for Boat, Birds & Foreground Crags -->
+      <filter id="sumi-dry-brush" x="-3%" y="-3%" width="106%" height="106%" color-interpolation-filters="sRGB">
+        <feTurbulence type="fractalNoise" baseFrequency="0.065 0.05" numOctaves="2" seed="9" result="bristleNoise" />
+        <feDisplacementMap in="SourceGraphic" in2="bristleNoise" scale="2.2" xChannelSelector="R" yChannelSelector="G" />
+      </filter>
+    </defs>
+  </svg>
+
+  <div id="viewport-wrapper">
+    <div id="stage-container">
+
+      <!-- Layer 0: Base Handmade Xuan Paper & Warm Sizing Clouds -->
+      <canvas id="paper-canvas" class="layer-canvas" style="z-index: 1;"></canvas>
+
+      <!-- Layer 1: Wet-on-Wet Capillary Ink Scenery Canvas (Filtered with #xuan-capillary-bleed) -->
+      <canvas id="wet-scenery-canvas" class="layer-canvas" style="z-index: 2;"></canvas>
+
+      <!-- Layer 2: Crisp Sumi Detail Canvas (Boat, Birds, Ripples, Petals, Calligraphy & Seal) -->
+      <canvas id="detail-scene-canvas" class="layer-canvas" style="z-index: 3;"></canvas>
+
+      <!-- Layer 3: Multiply Paper Tooth Overlay so dark ink absorbs into paper fibers -->
+      <canvas id="paper-grain-overlay" class="layer-canvas"></canvas>
+
+      <!-- Subtle Xuan Paper Edge Warmth -->
+      <div id="paper-vignette"></div>
+
+      <!-- Touch / Swipe / Water Ripple Interaction Catcher -->
+      <div id="interaction-layer" title="Swipe left/right to glide between the 8 Shan Shui sceneries, or tap the river to create ink ripples"></div>
+
+          </div>
+  </div>
+
+  <script>
+    /**
+     * ============================================================================
+     * SHAN SHUI / SUMI-E 8-SCENERY CONTINUOUS PANORAMIC RIVER SCROLL ENGINE
+     * Crafted as a Master Showcase (Gemini Argon 4 Edition)
+     * ============================================================================
+     * Architecture Overview:
+     * 1. True Wet-on-Wet Ink & Capillary Paper Physics:
+     *    - SVG `<filter id="xuan-capillary-bleed">` applies multi-octave fractalNoise
+     *      displacement and wet-boundary diffusion to the scenery layer.
+     *    - Multiply paper fiber overlay (`#paper-grain-overlay`) embeds dark sumi
+     *      charcoal and indigo-slate pigments directly into the Xuan mulberry fibers.
+     *    - Every mountain ridge features wet granulation, cauliflower water-blooms,
+     *      and dry-brush *Feibai* (flying white) texture strokes.
+     *
+     * 2. Continuous 8-Scenery Panoramic Scroll (World Width = 8 * 1080 = 8640px):
+     *    - Each onboarding step (0..7) has its own complete, custom-painted Shan Shui
+     *      landscape in the exact same traditional ink-wash style as Slide 1 (the 1:1
+     *      reference painting).
+     *    - As the user progresses from Slide 1 to Slide 8, the camera glides along the
+     *      river scroll while the Sampan Boat and Soaring Birds animate naturally from
+     *      scenery to scenery, and each newly reached landscape organically blooms onto
+     *      the paper as if freshly painted by a master brush.
+     */
+
+    const W = 1080;
+    const H = 1920;
+    const NUM_STEPS = 8;
+
+    // ============================================================================
+    // 1. 8-STEP SCENERY & ONBOARDING CONFIGURATION
+    // ============================================================================
+    const ONBOARDING_SLIDES = [
+      {
+        index: 0,
+        stepNumber: 1,
+        kanji: '壱',
+        jpSeal: '山水・双峰',
+        shortTitle: 'Hero: Get Started',
+        featureTag: '1. Value Proposition & Get Started',
+        uiTitle: 'Effortless Financial Serenity',
+        uiDesc: 'Your finances flow automatically like ink on calm mountain water. Zero manual entry.',
+        motifDesc: 'I. Twin Peaks & Misty Promontory (1:1 Master Reference)',
+        // Exact 1:1 Reference Boat & Bird Coordinates on Screen
+        boatX: 638,
+        boatY: 1482,
+        boatScale: 1.0,
+        canopyLantern: 0.0,
+        birdFormation: [
+          { x: 693, y: 872, scale: 1.0,  wingSpeed: 3.3, type: 'glider' },
+          { x: 752, y: 503, scale: 0.68, wingSpeed: 3.9, type: 'banker' },
+          { x: 672, y: 424, scale: 0.52, wingSpeed: 4.3, type: 'high' }
+        ],
+        fourthBird: null,
+        petalsActive: false,
+        sealHighlight: 0.0
+      },
+      {
+        index: 1,
+        stepNumber: 2,
+        kanji: '弐',
+        jpSeal: '奇峰・迎客松',
+        shortTitle: 'Profile: Name & Avatar',
+        featureTag: '2. Profile: Name & Avatar',
+        uiTitle: 'A Sanctuary Built Around You',
+        uiDesc: 'Personalize your name and avatar beneath the welcoming branches of the Scholar’s Pine.',
+        motifDesc: 'II. Whispering Karst Crag & Ancient Scholar’s Pine',
+        boatX: 565,
+        boatY: 1505,
+        boatScale: 0.98,
+        canopyLantern: 0.1,
+        birdFormation: [
+          { x: 520, y: 740, scale: 0.95, wingSpeed: 3.5, type: 'glider' },
+          { x: 615, y: 465, scale: 0.66, wingSpeed: 4.0, type: 'banker' },
+          { x: 485, y: 390, scale: 0.50, wingSpeed: 4.4, type: 'high' }
+        ],
+        fourthBird: null,
+        petalsActive: false,
+        sealHighlight: 0.0
+      },
+      {
+        index: 2,
+        stepNumber: 3,
+        kanji: '参',
+        jpSeal: '雲峡・飛瀑',
+        shortTitle: 'SMS Access: Bank Texts',
+        featureTag: '3. SMS Access: Bank Message Reading',
+        uiTitle: 'Reading the Stream of Transactions',
+        uiDesc: 'Allow local SMS parsing so every bank debit and credit is captured privately on-device.',
+        motifDesc: 'III. Cascading Cloud Gorge & Twin Mountain Waterfalls',
+        boatX: 460,
+        boatY: 1475,
+        boatScale: 0.96,
+        canopyLantern: 0.15,
+        birdFormation: [
+          { x: 430, y: 810, scale: 0.92, wingSpeed: 3.6, type: 'glider' },
+          { x: 540, y: 520, scale: 0.65, wingSpeed: 4.1, type: 'banker' },
+          { x: 395, y: 445, scale: 0.50, wingSpeed: 4.5, type: 'high' }
+        ],
+        fourthBird: null,
+        petalsActive: false,
+        sealHighlight: 0.0
+      },
+      {
+        index: 3,
+        stepNumber: 4,
+        kanji: '肆',
+        jpSeal: '紅梅・四燕',
+        shortTitle: 'UPI Listener: Real-Time',
+        featureTag: '4. Notification Listener: GPay, PhonePe, Paytm, CRED',
+        uiTitle: 'Four Swift Messengers in Flight',
+        uiDesc: 'Instant UPI tracking captures real-time alerts from GPay, PhonePe, Paytm, and CRED.',
+        motifDesc: 'IV. Cinnabar Plum Blossom Bend & The Four Swallows',
+        boatX: 610,
+        boatY: 1492,
+        boatScale: 1.0,
+        canopyLantern: 0.25,
+        birdFormation: [
+          { x: 640, y: 785, scale: 0.98, wingSpeed: 3.8, type: 'glider' },
+          { x: 745, y: 560, scale: 0.72, wingSpeed: 4.2, type: 'banker' },
+          { x: 565, y: 475, scale: 0.58, wingSpeed: 4.5, type: 'high' }
+        ],
+        // 4th swallow joins specifically for the 4 UPI apps (GPay, PhonePe, Paytm, CRED)
+        fourthBird: { x: 825, y: 655, scale: 0.76, wingSpeed: 4.0, type: 'glider' },
+        petalsActive: true,
+        sealHighlight: 0.0
+      },
+      {
+        index: 4,
+        stepNumber: 5,
+        kanji: '伍',
+        jpSeal: '月橋・柳影',
+        shortTitle: 'Overlay: Category Picker',
+        featureTag: '5. Floating Overlay: Instant Category Picker',
+        uiTitle: 'Instant Floating Canopy Picker',
+        uiDesc: 'A warm, lightweight overlay lets you categorize payments the moment they happen.',
+        motifDesc: 'V. Moonbridge of the Misty Lagoon & Weeping Willows',
+        boatX: 525,
+        boatY: 1518,
+        boatScale: 1.02,
+        canopyLantern: 1.0, // Warm vermilion-amber lantern illuminates the boat & water
+        birdFormation: [
+          { x: 735, y: 740, scale: 0.94, wingSpeed: 3.4, type: 'glider' },
+          { x: 810, y: 485, scale: 0.66, wingSpeed: 3.9, type: 'banker' },
+          { x: 685, y: 410, scale: 0.52, wingSpeed: 4.2, type: 'high' }
+        ],
+        fourthBird: null,
+        petalsActive: false,
+        sealHighlight: 0.0
+      },
+      {
+        index: 5,
+        stepNumber: 6,
+        kanji: '陸',
+        jpSeal: '墨竹・翠嶂',
+        shortTitle: 'Battery: Reliability',
+        featureTag: '6. Battery Exemption: Background Reliability',
+        uiTitle: 'Evergreen Background Endurance',
+        uiDesc: 'Resilient like mountain bamboo in the wind—your expense tracker never sleeps.',
+        motifDesc: 'VI. Ink Bamboo Sanctuary & Towering Karst Pillars',
+        boatX: 540,
+        boatY: 1488,
+        boatScale: 0.97,
+        canopyLantern: 0.4,
+        birdFormation: [
+          { x: 510, y: 720, scale: 0.95, wingSpeed: 3.5, type: 'glider' },
+          { x: 625, y: 450, scale: 0.68, wingSpeed: 4.0, type: 'banker' },
+          { x: 475, y: 380, scale: 0.52, wingSpeed: 4.4, type: 'high' }
+        ],
+        fourthBird: null,
+        petalsActive: false,
+        sealHighlight: 0.0
+      },
+      {
+        index: 6,
+        stepNumber: 7,
+        kanji: '漆',
+        jpSeal: '夕照・孤亭',
+        shortTitle: 'Alerts: Spend Nudges',
+        featureTag: '7. App Notifications: Spend Alerts',
+        uiTitle: 'Mindful Ripples & Spend Alerts',
+        uiDesc: 'Timely notifications ripple across your screen when daily budgets or unusual spends occur.',
+        motifDesc: 'VII. Sunset Cliff Pavilion, Lotus Cove & Amber Glow',
+        boatX: 645,
+        boatY: 1478,
+        boatScale: 1.0,
+        canopyLantern: 0.75,
+        birdFormation: [
+          { x: 465, y: 790, scale: 0.96, wingSpeed: 3.3, type: 'glider' },
+          { x: 385, y: 530, scale: 0.68, wingSpeed: 3.8, type: 'banker' },
+          { x: 515, y: 455, scale: 0.54, wingSpeed: 4.2, type: 'high' }
+        ],
+        fourthBird: null,
+        petalsActive: false,
+        sealHighlight: 0.0
+      },
+      {
+        index: 7,
+        stepNumber: 8,
+        kanji: '捌',
+        jpSeal: '霊塔・秘印',
+        shortTitle: 'Biometrics: App Lock',
+        featureTag: '8. Biometric Security: App Lock',
+        uiTitle: 'Sealed with Biometric Security',
+        uiDesc: 'Lock your financial scroll with Fingerprint or Face Unlock—stamped with the master seal.',
+        motifDesc: 'VIII. Sacred Pagoda Harbor & Cinnabar Master Seal',
+        boatX: 590,
+        boatY: 1485,
+        boatScale: 1.0,
+        canopyLantern: 0.55,
+        birdFormation: [
+          { x: 685, y: 840, scale: 1.0,  wingSpeed: 3.2, type: 'glider' },
+          { x: 748, y: 495, scale: 0.68, wingSpeed: 3.8, type: 'banker' },
+          { x: 665, y: 418, scale: 0.52, wingSpeed: 4.1, type: 'high' }
+        ],
+        fourthBird: null,
+        petalsActive: false,
+        sealHighlight: 1.0
+      }
+    ];
+
+    // ============================================================================
+    // 2. DETERMINISTIC PRNG & MULTI-OCTAVE FRACTAL NOISE
+    // ============================================================================
+    class SeededRandom {
+      constructor(seed = 90210) {
+        this.seed = seed % 2147483647;
+        if (this.seed <= 0) this.seed += 2147483646;
+      }
+      next() {
+        this.seed = (this.seed * 16807) % 2147483647;
+        return (this.seed - 1) / 2147483646;
+      }
+      range(min, max) {
+        return min + this.next() * (max - min);
+      }
+    }
+
+    const Noise2D = (() => {
+      const p = new Uint8Array(512);
+      const rng = new SeededRandom(1337);
+      for (let i = 0; i < 256; i++) p[i] = i;
+      for (let i = 255; i > 0; i--) {
+        const j = Math.floor(rng.next() * (i + 1));
+        const tmp = p[i]; p[i] = p[j]; p[j] = tmp;
+      }
+      for (let i = 0; i < 256; i++) p[i + 256] = p[i];
+
+      function fade(t) { return t * t * t * (t * (t * 6 - 15) + 10); }
+      function lerp(a, b, t) { return a + t * (b - a); }
+      function grad(hash, x, y) {
+        const h = hash & 7;
+        const u = h < 4 ? x : y;
+        const v = h < 4 ? y : x;
+        return ((h & 1) ? -u : u) + ((h & 2) ? -2.0 * v : 2.0 * v);
+      }
+
+      function noise(x, y) {
+        const X = Math.floor(x) & 255;
+        const Y = Math.floor(y) & 255;
+        x -= Math.floor(x);
+        y -= Math.floor(y);
+        const u = fade(x), v = fade(y);
+        const A = p[X] + Y, B = p[X + 1] + Y;
+        return lerp(
+          lerp(grad(p[A], x, y), grad(p[B], x - 1, y), u),
+          lerp(grad(p[A + 1], x, y - 1), grad(p[B + 1], x - 1, y - 1), u),
+          v
+        ) * 0.5 + 0.5;
+      }
+
+      function fbm(x, y, octaves = 4) {
+        let val = 0, amp = 0.5, freq = 1.0, max = 0;
+        for (let i = 0; i < octaves; i++) {
+          val += noise(x * freq, y * freq) * amp;
+          max += amp;
+          amp *= 0.5;
+          freq *= 2.03;
+        }
+        return val / max;
+      }
+
+      return { noise, fbm };
+    })();
+
+    // ============================================================================
+    // 3. COLOR PALETTES: 1:1 WARM XUAN PAPER (DEFAULT) & MIDNIGHT INK
+    // ============================================================================
+    const PALETTES = {
+      light: {
+        name: 'Xuan 1:1',
+        paperTop: '#F0ECE1',
+        paperMid: '#ECE6DA',
+        paperBot: '#E5DECFE',
+        paperBotHex: '#E6DFD1',
+        paperRgb: [236, 230, 218],
+        // Distant Indigo-Slate Mountain Pigments (exact match to uploaded image)
+        mtPeakDark: [68, 84, 100],     // #445464 granulated upper ridge
+        mtBodyMid: [108, 125, 140],    // #6C7D8C soft slate-blue wash
+        mtBodyLight: [156, 170, 181],  // #9CAAB5 lower mist-blended wash
+        mtFarRight: [138, 153, 167],   // #8A99A7 distant right conical peak
+        // Mid-ground misty hill & distant foliage
+        midHillWash: [144, 157, 168],  // #909DA8
+        midTreeDabs: [74, 89, 102],    // #4A5966
+        // Left Rocky Island & Twin Trees
+        rockDark: [24, 29, 36],        // #181D24 crisp charcoal crags
+        rockSlate: [72, 86, 100],      // #485664 blue-grey rock facets
+        rockUmber: [142, 115, 90],     // #8E735A warm burnt-umber mineral wash
+        treeHalo: [160, 171, 180],     // #A0ABB4 soft misty canopy halo
+        treeDark: [26, 34, 42],        // #1A222A dark sumi leaf clusters
+        treeMid: [62, 76, 89],         // #3E4C59 secondary foliage
+        // Traditional Sampan Boat
+        boatHull: [33, 23, 18],        // #211712 deep sepia-charcoal hull
+        boatMid: [70, 51, 40],         // #463328 warm dark wood
+        canopyOchre: [158, 128, 96],   // #9E8060 woven bamboo mat roof
+        canopyGlow: [222, 142, 68],    // #DE8E44 warm lantern amber
+        reflection: [50, 44, 40],      // #322C28 wavering water reflection
+        // Botanical & Atmospheric Accents
+        plumRed: [186, 56, 52],        // #BA3834 Cinnabar plum blossom
+        plumBlush: [212, 128, 122],    // #D4807A soft wet petal wash
+        sunsetAmber: [208, 112, 66],   // #D07042 setting sun wash
+        inkBlack: [20, 23, 27],        // #14171B sumi black
+        sealRed: [198, 56, 52],        // #C63834 Cinnabar red stamp
+        vignette: 'inset 0 0 75px rgba(132, 114, 88, 0.22)'
+      },
+      dark: {
+        name: 'Midnight',
+        paperTop: '#0B0E13',
+        paperMid: '#10151C',
+        paperBotHex: '#0C1016',
+        paperRgb: [16, 21, 28],
+        mtPeakDark: [186, 202, 218],
+        mtBodyMid: [118, 138, 158],
+        mtBodyLight: [64, 78, 94],
+        mtFarRight: [92, 110, 128],
+        midHillWash: [78, 94, 110],
+        midTreeDabs: [165, 182, 198],
+        rockDark: [224, 228, 234],
+        rockSlate: [128, 146, 164],
+        rockUmber: [178, 146, 114],
+        treeHalo: [62, 76, 90],
+        treeDark: [222, 228, 234],
+        treeMid: [148, 164, 178],
+        boatHull: [232, 224, 214],
+        boatMid: [184, 168, 152],
+        canopyOchre: [194, 158, 116],
+        canopyGlow: [242, 178, 88],
+        reflection: [168, 176, 186],
+        plumRed: [224, 82, 78],
+        plumBlush: [185, 110, 108],
+        sunsetAmber: [232, 136, 82],
+        inkBlack: [232, 235, 240],
+        sealRed: [216, 68, 64],
+        vignette: 'inset 0 0 95px rgba(0, 0, 0, 0.78)'
+      }
+    };
+
+    // ============================================================================
+    // 4. SERENE TIMELINE INTERPOLATION & 4-PHASE PROGRESSIVE PAINTING STATE
+    // ============================================================================
+    let currentTheme = 'light';
+    let currentStep = 0; // 0..7
+    let mockUiVisible = false;
+    let hudVisible = true;
+    let autoJourneyTimer = null;
+
+    // Selectable meditative pacing presets (zero spring physics, pure ease-in-out)
+    const PACE_PRESETS = [
+      { label: 'Pace: Meditative 4.2s', glideDuration: 4200, paintDuration: 3600, startupDuration: 3800 },
+      { label: 'Pace: Cinema 5.5s',     glideDuration: 5500, paintDuration: 4600, startupDuration: 4800 },
+      { label: 'Pace: Calm 3.0s',       glideDuration: 3000, paintDuration: 2800, startupDuration: 3000 }
+    ];
+    let currentPaceIdx = 0;
+
+    // Dedicated progressive ink-painting state (0.0 -> 1.0) for each of the 8 steps
+    const scenePaintProgress = new Float32Array(NUM_STEPS);
+    const scenePaintActive = new Uint8Array(NUM_STEPS);
+    const scenePaintStartTime = new Float64Array(NUM_STEPS);
+    const scenePaintDuration = new Float64Array(NUM_STEPS);
+
+    // Pure Overshoot-Free Quintic/Hermite Ease-In-Out Timeline State
+    const nav = {
+      inTransition: false,
+      startTime: 0,
+      duration: 4200,
+
+      // Camera step position (0.0 .. 7.0)
+      camStep: 0.0,
+      startCamStep: 0.0,
+      targetCamStep: 0.0,
+
+      // Sampan boat state
+      boatX: 638,
+      boatY: 1482,
+      boatScale: 1.0,
+      startBoatX: 638,
+      startBoatY: 1482,
+      startBoatScale: 1.0,
+      targetBoatX: 638,
+      targetBoatY: 1482,
+      targetBoatScale: 1.0,
+
+      // Atmospheric & seal accents
+      canopyLantern: 0.0,
+      startCanopyLantern: 0.0,
+      targetCanopyLantern: 0.0,
+
+      sealHighlight: 0.0,
+      startSealHighlight: 0.0,
+      targetSealHighlight: 0.0,
+
+      // Calm meditative rowing state (no sudden boost spikes)
+      glideActivity: 0.0,
+      oarPhase: 0.0,
+      lastRippleTime: 0,
+
+      // Subtle, heavily-smoothed pointer parallax
+      pointerX: 0.0,
+      pointerY: 0.0,
+      targetPointerX: 0.0,
+      targetPointerY: 0.0,
+
+      // 4 birds moving along smooth cubic Bezier sky arcs with soaring pauses
+      birds: [
+        {
+          x: 693, y: 872, scale: 1.0, alpha: 1.0, bank: 0.0, type: 'glider',
+          startX: 693, startY: 872, ctrlX: 693, ctrlY: 850, targetX: 693, targetY: 872,
+          startScale: 1.0, targetScale: 1.0, startAlpha: 1.0, targetAlpha: 1.0, phaseOffset: 0.0
+        },
+        {
+          x: 752, y: 503, scale: 0.68, alpha: 1.0, bank: 0.0, type: 'banker',
+          startX: 752, startY: 503, ctrlX: 752, ctrlY: 480, targetX: 752, targetY: 503,
+          startScale: 0.68, targetScale: 0.68, startAlpha: 1.0, targetAlpha: 1.0, phaseOffset: 2.1
+        },
+        {
+          x: 672, y: 424, scale: 0.52, alpha: 1.0, bank: 0.0, type: 'high',
+          startX: 672, startY: 424, ctrlX: 672, ctrlY: 400, targetX: 672, targetY: 424,
+          startScale: 0.52, targetScale: 0.52, startAlpha: 1.0, targetAlpha: 1.0, phaseOffset: 4.3
+        },
+        {
+          x: 825, y: 655, scale: 0.76, alpha: 0.0, bank: 0.0, type: 'glider',
+          startX: 825, startY: 655, ctrlX: 825, ctrlY: 620, targetX: 825, targetY: 655,
+          startScale: 0.76, targetScale: 0.76, startAlpha: 0.0, targetAlpha: 0.0, phaseOffset: 1.2
+        }
+      ]
+    };
+
+    // Feather-soft Ease-In-Out (blend of Cubic Hermite & Quintic Ease-In-Out)
+    // Guarantees zero velocity at start (t=0) and end (t=1) with zero spring overshoot
+    function sereneEaseInOut(t) {
+      const clamped = Math.max(0, Math.min(1, t));
+      const hermite = clamped * clamped * (3 - 2 * clamped);
+      const quintic = clamped < 0.5
+        ? 16 * Math.pow(clamped, 5)
+        : 1 - Math.pow(-2 * clamped + 2, 5) / 2;
+      return hermite * 0.45 + quintic * 0.55;
+    }
+
+    function subPhaseEase(progress, startP, endP) {
+      if (progress <= startP) return 0.0;
+      if (progress >= endP) return 1.0;
+      const u = (progress - startP) / (endP - startP);
+      return u * u * (3 - 2 * u);
+    }
+
+    // Dynamic Particles: Water Ripples & Drifting Plum Petals
+    const waterRipples = [];
+    const plumPetals = [];
+
+    const paperCanvas = document.getElementById('paper-canvas');
+    const wetSceneryCanvas = document.getElementById('wet-scenery-canvas');
+    const detailSceneCanvas = document.getElementById('detail-scene-canvas');
+    const paperGrainOverlay = document.getElementById('paper-grain-overlay');
+
+    const paperCtx = paperCanvas.getContext('2d');
+    const wetCtx = wetSceneryCanvas.getContext('2d');
+    const detailCtx = detailSceneCanvas.getContext('2d');
+    const grainCtx = paperGrainOverlay.getContext('2d');
+
+    // Offscreen caches for the heavy wet-on-wet mountain & rock washes, plus progressive scratch canvas
+    const sceneryCaches = Array.from({ length: NUM_STEPS }, () => ({
+      far: createOffCanvas(),       // Phase A: Distant mountain ink washes
+      midWash: createOffCanvas(),   // Phase B: Mid-ground misty hill washes
+      nearRock: createOffCanvas()   // Phase B/C: Rocky promontory mineral washes & reflections
+    }));
+    const progressiveScratch = createOffCanvas();
+
+    function createOffCanvas() {
+      const c = document.createElement('canvas');
+      c.width = W;
+      c.height = H;
+      return { canvas: c, ctx: c.getContext('2d') };
+    }
+
+    // Initialize drifting plum petals (slow, meditative drift)
+    for (let i = 0; i < 26; i++) {
+      plumPetals.push({
+        x: Math.random() * W,
+        y: Math.random() * H * 0.78,
+        vx: -0.22 - Math.random() * 0.28,
+        vy: 0.24 + Math.random() * 0.30,
+        r: 3.2 + Math.random() * 3.6,
+        ang: Math.random() * Math.PI * 2,
+        spin: (Math.random() - 0.5) * 0.012
+      });
+    }
+
+    // ============================================================================
+    // 5. LAYER 0 & 3: HANDMADE XUAN PAPER & MULTIPLY FIBER GRAIN OVERLAY
+    // ============================================================================
+    function renderXuanPaperAndGrain() {
+      const pal = PALETTES[currentTheme];
+      paperCanvas.width = W;
+      paperCanvas.height = H;
+      paperGrainOverlay.width = W;
+      paperGrainOverlay.height = H;
+
+      // 1. Warm ivory-cream Xuan paper base tone
+      const bgGrad = paperCtx.createLinearGradient(0, 0, 0, H);
+      bgGrad.addColorStop(0, pal.paperTop);
+      bgGrad.addColorStop(0.55, pal.paperMid);
+      bgGrad.addColorStop(1, pal.paperBotHex);
+      paperCtx.fillStyle = bgGrad;
+      paperCtx.fillRect(0, 0, W, H);
+
+      const rng = new SeededRandom(2026);
+
+      // 2. Subtle organic alum-sizing watercolor clouds in the paper
+      for (let i = 0; i < 55; i++) {
+        const cx = rng.range(0, W);
+        const cy = rng.range(0, H);
+        const r = rng.range(150, 460);
+        const isWarm = i % 2 === 0;
+        const col = currentTheme === 'light'
+          ? (isWarm ? 'rgba(206, 188, 160, 0.055)' : 'rgba(255, 253, 247, 0.065)')
+          : (isWarm ? 'rgba(42, 54, 68, 0.05)' : 'rgba(0, 0, 0, 0.08)');
+        const g = paperCtx.createRadialGradient(cx, cy, 10, cx, cy, r);
+        g.addColorStop(0, col);
+        g.addColorStop(1, 'rgba(0,0,0,0)');
+        paperCtx.fillStyle = g;
+        paperCtx.beginPath();
+        paperCtx.arc(cx, cy, r, 0, Math.PI * 2);
+        paperCtx.fill();
+      }
+
+      // 3. Render Multiply Paper Tooth & Mulberry Fibers onto #paper-grain-overlay
+      grainCtx.clearRect(0, 0, W, H);
+      grainCtx.fillStyle = currentTheme === 'light' ? '#faf7f0' : '#181e26';
+      grainCtx.fillRect(0, 0, W, H);
+
+      for (let y = 0; y < H; y += 5) {
+        grainCtx.strokeStyle = currentTheme === 'light'
+          ? 'rgba(148, 132, 110, 0.065)'
+          : 'rgba(255, 255, 255, 0.025)';
+        grainCtx.lineWidth = 1;
+        grainCtx.beginPath();
+        grainCtx.moveTo(0, y);
+        grainCtx.lineTo(W, y);
+        grainCtx.stroke();
+      }
+
+      grainCtx.lineCap = 'round';
+      for (let i = 0; i < 1400; i++) {
+        const x = rng.range(0, W);
+        const y = rng.range(0, H);
+        const len = rng.range(6, 34);
+        const ang = rng.range(0, Math.PI * 2);
+        grainCtx.strokeStyle = currentTheme === 'light'
+          ? (i % 4 === 0 ? 'rgba(255,255,255,0.45)' : 'rgba(122, 106, 84, 0.085)')
+          : (i % 4 === 0 ? 'rgba(255,255,255,0.05)' : 'rgba(0, 0, 0, 0.32)');
+        grainCtx.lineWidth = rng.range(0.5, 1.4);
+        grainCtx.beginPath();
+        grainCtx.moveTo(x, y);
+        grainCtx.quadraticCurveTo(
+          x + Math.cos(ang + 0.35) * len * 0.5,
+          y + Math.sin(ang + 0.35) * len * 0.5,
+          x + Math.cos(ang) * len,
+          y + Math.sin(ang) * len
+        );
+        grainCtx.stroke();
+      }
+
+      document.getElementById('paper-vignette').style.boxShadow = pal.vignette;
+      document.getElementById('stage-container').style.backgroundColor = pal.paperMid;
+      document.body.classList.toggle('dark-theme-ui', currentTheme === 'dark');
+      document.getElementById('theme-label').textContent = pal.name;
+      document.getElementById('theme-dot').style.backgroundColor = currentTheme === 'light' ? '#2b3540' : '#efece6';
+    }
+
+    // ============================================================================
+    // 6. WET-ON-WET INK WASH & PROGRESSIVE BRUSH-PATH (FEIBAI) ENGINE
+    // ============================================================================
+    function sampleRidgeProfile(controlPts, xMin, xMax, stepPx, noiseAmp, seed) {
+      const pts = [];
+      for (let x = xMin; x <= xMax; x += stepPx) {
+        let p0 = controlPts[0], p1 = controlPts[controlPts.length - 1];
+        for (let i = 0; i < controlPts.length - 1; i++) {
+          if (x >= controlPts[i].x && x <= controlPts[i + 1].x) {
+            p0 = controlPts[i];
+            p1 = controlPts[i + 1];
+            break;
+          }
+        }
+        const t = Math.max(0, Math.min(1, (x - p0.x) / Math.max(1, p1.x - p0.x)));
+        const smoothT = (1 - Math.cos(t * Math.PI)) * 0.5;
+        const baseY = p0.y + (p1.y - p0.y) * smoothT;
+        const n = (Noise2D.fbm(x * 0.0085 + seed, seed * 0.7, 4) - 0.5) * 2 * noiseAmp;
+        pts.push({ x, y: baseY + n });
+      }
+      return pts;
+    }
+
+    function paintWetMountainWash(ctx, ridgePts, highestY, mistBottomY, topRgb, midRgb, paperRgb, maxAlpha, seed) {
+      ctx.save();
+      ctx.beginPath();
+      ridgePts.forEach((pt, idx) => {
+        if (idx === 0) ctx.moveTo(pt.x, pt.y);
+        else ctx.lineTo(pt.x, pt.y);
+      });
+      ctx.lineTo(ridgePts[ridgePts.length - 1].x, mistBottomY);
+      ctx.lineTo(ridgePts[0].x, mistBottomY);
+      ctx.closePath();
+
+      const grad = ctx.createLinearGradient(0, highestY, 0, mistBottomY);
+      grad.addColorStop(0.0, `rgba(${topRgb[0]},${topRgb[1]},${topRgb[2]},${maxAlpha})`);
+      grad.addColorStop(0.35, `rgba(${midRgb[0]},${midRgb[1]},${midRgb[2]},${maxAlpha * 0.80})`);
+      grad.addColorStop(0.72, `rgba(${midRgb[0]},${midRgb[1]},${midRgb[2]},${maxAlpha * 0.28})`);
+      grad.addColorStop(1.0, `rgba(${paperRgb[0]},${paperRgb[1]},${paperRgb[2]},0)`);
+      ctx.fillStyle = grad;
+      ctx.fill();
+
+      ctx.clip();
+      const rng = new SeededRandom(seed);
+
+      // Capillary Pigment Pooling along upper wet ridge
+      for (let i = 0; i < ridgePts.length; i++) {
+        const pt = ridgePts[i];
+        const distFromTop = Math.max(0, Math.min(1, (pt.y - highestY) / (mistBottomY - highestY)));
+        const edgeAlpha = (1 - distFromTop * 0.82) * maxAlpha * 0.34;
+        if (edgeAlpha <= 0.01) continue;
+
+        const r = rng.range(12, 38);
+        const g2 = ctx.createRadialGradient(pt.x, pt.y + r * 0.22, 1, pt.x, pt.y + r * 0.3, r);
+        g2.addColorStop(0, `rgba(${topRgb[0]},${topRgb[1]},${topRgb[2]},${edgeAlpha})`);
+        g2.addColorStop(0.65, `rgba(${topRgb[0]},${topRgb[1]},${topRgb[2]},${edgeAlpha * 0.45})`);
+        g2.addColorStop(1, `rgba(${topRgb[0]},${topRgb[1]},${topRgb[2]},0)`);
+        ctx.fillStyle = g2;
+        ctx.beginPath();
+        ctx.arc(pt.x + rng.range(-5, 5), pt.y + r * 0.18, r, 0, Math.PI * 2);
+        ctx.fill();
+      }
+
+      // Wet-into-Wet Cauliflower Water Blooms
+      for (let b = 0; b < 64; b++) {
+        const idx = Math.floor(rng.range(0, ridgePts.length));
+        const rp = ridgePts[idx];
+        const bx = rp.x + rng.range(-45, 45);
+        const by = rp.y + rng.range(18, (mistBottomY - rp.y) * 0.72);
+        const br = rng.range(30, 115);
+        const isDark = rng.next() > 0.40;
+        const col = isDark ? topRgb : paperRgb;
+        const a = isDark ? maxAlpha * 0.11 : 0.17;
+        const bg = ctx.createRadialGradient(bx, by, 4, bx, by, br);
+        bg.addColorStop(0, `rgba(${col[0]},${col[1]},${col[2]},${a * 0.4})`);
+        bg.addColorStop(0.75, `rgba(${col[0]},${col[1]},${col[2]},${a})`);
+        bg.addColorStop(1, `rgba(${col[0]},${col[1]},${col[2]},0)`);
+        ctx.fillStyle = bg;
+        ctx.beginPath();
+        ctx.arc(bx, by, br, 0, Math.PI * 2);
+        ctx.fill();
+      }
+
+      ctx.restore();
+    }
+
+    // Progressive Dry-Brush (Feibai) Stroke: grows smoothly along its quadratic Bezier path from t=0 to t=progress
+    function drawProgressiveFeibaiStroke(ctx, x0, y0, cx, cy, x1, y1, width, rgb, alpha, progress = 1.0, seed = 77) {
+      if (progress <= 0.005) return;
+      const t = Math.min(1.0, progress);
+      // De Casteljau subdivision of quadratic Bezier from 0 to t
+      const qx0 = x0 + (cx - x0) * t;
+      const qy0 = y0 + (cy - y0) * t;
+      const qx1 = cx + (x1 - cx) * t;
+      const qy1 = cy + (y1 - cy) * t;
+      const ex = qx0 + (qx1 - qx0) * t;
+      const ey = qy0 + (qy1 - qy0) * t;
+
+      const rng = new SeededRandom(seed);
+      const strands = Math.max(4, Math.floor(width * 1.4));
+      ctx.save();
+      ctx.lineCap = 'round';
+      for (let s = 0; s < strands; s++) {
+        const offset = ((s / (strands - 1)) - 0.5) * width;
+        const strandAlpha = alpha * rng.range(0.35, 0.95);
+        ctx.strokeStyle = `rgba(${rgb[0]},${rgb[1]},${rgb[2]},${strandAlpha})`;
+        ctx.lineWidth = rng.range(0.8, 2.2);
+        ctx.beginPath();
+        ctx.moveTo(x0 + offset * 0.6, y0 + offset * 0.3);
+        ctx.quadraticCurveTo(qx0 + offset * 0.85, qy0 + offset * 0.45, ex + offset * 1.05, ey + offset * 0.4);
+        ctx.stroke();
+      }
+      ctx.restore();
+    }
+
+    function drawFeibaiStroke(ctx, x0, y0, cx, cy, x1, y1, width, rgb, alpha, seed = 77) {
+      drawProgressiveFeibaiStroke(ctx, x0, y0, cx, cy, x1, y1, width, rgb, alpha, 1.0, seed);
+    }
+
+    function paintRockyPromontory(ctx, pal, outlinePts, shoreY, isLeftAligned, seed) {
+      const rng = new SeededRandom(seed);
+      const [rkR, rkG, rkB] = pal.rockDark;
+      const [slR, slG, slB] = pal.rockSlate;
+      const [umR, umG, umB] = pal.rockUmber;
+      const [pr, pg, pb] = pal.paperRgb;
+
+      const minX = outlinePts[0].x;
+      const maxX = outlinePts[outlinePts.length - 1].x;
+
+      ctx.save();
+      ctx.beginPath();
+      ctx.moveTo(minX, shoreY);
+      outlinePts.forEach(p => ctx.lineTo(p.x, p.y));
+      ctx.lineTo(maxX, shoreY);
+      ctx.closePath();
+
+      const rockGrad = ctx.createLinearGradient(minX, shoreY - 180, maxX, shoreY);
+      rockGrad.addColorStop(0, `rgba(${slR},${slG},${slB},0.80)`);
+      rockGrad.addColorStop(0.45, `rgba(${umR},${umG},${umB},0.68)`);
+      rockGrad.addColorStop(0.85, `rgba(${slR},${slG},${slB},0.58)`);
+      rockGrad.addColorStop(1, `rgba(${umR},${umG},${umB},0.36)`);
+      ctx.fillStyle = rockGrad;
+      ctx.fill();
+
+      ctx.clip();
+      for (let i = 0; i < 120; i++) {
+        const u = isLeftAligned ? Math.pow(rng.next(), 1.35) : 1 - Math.pow(rng.next(), 1.35);
+        const rx = minX + u * (maxX - minX);
+        let topY = shoreY - 60;
+        for (let j = 0; j < outlinePts.length - 1; j++) {
+          if (rx >= outlinePts[j].x && rx <= outlinePts[j + 1].x) {
+            const t = (rx - outlinePts[j].x) / Math.max(1, outlinePts[j + 1].x - outlinePts[j].x);
+            topY = outlinePts[j].y + t * (outlinePts[j + 1].y - outlinePts[j].y);
+            break;
+          }
+        }
+        const ry = rng.range(topY - 4, shoreY - 2);
+        const isCharcoal = rng.next() > 0.36;
+        const col = isCharcoal ? [rkR, rkG, rkB] : (rng.next() > 0.5 ? [slR, slG, slB] : [umR, umG, umB]);
+        const alpha = isCharcoal ? rng.range(0.38, 0.90) : rng.range(0.28, 0.58);
+        ctx.fillStyle = `rgba(${col[0]},${col[1]},${col[2]},${alpha})`;
+        ctx.beginPath();
+        ctx.ellipse(rx, ry, rng.range(8, 28), rng.range(3.5, 11), rng.range(-0.35, 0.45), 0, Math.PI * 2);
+        ctx.fill();
+      }
+      ctx.restore();
+
+      ctx.save();
+      for (let x = Math.max(0, minX); x < Math.min(W, maxX); x += 6) {
+        const u = isLeftAligned ? (x - minX) / (maxX - minX) : (maxX - x) / (maxX - minX);
+        const refDepth = (1 - u * 0.72) * 102 + rng.range(-10, 10);
+        if (refDepth <= 4) continue;
+        const refGrad = ctx.createLinearGradient(x, shoreY, x, shoreY + refDepth);
+        refGrad.addColorStop(0, `rgba(${slR},${slG},${slB},${0.36 * (1 - u * 0.4)})`);
+        refGrad.addColorStop(0.45, `rgba(${umR},${umG},${umB},${0.22 * (1 - u * 0.5)})`);
+        refGrad.addColorStop(1, `rgba(${pr},${pg},${pb},0)`);
+        ctx.fillStyle = refGrad;
+        ctx.fillRect(x, shoreY, 7, refDepth);
+      }
+
+      ctx.strokeStyle = `rgba(${pr},${pg},${pb},0.72)`;
+      for (let ry = shoreY + 5; ry < shoreY + 105; ry += 7) {
+        ctx.lineWidth = rng.range(1.2, 2.5);
+        ctx.beginPath();
+        ctx.moveTo(Math.max(0, minX), ry);
+        ctx.lineTo(Math.min(W, maxX), ry + rng.range(-1.5, 1.5));
+        ctx.stroke();
+      }
+      ctx.restore();
+    }
+
+    // ============================================================================
+    // 7. PRE-BAKE WET MOUNTAIN/ROCK WASH CACHES + PROGRESSIVE 4-PHASE LIVE PAINTER
+    // ============================================================================
+    function buildAllEightSceneries() {
+      const pal = PALETTES[currentTheme];
+
+      sceneryCaches.forEach(sc => {
+        sc.far.ctx.clearRect(0, 0, W, H);
+        sc.midWash.ctx.clearRect(0, 0, W, H);
+        sc.nearRock.ctx.clearRect(0, 0, W, H);
+      });
+
+      buildScenery0_BaseWashes(sceneryCaches[0], pal);
+      buildScenery1_BaseWashes(sceneryCaches[1], pal);
+      buildScenery2_BaseWashes(sceneryCaches[2], pal);
+      buildScenery3_BaseWashes(sceneryCaches[3], pal);
+      buildScenery4_BaseWashes(sceneryCaches[4], pal);
+      buildScenery5_BaseWashes(sceneryCaches[5], pal);
+      buildScenery6_BaseWashes(sceneryCaches[6], pal);
+      buildScenery7_BaseWashes(sceneryCaches[7], pal);
+    }
+
+    // --- BASE WET WASH CACHES FOR EACH OF THE 8 SCENERIES ---
+    function buildScenery0_BaseWashes(cache, pal) {
+      const fCtx = cache.far.ctx;
+      const rightPeak = sampleRidgeProfile([
+        { x: 640, y: 760 }, { x: 745, y: 665 }, { x: 850, y: 580 }, { x: 925, y: 675 }, { x: 1035, y: 815 }
+      ], 640, 1035, 6, 9, 101);
+      paintWetMountainWash(fCtx, rightPeak, 575, 875, pal.mtFarRight, pal.mtBodyLight, pal.paperRgb, 0.56, 105);
+
+      const mainRidge = sampleRidgeProfile([
+        { x: 55,  y: 795 }, { x: 135, y: 725 }, { x: 215, y: 662 }, { x: 285, y: 585 },
+        { x: 350, y: 472 }, { x: 394, y: 438 }, { x: 438, y: 478 }, { x: 495, y: 615 },
+        { x: 538, y: 662 }, { x: 582, y: 638 }, { x: 632, y: 630 }, { x: 695, y: 695 },
+        { x: 775, y: 785 }, { x: 855, y: 845 }
+      ], 55, 855, 5, 11, 202);
+      paintWetMountainWash(fCtx, mainRidge, 435, 885, pal.mtPeakDark, pal.mtBodyMid, pal.paperRgb, 0.88, 208);
+
+      const fold1 = sampleRidgeProfile([{ x: 394, y: 444 }, { x: 365, y: 535 }, { x: 305, y: 645 }, { x: 235, y: 745 }], 235, 394, 6, 8, 215);
+      paintWetMountainWash(fCtx, fold1, 444, 820, pal.mtPeakDark, pal.mtBodyMid, pal.paperRgb, 0.32, 216);
+
+      const mCtx = cache.midWash.ctx;
+      const midRidge = sampleRidgeProfile([
+        { x: 205, y: 1055 }, { x: 295, y: 985 }, { x: 345, y: 965 }, { x: 405, y: 925 },
+        { x: 452, y: 886 },  { x: 505, y: 942 }, { x: 585, y: 998 }, { x: 675, y: 1035 }, { x: 795, y: 1115 }
+      ], 205, 795, 5, 9, 301);
+      paintWetMountainWash(mCtx, midRidge, 882, 1145, pal.midTreeDabs, pal.midHillWash, pal.paperRgb, 0.58, 305);
+
+      const [pr, pg, pb] = pal.paperRgb;
+      [995, 1045, 1092, 1125].forEach((my, idx) => {
+        const mGrad = mCtx.createLinearGradient(0, my - 26, 0, my + 26);
+        mGrad.addColorStop(0, `rgba(${pr},${pg},${pb},0)`);
+        mGrad.addColorStop(0.5, `rgba(${pr},${pg},${pb},${0.55 + idx * 0.1})`);
+        mGrad.addColorStop(1, `rgba(${pr},${pg},${pb},0)`);
+        mCtx.fillStyle = mGrad;
+        mCtx.fillRect(180, my - 26, 660, 52);
+      });
+
+      const rightBank = sampleRidgeProfile([{ x: 895, y: 1125 }, { x: 965, y: 1015 }, { x: 1025, y: 965 }, { x: 1080, y: 945 }], 895, 1080, 5, 7, 360);
+      paintWetMountainWash(mCtx, rightBank, 940, 1165, pal.midTreeDabs, pal.midHillWash, pal.paperRgb, 0.52, 365);
+
+      const nCtx = cache.nearRock.ctx;
+      const [hlR, hlG, hlB] = pal.treeHalo;
+      [
+        { x: 118, y: 845, rx: 56, ry: 48, a: 0.42 }, { x: 102, y: 895, rx: 68, ry: 45, a: 0.38 },
+        { x: 145, y: 920, rx: 62, ry: 42, a: 0.35 }, { x: 85,  y: 945, rx: 54, ry: 38, a: 0.32 },
+        { x: 195, y: 995, rx: 52, ry: 36, a: 0.28 }
+      ].forEach(hb => {
+        const g = nCtx.createRadialGradient(hb.x, hb.y, 6, hb.x, hb.y, Math.max(hb.rx, hb.ry));
+        g.addColorStop(0, `rgba(${hlR},${hlG},${hlB},${hb.a})`);
+        g.addColorStop(1, `rgba(${hlR},${hlG},${hlB},0)`);
+        nCtx.fillStyle = g;
+        nCtx.beginPath();
+        nCtx.ellipse(hb.x, hb.y, hb.rx, hb.ry, 0, 0, Math.PI * 2);
+        nCtx.fill();
+      });
+
+      paintRockyPromontory(nCtx, pal, [
+        { x: -10, y: 1145 }, { x: 45, y: 1125 }, { x: 112, y: 1102 }, { x: 175, y: 1128 },
+        { x: 235, y: 1175 }, { x: 315, y: 1208 }, { x: 395, y: 1228 }, { x: 485, y: 1254 },
+        { x: 565, y: 1268 }, { x: 608, y: 1276 }
+      ], 1278, true, 404);
+    }
+
+    function buildScenery1_BaseWashes(cache, pal) {
+      const fCtx = cache.far.ctx;
+      const karstPeak = sampleRidgeProfile([
+        { x: 260, y: 840 }, { x: 420, y: 690 }, { x: 540, y: 460 },
+        { x: 615, y: 390 }, { x: 685, y: 455 }, { x: 785, y: 680 }, { x: 960, y: 855 }
+      ], 260, 960, 5, 12, 1105);
+      paintWetMountainWash(fCtx, karstPeak, 385, 895, pal.mtPeakDark, pal.mtBodyMid, pal.paperRgb, 0.86, 1108);
+
+      const leftDist = sampleRidgeProfile([
+        { x: 20, y: 780 }, { x: 165, y: 610 }, { x: 295, y: 685 }, { x: 410, y: 820 }
+      ], 20, 410, 6, 9, 1112);
+      paintWetMountainWash(fCtx, leftDist, 605, 865, pal.mtFarRight, pal.mtBodyLight, pal.paperRgb, 0.52, 1115);
+
+      const mCtx = cache.midWash.ctx;
+      const midTerrace = sampleRidgeProfile([
+        { x: 310, y: 1120 }, { x: 460, y: 965 }, { x: 580, y: 920 },
+        { x: 695, y: 980 },  { x: 865, y: 1085 }, { x: 990, y: 1140 }
+      ], 310, 990, 5, 9, 1120);
+      paintWetMountainWash(mCtx, midTerrace, 915, 1165, pal.midTreeDabs, pal.midHillWash, pal.paperRgb, 0.56, 1125);
+
+      const nCtx = cache.nearRock.ctx;
+      paintRockyPromontory(nCtx, pal, [
+        { x: -10, y: 940 }, { x: 85, y: 925 }, { x: 175, y: 965 },
+        { x: 235, y: 1065 }, { x: 295, y: 1185 }, { x: 385, y: 1265 }, { x: 465, y: 1295 }
+      ], 1298, true, 1140);
+      paintRockyPromontory(nCtx, pal, [
+        { x: 760, y: 1765 }, { x: 865, y: 1720 }, { x: 975, y: 1685 }, { x: 1085, y: 1675 }
+      ], 1768, false, 1180);
+    }
+
+    function buildScenery2_BaseWashes(cache, pal) {
+      const fCtx = cache.far.ctx;
+      const leftGorge = sampleRidgeProfile([
+        { x: 0, y: 580 }, { x: 180, y: 440 }, { x: 320, y: 410 }, { x: 460, y: 690 }, { x: 580, y: 850 }
+      ], 0, 580, 5, 11, 2201);
+      paintWetMountainWash(fCtx, leftGorge, 405, 890, pal.mtPeakDark, pal.mtBodyMid, pal.paperRgb, 0.85, 2202);
+
+      const rightGorge = sampleRidgeProfile([
+        { x: 480, y: 840 }, { x: 620, y: 590 }, { x: 745, y: 435 }, { x: 890, y: 465 }, { x: 1080, y: 640 }
+      ], 480, 1080, 5, 11, 2205);
+      paintWetMountainWash(fCtx, rightGorge, 430, 910, pal.mtPeakDark, pal.mtBodyMid, pal.paperRgb, 0.90, 2206);
+
+      const mCtx = cache.midWash.ctx;
+      const fallCliff = sampleRidgeProfile([
+        { x: 520, y: 1180 }, { x: 635, y: 820 }, { x: 715, y: 745 },
+        { x: 835, y: 735 },  { x: 965, y: 790 }, { x: 1080, y: 890 }
+      ], 520, 1080, 5, 10, 2210);
+      paintWetMountainWash(mCtx, fallCliff, 730, 1195, pal.rockSlate, pal.midHillWash, pal.paperRgb, 0.78, 2212);
+
+      const nCtx = cache.nearRock.ctx;
+      paintRockyPromontory(nCtx, pal, [
+        { x: -10, y: 1180 }, { x: 95, y: 1150 }, { x: 215, y: 1195 }, { x: 345, y: 1255 }, { x: 445, y: 1280 }
+      ], 1284, true, 2230);
+    }
+
+    function buildScenery3_BaseWashes(cache, pal) {
+      const fCtx = cache.far.ctx;
+      const farMt = sampleRidgeProfile([
+        { x: 80, y: 810 }, { x: 290, y: 560 }, { x: 465, y: 470 },
+        { x: 640, y: 610 }, { x: 790, y: 525 }, { x: 980, y: 790 }
+      ], 80, 980, 5, 10, 3305);
+      paintWetMountainWash(fCtx, farMt, 465, 880, pal.mtPeakDark, pal.mtBodyMid, pal.paperRgb, 0.78, 3308);
+
+      const mCtx = cache.midWash.ctx;
+      const midBluff = sampleRidgeProfile([
+        { x: 420, y: 1140 }, { x: 640, y: 980 }, { x: 845, y: 910 }, { x: 1080, y: 950 }
+      ], 420, 1080, 5, 8, 3315);
+      paintWetMountainWash(mCtx, midBluff, 905, 1170, pal.midTreeDabs, pal.midHillWash, pal.paperRgb, 0.56, 3318);
+
+      const nCtx = cache.nearRock.ctx;
+      paintRockyPromontory(nCtx, pal, [
+        { x: -10, y: 1165 }, { x: 115, y: 1135 }, { x: 245, y: 1185 }, { x: 395, y: 1245 }, { x: 510, y: 1272 }
+      ], 1275, true, 3325);
+    }
+
+    function buildScenery4_BaseWashes(cache, pal) {
+      const fCtx = cache.far.ctx;
+      const lagoonMt = sampleRidgeProfile([
+        { x: 40, y: 780 }, { x: 240, y: 540 }, { x: 410, y: 630 },
+        { x: 630, y: 465 }, { x: 820, y: 590 }, { x: 1040, y: 790 }
+      ], 40, 1040, 5, 10, 4401);
+      paintWetMountainWash(fCtx, lagoonMt, 460, 860, pal.mtPeakDark, pal.mtBodyMid, pal.paperRgb, 0.76, 4405);
+
+      const mCtx = cache.midWash.ctx;
+      paintRockyPromontory(mCtx, pal, [
+        { x: 80, y: 1145 }, { x: 240, y: 1110 }, { x: 415, y: 1122 }
+      ], 1145, true, 4410);
+      paintRockyPromontory(mCtx, pal, [
+        { x: 705, y: 1122 }, { x: 880, y: 1105 }, { x: 1060, y: 1145 }
+      ], 1145, false, 4412);
+    }
+
+    function buildScenery5_BaseWashes(cache, pal) {
+      const fCtx = cache.far.ctx;
+      const pillar1 = sampleRidgeProfile([
+        { x: 160, y: 860 }, { x: 235, y: 470 }, { x: 310, y: 410 }, { x: 385, y: 465 }, { x: 455, y: 860 }
+      ], 160, 455, 5, 10, 5501);
+      paintWetMountainWash(fCtx, pillar1, 405, 880, pal.mtPeakDark, pal.mtBodyMid, pal.paperRgb, 0.86, 5502);
+
+      const pillar2 = sampleRidgeProfile([
+        { x: 495, y: 880 }, { x: 585, y: 430 }, { x: 665, y: 375 }, { x: 745, y: 435 }, { x: 830, y: 880 }
+      ], 495, 830, 5, 11, 5505);
+      paintWetMountainWash(fCtx, pillar2, 370, 900, pal.mtPeakDark, pal.mtBodyMid, pal.paperRgb, 0.90, 5506);
+
+      const mCtx = cache.midWash.ctx;
+      const midIslet = sampleRidgeProfile([
+        { x: 240, y: 1135 }, { x: 450, y: 975 }, { x: 680, y: 1015 }, { x: 890, y: 1140 }
+      ], 240, 890, 5, 8, 5512);
+      paintWetMountainWash(mCtx, midIslet, 970, 1165, pal.midTreeDabs, pal.midHillWash, pal.paperRgb, 0.54, 5515);
+
+      const nCtx = cache.nearRock.ctx;
+      paintRockyPromontory(nCtx, pal, [
+        { x: -10, y: 1160 }, { x: 95, y: 1130 }, { x: 215, y: 1190 }, { x: 355, y: 1265 }
+      ], 1268, true, 5520);
+    }
+
+    function buildScenery6_BaseWashes(cache, pal) {
+      const fCtx = cache.far.ctx;
+      const [saR, saG, saB] = pal.sunsetAmber;
+      const sunCx = 345, sunCy = 525;
+      const sunGlow = fCtx.createRadialGradient(sunCx, sunCy, 15, sunCx, sunCy, 240);
+      sunGlow.addColorStop(0, `rgba(${saR},${saG},${saB},0.52)`);
+      sunGlow.addColorStop(0.35, `rgba(${saR},${saG},${saB},0.22)`);
+      sunGlow.addColorStop(1, `rgba(${saR},${saG},${saB},0)`);
+      fCtx.fillStyle = sunGlow;
+      fCtx.beginPath();
+      fCtx.arc(sunCx, sunCy, 240, 0, Math.PI * 2);
+      fCtx.fill();
+
+      fCtx.fillStyle = `rgba(${saR},${saG},${saB},0.44)`;
+      fCtx.beginPath();
+      fCtx.arc(sunCx, sunCy, 56, 0, Math.PI * 2);
+      fCtx.fill();
+
+      const sunsetMt = sampleRidgeProfile([
+        { x: 120, y: 845 }, { x: 310, y: 635 }, { x: 520, y: 495 },
+        { x: 735, y: 440 }, { x: 920, y: 650 }, { x: 1080, y: 830 }
+      ], 120, 1080, 5, 11, 6601);
+      paintWetMountainWash(fCtx, sunsetMt, 435, 895, pal.mtPeakDark, pal.mtBodyMid, pal.paperRgb, 0.84, 6605);
+
+      const mCtx = cache.midWash.ctx;
+      const cliffRidge = sampleRidgeProfile([
+        { x: 0, y: 985 }, { x: 165, y: 940 }, { x: 285, y: 955 }, { x: 395, y: 1125 }, { x: 525, y: 1185 }
+      ], 0, 525, 5, 8, 6610);
+      paintWetMountainWash(mCtx, cliffRidge, 935, 1195, pal.rockSlate, pal.rockUmber, pal.paperRgb, 0.78, 6612);
+    }
+
+    function buildScenery7_BaseWashes(cache, pal) {
+      const fCtx = cache.far.ctx;
+      const sanctuaryPeaks = sampleRidgeProfile([
+        { x: 40,  y: 790 }, { x: 220, y: 580 }, { x: 385, y: 425 },
+        { x: 515, y: 620 }, { x: 645, y: 540 }, { x: 825, y: 575 }, { x: 1020, y: 810 }
+      ], 40, 1020, 5, 11, 7701);
+      paintWetMountainWash(fCtx, sanctuaryPeaks, 420, 885, pal.mtPeakDark, pal.mtBodyMid, pal.paperRgb, 0.88, 7705);
+
+      const mCtx = cache.midWash.ctx;
+      const pagodaHill = sampleRidgeProfile([
+        { x: 260, y: 1135 }, { x: 445, y: 915 }, { x: 565, y: 865 },
+        { x: 695, y: 945 },  { x: 855, y: 1085 }
+      ], 260, 855, 5, 9, 7710);
+      paintWetMountainWash(mCtx, pagodaHill, 860, 1155, pal.midTreeDabs, pal.midHillWash, pal.paperRgb, 0.62, 7712);
+
+      const nCtx = cache.nearRock.ctx;
+      paintRockyPromontory(nCtx, pal, [
+        { x: -10, y: 1145 }, { x: 75, y: 1115 }, { x: 165, y: 1138 },
+        { x: 265, y: 1195 }, { x: 395, y: 1245 }, { x: 525, y: 1272 }
+      ], 1275, true, 7725);
+    }
+
+    // ============================================================================
+    // PROGRESSIVE 4-PHASE SCENERY PAINTER (Paints Brushes & Blooms Live as p: 0->1)
+    // ============================================================================
+    // Draws a pre-baked wet wash layer through an organic expanding capillary ink-diffusion mask
+    function drawCapillaryWashReveal(targetCtx, sourceCanvas, screenX, screenY, phaseT, originX, originY, maxRadius) {
+      if (phaseT <= 0.002 || screenX <= -W * 1.15 || screenX >= W * 1.15) return;
+
+      if (phaseT >= 0.995) {
+        targetCtx.drawImage(sourceCanvas, screenX, screenY);
+        return;
+      }
+
+      const sCtx = progressiveScratch.ctx;
+      sCtx.clearRect(0, 0, W, H);
+      sCtx.save();
+
+      // Gentle upward capillary rise as the wet wash settles into the paper
+      const settleY = (1 - phaseT) * 14;
+      sCtx.drawImage(sourceCanvas, 0, settleY);
+
+      // Multi-lobe radial capillary diffusion mask
+      sCtx.globalCompositeOperation = 'destination-in';
+      const curR = Math.max(40, phaseT * maxRadius);
+      const maskGrad = sCtx.createRadialGradient(originX, originY, curR * 0.15, originX, originY, curR);
+      maskGrad.addColorStop(0.0, `rgba(0,0,0,${ Math.min(1, phaseT * 1.35) })`);
+      maskGrad.addColorStop(0.68, `rgba(0,0,0,${ phaseT * 0.85 })`);
+      maskGrad.addColorStop(1.0, 'rgba(0,0,0,0)');
+      sCtx.fillStyle = maskGrad;
+      sCtx.fillRect(0, 0, W, H);
+      sCtx.restore();
+
+      targetCtx.drawImage(progressiveScratch.canvas, screenX, screenY);
+    }
+
+    // Progressive Foreground Right Sedge Grass Bank (Phase D: 70% -> 100%)
+    function renderProgressiveRightSedgeBank(ctx, pal, sx, sy, fgWaterY, phaseC, phaseD, seed) {
+      if (phaseC <= 0.01) return;
+      const rng = new SeededRandom(seed);
+      const [rkR, rkG, rkB] = pal.rockDark;
+      const [slR, slG, slB] = pal.rockSlate;
+      const [pr, pg, pb] = pal.paperRgb;
+
+      ctx.save();
+      ctx.translate(sx, sy);
+
+      // Bank base rock & reflection (Phase C)
+      ctx.globalAlpha = phaseC;
+      ctx.beginPath();
+      ctx.moveTo(815, fgWaterY - 4);
+      ctx.lineTo(865, fgWaterY - 14);
+      ctx.lineTo(925, fgWaterY - 32);
+      ctx.lineTo(985, fgWaterY - 68);
+      ctx.lineTo(1080, fgWaterY - 76);
+      ctx.lineTo(1080, fgWaterY);
+      ctx.closePath();
+      ctx.fillStyle = `rgba(${rkR},${rkG},${rkB},0.92)`;
+      ctx.fill();
+
+      const fgRefGrad = ctx.createLinearGradient(0, fgWaterY, 0, fgWaterY + 85 * phaseC);
+      fgRefGrad.addColorStop(0, `rgba(${slR},${slG},${slB},0.34)`);
+      fgRefGrad.addColorStop(1, `rgba(${pr},${pg},${pb},0)`);
+      ctx.fillStyle = fgRefGrad;
+      ctx.fillRect(825, fgWaterY, 255, 85 * phaseC);
+
+      const totalBoulders = 24;
+      const activeBoulders = Math.floor(totalBoulders * phaseC);
+      for (let i = 0; i < totalBoulders; i++) {
+        const bx = rng.range(945, 1080);
+        const by = rng.range(1692, 1735);
+        const bw = rng.range(8, 22);
+        const bh = rng.range(5, 12);
+        const bang = rng.range(-0.3, 0.3);
+        const ba = rng.range(0.55, 0.92);
+        if (i <= activeBoulders) {
+          ctx.fillStyle = `rgba(${rkR},${rkG},${rkB},${ba})`;
+          ctx.beginPath();
+          ctx.ellipse(bx, by, bw, bh, bang, 0, Math.PI * 2);
+          ctx.fill();
+        }
+      }
+
+      // Upward-flicked wild sedge grass blades grow progressively from root to tip (Phase D)
+      if (phaseD > 0.01) {
+        ctx.globalAlpha = 1.0;
+        const grassBlades = [
+          { x0: 965, y0: 1715, cx: 945, cy: 1635, x1: 915, y1: 1585, w: 3.4 },
+          { x0: 978, y0: 1712, cx: 962, cy: 1620, x1: 940, y1: 1565, w: 3.0 },
+          { x0: 992, y0: 1708, cx: 990, cy: 1625, x1: 982, y1: 1568, w: 2.8 },
+          { x0: 1005, y0: 1705, cx: 1018, cy: 1630, x1: 1032, y1: 1580, w: 3.2 },
+          { x0: 1018, y0: 1710, cx: 1045, cy: 1645, x1: 1068, y1: 1605, w: 2.6 },
+          { x0: 952, y0: 1722, cx: 922, cy: 1668, x1: 888, y1: 1635, w: 2.5 },
+          { x0: 1035, y0: 1705, cx: 1058, cy: 1625, x1: 1078, y1: 1572, w: 3.0 }
+        ];
+        grassBlades.forEach((gb, idx) => {
+          const bladeP = subPhaseEase(phaseD, idx * 0.08, 0.55 + idx * 0.06);
+          drawProgressiveFeibaiStroke(ctx, gb.x0, gb.y0, gb.cx, gb.cy, gb.x1, gb.y1, gb.w, pal.rockDark, 0.90, bladeP, seed + idx);
+        });
+      }
+
+      ctx.restore();
+    }
+
+    // Renders Phase B, C, and D progressive brushwork for a given scenery index
+    function renderSceneryProgressiveBrushwork(wetCtx, detailCtx, stepIdx, pal, sxMid, syMid, sxNear, syNear, p, timeSec) {
+      if (p <= 0.22) return;
+      const phaseB = subPhaseEase(p, 0.25, 0.70); // Mid-ground crags & distant tree dabs
+      const phaseC = subPhaseEase(p, 0.50, 0.90); // Tree trunks growing root-to-crown + dab-by-dab foliage/blossoms
+      const phaseD = subPhaseEase(p, 0.70, 1.00); // Fine architectural/water/grass details
+
+      const [tdR, tdG, tdB] = pal.treeDark;
+      const [tmR, tmG, tmB] = pal.treeMid;
+      const [rkR, rkG, rkB] = pal.rockDark;
+      const [slR, slG, slB] = pal.rockSlate;
+      const [pr, pg, pb] = pal.paperRgb;
+
+      // ------------------------------------------------------------------------
+      // SCENE 0: 1:1 MASTER REFERENCE (Twin Trees, Shoreline Boulders, Sedge Bank)
+      // ------------------------------------------------------------------------
+      if (stepIdx === 0) {
+        if (phaseB > 0.01) {
+          const rng = new SeededRandom(333);
+          const [tr, tg, tb] = pal.midTreeDabs;
+          wetCtx.save();
+          wetCtx.translate(sxMid, syMid);
+          [
+            { x: 465, y: 1038, count: 9 }, { x: 535, y: 1018, count: 14 }, { x: 605, y: 1048, count: 12 },
+            { x: 685, y: 1068, count: 16 }, { x: 745, y: 1098, count: 10 }, { x: 335, y: 1042, count: 8 }
+          ].forEach((tc, cIdx) => {
+            const clusterP = subPhaseEase(phaseB, cIdx * 0.1, 0.55 + cIdx * 0.07);
+            for (let i = 0; i < tc.count; i++) {
+              const dx = tc.x + rng.range(-38, 38);
+              const dy = tc.y + rng.range(-14, 14);
+              const rw = rng.range(3, 7.5);
+              const rh = rng.range(4, 12);
+              const a = rng.range(0.18, 0.44);
+              if (i / tc.count <= clusterP) {
+                wetCtx.fillStyle = `rgba(${tr},${tg},${tb},${a * clusterP})`;
+                wetCtx.beginPath();
+                wetCtx.ellipse(dx, dy, rw, rh, 0, 0, Math.PI * 2);
+                wetCtx.fill();
+              }
+            }
+          });
+          wetCtx.restore();
+        }
+
+        if (phaseC > 0.01) {
+          const rng = new SeededRandom(409);
+          wetCtx.save();
+          wetCtx.translate(sxNear, syNear);
+
+          // Shoreline boulders appear progressively along the promontory
+          const boulders = [
+            { x: 22, y: 1185, w: 34, h: 16 }, { x: 65, y: 1142, w: 38, h: 18 }, { x: 108, y: 1118, w: 42, h: 20 },
+            { x: 142, y: 1255, w: 45, h: 15 }, { x: 225, y: 1265, w: 42, h: 14 }, { x: 295, y: 1242, w: 38, h: 15 },
+            { x: 358, y: 1258, w: 36, h: 13 }, { x: 435, y: 1264, w: 32, h: 11 }, { x: 515, y: 1270, w: 28, h: 9 }
+          ];
+          boulders.forEach((sb, idx) => {
+            const rot = rng.range(-0.15, 0.2);
+            const bp = subPhaseEase(phaseC, idx * 0.06, 0.45 + idx * 0.05);
+            if (bp > 0.01) {
+              wetCtx.fillStyle = `rgba(${rkR},${rkG},${rkB},${0.90 * bp})`;
+              wetCtx.beginPath();
+              wetCtx.ellipse(sb.x, sb.y, sb.w * bp, sb.h * bp, rot, 0, Math.PI * 2);
+              wetCtx.fill();
+            }
+          });
+
+          // Twin tall slender trees grow upward from root to crown
+          const trunk1P = subPhaseEase(phaseC, 0.0, 0.55);
+          const trunk2P = subPhaseEase(phaseC, 0.12, 0.65);
+          const trunk3P = subPhaseEase(phaseC, 0.24, 0.72);
+          drawProgressiveFeibaiStroke(wetCtx, 110, 1122, 112, 995, 108, 868, 4.8, pal.treeDark, 0.92, trunk1P, 410);
+          drawProgressiveFeibaiStroke(wetCtx, 132, 1132, 134, 1010, 136, 888, 4.0, pal.treeDark, 0.90, trunk2P, 411);
+          drawProgressiveFeibaiStroke(wetCtx, 184, 1138, 188, 1065, 192, 995, 3.4, pal.treeDark, 0.88, trunk3P, 412);
+
+          // Sumi foliage clusters bloom dab-by-dab onto the branches
+          const foliageP = subPhaseEase(phaseC, 0.35, 1.0);
+          if (foliageP > 0.01) {
+            [
+              { x: 106, y: 855, rx: 38, ry: 20, count: 22 }, { x: 78, y: 895, rx: 34, ry: 18, count: 18 },
+              { x: 138, y: 885, rx: 40, ry: 20, count: 22 }, { x: 64, y: 942, rx: 32, ry: 16, count: 16 },
+              { x: 162, y: 935, rx: 36, ry: 18, count: 20 }, { x: 188, y: 995, rx: 38, ry: 22, count: 24 },
+              { x: 215, y: 1028, rx: 34, ry: 18, count: 20 }
+            ].forEach((fc, cIdx) => {
+              const cp = subPhaseEase(foliageP, cIdx * 0.08, 0.52 + cIdx * 0.08);
+              for (let i = 0; i < fc.count; i++) {
+                const col = i % 3 !== 0 ? [tdR, tdG, tdB] : [tmR, tmG, tmB];
+                const a = rng.range(0.58, 0.92);
+                const dx = fc.x + rng.range(-fc.rx, fc.rx);
+                const dy = fc.y + rng.range(-fc.ry, fc.ry);
+                const rw = rng.range(5, 13);
+                const rh = rng.range(2.5, 6);
+                const rot = rng.range(-0.35, 0.35);
+                if (i / fc.count <= cp) {
+                  wetCtx.fillStyle = `rgba(${col[0]},${col[1]},${col[2]},${a * cp})`;
+                  wetCtx.beginPath();
+                  wetCtx.ellipse(dx, dy, rw * (0.5 + 0.5 * cp), rh * (0.5 + 0.5 * cp), rot, 0, Math.PI * 2);
+                  wetCtx.fill();
+                }
+              }
+            });
+          }
+          wetCtx.restore();
+        }
+
+        renderProgressiveRightSedgeBank(wetCtx, pal, sxNear, syNear, 1776, phaseC, phaseD, 606);
+      }
+
+      // ------------------------------------------------------------------------
+      // SCENE 1: WHISPERING KARST CRAG & ANCIENT SCHOLAR'S PINE (Yingkesong)
+      // ------------------------------------------------------------------------
+      else if (stepIdx === 1) {
+        if (phaseC > 0.01) {
+          const rng = new SeededRandom(1102);
+          wetCtx.save();
+          wetCtx.translate(sxNear, syNear);
+
+          // Cantilevered Scholar's Pine trunk & branches paint outward from cliff to river
+          const b1 = subPhaseEase(phaseC, 0.00, 0.42);
+          const b2 = subPhaseEase(phaseC, 0.25, 0.68);
+          const b3 = subPhaseEase(phaseC, 0.35, 0.78);
+          const b4 = subPhaseEase(phaseC, 0.48, 0.88);
+          drawProgressiveFeibaiStroke(wetCtx, 95, 955, 145, 855, 225, 835, 9.5, pal.treeDark, 0.94, b1, 1150);
+          drawProgressiveFeibaiStroke(wetCtx, 225, 835, 315, 845, 425, 815, 7.2, pal.treeDark, 0.92, b2, 1151);
+          drawProgressiveFeibaiStroke(wetCtx, 175, 865, 210, 775, 275, 745, 5.5, pal.treeDark, 0.88, b3, 1152);
+          drawProgressiveFeibaiStroke(wetCtx, 315, 838, 375, 875, 455, 865, 4.4, pal.treeDark, 0.86, b4, 1153);
+
+          // Pine needle pads bloom dab-by-dab
+          const padP = subPhaseEase(phaseC, 0.40, 1.0);
+          if (padP > 0.01) {
+            const pinePads = [
+              { x: 120, y: 835, rx: 48, ry: 18 }, { x: 185, y: 785, rx: 52, ry: 20 },
+              { x: 265, y: 738, rx: 62, ry: 22 }, { x: 355, y: 785, rx: 68, ry: 24 },
+              { x: 435, y: 805, rx: 75, ry: 25 }, { x: 465, y: 858, rx: 58, ry: 20 }
+            ];
+            pinePads.forEach((pad, pIdx) => {
+              const localP = subPhaseEase(padP, pIdx * 0.1, 0.5 + pIdx * 0.1);
+              for (let i = 0; i < 34; i++) {
+                const px = pad.x + rng.range(-pad.rx, pad.rx);
+                const py = pad.y + rng.range(-pad.ry, pad.ry);
+                const col = i % 3 === 0 ? [tmR, tmG, tmB] : [tdR, tdG, tdB];
+                const a = rng.range(0.62, 0.94);
+                const rw = rng.range(7, 16);
+                const rh = rng.range(2.5, 5.5);
+                const rot = rng.range(-0.2, 0.2);
+                if (i / 34 <= localP) {
+                  wetCtx.fillStyle = `rgba(${col[0]},${col[1]},${col[2]},${a * localP})`;
+                  wetCtx.beginPath();
+                  wetCtx.ellipse(px, py, rw * localP, rh * localP, rot, 0, Math.PI * 2);
+                  wetCtx.fill();
+                }
+              }
+            });
+          }
+          wetCtx.restore();
+        }
+      }
+
+      // ------------------------------------------------------------------------
+      // SCENE 2: CASCADING CLOUD GORGE & TWIN WATERFALLS (Sui)
+      // ------------------------------------------------------------------------
+      else if (stepIdx === 2) {
+        // Waterfall ribbons cascade downward from cliff top (y=738) to plunge pool (y=1165)
+        const fallP = subPhaseEase(p, 0.45, 0.95);
+        if (fallP > 0.01) {
+          wetCtx.save();
+          wetCtx.translate(sxMid, syMid);
+          const fallRibbons = [
+            { x: 748, w: 18, y0: 742, y1: 1155 },
+            { x: 776, w: 26, y0: 738, y1: 1165 },
+            { x: 808, w: 12, y0: 748, y1: 1145 }
+          ];
+          fallRibbons.forEach((fr, idx) => {
+            const rp = subPhaseEase(fallP, idx * 0.12, 0.76 + idx * 0.12);
+            if (rp <= 0.01) return;
+            const curY1 = fr.y0 + (fr.y1 - fr.y0) * rp;
+            const wg = wetCtx.createLinearGradient(fr.x, fr.y0, fr.x, curY1);
+            wg.addColorStop(0, `rgba(${pr},${pg},${pb},0.92)`);
+            wg.addColorStop(0.75, `rgba(${pr},${pg},${pb},0.85)`);
+            wg.addColorStop(1, `rgba(${pr},${pg},${pb},0)`);
+            wetCtx.fillStyle = wg;
+            wetCtx.beginPath();
+            wetCtx.moveTo(fr.x - fr.w * 0.4, fr.y0);
+            wetCtx.quadraticCurveTo(fr.x - fr.w * 0.7, (fr.y0 + curY1) * 0.5, fr.x - fr.w * 0.9, curY1);
+            wetCtx.lineTo(fr.x + fr.w * 0.9, curY1);
+            wetCtx.quadraticCurveTo(fr.x + fr.w * 0.6, (fr.y0 + curY1) * 0.5, fr.x + fr.w * 0.4, fr.y0);
+            wetCtx.closePath();
+            wetCtx.fill();
+          });
+
+          // Plunge pool mist cloud rises as water hits the gorge basin
+          const mistP = subPhaseEase(fallP, 0.45, 1.0);
+          if (mistP > 0.01) {
+            const poolMist = wetCtx.createRadialGradient(775, 1155, 15, 775, 1155, 185 * mistP);
+            poolMist.addColorStop(0, `rgba(${pr},${pg},${pb},${0.92 * mistP})`);
+            poolMist.addColorStop(0.6, `rgba(${pr},${pg},${pb},${0.55 * mistP})`);
+            poolMist.addColorStop(1, `rgba(${pr},${pg},${pb},0)`);
+            wetCtx.fillStyle = poolMist;
+            wetCtx.beginPath();
+            wetCtx.arc(775, 1155, 185 * mistP, 0, Math.PI * 2);
+            wetCtx.fill();
+          }
+          wetCtx.restore();
+
+          // Live gentle waterfall shimmer threads
+          renderLiveWaterfallShimmer(wetCtx, pal, sxMid, syMid, timeSec, fallP);
+        }
+
+        renderProgressiveRightSedgeBank(wetCtx, pal, sxNear, syNear, 1765, phaseC, phaseD, 2240);
+      }
+
+      // ------------------------------------------------------------------------
+      // SCENE 3: CINNABAR PLUM BLOSSOM BEND (Meihua)
+      // ------------------------------------------------------------------------
+      else if (stepIdx === 3) {
+        if (phaseC > 0.01) {
+          const rng = new SeededRandom(3301);
+          const [prR, prG, prB] = pal.plumRed;
+          const [pbR, pbG, pbB] = pal.plumBlush;
+
+          wetCtx.save();
+          wetCtx.translate(sxNear, syNear);
+
+          // Calligraphic plum branches shoot across from left cliff
+          const plumBranches = [
+            [ -10, 520, 145, 565, 345, 515, 9.0 ],
+            [ 145, 555, 245, 645, 415, 635, 6.2 ],
+            [ 235, 625, 310, 715, 395, 765, 4.2 ],
+            [ 285, 535, 385, 465, 495, 445, 4.8 ],
+            [ 85,  1145, 135, 985, 225, 895, 6.5 ],
+            [ 165, 965, 265, 925, 355, 885, 4.2 ]
+          ];
+          plumBranches.forEach((b, idx) => {
+            const bp = subPhaseEase(phaseC, idx * 0.08, 0.52 + idx * 0.08);
+            drawProgressiveFeibaiStroke(wetCtx, b[0], b[1], b[2], b[3], b[4], b[5], b[6], pal.treeDark, 0.92, bp, 3340 + idx);
+          });
+
+          // Cinnabar & Blush 5-petal plum blossoms dot onto the branches dab-by-dab
+          const blossomP = subPhaseEase(p, 0.62, 0.98);
+          if (blossomP > 0.01) {
+            const blossomZones = [
+              { x: 220, y: 545, rx: 140, ry: 75, count: 42 },
+              { x: 355, y: 645, rx: 110, ry: 65, count: 32 },
+              { x: 425, y: 475, rx: 95,  ry: 50, count: 26 },
+              { x: 245, y: 915, rx: 110, ry: 60, count: 30 }
+            ];
+            blossomZones.forEach((bz, zIdx) => {
+              const zp = subPhaseEase(blossomP, zIdx * 0.1, 0.65 + zIdx * 0.1);
+              for (let i = 0; i < bz.count; i++) {
+                const bx = bz.x + rng.range(-bz.rx, bz.rx);
+                const by = bz.y + rng.range(-bz.ry, bz.ry);
+                const isDeepRed = rng.next() > 0.42;
+                const col = isDeepRed ? [prR, prG, prB] : [pbR, pbG, pbB];
+                const alpha = isDeepRed ? rng.range(0.65, 0.94) : rng.range(0.45, 0.78);
+
+                const petals = [];
+                for (let pt = 0; pt < 4; pt++) {
+                  petals.push({
+                    ang: (pt / 4) * Math.PI * 2 + rng.range(-0.2, 0.2),
+                    dist: rng.range(3.5, 6.5),
+                    r: rng.range(2.8, 5.2)
+                  });
+                }
+
+                if (i / bz.count <= zp) {
+                  for (let pt = 0; pt < 4; pt++) {
+                    const pd = petals[pt];
+                    wetCtx.fillStyle = `rgba(${col[0]},${col[1]},${col[2]},${alpha * zp})`;
+                    wetCtx.beginPath();
+                    wetCtx.arc(bx + Math.cos(pd.ang) * pd.dist, by + Math.sin(pd.ang) * pd.dist, pd.r * zp, 0, Math.PI * 2);
+                    wetCtx.fill();
+                  }
+                  if (isDeepRed && i % 2 === 0) {
+                    wetCtx.fillStyle = `rgba(${tdR},${tdG},${tdB},${0.85 * zp})`;
+                    wetCtx.beginPath();
+                    wetCtx.arc(bx, by, 1.6 * zp, 0, Math.PI * 2);
+                    wetCtx.fill();
+                  }
+                }
+              }
+            });
+          }
+          wetCtx.restore();
+        }
+      }
+
+      // ------------------------------------------------------------------------
+      // SCENE 4: ARCHED STONE MOONBRIDGE & WEEPING WILLOWS (Yueqiao)
+      // ------------------------------------------------------------------------
+      else if (stepIdx === 4) {
+        // Moonbridge stone arch & circular water reflection paint in during Phase B/C
+        const bridgeP = subPhaseEase(p, 0.35, 0.82);
+        if (bridgeP > 0.01) {
+          const bridgeY = 1145, bridgeCx = 560, archRx = 145, archRy = 92;
+          wetCtx.save();
+          wetCtx.translate(sxMid, syMid);
+          wetCtx.globalAlpha = bridgeP;
+
+          wetCtx.fillStyle = `rgba(${slR},${slG},${slB},0.82)`;
+          wetCtx.beginPath();
+          wetCtx.moveTo(bridgeCx - archRx - 35, bridgeY);
+          wetCtx.quadraticCurveTo(bridgeCx, bridgeY - archRy - 48, bridgeCx + archRx + 35, bridgeY);
+          wetCtx.lineTo(bridgeCx + archRx, bridgeY);
+          wetCtx.arc(bridgeCx, bridgeY, archRx, 0, Math.PI, true);
+          wetCtx.closePath();
+          wetCtx.fill();
+
+          drawProgressiveFeibaiStroke(wetCtx, bridgeCx - archRx - 32, bridgeY - 4, bridgeCx, bridgeY - archRy - 46, bridgeCx + archRx + 32, bridgeY - 4, 4.5, pal.rockDark, 0.88, bridgeP, 4415);
+
+          const refP = subPhaseEase(p, 0.55, 0.92);
+          if (refP > 0.01) {
+            wetCtx.strokeStyle = `rgba(${slR},${slG},${slB},${0.32 * refP})`;
+            wetCtx.lineWidth = 14;
+            wetCtx.beginPath();
+            wetCtx.arc(bridgeCx, bridgeY + 4, archRx * 0.96, 0.08 * Math.PI, (0.08 + 0.84 * refP) * Math.PI, false);
+            wetCtx.stroke();
+
+            wetCtx.strokeStyle = `rgba(${pr},${pg},${pb},0.68)`;
+            for (let ry = bridgeY + 8; ry < bridgeY + 98; ry += 7) {
+              wetCtx.lineWidth = 2.0;
+              wetCtx.beginPath();
+              wetCtx.moveTo(bridgeCx - archRx - 20, ry);
+              wetCtx.lineTo(bridgeCx + archRx + 20, ry);
+              wetCtx.stroke();
+            }
+          }
+          wetCtx.restore();
+        }
+
+        // Weeping willow branches & hanging tendrils paint downward during Phase C/D
+        if (phaseC > 0.01) {
+          wetCtx.save();
+          wetCtx.translate(sxNear, syNear);
+          drawProgressiveFeibaiStroke(wetCtx, -10, 680, 95, 595, 215, 555, 8.5, pal.treeDark, 0.90, subPhaseEase(phaseC, 0, 0.45), 4425);
+          drawProgressiveFeibaiStroke(wetCtx, 135, 580, 235, 535, 345, 520, 5.5, pal.treeDark, 0.86, subPhaseEase(phaseC, 0.15, 0.60), 4426);
+
+          const tendrilP = subPhaseEase(p, 0.58, 0.96);
+          if (tendrilP > 0.01) {
+            const rng = new SeededRandom(4430);
+            wetCtx.lineCap = 'round';
+            for (let w = 0; w < 38; w++) {
+              const sx = rng.range(15, 365);
+              const sy = rng.range(515, 595);
+              const dropLen = rng.range(180, 390);
+              const swayX = rng.range(18, 52) + Math.sin(timeSec * 0.9 + w * 0.4) * 5;
+              const strokeA = rng.range(0.32, 0.68);
+              const strokeW = rng.range(1.1, 2.1);
+
+              const tp = subPhaseEase(tendrilP, (w / 38) * 0.35, 0.65 + (w / 38) * 0.35);
+              if (tp > 0.01) {
+                const curDrop = dropLen * tp;
+                const curSway = swayX * tp;
+                wetCtx.strokeStyle = `rgba(${tmR},${tmG},${tmB},${strokeA})`;
+                wetCtx.lineWidth = strokeW;
+                wetCtx.beginPath();
+                wetCtx.moveTo(sx, sy);
+                wetCtx.quadraticCurveTo(sx + curSway * 0.4, sy + curDrop * 0.55, sx + curSway, sy + curDrop);
+                wetCtx.stroke();
+
+                for (let lf = 0.2; lf <= 0.95; lf += 0.14) {
+                  const lx = sx + swayX * lf + rng.range(-4, 4);
+                  const ly = sy + dropLen * lf;
+                  const la = rng.range(0.45, 0.78);
+                  if (lf <= tp) {
+                    wetCtx.fillStyle = `rgba(${rkR},${rkG},${rkB},${la})`;
+                    wetCtx.beginPath();
+                    wetCtx.ellipse(lx, ly, 4.5, 1.6, 0.45, 0, Math.PI * 2);
+                    wetCtx.fill();
+                  }
+                }
+              } else {
+                for (let lf = 0.2; lf <= 0.95; lf += 0.14) { rng.next(); rng.next(); }
+              }
+            }
+          }
+          wetCtx.restore();
+        }
+
+        renderProgressiveRightSedgeBank(wetCtx, pal, sxNear, syNear, 1775, phaseC, phaseD, 4450);
+      }
+
+      // ------------------------------------------------------------------------
+      // SCENE 5: INK BAMBOO SANCTUARY & TOWERING KARST PILLARS (Mozhu)
+      // ------------------------------------------------------------------------
+      else if (stepIdx === 5) {
+        if (phaseC > 0.01) {
+          const stalks = [
+            { x0: 68,   y0: 1145, lean: 6.5,  segs: 6, segLen: 88, w: 6.8, alpha: 0.92 },
+            { x0: 108,  y0: 1155, lean: 11.0, segs: 6, segLen: 82, w: 5.4, alpha: 0.82 },
+            { x0: 145,  y0: 1165, lean: 15.5, segs: 5, segLen: 76, w: 4.2, alpha: 0.68 },
+            { x0: 985,  y0: 1735, lean: -9.5, segs: 6, segLen: 86, w: 6.2, alpha: 0.90 },
+            { x0: 1028, y0: 1740, lean: -5.0, segs: 5, segLen: 80, w: 4.8, alpha: 0.76 }
+          ];
+          const rng = new SeededRandom(5530);
+
+          wetCtx.save();
+          wetCtx.translate(sxNear, syNear);
+          wetCtx.lineCap = 'butt';
+
+          // Bamboo stalks grow upward segment-by-segment, then sprout sharp leaves
+          stalks.forEach((st, stIdx) => {
+            const stalkP = subPhaseEase(p, 0.48 + stIdx * 0.06, 0.94);
+            let cx = st.x0, cy = st.y0;
+            for (let s = 0; s < st.segs; s++) {
+              const nx = cx + st.lean + rng.range(-1.5, 1.5);
+              const ny = cy - st.segLen;
+              const sw = Math.max(2.0, st.w * (1 - s * 0.1));
+              const segP = subPhaseEase(stalkP, s / st.segs, (s + 1) / st.segs);
+
+              const leaves = [];
+              if (s >= 2) {
+                const leafDir = st.lean > 0 ? 1 : -1;
+                for (let lf = 0; lf < 5; lf++) {
+                  leaves.push({
+                    lang: (leafDir > 0 ? 0.15 : Math.PI - 0.15) + rng.range(-0.45, 0.45),
+                    llen: rng.range(36, 68),
+                    la: st.alpha * rng.range(0.75, 0.98)
+                  });
+                }
+              }
+
+              if (segP > 0.01) {
+                const curNx = cx + (nx - cx) * segP;
+                const curNy = cy + (ny - cy) * segP;
+                wetCtx.strokeStyle = `rgba(${tdR},${tdG},${tdB},${st.alpha})`;
+                wetCtx.lineWidth = sw;
+                wetCtx.beginPath();
+                wetCtx.moveTo(cx, cy - 3);
+                wetCtx.lineTo(curNx, curNy + 3);
+                wetCtx.stroke();
+
+                if (segP > 0.85) {
+                  wetCtx.lineWidth = 2.2;
+                  wetCtx.beginPath();
+                  wetCtx.moveTo(nx - sw * 0.85, ny);
+                  wetCtx.lineTo(nx + sw * 0.85, ny);
+                  wetCtx.stroke();
+                }
+
+                if (s >= 2 && segP > 0.5) {
+                  const leafP = (segP - 0.5) * 2.0;
+                  leaves.forEach(lf => {
+                    const lx1 = nx + Math.cos(lf.lang) * lf.llen * leafP;
+                    const ly1 = ny + Math.sin(lf.lang) * lf.llen * leafP + 12 * leafP;
+                    wetCtx.fillStyle = `rgba(${tdR},${tdG},${tdB},${lf.la * leafP})`;
+                    wetCtx.beginPath();
+                    wetCtx.moveTo(nx, ny);
+                    wetCtx.quadraticCurveTo((nx + lx1) * 0.5, (ny + ly1) * 0.5 - 6 * leafP, lx1, ly1);
+                    wetCtx.quadraticCurveTo((nx + lx1) * 0.5, (ny + ly1) * 0.5 + 3 * leafP, nx, ny);
+                    wetCtx.closePath();
+                    wetCtx.fill();
+                  });
+                }
+              }
+              cx = nx;
+              cy = ny;
+            }
+          });
+          wetCtx.restore();
+        }
+
+        renderProgressiveRightSedgeBank(wetCtx, pal, sxNear, syNear, 1775, phaseC, phaseD, 5560);
+      }
+
+      // ------------------------------------------------------------------------
+      // SCENE 6: SUNSET CLIFF PAVILION & FLOATING LOTUS PADS (Ting)
+      // ------------------------------------------------------------------------
+      else if (stepIdx === 6) {
+        const pavP = subPhaseEase(p, 0.42, 0.88);
+        if (pavP > 0.01) {
+          const [saR, saG, saB] = pal.sunsetAmber;
+          const px = 215, py = 942;
+          wetCtx.save();
+          wetCtx.translate(sxMid, syMid);
+
+          // Columns & base terrace draw first, then upturned roof eaves sweep across
+          const colP = subPhaseEase(pavP, 0.0, 0.55);
+          const roofP = subPhaseEase(pavP, 0.35, 1.0);
+
+          wetCtx.fillStyle = `rgba(${rkR},${rkG},${rkB},${0.88 * colP})`;
+          wetCtx.strokeStyle = `rgba(${rkR},${rkG},${rkB},${0.88 * colP})`;
+          wetCtx.lineCap = 'round';
+          wetCtx.lineWidth = 2.6;
+
+          [-32, -12, 12, 32].forEach(colX => {
+            wetCtx.beginPath();
+            wetCtx.moveTo(px + colX, py + 4);
+            wetCtx.lineTo(px + colX, py + 4 - 28 * colP);
+            wetCtx.stroke();
+          });
+          wetCtx.fillRect(px - 40 * colP, py + 2, 80 * colP, 6);
+
+          if (roofP > 0.01) {
+            wetCtx.globalAlpha = roofP;
+            wetCtx.fillStyle = `rgba(${rkR},${rkG},${rkB},0.88)`;
+            wetCtx.beginPath();
+            wetCtx.moveTo(px - 62 * roofP, py - 28);
+            wetCtx.quadraticCurveTo(px - 22 * roofP, py - 34, px, py - 56);
+            wetCtx.quadraticCurveTo(px + 22 * roofP, py - 34, px + 62 * roofP, py - 28);
+            wetCtx.quadraticCurveTo(px + 28 * roofP, py - 22, px - 28 * roofP, py - 22);
+            wetCtx.closePath();
+            wetCtx.fill();
+          }
+
+          // Warm amber sunset reflection on the water
+          wetCtx.globalAlpha = pavP;
+          const waterGlow = wetCtx.createRadialGradient(365, 1410, 20, 365, 1410, 260);
+          waterGlow.addColorStop(0, `rgba(${saR},${saG},${saB},0.22)`);
+          waterGlow.addColorStop(1, `rgba(${saR},${saG},${saB},0)`);
+          wetCtx.fillStyle = waterGlow;
+          wetCtx.fillRect(80, 1210, 580, 380);
+          wetCtx.restore();
+        }
+
+        // Foreground lotus pads bloom dab-by-dab
+        if (phaseC > 0.01) {
+          const rng = new SeededRandom(6630);
+          wetCtx.save();
+          wetCtx.translate(sxNear, syNear);
+          const lotusPads = [
+            { x: 95,  y: 1685, rx: 48, ry: 14 },
+            { x: 185, y: 1715, rx: 56, ry: 16 },
+            { x: 275, y: 1695, rx: 42, ry: 12 },
+            { x: 135, y: 1742, rx: 52, ry: 15 }
+          ];
+          lotusPads.forEach((lp, idx) => {
+            const rot = rng.range(-0.1, 0.1);
+            const lpp = subPhaseEase(phaseC, idx * 0.15, 0.55 + idx * 0.15);
+            if (lpp > 0.01) {
+              wetCtx.fillStyle = `rgba(${tmR},${tmG},${tmB},${0.78 * lpp})`;
+              wetCtx.beginPath();
+              wetCtx.ellipse(lp.x, lp.y, lp.rx * lpp, lp.ry * lpp, rot, 0, Math.PI * 2);
+              wetCtx.fill();
+              drawProgressiveFeibaiStroke(wetCtx, lp.x, lp.y, lp.x - 4, lp.y + 28, lp.x + 2, lp.y + 52, 2.2, pal.rockDark, 0.72, lpp, 6635 + idx);
+            }
+          });
+          wetCtx.restore();
+        }
+
+        renderProgressiveRightSedgeBank(wetCtx, pal, sxNear, syNear, 1775, phaseC, phaseD, 6640);
+      }
+
+      // ------------------------------------------------------------------------
+      // SCENE 7: SACRED 5-TIERED PAGODA HARBOR & TWIN TREES (Ta)
+      // ------------------------------------------------------------------------
+      else if (stepIdx === 7) {
+        // 5-Tiered Ink Pagoda builds upward tier-by-tier from base to spire finial
+        const pagodaP = subPhaseEase(p, 0.40, 0.92);
+        if (pagodaP > 0.01) {
+          const tx = 565;
+          let ty = 872;
+          wetCtx.save();
+          wetCtx.translate(sxMid, syMid);
+          for (let tier = 0; tier < 5; tier++) {
+            const tp = subPhaseEase(pagodaP, tier * 0.14, 0.35 + tier * 0.14);
+            const w = 36 - tier * 4.8;
+            const h = 15 - tier * 1.2;
+            if (tp > 0.01) {
+              wetCtx.fillStyle = `rgba(${rkR},${rkG},${rkB},${0.84 * tp})`;
+              wetCtx.fillRect(tx - w * 0.45 * tp, ty - h * tp, w * 0.9 * tp, h * tp);
+              wetCtx.beginPath();
+              wetCtx.moveTo(tx - w * 0.85 * tp, ty - h + 2);
+              wetCtx.quadraticCurveTo(tx, ty - h - 7 * tp, tx + w * 0.85 * tp, ty - h + 2);
+              wetCtx.lineTo(tx + w * 0.55 * tp, ty - h + 5);
+              wetCtx.lineTo(tx - w * 0.55 * tp, ty - h + 5);
+              wetCtx.closePath();
+              wetCtx.fill();
+            }
+            ty -= (h + 4);
+          }
+          const spireP = subPhaseEase(pagodaP, 0.82, 1.0);
+          if (spireP > 0.01) {
+            wetCtx.fillStyle = `rgba(${rkR},${rkG},${rkB},${0.84 * spireP})`;
+            wetCtx.fillRect(tx - 1.5, ty - 22 * spireP, 3, 22 * spireP);
+          }
+          wetCtx.restore();
+        }
+
+        // Harbor Twin Trees grow upward
+        if (phaseC > 0.01) {
+          const rng = new SeededRandom(7735);
+          wetCtx.save();
+          wetCtx.translate(sxNear, syNear);
+          drawProgressiveFeibaiStroke(wetCtx, 105, 1125, 108, 995, 104, 875, 4.6, pal.treeDark, 0.90, subPhaseEase(phaseC, 0, 0.55), 7730);
+          drawProgressiveFeibaiStroke(wetCtx, 130, 1132, 135, 1015, 138, 900, 3.8, pal.treeDark, 0.88, subPhaseEase(phaseC, 0.15, 0.68), 7731);
+
+          const folP = subPhaseEase(phaseC, 0.35, 1.0);
+          if (folP > 0.01) {
+            [
+              { x: 104, y: 868, rx: 38, ry: 20, count: 22 },
+              { x: 140, y: 895, rx: 36, ry: 18, count: 20 },
+              { x: 78,  y: 915, rx: 32, ry: 16, count: 18 }
+            ].forEach((fc, idx) => {
+              const cp = subPhaseEase(folP, idx * 0.15, 0.65 + idx * 0.15);
+              for (let i = 0; i < fc.count; i++) {
+                const a = rng.range(0.60, 0.92);
+                const dx = fc.x + rng.range(-fc.rx, fc.rx);
+                const dy = fc.y + rng.range(-fc.ry, fc.ry);
+                const rw = rng.range(5, 13);
+                const rh = rng.range(2.5, 6);
+                if (i / fc.count <= cp) {
+                  wetCtx.fillStyle = `rgba(${tdR},${tdG},${tdB},${a * cp})`;
+                  wetCtx.beginPath();
+                  wetCtx.ellipse(dx, dy, rw * cp, rh * cp, 0, 0, Math.PI * 2);
+                  wetCtx.fill();
+                }
+              }
+            });
+          }
+          wetCtx.restore();
+        }
+
+        renderProgressiveRightSedgeBank(wetCtx, pal, sxNear, syNear, 1775, phaseC, phaseD, 7750);
+      }
+    }
+
+    // Progressive Top-Right Vertical Running-Script Calligraphy & Cinnabar Red Seal
+    function renderProgressiveCalligraphyAndSeal(ctx, pal, offsetX, offsetY, scene0P) {
+      const calP = subPhaseEase(scene0P, 0.62, 1.0);
+      if (calP <= 0.01) return;
+
+      const [ikR, ikG, ikB] = pal.inkBlack;
+      const [srR, srG, srB] = pal.sealRed;
+      const [pr, pg, pb] = pal.paperRgb;
+
+      const cx = 928 + offsetX;
+      ctx.save();
+      ctx.strokeStyle = `rgba(${ikR},${ikG},${ikB},0.90)`;
+      ctx.fillStyle = `rgba(${ikR},${ikG},${ikB},0.90)`;
+      ctx.lineCap = 'round';
+      ctx.lineJoin = 'round';
+
+      // Glyph 1 writes first
+      const g1P = subPhaseEase(calP, 0.0, 0.35);
+      if (g1P > 0.01) {
+        ctx.globalAlpha = g1P;
+        drawCalligraphicGlyph1(ctx, cx, 326 + offsetY);
+      }
+
+      // Glyph 2 writes second
+      const g2P = subPhaseEase(calP, 0.25, 0.60);
+      if (g2P > 0.01) {
+        ctx.globalAlpha = g2P;
+        drawCalligraphicGlyph2(ctx, cx, 378 + offsetY);
+      }
+
+      // Glyph 3 writes third
+      const g3P = subPhaseEase(calP, 0.50, 0.82);
+      if (g3P > 0.01) {
+        ctx.globalAlpha = g3P;
+        drawCalligraphicGlyph3(ctx, cx, 422 + offsetY);
+      }
+
+      // Square Cinnabar Red Seal stamps onto the paper last
+      const sealP = subPhaseEase(calP, 0.72, 1.0);
+      if (sealP > 0.01) {
+        const sealSize = 28;
+        const sx = cx - sealSize * 0.5;
+        const sy = 446 + offsetY;
+
+        ctx.globalAlpha = sealP;
+        ctx.fillStyle = `rgba(${srR},${srG},${srB},0.90)`;
+        ctx.beginPath();
+        ctx.roundRect(sx, sy, sealSize, sealSize, 2.5);
+        ctx.fill();
+
+        ctx.strokeStyle = `rgba(${pr},${pg},${pb},0.88)`;
+        ctx.lineWidth = 1.7;
+        ctx.strokeRect(sx + 3, sy + 3, sealSize - 6, sealSize - 6);
+        ctx.beginPath();
+        ctx.moveTo(sx + 8, sy + 7); ctx.lineTo(sx + 8, sy + sealSize - 7);
+        ctx.moveTo(sx + 5, sy + 13); ctx.lineTo(sx + 13, sy + 13);
+        ctx.moveTo(sx + 16, sy + 8); ctx.lineTo(sx + sealSize - 6, sy + 8);
+        ctx.moveTo(sx + sealSize - 6, sy + 8); ctx.lineTo(sx + sealSize - 6, sy + sealSize - 8);
+        ctx.moveTo(sx + 16, sy + 16); ctx.lineTo(sx + sealSize - 6, sy + 16);
+        ctx.stroke();
+      }
+      ctx.restore();
+    }
+
+    function drawCalligraphicGlyph1(ctx, x, y) {
+      ctx.lineWidth = 3.2;
+      ctx.beginPath();
+      ctx.moveTo(x - 11, y - 14);
+      ctx.quadraticCurveTo(x - 4, y - 15, x - 6, y - 6);
+      ctx.quadraticCurveTo(x - 12, y + 2, x - 9, y + 14);
+      ctx.moveTo(x - 14, y - 2); ctx.lineTo(x - 2, y - 5);
+      ctx.moveTo(x + 3, y - 16);
+      ctx.quadraticCurveTo(x + 12, y - 12, x + 5, y - 2);
+      ctx.quadraticCurveTo(x + 14, y + 4, x + 8, y + 15);
+      ctx.moveTo(x + 1, y + 4); ctx.lineTo(x + 14, y + 1);
+      ctx.stroke();
+    }
+
+    function drawCalligraphicGlyph2(ctx, x, y) {
+      ctx.lineWidth = 3.2;
+      ctx.beginPath();
+      ctx.moveTo(x - 9, y - 13); ctx.quadraticCurveTo(x + 2, y - 16, x + 9, y - 11);
+      ctx.moveTo(x - 6, y - 5); ctx.bezierCurveTo(x + 8, y - 7, x - 10, y + 4, x + 10, y + 3);
+      ctx.moveTo(x - 11, y + 11); ctx.quadraticCurveTo(x, y + 8, x + 12, y + 13);
+      ctx.moveTo(x + 1, y - 12); ctx.lineTo(x - 1, y + 14);
+      ctx.stroke();
+    }
+
+    function drawCalligraphicGlyph3(ctx, x, y) {
+      ctx.lineWidth = 3.0;
+      ctx.beginPath();
+      ctx.moveTo(x - 10, y - 10); ctx.quadraticCurveTo(x - 8, y + 2, x - 10, y + 11);
+      ctx.moveTo(x - 2, y - 11);
+      ctx.quadraticCurveTo(x + 9, y - 13, x + 8, y - 2);
+      ctx.quadraticCurveTo(x + 7, y + 8, x + 12, y + 12);
+      ctx.moveTo(x - 3, y + 1); ctx.lineTo(x + 9, y - 1);
+      ctx.moveTo(x - 4, y + 10); ctx.lineTo(x + 8, y + 9);
+      ctx.stroke();
+    }
+
+    // ============================================================================
+    // 8. SERENE SAMPAN BOAT WITH MEDITATIVE SLOW SCULLING OAR & REFLECTION
+    // ============================================================================
+    function renderSampanBoat(ctx, pal, boatX, boatY, boatScale, pitch, oarAngle, glideActivity, canopyLantern, timeSec, revealT) {
+      if (revealT <= 0.01) return;
+
+      const [hlR, hlG, hlB] = pal.boatHull;
+      const [mdR, mdG, mdB] = pal.boatMid;
+      const [ocR, ocG, ocB] = pal.canopyOchre;
+      const [glR, glG, glB] = pal.canopyGlow;
+      const [rfR, rfG, rfB] = pal.reflection;
+      const [pr, pg, pb] = pal.paperRgb;
+
+      // Calm, meditative water swell
+      const bobY = Math.sin(timeSec * 1.35) * 1.4;
+
+      ctx.save();
+      ctx.globalAlpha = Math.min(1, revealT);
+      ctx.translate(boatX, boatY + bobY);
+      ctx.scale(boatScale, boatScale);
+      ctx.rotate(pitch);
+
+      // A. INVERTED WATER REFLECTION DIRECTLY UNDER THE HULL
+      ctx.save();
+      ctx.translate(0, 6);
+      ctx.scale(1, -0.78);
+      const waveShift = Math.sin(timeSec * 1.8) * 2.6;
+      ctx.translate(waveShift, 0);
+
+      if (canopyLantern > 0.02) {
+        const lanternRef = ctx.createRadialGradient(-162, -32, 4, -120, -28, 125);
+        lanternRef.addColorStop(0, `rgba(${glR},${glG},${glB},${0.42 * canopyLantern})`);
+        lanternRef.addColorStop(1, `rgba(${glR},${glG},${glB},0)`);
+        ctx.fillStyle = lanternRef;
+        ctx.beginPath();
+        ctx.ellipse(-120, -28, 125, 52, 0, 0, Math.PI * 2);
+        ctx.fill();
+      }
+
+      ctx.fillStyle = `rgba(${rfR},${rfG},${rfB},0.24)`;
+      drawBoatSilhouetteGeometry(ctx, false, oarAngle, glideActivity, timeSec);
+
+      ctx.fillStyle = `rgba(${ocR},${ocG},${ocB},0.18)`;
+      ctx.fillRect(10, -56, 114, 24);
+      ctx.restore();
+
+      // Horizontal water ripple slices across the boat reflection
+      ctx.strokeStyle = `rgba(${pr},${pg},${pb},0.68)`;
+      for (let ry = 10; ry <= 62; ry += 6.5) {
+        ctx.lineWidth = 1.8;
+        ctx.beginPath();
+        ctx.moveTo(-200, ry);
+        ctx.lineTo(210, ry);
+        ctx.stroke();
+      }
+
+      // Delicate dark ink water-line ripples flanking the bow and stern
+      ctx.strokeStyle = `rgba(${rfR},${rfG},${rfB},${0.30 + glideActivity * 0.14})`;
+      ctx.lineWidth = 1.4;
+      ctx.beginPath();
+      ctx.moveTo(-250, 3); ctx.lineTo(260, 3);
+      ctx.moveTo(-215, 9); ctx.lineTo(220, 9);
+      ctx.moveTo(-170, 16); ctx.lineTo(180, 16);
+      ctx.stroke();
+
+      // B. WOVEN BAMBOO-MAT CANOPY (AWNING) & VERTICAL POSTS
+      const canopyGrad = ctx.createLinearGradient(8, -58, 8, -32);
+      canopyGrad.addColorStop(0, `rgba(${ocR},${ocG},${ocB},0.92)`);
+      canopyGrad.addColorStop(0.6, `rgba(${ocR + 18},${ocG + 14},${ocB + 10},0.78)`);
+      canopyGrad.addColorStop(1, `rgba(${ocR},${ocG},${ocB},0.15)`);
+
+      ctx.fillStyle = canopyGrad;
+      ctx.beginPath();
+      ctx.moveTo(8, -52);
+      ctx.quadraticCurveTo(65, -58, 122, -50);
+      ctx.lineTo(120, -34);
+      ctx.quadraticCurveTo(65, -40, 10, -36);
+      ctx.closePath();
+      ctx.fill();
+
+      ctx.strokeStyle = `rgba(${hlR},${hlG},${hlB},0.88)`;
+      ctx.lineCap = 'round';
+      ctx.lineWidth = 2.4;
+      ctx.beginPath();
+      ctx.moveTo(-4, -52); ctx.quadraticCurveTo(64, -57, 124, -49);
+      ctx.lineWidth = 1.6;
+      ctx.moveTo(10, -37); ctx.quadraticCurveTo(64, -41, 120, -35);
+      ctx.moveTo(32, -52); ctx.lineTo(31, -15);
+      ctx.moveTo(64, -54); ctx.lineTo(64, -15);
+      ctx.moveTo(96, -52); ctx.lineTo(96, -15);
+      ctx.moveTo(116, -49); ctx.lineTo(115, -16);
+      ctx.stroke();
+
+      ctx.lineWidth = 3.2;
+      ctx.beginPath();
+      ctx.moveTo(3, -14); ctx.lineTo(3, -64);
+      ctx.lineWidth = 1.6;
+      ctx.moveTo(8, -14); ctx.lineTo(8, -58);
+      ctx.stroke();
+
+      // C. BOW LANTERN & WARM AMBER CANOPY GLOW
+      if (canopyLantern > 0.02) {
+        const cGlow = ctx.createRadialGradient(-165, -34, 3, -100, -34, 130);
+        cGlow.addColorStop(0, `rgba(${glR},${glG},${glB},${0.55 * canopyLantern})`);
+        cGlow.addColorStop(0.5, `rgba(${glR},${glG},${glB},${0.22 * canopyLantern})`);
+        cGlow.addColorStop(1, `rgba(${glR},${glG},${glB},0)`);
+        ctx.fillStyle = cGlow;
+        ctx.beginPath();
+        ctx.arc(-100, -34, 130, 0, Math.PI * 2);
+        ctx.fill();
+
+        ctx.fillStyle = `rgba(198, 59, 54, ${0.88 * canopyLantern})`;
+        ctx.beginPath();
+        ctx.ellipse(-155, -33, 5.5, 7.5, 0, 0, Math.PI * 2);
+        ctx.fill();
+      }
+
+      // D. MAIN WOODEN HULL, TWO SEATED PASSENGERS & MEDITATIVE ROWING BOATMAN
+      ctx.fillStyle = `rgba(${hlR},${hlG},${hlB},0.95)`;
+      drawBoatSilhouetteGeometry(ctx, true, oarAngle, glideActivity, timeSec);
+
+      ctx.strokeStyle = `rgba(${mdR},${mdG},${mdB},0.75)`;
+      ctx.lineWidth = 2.2;
+      ctx.beginPath();
+      ctx.moveTo(-125, -14);
+      ctx.quadraticCurveTo(0, -10, 130, -15);
+      ctx.stroke();
+
+      ctx.restore();
+    }
+
+    function drawBoatSilhouetteGeometry(ctx, includeFineDetails, oarAngle, glideActivity, timeSec) {
+      // 1. Long Curved Wooden Hull
+      ctx.beginPath();
+      ctx.moveTo(-188, -25);
+      ctx.quadraticCurveTo(-142, -14, -75, -14);
+      ctx.lineTo(118, -15);
+      ctx.quadraticCurveTo(162, -17, 188, -28);
+      ctx.quadraticCurveTo(158, -3, 112, 1);
+      ctx.lineTo(-92, 1);
+      ctx.quadraticCurveTo(-148, -2, -188, -25);
+      ctx.closePath();
+      ctx.fill();
+
+      const nod1 = Math.sin(timeSec * 1.1) * 0.6;
+      const nod2 = Math.cos(timeSec * 1.3) * 0.6;
+
+      // 2. Seated Passenger 1
+      ctx.beginPath();
+      ctx.arc(-92, -37 + nod1, 5.2, 0, Math.PI * 2);
+      ctx.moveTo(-104, -14);
+      ctx.quadraticCurveTo(-102, -31, -92, -33);
+      ctx.quadraticCurveTo(-82, -30, -80, -14);
+      ctx.closePath();
+      ctx.fill();
+
+      // 3. Seated Passenger 2
+      ctx.beginPath();
+      ctx.arc(-64, -39 + nod2, 5.4, 0, Math.PI * 2);
+      ctx.moveTo(-74, -14);
+      ctx.quadraticCurveTo(-72, -33, -64, -35);
+      ctx.quadraticCurveTo(-53, -32, -52, -14);
+      ctx.closePath();
+      ctx.fill();
+
+      if (includeFineDetails) {
+        ctx.beginPath();
+        ctx.arc(-118, -17, 3.2, 0, Math.PI * 2);
+        ctx.arc(-22, -18, 4.2, 0, Math.PI * 2);
+        ctx.fill();
+      }
+
+      // 4. Standing Boatman at Stern (Gentle, meditative torso sway synced with slow oar sweep)
+      const torsoLean = Math.sin(nav.oarPhase - 0.35) * (1.1 + glideActivity * 1.3);
+      ctx.beginPath();
+      ctx.arc(129 + torsoLean, -54, 5.2, 0, Math.PI * 2);
+      ctx.moveTo(121, -15);
+      ctx.quadraticCurveTo(120 + torsoLean * 0.5, -38, 128 + torsoLean, -49);
+      ctx.quadraticCurveTo(138 + torsoLean * 0.5, -46, 138, -15);
+      ctx.closePath();
+      ctx.fill();
+
+      // 5. Long Diagonal Sculling Oar (Yuloh)
+      ctx.save();
+      ctx.translate(128 + torsoLean * 0.6, -34);
+      ctx.rotate(oarAngle);
+      ctx.lineWidth = 2.5;
+      ctx.strokeStyle = ctx.fillStyle;
+      ctx.beginPath();
+      ctx.moveTo(-14, 6);
+      ctx.lineTo(122, -22);
+      ctx.stroke();
+      ctx.restore();
+    }
+
+    // ============================================================================
+    // 9. SERENE BEZIER SKY FLIGHT & SOARING-PAUSE BIRD KINEMATICS
+    // ============================================================================
+    // Produces 2 slow, graceful wingbeats followed by a serene soaring glide pause
+    function computeSereneWingBeat(timeSec, phaseOffset, glideActivity) {
+      const cycleDuration = 4.6 - glideActivity * 0.6; // ~4.0 to 4.6 seconds per full flap-and-soar cycle
+      const u = ((timeSec + phaseOffset) % cycleDuration) / cycleDuration;
+      // First 58% of cycle: two smooth, unhurried sine wingbeats; Remaining 42%: serene open-wing soaring pause
+      if (u < 0.58) {
+        const angle = (u / 0.58) * Math.PI * 4;
+        const env = Math.sin((u / 0.58) * Math.PI); // Smooth envelope so wingbeat starts and ends softly
+        const flap = Math.sin(angle) * env;
+        const tipDelay = Math.sin(angle - 0.52) * env;
+        return { flap, tipDelay };
+      } else {
+        // Gentle thermal soaring hold
+        const soarBreath = Math.sin(((u - 0.58) / 0.42) * Math.PI) * 0.12;
+        return { flap: soarBreath, tipDelay: soarBreath * 0.8 };
+      }
+    }
+
+    function renderSereneBirds(ctx, pal, timeSec, revealT) {
+      if (revealT <= 0.01) return;
+      const [ikR, ikG, ikB] = pal.inkBlack;
+
+      ctx.save();
+      ctx.fillStyle = `rgba(${ikR},${ikG},${ikB},0.92)`;
+      ctx.strokeStyle = `rgba(${ikR},${ikG},${ikB},0.92)`;
+      ctx.lineCap = 'round';
+      ctx.lineJoin = 'round';
+
+      for (let i = 0; i < 4; i++) {
+        const b = nav.birds[i];
+        if (b.alpha < 0.02) continue;
+
+        // Gentle thermal figure-eight float around the interpolated Bezier trajectory
+        const floatX = Math.cos(timeSec * 0.75 + i * 1.9) * 6.5;
+        const floatY = Math.sin(timeSec * 0.95 + i * 2.1) * 4.2;
+
+        const { flap, tipDelay } = computeSereneWingBeat(timeSec, b.phaseOffset, nav.glideActivity);
+
+        ctx.save();
+        ctx.globalAlpha = Math.min(1, revealT) * b.alpha;
+        ctx.translate(b.x + floatX, b.y + floatY);
+        ctx.scale(b.scale, b.scale);
+        ctx.rotate(b.bank);
+
+        if (b.type === 'glider') {
+          ctx.beginPath();
+          ctx.moveTo(-8, 4);
+          ctx.lineTo(6, 2);
+          ctx.lineTo(12, 11);
+          ctx.lineTo(1, 9);
+          ctx.closePath();
+          ctx.fill();
+
+          // Left extended wing
+          ctx.beginPath();
+          ctx.moveTo(0, 5);
+          ctx.quadraticCurveTo(-24, 3 - flap * 4.2, -46, -2 - tipDelay * 8.5);
+          ctx.quadraticCurveTo(-24, 10 - flap * 1.8, 2, 8);
+          ctx.closePath();
+          ctx.fill();
+
+          // Right upward-swept calligraphic wing
+          ctx.beginPath();
+          ctx.moveTo(2, 5);
+          ctx.quadraticCurveTo(24, -10 + flap * 4.2, 44, -34 + tipDelay * 8.5);
+          ctx.quadraticCurveTo(30, -4 + flap * 1.8, 5, 8);
+          ctx.closePath();
+          ctx.fill();
+        } else if (b.type === 'banker') {
+          ctx.beginPath();
+          ctx.moveTo(0, 2);
+          ctx.quadraticCurveTo(-16, -12 - flap * 4.5, -30, -24 - tipDelay * 7.2);
+          ctx.quadraticCurveTo(-14, -2, 0, 6);
+          ctx.moveTo(0, 2);
+          ctx.quadraticCurveTo(16, 0 + flap * 3.8, 32, -4 + tipDelay * 6.5);
+          ctx.quadraticCurveTo(14, 6, 0, 6);
+          ctx.fill();
+        } else {
+          ctx.lineWidth = 4.6;
+          ctx.beginPath();
+          ctx.moveTo(-28, -8 - tipDelay * 5.8);
+          ctx.quadraticCurveTo(-11, -3 - flap * 2.2, 0, 5);
+          ctx.quadraticCurveTo(12, -4 - flap * 2.2, 29, -9 - tipDelay * 5.8);
+          ctx.stroke();
+        }
+
+        ctx.restore();
+      }
+      ctx.restore();
+    }
+
+    // ============================================================================
+    // 10. MAIN RENDER & SERENE TIMELINE LOOP
+    // ============================================================================
+    let lastFrameTime = null;
+
+    function animate(timestamp) {
+      if (!lastFrameTime) lastFrameTime = timestamp;
+      const dt = Math.min(0.05, (timestamp - lastFrameTime) * 0.001);
+      lastFrameTime = timestamp;
+      const timeSec = timestamp * 0.001;
+
+      const pal = PALETTES[currentTheme];
+      const slide = ONBOARDING_SLIDES[currentStep];
+
+      // 1. Update Progressive 4-Phase Painting Timelines (0.0 -> 1.0) for each active scene
+      for (let i = 0; i < NUM_STEPS; i++) {
+        if (scenePaintActive[i] && scenePaintProgress[i] < 1.0) {
+          const elapsed = timestamp - scenePaintStartTime[i];
+          const dur = Math.max(400, scenePaintDuration[i]);
+          scenePaintProgress[i] = Math.min(1.0, elapsed / dur);
+        }
+      }
+
+      // 2. Update Pure Ease-In-Out Camera, Boat & Bird Timeline Interpolation (Zero Spring Overshoot)
+      let targetGlideActivity = 0.0;
+      if (nav.inTransition) {
+        const rawT = Math.min(1.0, (timestamp - nav.startTime) / Math.max(300, nav.duration));
+        const easeT = sereneEaseInOut(rawT);
+
+        // Smooth bell curve (0 -> 1 -> 0) for subtle oar & bird glide depth
+        targetGlideActivity = Math.sin(rawT * Math.PI);
+
+        nav.camStep = nav.startCamStep + (nav.targetCamStep - nav.startCamStep) * easeT;
+        nav.boatX = nav.startBoatX + (nav.targetBoatX - nav.startBoatX) * easeT;
+        nav.boatY = nav.startBoatY + (nav.targetBoatY - nav.startBoatY) * easeT;
+        nav.boatScale = nav.startBoatScale + (nav.targetBoatScale - nav.startBoatScale) * easeT;
+        nav.canopyLantern = nav.startCanopyLantern + (nav.targetCanopyLantern - nav.startCanopyLantern) * easeT;
+        nav.sealHighlight = nav.startSealHighlight + (nav.targetSealHighlight - nav.startSealHighlight) * easeT;
+
+        // Evaluate quadratic Bezier sky trajectories for all 4 birds
+        const invT = 1 - easeT;
+        for (let i = 0; i < 4; i++) {
+          const b = nav.birds[i];
+          const prevX = b.x;
+          b.x = invT * invT * b.startX + 2 * invT * easeT * b.ctrlX + easeT * easeT * b.targetX;
+          b.y = invT * invT * b.startY + 2 * invT * easeT * b.ctrlY + easeT * easeT * b.targetY;
+          b.scale = b.startScale + (b.targetScale - b.startScale) * easeT;
+          b.alpha = b.startAlpha + (b.targetAlpha - b.startAlpha) * easeT;
+
+          // Gentle, heavily damped bank angle along the curve
+          const dx = b.x - prevX;
+          const desiredBank = Math.max(-0.14, Math.min(0.14, dx * 0.025));
+          b.bank += (desiredBank - b.bank) * 0.06;
+        }
+
+        if (rawT >= 1.0) {
+          nav.inTransition = false;
+        }
+      } else {
+        for (let i = 0; i < 4; i++) {
+          nav.birds[i].bank *= 0.94;
+        }
+      }
+
+      // Smoothly blend glideActivity so even mid-transition retargeting is imperceptibly gentle
+      nav.glideActivity += (targetGlideActivity - nav.glideActivity) * Math.min(1, dt * 2.2);
+
+      // Smooth pointer parallax
+      nav.pointerX += (nav.targetPointerX - nav.pointerX) * Math.min(1, dt * 2.5);
+      nav.pointerY += (nav.targetPointerY - nav.pointerY) * Math.min(1, dt * 2.5);
+
+      // 3. Meditative Boatman Sculling Oar Rhythm (slow, continuous, unhurried)
+      nav.oarPhase += dt * (1.05 + nav.glideActivity * 0.65);
+      const oarAngle = Math.sin(nav.oarPhase) * (0.042 + nav.glideActivity * 0.040);
+      const boatPitch = Math.cos(timeSec * 1.1) * 0.0032;
+
+      // Spawn calm, slowly expanding concentric water ripples behind the hull
+      const curSceneP = scenePaintProgress[currentStep];
+      if (curSceneP > 0.35 && timestamp - nav.lastRippleTime > (1450 - nav.glideActivity * 650)) {
+        nav.lastRippleTime = timestamp;
+        waterRipples.push({
+          x: nav.boatX + (Math.random() > 0.45 ? 135 : -135) + (Math.random() - 0.5) * 24,
+          y: nav.boatY + 6 + (Math.random() - 0.5) * 5,
+          r: 10,
+          maxR: currentStep === 6 ? 165 : (105 + nav.glideActivity * 35),
+          alpha: 0.22 + nav.glideActivity * 0.08
+        });
+      }
+
+      // Update HUD status text with current painting phase & glide state
+      const statusEl = document.getElementById('hud-brush-status');
+      if (statusEl) {
+        if (curSceneP < 0.995) {
+          const pct = Math.round(curSceneP * 100);
+          let phaseLabel = 'Mountain Washes';
+          if (curSceneP >= 0.70) phaseLabel = 'Fine Ink Details';
+          else if (curSceneP >= 0.50) phaseLabel = 'Trees & Blossoms';
+          else if (curSceneP >= 0.25) phaseLabel = 'Cliffs & Crags';
+          statusEl.textContent = `Painting ${phaseLabel} (${pct}%)`;
+        } else if (nav.inTransition) {
+          statusEl.textContent = `Gliding Serene to Scene ${currentStep + 1}...`;
+        } else {
+          statusEl.textContent = `Scene ${currentStep + 1} / 8 Complete`;
+        }
+      }
+
+      // Clear Wet Scenery & Crisp Detail canvases
+      wetCtx.clearRect(0, 0, W, H);
+      detailCtx.clearRect(0, 0, W, H);
+
+      const ptrX = nav.pointerX * 18;
+      const ptrY = nav.pointerY * 10;
+
+      // ==========================================================================
+      // PASS 1: 4-PHASE PROGRESSIVE PANORAMIC SCENERIES ON WET-BLEED CANVAS
+      // ==========================================================================
+      // Phase A (0% - 45%): Distant Mountain Ink Washes bloom outward & upward from mist
+      for (let i = 0; i < NUM_STEPS; i++) {
+        const rel = i - nav.camStep;
+        if (Math.abs(rel) > 1.6) continue;
+        const p = scenePaintProgress[i];
+        const phaseA = subPhaseEase(p, 0.00, 0.45);
+        const sxFar = rel * W * 0.55 + ptrX * 0.25;
+        const syFar = ptrY * 0.25;
+        drawCapillaryWashReveal(wetCtx, sceneryCaches[i].far.canvas, sxFar, syFar, phaseA, 480, 620, 980);
+      }
+
+      // Phase B (25% - 70%): Mid-ground hills & cliffs bleed into the paper grain
+      for (let i = 0; i < NUM_STEPS; i++) {
+        const rel = i - nav.camStep;
+        if (Math.abs(rel) > 1.45) continue;
+        const p = scenePaintProgress[i];
+        const phaseB = subPhaseEase(p, 0.25, 0.70);
+        const sxMid = rel * W * 0.78 + ptrX * 0.55;
+        const syMid = ptrY * 0.55;
+        drawCapillaryWashReveal(wetCtx, sceneryCaches[i].midWash.canvas, sxMid, syMid, phaseB, 540, 1040, 880);
+      }
+
+      // Live Drifting River Mist Veils
+      renderLiveMistVeils(wetCtx, pal, timeSec, ptrX * 0.65, ptrY * 0.65);
+
+      // Phase B/C/D: Foreground rocky promontories + Progressive Live Brushwork (Trunks, Blossoms, Waterfalls, Pagoda)
+      for (let i = 0; i < NUM_STEPS; i++) {
+        const rel = i - nav.camStep;
+        if (Math.abs(rel) > 1.3) continue;
+        const p = scenePaintProgress[i];
+        const rockP = subPhaseEase(p, 0.30, 0.72);
+        const sxMid = rel * W * 0.78 + ptrX * 0.55;
+        const syMid = ptrY * 0.55;
+        const sxNear = rel * W * 1.0 + ptrX * 0.90;
+        const syNear = ptrY * 0.90;
+
+        drawCapillaryWashReveal(wetCtx, sceneryCaches[i].nearRock.canvas, sxNear, syNear, rockP, 180, 1180, 920);
+        renderSceneryProgressiveBrushwork(wetCtx, detailCtx, i, pal, sxMid, syMid, sxNear, syNear, p, timeSec);
+      }
+
+      // ==========================================================================
+      // PASS 2: BOAT, BIRDS, RIPPLES, PETALS & CALLIGRAPHY ON DETAIL CANVAS
+      // ==========================================================================
+      const boatReveal = subPhaseEase(scenePaintProgress[0], 0.42, 0.85);
+
+      // 1. Slowly Expanding Concentric Ink Water Ripples
+      renderWaterRipples(detailCtx, pal, dt);
+
+      // 2. Serene River Sampan Boat
+      renderSampanBoat(
+        detailCtx,
+        pal,
+        nav.boatX + ptrX * 0.8,
+        nav.boatY + ptrY * 0.5,
+        nav.boatScale,
+        boatPitch,
+        oarAngle,
+        nav.glideActivity,
+        nav.canopyLantern,
+        timeSec,
+        boatReveal
+      );
+
+      // 3. Soaring Calligraphic Birds along Bezier sky arcs
+      renderSereneBirds(detailCtx, pal, timeSec, boatReveal);
+
+      // 4. Drifting Cinnabar Plum Blossom Petals (Step 4 UPI Slide)
+      if (slide.petalsActive || Math.abs(nav.camStep - 3) < 0.85) {
+        const petalAlpha = Math.max(0, 1 - Math.abs(nav.camStep - 3) * 1.2) * subPhaseEase(scenePaintProgress[3], 0.65, 1.0);
+        renderDriftingPlumPetals(detailCtx, pal, petalAlpha);
+      }
+
+      // 5. Progressive Top-Right Vertical Calligraphy & Cinnabar Red Seal
+      renderProgressiveCalligraphyAndSeal(detailCtx, pal, ptrX * 0.12, ptrY * 0.12, scenePaintProgress[0]);
+
+      // 6. Master Cinnabar Seal Gentle Pulse on Step 8 (Biometric Security)
+      if (nav.sealHighlight > 0.05) {
+        const [srR, srG, srB] = pal.sealRed;
+        const pulseR = 22 + ((timeSec * 16) % 38);
+        const pulseA = (1 - (pulseR - 22) / 38) * 0.42 * nav.sealHighlight;
+        detailCtx.save();
+        detailCtx.strokeStyle = `rgba(${srR},${srG},${srB},${pulseA})`;
+        detailCtx.lineWidth = 2.0;
+        detailCtx.beginPath();
+        detailCtx.arc(928 + ptrX * 0.12, 460 + ptrY * 0.12, pulseR, 0, Math.PI * 2);
+        detailCtx.stroke();
+        detailCtx.restore();
+      }
+
+      requestAnimationFrame(animate);
+    }
+
+    function renderLiveWaterfallShimmer(ctx, pal, offsetX, offsetY, timeSec, alpha) {
+      const [pr, pg, pb] = pal.paperRgb;
+      ctx.save();
+      ctx.globalAlpha = alpha * 0.72;
+      ctx.strokeStyle = `rgba(${pr},${pg},${pb},0.82)`;
+      ctx.lineCap = 'round';
+      for (let i = 0; i < 12; i++) {
+        const x = offsetX + 746 + (i * 5.6);
+        const yStart = offsetY + 745 + ((timeSec * 95 + i * 47) % 340);
+        const len = 32 + (i % 3) * 16;
+        if (yStart + len > offsetY + 1155) continue;
+        ctx.lineWidth = 2.0;
+        ctx.beginPath();
+        ctx.moveTo(x, yStart);
+        ctx.lineTo(x - 2.5, yStart + len);
+        ctx.stroke();
+      }
+      ctx.restore();
+    }
+
+    function renderLiveMistVeils(ctx, pal, timeSec, offsetX, offsetY) {
+      const [pr, pg, pb] = pal.paperRgb;
+      ctx.save();
+      const bands = [
+        { y: 845, h: 95,  a: 0.38 },
+        { y: 1085, h: 110, a: 0.44 },
+        { y: 1215, h: 85,  a: 0.32 }
+      ];
+      bands.forEach((b, i) => {
+        const xShift = Math.sin(timeSec * 0.18 + i * 2.1) * 42 + offsetX;
+        const by = b.y + offsetY;
+        const grad = ctx.createRadialGradient(W * 0.5 + xShift, by, 20, W * 0.5 + xShift, by, W * 0.65);
+        grad.addColorStop(0, `rgba(${pr},${pg},${pb},${b.a})`);
+        grad.addColorStop(1, `rgba(${pr},${pg},${pb},0)`);
+        ctx.fillStyle = grad;
+        ctx.fillRect(0, by - b.h, W, b.h * 2);
+      });
+      ctx.restore();
+    }
+
+    function renderWaterRipples(ctx, pal, dt) {
+      const [rfR, rfG, rfB] = pal.reflection;
+      ctx.save();
+      for (let i = waterRipples.length - 1; i >= 0; i--) {
+        const rp = waterRipples[i];
+        rp.r += dt * 22; // Slow, tranquil ripple expansion
+        rp.alpha -= dt * 0.048;
+        if (rp.alpha <= 0.005 || rp.r > rp.maxR) {
+          waterRipples.splice(i, 1);
+          continue;
+        }
+        ctx.strokeStyle = `rgba(${rfR},${rfG},${rfB},${rp.alpha})`;
+        ctx.lineWidth = 1.3;
+        ctx.beginPath();
+        ctx.ellipse(rp.x, rp.y, rp.r, rp.r * 0.18, 0, 0, Math.PI * 2);
+        ctx.stroke();
+      }
+      ctx.restore();
+    }
+
+    function renderDriftingPlumPetals(ctx, pal, alpha) {
+      if (alpha <= 0.01) return;
+      const [prR, prG, prB] = pal.plumRed;
+      ctx.save();
+      ctx.globalAlpha = alpha;
+      plumPetals.forEach(pt => {
+        pt.x += pt.vx;
+        pt.y += pt.vy;
+        pt.ang += pt.spin;
+        if (pt.x < -20) pt.x = W + 15;
+        if (pt.y > H * 0.82) {
+          pt.y = 420 + Math.random() * 200;
+          pt.x = 120 + Math.random() * 550;
+        }
+        ctx.save();
+        ctx.translate(pt.x, pt.y);
+        ctx.rotate(pt.ang);
+        ctx.fillStyle = `rgba(${prR},${prG},${prB},0.78)`;
+        ctx.beginPath();
+        ctx.ellipse(0, 0, pt.r, pt.r * 0.55, 0, 0, Math.PI * 2);
+        ctx.fill();
+        ctx.restore();
+      });
+      ctx.restore();
+    }
+
+    // ============================================================================
+    // 11. ANDROID WEBVIEW BRIDGE & SERENE STEP CONTROLLER
+    // ============================================================================
+    function startSceneInkPainting(stepIdx, customDuration) {
+      const preset = PACE_PRESETS[currentPaceIdx];
+      scenePaintProgress[stepIdx] = 0.0;
+      scenePaintActive[stepIdx] = 1;
+      scenePaintStartTime[stepIdx] = performance.now();
+      scenePaintDuration[stepIdx] = customDuration || preset.paintDuration;
+    }
+
+    window.setOnboardingStep = function(stepIndex, isInitialStartup = false) {
+      let idx = parseInt(stepIndex, 10);
+      if (isNaN(idx)) return;
+      idx = Math.max(0, Math.min(7, idx));
+
+      const now = performance.now();
+      const preset = PACE_PRESETS[currentPaceIdx];
+      const slide = ONBOARDING_SLIDES[idx];
+
+      // Always progressively paint the destination scenery as the user journeys into it
+      if (isInitialStartup) {
+        startSceneInkPainting(idx, preset.startupDuration);
+      } else if (idx !== currentStep || scenePaintProgress[idx] < 0.1) {
+        startSceneInkPainting(idx, preset.paintDuration);
+      }
+
+      currentStep = idx;
+
+      if (isInitialStartup) {
+        nav.inTransition = false;
+        nav.camStep = idx;
+        nav.boatX = slide.boatX;
+        nav.boatY = slide.boatY;
+        nav.boatScale = slide.boatScale;
+        nav.canopyLantern = slide.canopyLantern;
+        nav.sealHighlight = slide.sealHighlight;
+        for (let i = 0; i < 4; i++) {
+          const tBird = i < 3 ? slide.birdFormation[i] : slide.fourthBird;
+          if (tBird) {
+            nav.birds[i].x = tBird.x;
+            nav.birds[i].y = tBird.y;
+            nav.birds[i].scale = tBird.scale;
+            nav.birds[i].alpha = 1.0;
+          } else {
+            nav.birds[i].alpha = 0.0;
+          }
+        }
+      } else {
+        // Smoothly retarget from the exact current interpolated coordinates (zero jump or speed boost)
+        nav.startTime = now;
+        nav.duration = preset.glideDuration;
+        nav.inTransition = true;
+
+        nav.startCamStep = nav.camStep;
+        nav.targetCamStep = idx;
+
+        nav.startBoatX = nav.boatX;
+        nav.startBoatY = nav.boatY;
+        nav.startBoatScale = nav.boatScale;
+        nav.targetBoatX = slide.boatX;
+        nav.targetBoatY = slide.boatY;
+        nav.targetBoatScale = slide.boatScale;
+
+        nav.startCanopyLantern = nav.canopyLantern;
+        nav.targetCanopyLantern = slide.canopyLantern;
+
+        nav.startSealHighlight = nav.sealHighlight;
+        nav.targetSealHighlight = slide.sealHighlight;
+
+        // Set up smooth arched Bezier flight paths for each bird
+        for (let i = 0; i < 4; i++) {
+          const b = nav.birds[i];
+          const tBird = i < 3 ? slide.birdFormation[i] : slide.fourthBird;
+          b.startX = b.x;
+          b.startY = b.y;
+          b.startScale = b.scale;
+          b.startAlpha = b.alpha;
+
+          if (tBird) {
+            b.targetX = tBird.x;
+            b.targetY = tBird.y;
+            b.targetScale = tBird.scale;
+            b.targetAlpha = 1.0;
+            // Gentle upward sky arc control point
+            b.ctrlX = (b.startX + tBird.x) * 0.5;
+            b.ctrlY = Math.min(b.startY, tBird.y) - 42 - i * 12;
+          } else {
+            b.targetX = b.x + 40;
+            b.targetY = b.y - 25;
+            b.targetScale = b.scale;
+            b.targetAlpha = 0.0;
+            b.ctrlX = b.x + 20;
+            b.ctrlY = b.y - 15;
+          }
+        }
+      }
+
+      updateHudUI();
+    };
+
+    window.updateProgress = function(stepNumber) {
+      const num = parseInt(stepNumber, 10);
+      if (isNaN(num)) return;
+      const idx = num >= 1 && num <= 8 ? num - 1 : 0;
+      window.setOnboardingStep(idx);
+    };
+
+    window.nextOnboardingStep = function() {
+      window.setOnboardingStep((currentStep + 1) % 8);
+    };
+    window.nextStep = window.nextOnboardingStep;
+
+    window.prevOnboardingStep = function() {
+      window.setOnboardingStep((currentStep + 7) % 8);
+    };
+    window.prevStep = window.prevOnboardingStep;
+
+    window.replayPainting = function() {
+      startSceneInkPainting(currentStep, PACE_PRESETS[currentPaceIdx].paintDuration);
+    };
+    window.replayStartupPainting = window.replayPainting;
+    window.replayCurrentStep = window.replayPainting;
+
+    window.cycleGlidePace = function() {
+      currentPaceIdx = (currentPaceIdx + 1) % PACE_PRESETS.length;
+      const preset = PACE_PRESETS[currentPaceIdx];
+      const lbl = document.getElementById('pace-label');
+      if (lbl) lbl.textContent = preset.label;
+      if (autoJourneyTimer) {
+        window.toggleAutoJourney();
+        window.toggleAutoJourney();
+      }
+    };
+
+    window.toggleAutoJourney = function() {
+      const dot = document.getElementById('auto-journey-dot');
+      const label = document.getElementById('auto-journey-label');
+      if (autoJourneyTimer) {
+        clearInterval(autoJourneyTimer);
+        autoJourneyTimer = null;
+        if (dot) dot.classList.add('opacity-50');
+        if (label) label.textContent = 'Auto-Journey';
+      } else {
+        const intervalMs = PACE_PRESETS[currentPaceIdx].glideDuration + 1400;
+        window.nextOnboardingStep();
+        autoJourneyTimer = setInterval(() => {
+          window.nextOnboardingStep();
+        }, intervalMs);
+        if (dot) dot.classList.remove('opacity-50');
+        if (label) label.textContent = 'Playing...';
+      }
+    };
+
+    window.setPaperTheme = function(themeName) {
+      if (themeName !== 'light' && themeName !== 'dark') return;
+      currentTheme = themeName;
+      renderXuanPaperAndGrain();
+      buildAllEightSceneries();
+      updateHudUI();
+    };
+
+    window.togglePaperTheme = function() {
+      window.setPaperTheme(currentTheme === 'light' ? 'dark' : 'light');
+    };
+
+    window.toggleMockAndroidCard = function() {
+      mockUiVisible = !mockUiVisible;
+      const card = document.getElementById('mock-android-ui');
+      const btn = document.getElementById('btn-toggle-mock');
+      if (mockUiVisible) {
+        card.classList.remove('opacity-0', 'translate-y-4');
+        card.classList.add('opacity-100', 'translate-y-0');
+        btn.classList.add('border-[#c43b38]', 'text-[#c43b38]');
+      } else {
+        card.classList.add('opacity-0', 'translate-y-4');
+        card.classList.remove('opacity-100', 'translate-y-0');
+        btn.classList.remove('border-[#c43b38]', 'text-[#c43b38]');
+      }
+    };
+
+    window.toggleHud = function(forceState) {
+      hudVisible = typeof forceState === 'boolean' ? forceState : !hudVisible;
+      document.body.classList.toggle('hud-hidden', !hudVisible);
+      const restoreBtn = document.getElementById('btn-restore-hud');
+      if (restoreBtn) restoreBtn.classList.toggle('hidden', hudVisible);
+    };
+    window.setHudVisible = window.toggleHud;
+
+    // ============================================================================
+    // 12. HUD STEPPER & TOUCH / KEYBOARD INTERACTIONS
+    // ============================================================================
+    function buildStepButtons() {
+      const container = document.getElementById('step-dots-container');
+      if (!container) return;
+      container.innerHTML = '';
+
+      ONBOARDING_SLIDES.forEach((s, idx) => {
+        const btn = document.createElement('button');
+        btn.className = 'step-node h-8 rounded-lg flex flex-col items-center justify-center border text-[10px] font-medium transition-all';
+        btn.onclick = () => window.setOnboardingStep(idx);
+        btn.innerHTML = `
+          <span class="font-serif-east text-[11px] leading-none">${s.kanji}</span>
+          <span class="font-mono text-[8px] opacity-65 mt-0.5">${idx + 1}</span>
+        `;
+        btn.title = `${s.featureTag} — ${s.motifDesc}`;
+        container.appendChild(btn);
+      });
+    }
+
+    function updateHudUI() {
+      const slide = ONBOARDING_SLIDES[currentStep];
+      const sn = document.getElementById('hud-slide-num');
+      if (!sn) return;
+      sn.textContent = `0${slide.stepNumber}/08`;
+      document.getElementById('hud-slide-name').textContent = slide.shortTitle;
+      document.getElementById('hud-kanji').textContent = slide.kanji;
+      document.getElementById('hud-motif-desc').textContent = slide.motifDesc;
+
+      document.getElementById('mock-step-badge').textContent = `STEP 0${slide.stepNumber} / 08`;
+      document.getElementById('mock-jp-seal').textContent = slide.jpSeal;
+      document.getElementById('mock-slide-title').textContent = slide.uiTitle;
+      document.getElementById('mock-slide-desc').textContent = slide.uiDesc;
+      document.getElementById('mock-permission-tag').textContent = slide.featureTag;
+
+      const nodes = document.querySelectorAll('#step-dots-container .step-node');
+      nodes.forEach((node, idx) => {
+        if (idx === currentStep) {
+          node.className = 'step-node active h-8 rounded-lg flex flex-col items-center justify-center border border-[#c43b38] bg-[#c43b38]/15 text-[#c43b38] font-semibold shadow-sm';
+        } else if (idx < currentStep) {
+          node.className = 'step-node h-8 rounded-lg flex flex-col items-center justify-center border border-current/15 bg-current/5 opacity-85';
+        } else {
+          node.className = 'step-node h-8 rounded-lg flex flex-col items-center justify-center border border-current/10 bg-transparent opacity-45 hover:opacity-80';
+        }
+      });
+    }
+
+    function setupInteractions() {
+      const stage = document.getElementById('interaction-layer');
+      let touchStartX = null;
+      let touchStartY = null;
+
+      stage.addEventListener('pointermove', (e) => {
+        const rect = stage.getBoundingClientRect();
+        nav.targetPointerX = -(((e.clientX - rect.left) / rect.width) - 0.5);
+        nav.targetPointerY = -(((e.clientY - rect.top) / rect.height) - 0.5);
+      });
+
+      stage.addEventListener('pointerleave', () => {
+        nav.targetPointerX = 0;
+        nav.targetPointerY = 0;
+      });
+
+      stage.addEventListener('pointerdown', (e) => {
+        touchStartX = e.clientX;
+        touchStartY = e.clientY;
+
+        const rect = stage.getBoundingClientRect();
+        const lx = ((e.clientX - rect.left) / rect.width) * W;
+        const ly = ((e.clientY - rect.top) / rect.height) * H;
+        if (ly > 1150) {
+          waterRipples.push({ x: lx, y: ly, r: 8, maxR: 115, alpha: 0.28 });
+        }
+      });
+
+      stage.addEventListener('pointerup', (e) => {
+        if (touchStartX === null) return;
+        const dx = e.clientX - touchStartX;
+        const dy = e.clientY - touchStartY;
+        if (Math.abs(dx) > 40 && Math.abs(dx) > Math.abs(dy) * 1.2) {
+          if (dx < 0 && currentStep < 7) window.setOnboardingStep(currentStep + 1);
+          else if (dx > 0 && currentStep > 0) window.setOnboardingStep(currentStep - 1);
+        }
+        touchStartX = null;
+        touchStartY = null;
+      });
+
+      window.addEventListener('keydown', (e) => {
+        if (e.key === 'ArrowRight') window.nextOnboardingStep();
+        else if (e.key === 'ArrowLeft') window.prevOnboardingStep();
+        else if (e.key >= '1' && e.key <= '8') window.setOnboardingStep(parseInt(e.key, 10) - 1);
+        else if (e.key === ' ') { e.preventDefault(); window.toggleAutoJourney(); }
+        else if (e.key === 'r' || e.key === 'R') window.replayPainting();
+        else if (e.key === 'p' || e.key === 'P') window.cycleGlidePace();
+        else if (e.key === 't' || e.key === 'T') window.togglePaperTheme();
+        else if (e.key === 'h' || e.key === 'H') window.toggleHud();
+        else if (e.key === 'u' || e.key === 'U') window.toggleMockAndroidCard();
+      });
+    }
+
+    // ============================================================================
+    // 13. INITIALIZATION
+    // ============================================================================
+    window.onload = function() {
+      wetSceneryCanvas.width = W;
+      wetSceneryCanvas.height = H;
+      detailSceneCanvas.width = W;
+      detailSceneCanvas.height = H;
+
+      const params = new URLSearchParams(window.location.search);
+      if (params.get('webview') === 'true' || params.get('hud') === '0' || window.AndroidBridge) {
+        document.body.classList.add('webview-mode');
+      }
+      if (params.get('theme') === 'dark') {
+        currentTheme = 'dark';
+      }
+
+      renderXuanPaperAndGrain();
+      buildAllEightSceneries();
+      buildStepButtons();
+      setupInteractions();
+
+      const initialStep = params.get('step') ? parseInt(params.get('step'), 10) : 0;
+      window.setOnboardingStep(initialStep, true);
+
+      requestAnimationFrame(animate);
+    };
+  </script>
+</body>
+</html>

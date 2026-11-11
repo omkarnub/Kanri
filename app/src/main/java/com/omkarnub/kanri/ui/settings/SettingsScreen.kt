@@ -62,6 +62,7 @@ import androidx.compose.material.icons.filled.Refresh
 import androidx.compose.material.icons.filled.Replay
 import androidx.compose.material.icons.filled.Security
 import androidx.compose.material.icons.filled.Shield
+import androidx.compose.material.icons.filled.SwapVert
 import androidx.compose.material.icons.filled.Tune
 import androidx.compose.material.icons.filled.Visibility
 import androidx.compose.material.icons.filled.VisibilityOff
@@ -206,6 +207,7 @@ fun SettingsScreen(
     var categoryToEdit by remember { mutableStateOf<CategoryEntity?>(null) }
     var categoryToDelete by remember { mutableStateOf<CategoryEntity?>(null) }
     var showCreateCategoryDialog by remember { mutableStateOf(false) }
+    var showCategoryReorderSheet by remember { mutableStateOf(false) }
 
     var showWalletSetupDialog by remember { mutableStateOf(false) }
     var walletToCorrect by remember { mutableStateOf<String?>(null) }
@@ -426,6 +428,54 @@ fun SettingsScreen(
                     Toast.makeText(context, "Category created", Toast.LENGTH_SHORT).show()
                 }
             }
+        )
+    }
+
+    if (showCategoryReorderSheet) {
+        CategoryReorderSheet(
+            allCategories = allCategories,
+            onMoveUp = { cat ->
+                val idx = allCategories.indexOfFirst { it.id == cat.id }
+                if (idx > 0) {
+                    val prev = allCategories[idx - 1]
+                    scope.launch {
+                        val order1 = if (prev.displayOrder != 0) prev.displayOrder else idx
+                        val order2 = if (cat.displayOrder != 0) cat.displayOrder else (idx + 1)
+                        db.categoryDao().updateCategoryOrder(cat.id, order1)
+                        db.categoryDao().updateCategoryOrder(prev.id, order2)
+                    }
+                }
+            },
+            onMoveDown = { cat ->
+                val idx = allCategories.indexOfFirst { it.id == cat.id }
+                if (idx < allCategories.size - 1) {
+                    val next = allCategories[idx + 1]
+                    scope.launch {
+                        val order1 = if (next.displayOrder != 0) next.displayOrder else (idx + 2)
+                        val order2 = if (cat.displayOrder != 0) cat.displayOrder else (idx + 1)
+                        db.categoryDao().updateCategoryOrder(cat.id, order1)
+                        db.categoryDao().updateCategoryOrder(next.id, order2)
+                    }
+                }
+            },
+            onResetOrder = {
+                scope.launch {
+                    allCategories.forEachIndexed { i, c ->
+                        db.categoryDao().updateCategoryOrder(c.id, i + 1)
+                    }
+                    Toast.makeText(context, "Order reset to default", Toast.LENGTH_SHORT).show()
+                }
+            },
+            onEditCategory = { cat ->
+                categoryToEdit = cat
+            },
+            onDeleteCategory = { cat ->
+                categoryToDelete = cat
+            },
+            onCreateNewCategory = {
+                showCreateCategoryDialog = true
+            },
+            onDismiss = { showCategoryReorderSheet = false }
         )
     }
 
@@ -1070,6 +1120,16 @@ fun SettingsScreen(
                     subtitle = "${merchantRules.size} merchant category mappings active",
                     icon = Icons.Default.AutoFixHigh,
                     onClick = { showMerchantRulesScreen = true }
+                )
+
+                SettingsDivider()
+
+                // Edit Category Order (Which category shows first and last)
+                SettingsRow(
+                    title = "Edit Category Order",
+                    subtitle = "Customize which categories show first and last across the app",
+                    icon = Icons.Default.SwapVert,
+                    onClick = { showCategoryReorderSheet = true }
                 )
 
                 SettingsDivider()

@@ -162,11 +162,20 @@ fun sortCategoriesWithPriority(categories: List<CategoryEntity>): List<CategoryE
         val n = it.name.lowercase().trim()
         if (n == "transport") "transport & fuel" else n
     }
-    return deduplicated.sortedWith(
-        compareBy<CategoryEntity>({ priorityScore(it) })
-            .thenByDescending { it.id } // Newest custom categories first
-            .thenBy { it.name }
-    )
+    val hasCustomOrder = deduplicated.any { it.displayOrder > 0 }
+    return if (hasCustomOrder) {
+        deduplicated.sortedWith(
+            compareBy<CategoryEntity> { it.displayOrder }
+                .thenBy { it.id }
+                .thenBy { it.name }
+        )
+    } else {
+        deduplicated.sortedWith(
+            compareBy<CategoryEntity>({ priorityScore(it) })
+                .thenByDescending { it.id } // Newest custom categories first
+                .thenBy { it.name }
+        )
+    }
 }
 
 @OptIn(ExperimentalMaterial3Api::class)

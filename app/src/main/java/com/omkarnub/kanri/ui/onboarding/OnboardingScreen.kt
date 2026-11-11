@@ -72,6 +72,11 @@ import com.omkarnub.kanri.util.SmsPermissionHelper
 import android.content.Intent
 import android.os.Build
 import android.provider.Settings
+import android.view.View
+import android.view.ViewGroup
+import android.webkit.WebSettings
+import android.webkit.WebView
+import androidx.compose.ui.viewinterop.AndroidView
 import androidx.core.app.NotificationManagerCompat
 import com.omkarnub.kanri.util.BatteryOptimizationHelper
 import androidx.compose.material3.Button
@@ -239,20 +244,75 @@ fun OnboardingScreen(
         )
     }
 
-    if (currentSlide == 0) {
-        HeroSlide(
-            onGetStarted = {
-                haptics.click()
-                currentSlide = 1
-            }
+    var webViewInstance by remember { mutableStateOf<WebView?>(null) }
+    val themePrefs = remember { ThemePreferences.getInstance(context) }
+    val themeMode by themePrefs.themeModeFlow.collectAsState()
+    val isLight = themeMode == ThemeMode.LIGHT
+
+    LaunchedEffect(currentSlide, webViewInstance) {
+        webViewInstance?.evaluateJavascript(
+            "if (window.setOnboardingStep) window.setOnboardingStep($currentSlide);",
+            null
         )
-    } else {
-        Column(
-            modifier = modifier
-                .fillMaxSize()
-                .background(MaterialTheme.colorScheme.background)
-                .statusBarsPadding()
-        ) {
+    }
+
+    LaunchedEffect(isLight, webViewInstance) {
+        val paperTheme = if (isLight) "light" else "dark"
+        webViewInstance?.evaluateJavascript(
+            "if (window.setPaperTheme) window.setPaperTheme('$paperTheme');",
+            null
+        )
+    }
+
+    Box(modifier = modifier.fillMaxSize()) {
+        // Continuous 8-Step Panoramic Shan Shui Living Scroll Background
+        AndroidView(
+            factory = { ctx ->
+                WebView(ctx).apply {
+                    webViewInstance = this
+                    layoutParams = ViewGroup.LayoutParams(
+                        ViewGroup.LayoutParams.MATCH_PARENT,
+                        ViewGroup.LayoutParams.MATCH_PARENT
+                    )
+                    settings.apply {
+                        javaScriptEnabled = true
+                        domStorageEnabled = false
+                        allowFileAccess = true
+                        allowContentAccess = false
+                        cacheMode = WebSettings.LOAD_NO_CACHE
+                        loadWithOverviewMode = true
+                        useWideViewPort = true
+                    }
+                    setBackgroundColor(android.graphics.Color.TRANSPARENT)
+                    setLayerType(View.LAYER_TYPE_HARDWARE, null)
+                    isClickable = false
+                    isFocusable = false
+                    isVerticalScrollBarEnabled = false
+                    isHorizontalScrollBarEnabled = false
+                    setOnTouchListener { _, _ -> false }
+                    loadUrl("file:///android_asset/backgrounds/shan_shui_onboarding.html")
+                }
+            },
+            update = { webView ->
+                webViewInstance = webView
+            },
+            modifier = Modifier.fillMaxSize()
+        )
+
+        if (currentSlide == 0) {
+            HeroSlide(
+                onGetStarted = {
+                    haptics.click()
+                    currentSlide = 1
+                }
+            )
+        } else {
+            Column(
+                modifier = Modifier
+                    .fillMaxSize()
+                    .background(Color.Transparent)
+                    .statusBarsPadding()
+            ) {
             // Persistent top Stepper header for each slider
             Row(
                 modifier = Modifier
@@ -472,6 +532,7 @@ fun OnboardingScreen(
 }
 }
 }
+}
 
 // ─── Slide 0: Redesigned Hero / Know Where Every Rupee Went ───────────────
 
@@ -559,13 +620,8 @@ private fun HeroSlide(onGetStarted: () -> Unit) {
     Box(
         modifier = Modifier
             .fillMaxSize()
-            .background(if (tokens != null) Color.Transparent else MaterialTheme.colorScheme.background)
+            .background(Color.Transparent)
     ) {
-        // 1. Background: Full-bleed animated mesh gradient + film grain with pulse hook
-        GrainGradientBackground(
-            modifier = Modifier.fillMaxSize()
-        )
-
         // Single Column layout respecting WindowInsets and edge-to-edge
         Box(
             modifier = Modifier
@@ -584,27 +640,18 @@ private fun HeroSlide(onGetStarted: () -> Unit) {
                 horizontalAlignment = Alignment.Start,
                 verticalArrangement = Arrangement.SpaceBetween
             ) {
-                // Top block: Top bar area (~8% height) + Hero Zone (45-50% height) + Text block
+                // Top block: Intro Logo + Hero Zone + Text block
                 Column(
                     modifier = Modifier.fillMaxWidth(),
                     horizontalAlignment = Alignment.Start
                 ) {
-                    // 2. Top bar area: small Kanri wordmark (~20sp height)
-                    Box(
+                    // ChapterPlayer-inspired Kanri Intro Animation: Mark lands large with exponential ease, settles into lockup, letters rise & sharpen
+                    KanriIntroLogo(
+                        isLight = isLight,
                         modifier = Modifier
                             .fillMaxWidth()
-                            .padding(top = 8.dp, bottom = 12.dp),
-                        contentAlignment = Alignment.CenterStart
-                    ) {
-                        Text(
-                            text = "KANRI",
-                            fontFamily = Panchang,
-                            fontWeight = FontWeight.Bold,
-                            fontSize = 20.sp,
-                            letterSpacing = 2.5.sp,
-                            color = MaterialTheme.colorScheme.onSurface
-                        )
-                    }
+                            .padding(top = 12.dp, bottom = 8.dp)
+                    )
 
                     Spacer(modifier = Modifier.height(12.dp))
 
@@ -806,17 +853,30 @@ private fun PermissionSlide(
     onSkip: () -> Unit,
     isLastSlide: Boolean = false
 ) {
+    val tokens = com.omkarnub.kanri.ui.theme.LocalKanriGlass.current
+
     Box(
-        modifier = Modifier.fillMaxSize()
+        modifier = Modifier
+            .fillMaxSize()
+            .padding(horizontal = 20.dp),
+        contentAlignment = Alignment.Center
     ) {
-        // Content
-        Column(
-            modifier = Modifier
-                .fillMaxSize()
-                .padding(horizontal = 32.dp),
-            horizontalAlignment = Alignment.CenterHorizontally,
-            verticalArrangement = Arrangement.Center
+        Surface(
+            shape = RoundedCornerShape(24.dp),
+            color = tokens?.tintStrong ?: MaterialTheme.colorScheme.surface.copy(alpha = 0.85f),
+            border = BorderStroke(
+                1.dp,
+                tokens?.borderStart ?: MaterialTheme.colorScheme.outlineVariant.copy(alpha = 0.25f)
+            ),
+            modifier = Modifier.fillMaxWidth()
         ) {
+            Column(
+                modifier = Modifier
+                    .fillMaxWidth()
+                    .padding(horizontal = 24.dp, vertical = 32.dp),
+                horizontalAlignment = Alignment.CenterHorizontally,
+                verticalArrangement = Arrangement.Center
+            ) {
             // Clean monochrome icon circle
             Box(
                 modifier = Modifier
@@ -913,6 +973,7 @@ private fun PermissionSlide(
                     fontSize = 14.sp
                 )
             }
+        }
         }
 
         // Bottom navigation: dots + next/skip

@@ -177,6 +177,8 @@ class DeduplicationLogicTest {
         override suspend fun deleteAllMappings() {}
         override suspend fun deleteAllCategories() {}
         override suspend fun updateCategory(category: CategoryEntity) {}
+        override suspend fun updateCategories(categories: List<CategoryEntity>) {}
+        override suspend fun updateCategoryOrder(id: Long, order: Int) {}
         override suspend fun deleteCategoryById(id: Long) {}
         override suspend fun deleteMappingsForCategory(categoryId: Long) {}
     }

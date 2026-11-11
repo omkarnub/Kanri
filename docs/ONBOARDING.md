@@ -1,31 +1,55 @@
 # Kanri Onboarding & Stepper System
 
-Current Version: **1.13.0** (Build 39)
+Current Version: **1.16.0** (Build 48)
 
 ## 1. Overview
 The Kanri onboarding experience guides new users through permissions, personal profile configuration, and security settings with transparency, privacy assurances, and immediate tactile feedback.
 
-In version 1.13.0, the onboarding flow is powered by an interactive Jetpack Compose **Stepper** navigation architecture inspired by modern accessible Stepper design patterns.
+In version 1.16.0, the onboarding flow features:
+- An interactive Jetpack Compose **Stepper** navigation architecture inspired by modern accessible Stepper design patterns.
+- An edge-to-edge **Panoramic Shan Shui Living Scroll Background** (`shan_shui_onboarding.html`) with 8 sceneries synchronized with the user's progress through the onboarding steps.
+- A **ChapterPlayer Kinetic Intro Logo** (`KanriIntroLogo.kt`) with exponential ease landing, staggered letter reveals, and tagline appearance on the Hero slide.
 
 ---
 
-## 2. Onboarding Slide Structure
-The onboarding sequence consists of a Hero intro followed by 7 setup slides:
+## 2. Onboarding Slide Structure & Panoramic Living Scroll
+The onboarding sequence consists of a Hero intro followed by 7 setup slides, with each slide mapped directly to an individual hand-crafted panoramic scenery:
 
-| Step | Slide | Title | Purpose |
-|------|-------|-------|---------|
-| — | **Hero** | *Take Control of Your Money* | Welcomes the user, explains offline-first philosophy, and provides the "Get Started" CTA. |
-| 1 | **Profile** | *Set Up Your Profile* | Captures user display name, preferred avatar, and optional monthly budget cap. |
-| 2 | **SMS** | *SMS Detection* | Requests `READ_SMS` and `RECEIVE_SMS` for offline bank debit/credit parsing. |
-| 3 | **Apps** | *Payment App Notifications* | Guides user to grant Notification Listener access for PhonePe, GPay, Paytm, CRED, etc. |
-| 4 | **Overlay** | *Quick Entry Overlay* | Prompts for `SYSTEM_ALERT_WINDOW` permission to enable the instant floating entry pad. |
-| 5 | **Battery** | *Background Reliability* | Requests battery optimization exemption (`REQUEST_IGNORE_BATTERY_OPTIMIZATIONS`) for auto-rebind. |
-| 6 | **Alerts** | *Spending Reminders* | Configures daily budget pacing alerts and scheduled digests (`POST_NOTIFICATIONS`). |
-| 7 | **Lock** | *App Lock & Biometrics* | Enables optional biometric or device PIN authentication on app resume. |
+| Step | Slide | Title | Living Scroll Scenery | Purpose |
+|------|-------|-------|-----------------------|---------|
+| 0 | **Hero** | *Take Control of Your Money* | **Twin Peaks & Dawn Clouds** | ChapterPlayer kinetic logo landing, offline-first philosophy, and "Get Started" CTA. |
+| 1 | **Profile** | *Set Up Your Profile* | **Scholar's Pine & Mountain Brook** | Captures user display name, preferred avatar, and optional monthly budget cap. |
+| 2 | **SMS** | *SMS Detection* | **Cloud Gorge Waterfalls & Rising Mist** | Requests `READ_SMS` and `RECEIVE_SMS` for offline bank debit/credit parsing. |
+| 3 | **Apps** | *Payment App Notifications* | **Cinnabar Plum with 4 Swallows** | Guides user to grant Notification Listener access for PhonePe, GPay, Paytm, CRED, etc. |
+| 4 | **Overlay** | *Quick Entry Overlay* | **Glowing Moonbridge & Silver Lanterns** | Prompts for `SYSTEM_ALERT_WINDOW` permission to enable the instant floating entry pad. |
+| 5 | **Battery** | *Background Reliability* | **Bamboo Sanctuary & Floating Fireflies** | Requests battery optimization exemption (`REQUEST_IGNORE_BATTERY_OPTIMIZATIONS`) for auto-rebind. |
+| 6 | **Alerts** | *Spending Reminders* | **Sunset Pavilion Ripples & Gold Horizon** | Configures daily budget pacing alerts and scheduled digests (`POST_NOTIFICATIONS`). |
+| 7 | **Lock** | *App Lock & Biometrics* | **Sacred Pagoda & Mountain Constellations** | Enables optional biometric or device PIN authentication on app resume. |
 
 ---
 
-## 3. Interactive Stepper Architecture (`Stepper.kt`)
+## 3. Panoramic Shan Shui Living Scroll (`shan_shui_onboarding.html`)
+- **Zero HUD & Controls**: All developer bars, chapter switchers, and audio controls are stripped for a pure wallpaper experience.
+- **Hardware-Accelerated 2D Canvas**: Renders ink wash mountains, pine branches, drifting mist, waterfall particles, and water reflections smoothly at 60fps.
+- **Dynamic Step Synchronization**: In `OnboardingScreen.kt`, the background `WebView` listens to step updates:
+  ```kotlin
+  webView.evaluateJavascript("window.setOnboardingStep($currentSlide);", null)
+  ```
+  The canvas translates with smooth cubic bezier camera easing between sceneries.
+- **Light & Dark Paper Adaptation**: Automatically responds to the active theme via `window.setPaperTheme('dark' | 'light')`.
+- **Touch Passthrough**: Pointer events are set to `none` on the interaction layer, allowing native Compose touches, swipes, and button taps to pass through without interference.
+
+---
+
+## 4. ChapterPlayer Kinetic Intro Logo (`KanriIntroLogo.kt`)
+On Slide 0 (Hero slide), the static app icon is replaced by an expressive, physics-driven kinetic entrance:
+1. **Monogram Mark Landing**: Scale springs from `2.2f` down to `1.0f` using exponential ease (`CubicBezierEasing(0.16f, 1f, 0.3f, 1f)`), accompanied by a soft specular rim glow.
+2. **Kinetic Typography Stagger**: The letters **K - A - N - R - I** in Panchang font rise from `+16dp` offset with opacity fades staggered at 75ms intervals.
+3. **Subhead & Tagline Reveal**: Follows with a smooth fade & upward slide of `"FINANCIAL SERENITY / Know where every rupee went."`
+
+---
+
+## 5. Interactive Stepper Architecture (`Stepper.kt`)
 
 Package: `com.omkarnub.kanri.ui.common.stepper`
 

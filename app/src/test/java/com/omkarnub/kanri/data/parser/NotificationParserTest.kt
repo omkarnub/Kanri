@@ -251,6 +251,43 @@ class NotificationParserTest {
             text = "Send money to get scratch card awaits. Chance to win big."
         )
         assertNull(rewardPromo)
+
+        // Amazon & Flipkart promotional cashback offers (Must NOT create credit entries)
+        val amazonCashbackOffer = NotificationParser.parse(
+            packageName = NotificationParser.PKG_AMAZON_IN,
+            title = "Amazon Pay: Cashback offer",
+            text = "Flat ₹250 cashback on your recharge. Limited period offer!"
+        )
+        assertNull(amazonCashbackOffer)
+
+        val flipkartCashbackOffer = NotificationParser.parse(
+            packageName = NotificationParser.PKG_FLIPKART,
+            title = "Flipkart",
+            text = "₹250 cashback waiting for you on Flipkart! Shop now & avail cashback"
+        )
+        assertNull(flipkartCashbackOffer)
+
+        val phonePePromoOffer = NotificationParser.parse(
+            packageName = NotificationParser.PKG_PHONEPE,
+            title = "Special Offer",
+            text = "Earn up to ₹250 cashback on electricity bill payment"
+        )
+        assertNull(phonePePromoOffer)
+    }
+
+    @Test
+    fun testAmazonPay_genuineCashbackCredited_parsesCorrectly() {
+        val parsed = NotificationParser.parse(
+            packageName = NotificationParser.PKG_AMAZON_IN,
+            title = "Amazon Pay",
+            text = "Cashback of ₹15 credited to your Amazon Pay balance. Ref 123456"
+        )
+        assertNotNull(parsed)
+        assertEquals(15.0, parsed!!.amount, 0.001)
+        assertEquals(TransactionType.CREDIT, parsed.type)
+        assertEquals("Cashback & Rewards", parsed.counterparty)
+        assertEquals("Amazon Pay", parsed.bank)
+        assertEquals("123456", parsed.refNo)
     }
 
     @Test

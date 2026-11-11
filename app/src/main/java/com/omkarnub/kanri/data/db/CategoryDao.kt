@@ -9,10 +9,10 @@ import kotlinx.coroutines.flow.Flow
 @Dao
 interface CategoryDao {
 
-    @Query("SELECT * FROM categories ORDER BY id ASC")
+    @Query("SELECT * FROM categories ORDER BY display_order ASC, id ASC")
     fun getAllCategories(): Flow<List<CategoryEntity>>
 
-    @Query("SELECT * FROM categories ORDER BY id ASC")
+    @Query("SELECT * FROM categories ORDER BY display_order ASC, id ASC")
     suspend fun getAllCategoriesSync(): List<CategoryEntity>
 
     @Query("SELECT * FROM categories WHERE name = :name LIMIT 1")
@@ -59,6 +59,12 @@ interface CategoryDao {
 
     @androidx.room.Update
     suspend fun updateCategory(category: CategoryEntity)
+
+    @androidx.room.Update
+    suspend fun updateCategories(categories: List<CategoryEntity>)
+
+    @Query("UPDATE categories SET display_order = :order WHERE id = :id")
+    suspend fun updateCategoryOrder(id: Long, order: Int)
 
     @Query("DELETE FROM categories WHERE id = :id")
     suspend fun deleteCategoryById(id: Long)
