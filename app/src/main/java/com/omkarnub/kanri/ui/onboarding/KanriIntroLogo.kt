@@ -133,6 +133,8 @@ fun KanriIntroLogo(
     LaunchedEffect(isExiting) {
         if (isExiting) {
             exitAnim.animateTo(1f, tween(320, easing = LinearEasing))
+        } else {
+            exitAnim.snapTo(0f)
         }
     }
 

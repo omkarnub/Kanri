@@ -2,6 +2,7 @@ package com.omkarnub.kanri.ui.onboarding
 
 import androidx.compose.foundation.BorderStroke
 import androidx.compose.foundation.background
+import androidx.compose.foundation.border
 import androidx.compose.foundation.layout.Arrangement
 import androidx.compose.foundation.layout.Box
 import androidx.compose.foundation.layout.Column
@@ -36,6 +37,7 @@ import androidx.compose.runtime.Composable
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.draw.clip
+import androidx.compose.ui.graphics.Brush
 import androidx.compose.ui.graphics.Color
 import androidx.compose.ui.graphics.vector.ImageVector
 import androidx.compose.ui.res.stringResource
@@ -61,9 +63,9 @@ fun OnboardingPrivacySheet(
         onDismissRequest = onDismiss,
         sheetState = sheetState,
         dragHandle = null,
-        containerColor = Color(0xFFFAF9F6),
-        contentColor = Color(0xFF1E2229),
-        scrimColor = Color.Black.copy(alpha = 0.35f),
+        containerColor = Color(0xFF141416).copy(alpha = 0.94f),
+        contentColor = Color.White,
+        scrimColor = Color.Black.copy(alpha = 0.50f),
         shape = RoundedCornerShape(topStart = 28.dp, topEnd = 28.dp),
         modifier = modifier
     ) {
@@ -85,7 +87,7 @@ fun OnboardingPrivacySheet(
                     fontFamily = Panchang,
                     fontWeight = FontWeight.Bold,
                     fontSize = 20.sp,
-                    color = Color(0xFF1E2229)
+                    color = Color.White
                 )
 
                 IconButton(
@@ -95,7 +97,7 @@ fun OnboardingPrivacySheet(
                     Icon(
                         imageVector = Icons.Default.Close,
                         contentDescription = stringResource(R.string.onboarding_privacy_close),
-                        tint = Color(0xFF555555),
+                        tint = Color.White.copy(alpha = 0.70f),
                         modifier = Modifier.size(20.dp)
                     )
                 }
@@ -132,7 +134,7 @@ fun OnboardingPrivacySheet(
 
             Spacer(modifier = Modifier.height(28.dp))
 
-            // Primary Dismiss Pill Button (High Contrast Solid Black with White Text)
+            // Primary Dismiss Glass Button (Frosted Glass with White Text)
             Button(
                 onClick = onDismiss,
                 modifier = Modifier
@@ -140,14 +142,24 @@ fun OnboardingPrivacySheet(
                     .height(52.dp),
                 shape = RoundedCornerShape(50),
                 colors = ButtonDefaults.buttonColors(
-                    containerColor = Color(0xFF0F0E0C),
+                    containerColor = Color.White.copy(alpha = 0.22f),
                     contentColor = Color.White
-                )
+                ),
+                border = BorderStroke(
+                    1.dp,
+                    Brush.horizontalGradient(
+                        listOf(
+                            Color.White.copy(alpha = 0.50f),
+                            Color.White.copy(alpha = 0.20f)
+                        )
+                    )
+                ),
+                elevation = ButtonDefaults.buttonElevation(0.dp, 0.dp)
             ) {
                 Text(
                     text = stringResource(R.string.onboarding_privacy_close),
                     fontFamily = GoogleSansFlex,
-                    fontWeight = FontWeight.Bold,
+                    fontWeight = FontWeight.SemiBold,
                     fontSize = 15.sp,
                     color = Color.White
                 )
@@ -170,13 +182,14 @@ private fun PrivacyFeatureRow(
             modifier = Modifier
                 .size(38.dp)
                 .clip(CircleShape)
-                .background(Color(0xFFF0EDE5)),
+                .background(Color.White.copy(alpha = 0.12f))
+                .border(1.dp, Color.White.copy(alpha = 0.25f), CircleShape),
             contentAlignment = Alignment.Center
         ) {
             Icon(
                 imageVector = icon,
                 contentDescription = null,
-                tint = Color(0xFF1E2229),
+                tint = Color.White,
                 modifier = Modifier.size(19.dp)
             )
         }
@@ -189,7 +202,7 @@ private fun PrivacyFeatureRow(
             fontSize = 14.sp,
             lineHeight = 20.sp,
             fontWeight = FontWeight.Medium,
-            color = Color(0xFF333333)
+            color = Color.White.copy(alpha = 0.88f)
         )
     }
 }

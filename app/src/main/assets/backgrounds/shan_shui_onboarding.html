@@ -3116,7 +3116,7 @@
       buildStepButtons();
       setupInteractions();
 
-      const initialStep = params.get('step') ? parseInt(params.get('step'), 10) : 0;
+      const initialStep = 0;
       window.setOnboardingStep(initialStep, true);
 
       requestAnimationFrame(animate);

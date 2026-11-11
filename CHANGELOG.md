@@ -5,6 +5,23 @@ All notable changes to Kanri will be documented in this file.
 The format is based on [Keep a Changelog](https://keepachangelog.com/en/1.0.0/),
 and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0.html).
 
+## [1.18.3] - 2026-11-11
+
+### Fixed
+- **Shan Shui Living Scroll Painting Engine**:
+  - Fixed runtime initialization in `shan_shui_onboarding.html`, resolving undefined step parameter reference so living scroll paintings render and animate reliably.
+  - Locked background permanently to light Xuan paper theme (`currentTheme = 'light'`), disabling dark mode.
+
+### Changed & Refined
+- **Minimalist Top Progress Bar**:
+  - Replaced card stepper and checkboxes with a clean top bar: Back navigation icon, `"STEP X OF 7"` bold indicator, percentage completion, and smooth 4dp `LinearProgressIndicator`.
+- **Frosted Glass Cards, Glass Buttons & White Typography**:
+  - Styled all onboarding cards (`PermissionCardView`, `KokonutAvatarPicker`, and `OnboardingPrivacySheet`) in dark frosted glass (`#141416` @ 74% - 94% opacity) with specular linear gradient borders (`Brush.linearGradient`).
+  - Switched all card typography, titles, descriptions, and labels to pure white (`Color.White`).
+  - Implemented translucent frosted glass buttons with subtle white borders and white text across all cards and modals.
+  - Upgraded `AvatarCropDialog` action buttons to frosted glass with white text.
+- Bumped version to `1.18.3` (Build 54).
+
 ## [1.18.2] - 2026-11-11
 
 ### Added

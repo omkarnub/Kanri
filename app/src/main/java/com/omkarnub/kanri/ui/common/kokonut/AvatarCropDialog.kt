@@ -45,6 +45,7 @@ import androidx.compose.ui.draw.clip
 import androidx.compose.ui.draw.clipToBounds
 import androidx.compose.ui.geometry.Offset
 import androidx.compose.ui.geometry.Size
+import androidx.compose.ui.graphics.Brush
 import androidx.compose.ui.graphics.Color
 import androidx.compose.ui.graphics.asImageBitmap
 import androidx.compose.ui.graphics.drawscope.Stroke
@@ -221,13 +222,18 @@ fun AvatarCropDialog(
                     modifier = Modifier.fillMaxWidth(),
                     horizontalArrangement = Arrangement.spacedBy(14.dp)
                 ) {
-                    OutlinedButton(
+                    Button(
                         onClick = onDismiss,
                         modifier = Modifier
                             .weight(1f)
                             .height(50.dp),
                         shape = RoundedCornerShape(50),
-                        border = androidx.compose.foundation.BorderStroke(1.dp, Color.White.copy(alpha = 0.35f))
+                        colors = ButtonDefaults.buttonColors(
+                            containerColor = Color.White.copy(alpha = 0.12f),
+                            contentColor = Color.White
+                        ),
+                        border = androidx.compose.foundation.BorderStroke(1.dp, Color.White.copy(alpha = 0.30f)),
+                        elevation = ButtonDefaults.buttonElevation(0.dp, 0.dp)
                     ) {
                         Text(
                             text = "Cancel",
@@ -256,9 +262,19 @@ fun AvatarCropDialog(
                             .height(50.dp),
                         shape = RoundedCornerShape(50),
                         colors = ButtonDefaults.buttonColors(
-                            containerColor = Color.White,
-                            contentColor = Color.Black
-                        )
+                            containerColor = Color.White.copy(alpha = 0.25f),
+                            contentColor = Color.White
+                        ),
+                        border = androidx.compose.foundation.BorderStroke(
+                            1.dp,
+                            Brush.horizontalGradient(
+                                listOf(
+                                    Color.White.copy(alpha = 0.50f),
+                                    Color.White.copy(alpha = 0.20f)
+                                )
+                            )
+                        ),
+                        elevation = ButtonDefaults.buttonElevation(0.dp, 0.dp)
                     ) {
                         Text(
                             text = "Save Avatar",

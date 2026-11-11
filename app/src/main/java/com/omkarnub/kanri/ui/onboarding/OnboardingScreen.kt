@@ -63,6 +63,7 @@ import androidx.compose.material3.Button
 import androidx.compose.material3.ButtonDefaults
 import androidx.compose.material3.Icon
 import androidx.compose.material3.IconButton
+import androidx.compose.material3.LinearProgressIndicator
 import androidx.compose.material3.MaterialTheme
 import androidx.compose.material3.Surface
 import androidx.compose.material3.Text
@@ -80,6 +81,8 @@ import androidx.compose.runtime.setValue
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.draw.clip
+import androidx.compose.ui.draw.shadow
+import androidx.compose.ui.graphics.Brush
 import androidx.compose.ui.graphics.Color
 import androidx.compose.ui.graphics.graphicsLayer
 import androidx.compose.ui.graphics.vector.ImageVector
@@ -418,35 +421,70 @@ fun OnboardingScreen(
                             .navigationBarsPadding()
                             .displayCutoutPadding()
                     ) {
-                        // Setup Progress Stepper Pattern (User Pattern: Progress + CheckCircle/Circle)
-                        val setupSteps = remember(
-                            currentSlide,
-                            hasSmsPermission,
-                            hasNotificationAccess,
-                            hasOverlayPermission,
-                            hasBatteryExemption,
-                            hasNotificationPermission,
-                            isLockConfigured
-                        ) {
-                            listOf(
-                                SetupStepItem("Profile", currentSlide > 1),
-                                SetupStepItem("SMS", hasSmsPermission || currentSlide > 2),
-                                SetupStepItem("Apps", hasNotificationAccess || currentSlide > 3),
-                                SetupStepItem("Overlay", hasOverlayPermission || currentSlide > 4),
-                                SetupStepItem("Battery", hasBatteryExemption || currentSlide > 5),
-                                SetupStepItem("Alerts", hasNotificationPermission || currentSlide > 6),
-                                SetupStepItem("Security", isLockConfigured || currentSlide > 7)
-                            )
-                        }
-
-                        SetupProgressPattern(
-                            steps = setupSteps,
-                            activeStepIndex = currentSlide - 1,
-                            onStepClick = { stepIndex ->
-                                advanceToStep(stepIndex + 1)
-                            },
-                            onBackClick = { stepBack() }
+                        // Ultra-clean progress bar with step counter (no card, no checkboxes)
+                        val progressValue = ((currentSlide - 1).coerceAtLeast(0).toFloat() / 6f).coerceIn(0f, 1f)
+                        val animatedProgress by animateFloatAsState(
+                            targetValue = progressValue,
+                            animationSpec = tween(durationMillis = 350, easing = FastOutSlowInEasing),
+                            label = "onboarding_progress"
                         )
+
+                        Row(
+                            modifier = Modifier
+                                .fillMaxWidth()
+                                .padding(horizontal = 20.dp, vertical = 10.dp),
+                            verticalAlignment = Alignment.CenterVertically,
+                            horizontalArrangement = Arrangement.spacedBy(10.dp)
+                        ) {
+                            IconButton(
+                                onClick = { stepBack() },
+                                modifier = Modifier.size(36.dp)
+                            ) {
+                                Icon(
+                                    imageVector = Icons.AutoMirrored.Filled.ArrowBack,
+                                    contentDescription = "Back",
+                                    tint = Color(0xFF1E2229),
+                                    modifier = Modifier.size(20.dp)
+                                )
+                            }
+
+                            Column(
+                                modifier = Modifier.weight(1f),
+                                verticalArrangement = Arrangement.spacedBy(5.dp)
+                            ) {
+                                Row(
+                                    modifier = Modifier.fillMaxWidth(),
+                                    horizontalArrangement = Arrangement.SpaceBetween,
+                                    verticalAlignment = Alignment.CenterVertically
+                                ) {
+                                    Text(
+                                        text = "STEP $currentSlide OF 7",
+                                        fontFamily = GoogleSansFlex,
+                                        fontWeight = FontWeight.Bold,
+                                        fontSize = 11.5.sp,
+                                        letterSpacing = 1.2.sp,
+                                        color = Color(0xFF1E2229)
+                                    )
+                                    Text(
+                                        text = "${(progressValue * 100).toInt()}%",
+                                        fontFamily = GoogleSansFlex,
+                                        fontWeight = FontWeight.SemiBold,
+                                        fontSize = 11.sp,
+                                        color = Color(0xFF555555)
+                                    )
+                                }
+
+                                LinearProgressIndicator(
+                                    progress = { animatedProgress },
+                                    modifier = Modifier
+                                        .fillMaxWidth()
+                                        .height(4.dp)
+                                        .clip(RoundedCornerShape(2.dp)),
+                                    color = Color(0xFF0F0E0C),
+                                    trackColor = Color(0xFF0F0E0C).copy(alpha = 0.15f)
+                                )
+                            }
+                        }
 
                 // Main Step Content Card with Smooth Fade & Scale Transition
                 val cardAlpha by animateFloatAsState(
@@ -691,8 +729,17 @@ private fun HeroSlideView(
                         },
                     shape = RoundedCornerShape(50),
                     colors = ButtonDefaults.buttonColors(
-                        containerColor = buttonBgColor,
-                        contentColor = buttonContentColor
+                        containerColor = Color(0xFF141416).copy(alpha = 0.78f),
+                        contentColor = Color.White
+                    ),
+                    border = BorderStroke(
+                        1.dp,
+                        Brush.horizontalGradient(
+                            listOf(
+                                Color.White.copy(alpha = 0.45f),
+                                Color.White.copy(alpha = 0.15f)
+                            )
+                        )
                     ),
                     elevation = ButtonDefaults.buttonElevation(
                         defaultElevation = 0.dp,
@@ -704,7 +751,8 @@ private fun HeroSlideView(
                         fontFamily = GoogleSansFlex,
                         fontWeight = FontWeight.Bold,
                         fontSize = 16.sp,
-                        letterSpacing = 0.3.sp
+                        letterSpacing = 0.3.sp,
+                        color = Color.White
                     )
                 }
 
@@ -762,6 +810,7 @@ private fun ProfileSetupStepView(
             initialName = initialName,
             initialVariant = initialVariant,
             forceLight = true,
+            useGlassCard = true,
             onComplete = { name, variant, _ ->
                 profilePrefs.userName = name
                 profilePrefs.avatarVariant = variant
@@ -794,29 +843,38 @@ private fun PermissionCardView(
             .padding(horizontal = 20.dp),
         contentAlignment = Alignment.Center
     ) {
-        Surface(
-            shape = RoundedCornerShape(24.dp),
-            color = Color.White.copy(alpha = 0.90f),
-            border = BorderStroke(1.dp, Color(0xFF141414).copy(alpha = 0.12f)),
-            shadowElevation = 2.dp,
-            modifier = Modifier.fillMaxWidth()
+        Box(
+            modifier = Modifier
+                .fillMaxWidth()
+                .shadow(10.dp, RoundedCornerShape(24.dp), spotColor = Color.Black.copy(alpha = 0.35f))
+                .clip(RoundedCornerShape(24.dp))
+                .background(Color(0xFF141416).copy(alpha = 0.74f))
+                .border(
+                    width = 1.dp,
+                    brush = Brush.linearGradient(
+                        listOf(
+                            Color.White.copy(alpha = 0.38f),
+                            Color.White.copy(alpha = 0.08f)
+                        )
+                    ),
+                    shape = RoundedCornerShape(24.dp)
+                )
+                .padding(horizontal = 24.dp, vertical = 30.dp)
         ) {
             Column(
-                modifier = Modifier
-                    .fillMaxWidth()
-                    .padding(horizontal = 24.dp, vertical = 28.dp),
+                modifier = Modifier.fillMaxWidth(),
                 horizontalAlignment = Alignment.CenterHorizontally,
                 verticalArrangement = Arrangement.Center
             ) {
-                // Monochrome/Green Icon Circle
+                // Frosted Glass Icon Circle
                 Box(
                     modifier = Modifier
                         .size(76.dp)
                         .clip(CircleShape)
-                        .background(if (isGranted) Color(0xFFE8F5E9) else Color(0xFFF2EFE8))
+                        .background(if (isGranted) Color(0xFF2E7D32).copy(alpha = 0.30f) else Color.White.copy(alpha = 0.10f))
                         .border(
-                            width = 1.5.dp,
-                            color = if (isGranted) Color(0xFF81C784) else Color(0xFF141414).copy(alpha = 0.20f),
+                            width = 1.dp,
+                            color = if (isGranted) Color(0xFF81C784).copy(alpha = 0.60f) else Color.White.copy(alpha = 0.25f),
                             shape = CircleShape
                         ),
                     contentAlignment = Alignment.Center
@@ -824,7 +882,7 @@ private fun PermissionCardView(
                     Icon(
                         imageVector = if (isGranted) Icons.Default.Check else icon,
                         contentDescription = null,
-                        tint = if (isGranted) Color(0xFF1B5E20) else Color(0xFF0F0E0C),
+                        tint = if (isGranted) Color(0xFF81C784) else Color.White,
                         modifier = Modifier.size(32.dp)
                     )
                 }
@@ -836,7 +894,7 @@ private fun PermissionCardView(
                     fontFamily = GoogleSansFlex,
                     fontSize = 21.sp,
                     fontWeight = FontWeight.Bold,
-                    color = Color(0xFF0F0E0C),
+                    color = Color.White,
                     textAlign = TextAlign.Center
                 )
 
@@ -847,14 +905,14 @@ private fun PermissionCardView(
                     fontFamily = GoogleSansFlex,
                     fontSize = 13.5.sp,
                     lineHeight = 20.sp,
-                    color = Color(0xFF4A4A4A),
+                    color = Color.White.copy(alpha = 0.82f),
                     textAlign = TextAlign.Center,
                     modifier = Modifier.fillMaxWidth(0.92f)
                 )
 
                 Spacer(modifier = Modifier.height(24.dp))
 
-                // Grant Button (Solid Black when not granted; Soft Green when granted)
+                // Grant Glass Button
                 Button(
                     onClick = { if (!isGranted) onGrant() },
                     modifier = Modifier
@@ -862,17 +920,20 @@ private fun PermissionCardView(
                         .height(48.dp),
                     shape = RoundedCornerShape(50),
                     colors = ButtonDefaults.buttonColors(
-                        containerColor = if (isGranted) Color(0xFFE8F5E9) else Color(0xFF0F0E0C),
-                        contentColor = if (isGranted) Color(0xFF1B5E20) else Color.White
+                        containerColor = if (isGranted) Color(0xFF2E7D32).copy(alpha = 0.35f) else Color.White.copy(alpha = 0.14f),
+                        contentColor = Color.White
                     ),
-                    border = if (isGranted) BorderStroke(1.dp, Color(0xFF81C784)) else null,
+                    border = BorderStroke(
+                        1.dp,
+                        if (isGranted) Color(0xFF81C784).copy(alpha = 0.60f) else Color.White.copy(alpha = 0.30f)
+                    ),
                     elevation = ButtonDefaults.buttonElevation(0.dp, 0.dp)
                 ) {
                     if (isGranted) {
                         Icon(
                             imageVector = Icons.Default.Check,
                             contentDescription = null,
-                            tint = Color(0xFF1B5E20),
+                            tint = Color(0xFF81C784),
                             modifier = Modifier.size(16.dp)
                         )
                         Spacer(modifier = Modifier.width(6.dp))
@@ -882,13 +943,13 @@ private fun PermissionCardView(
                         fontFamily = GoogleSansFlex,
                         fontWeight = FontWeight.SemiBold,
                         fontSize = 13.5.sp,
-                        color = if (isGranted) Color(0xFF1B5E20) else Color.White
+                        color = Color.White
                     )
                 }
 
                 Spacer(modifier = Modifier.height(16.dp))
 
-                // Continue CTA Button (Always Solid Black Container with Crisp White Text)
+                // Continue CTA Glass Button
                 Button(
                     onClick = onNext,
                     modifier = Modifier
@@ -896,8 +957,17 @@ private fun PermissionCardView(
                         .height(50.dp),
                     shape = RoundedCornerShape(50),
                     colors = ButtonDefaults.buttonColors(
-                        containerColor = Color(0xFF0F0E0C),
+                        containerColor = Color.White.copy(alpha = 0.22f),
                         contentColor = Color.White
+                    ),
+                    border = BorderStroke(
+                        1.dp,
+                        Brush.horizontalGradient(
+                            listOf(
+                                Color.White.copy(alpha = 0.50f),
+                                Color.White.copy(alpha = 0.20f)
+                            )
+                        )
                     ),
                     elevation = ButtonDefaults.buttonElevation(0.dp, 0.dp)
                 ) {
@@ -911,14 +981,14 @@ private fun PermissionCardView(
                 }
 
                 if (!isLastSlide) {
-                    Spacer(modifier = Modifier.height(4.dp))
+                    Spacer(modifier = Modifier.height(6.dp))
                     TextButton(onClick = onSkip) {
                         Text(
                             text = "Skip for now",
                             fontFamily = GoogleSansFlex,
                             fontSize = 13.sp,
                             fontWeight = FontWeight.Medium,
-                            color = Color(0xFF555555)
+                            color = Color.White.copy(alpha = 0.65f)
                         )
                     }
                 }

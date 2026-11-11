@@ -1,17 +1,20 @@
 # Kanri Onboarding & Stepper System
 
-Current Version: **1.18.2** (Build 53)
+Current Version: **1.18.3** (Build 54)
 
 ## 1. Overview
 The Kanri onboarding experience guides new users through permissions, personal profile configuration, and security settings with transparency, privacy assurances, and immediate tactile feedback.
 
-In version 1.18.2:
-- **Strict Light Mode**: Enforced clean light Xuan paper theme throughout onboarding.
-- **Pure Black Kanri Logo**: Emblem mark and Panchang typography in deep black (`#000000`).
-- **Setup Progress Stepper Pattern**: Header with step counter, animated progress indicator, and individual `CheckCircle`/`Circle` status items.
-- **1:1 Avatar Cropper**: Built-in interactive photo cropper dialog with pinch-to-zoom and pan.
-- **Sequential Two-Phase Transitions**: Card components fade out $\to$ background living scroll glides $\to$ new card fades in.
-- **High-Contrast Typography & Buttons**: Guaranteed legible black and white button styles.
+In version 1.18.3:
+- **Living Scroll Painting Engine Locked in Light Mode**: Cleaned up startup sequence in `shan_shui_onboarding.html` so ink washes paint smoothly without runtime errors, locked permanently to Xuan paper light mode.
+- **Ultra-Clean Progress Bar**: Replaced previous stepper cards and checkboxes with an edge-to-edge top bar featuring back navigation, bold `"STEP X OF 7"` counter, completion percentage, and a 4dp `LinearProgressIndicator`.
+- **Frosted Dark Glass Cards with Glass Buttons & White Typography**:
+  - `PermissionCardView`: Dark frosted glass (`#141416` @ 74% opacity) with specular linear gradient border (`Brush.linearGradient`), glass buttons (`#FFFFFF` @ 14% and 22% alpha), and crisp white text (`Color.White`).
+  - `KokonutAvatarPicker`: Configured with `useGlassCard = true`, dark frosted glass container, white display name and variant typography, glass buttons for "Use your own photo" and dice shuffle, and glass CTA button with white text.
+  - `OnboardingPrivacySheet`: Dark frosted glass sheet (`#141416` @ 94% opacity) with white typography, icon pills, and glass dismiss button.
+- **1:1 Avatar Cropper (`AvatarCropDialog`)**: Interactive 1:1 avatar cropping modal with pinch-to-zoom (0.5x to 4.0x), drag-to-pan, circular guide overlay, rule-of-thirds grid, and frosted glass action buttons with white text.
+- **Sequential Two-Phase Choreography**: Active card fades out (260ms) $\to$ background living scroll glides to next panoramic landscape and paints ink washes (1350ms) $\to$ next card smoothly fades in (300ms).
+- **Pure Black Kanri Logo**: Emblem mark and Panchang typography in deep black (`#000000`) on Slide 0 hero landscape.
 
 ---
 

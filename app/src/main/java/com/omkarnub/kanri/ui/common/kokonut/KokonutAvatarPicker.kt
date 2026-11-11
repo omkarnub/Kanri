@@ -13,6 +13,7 @@ import androidx.compose.animation.core.animateFloatAsState
 import androidx.compose.animation.core.infiniteRepeatable
 import androidx.compose.animation.core.rememberInfiniteTransition
 import androidx.compose.animation.core.spring
+import androidx.compose.foundation.BorderStroke
 import androidx.compose.foundation.Canvas
 import androidx.compose.foundation.Image
 import androidx.compose.foundation.background
@@ -65,6 +66,7 @@ import androidx.compose.ui.draw.shadow
 import androidx.compose.ui.focus.onFocusChanged
 import androidx.compose.ui.geometry.Offset
 import androidx.compose.ui.geometry.Size
+import androidx.compose.ui.graphics.Brush
 import androidx.compose.ui.graphics.Color
 import androidx.compose.ui.graphics.Path
 import androidx.compose.ui.graphics.SolidColor
@@ -616,6 +618,7 @@ fun KokonutAvatarPicker(
     submitLabel: String = "Continue",
     onComplete: (displayName: String, variant: Int, photoUri: String?) -> Unit,
     forceLight: Boolean = false,
+    useGlassCard: Boolean = false,
     modifier: Modifier = Modifier
 ) {
     val dark = if (forceLight) false else isAppInDarkTheme()
@@ -717,7 +720,23 @@ fun KokonutAvatarPicker(
     }
 
     val tokens = LocalKanriGlass.current
-    val cardModifier = if (tokens != null && !forceLight) {
+    val cardModifier = if (useGlassCard) {
+        modifier
+            .fillMaxWidth()
+            .shadow(10.dp, RoundedCornerShape(24.dp), spotColor = Color.Black.copy(alpha = 0.35f))
+            .clip(RoundedCornerShape(24.dp))
+            .background(Color(0xFF141416).copy(alpha = 0.74f))
+            .border(
+                width = 1.dp,
+                brush = Brush.linearGradient(
+                    listOf(
+                        Color.White.copy(alpha = 0.38f),
+                        Color.White.copy(alpha = 0.08f)
+                    )
+                ),
+                shape = RoundedCornerShape(24.dp)
+            )
+    } else if (tokens != null && !forceLight) {
         modifier.fillMaxWidth().kanriGlass(level = GlassLevel.Blur, shape = RoundedCornerShape(20.dp))
     } else {
         modifier
@@ -742,17 +761,17 @@ fun KokonutAvatarPicker(
             ) {
                 Text(
                     text = title,
-                    fontSize = 17.sp,
+                    fontSize = 18.sp,
                     fontFamily = GoogleSansFlex,
-                    fontWeight = FontWeight.SemiBold,
-                    color = if (dark) Zinc100 else Zinc900,
+                    fontWeight = FontWeight.Bold,
+                    color = if (useGlassCard) Color.White else (if (dark) Zinc100 else Zinc900),
                     letterSpacing = (-0.02).sp
                 )
                 Text(
                     text = description,
                     fontSize = 13.5.sp,
                     fontFamily = GoogleSansFlex,
-                    color = if (dark) Zinc400 else Zinc500
+                    color = if (useGlassCard) Color.White.copy(alpha = 0.80f) else (if (dark) Zinc400 else Zinc500)
                 )
             }
 
@@ -851,8 +870,13 @@ fun KokonutAvatarPicker(
                         val rInner = if (isLong) rLongInner else rShortInner
                         val p0 = Offset(cx + sin(a) * rInner, cy - cos(a) * rInner)
                         val p1 = Offset(cx + sin(a) * rOuter, cy - cos(a) * rOuter)
+                        val tickColor = if (useGlassCard) {
+                            if (isLong) Color.White.copy(alpha = 0.85f) else Color.White.copy(alpha = 0.40f)
+                        } else {
+                            if (dark) (if (isLong) Zinc500 else Zinc700) else (if (isLong) Zinc500 else Zinc300)
+                        }
                         drawLine(
-                            color = if (dark) (if (isLong) Zinc500 else Zinc700) else (if (isLong) Zinc500 else Zinc300),
+                            color = tickColor,
                             start = p0,
                             end = p1,
                             strokeWidth = (if (isLong) 2.dp else 1.2.dp).toPx(),
@@ -869,7 +893,7 @@ fun KokonutAvatarPicker(
                         .padding(top = 2.dp)
                         .size(width = 2.dp, height = 12.dp)
                         .clip(CircleShape)
-                        .background(if (dark) Zinc100 else Zinc900)
+                        .background(if (useGlassCard) Color.White else (if (dark) Zinc100 else Zinc900))
                 )
 
                 // 3D Coin (128dp) with depth discs and perspective
@@ -882,7 +906,7 @@ fun KokonutAvatarPicker(
                         }
                         .shadow(elevation = 6.dp, shape = CircleShape)
                         .clip(CircleShape)
-                        .border(1.dp, Color.Black.copy(alpha = 0.10f), CircleShape)
+                        .border(1.dp, if (useGlassCard) Color.White.copy(alpha = 0.30f) else Color.Black.copy(alpha = 0.10f), CircleShape)
                         .clickable {
                             // Tapping turns to next face
                             spinBy(1)
@@ -898,7 +922,7 @@ fun KokonutAvatarPicker(
                                     translationX = (z * 0.75f) * sin(tiltAngle * PI.toFloat() / 180f)
                                 }
                                 .clip(CircleShape)
-                                .background(if (dark) Zinc700 else Zinc300)
+                                .background(if (useGlassCard) Color(0xFF27272A) else (if (dark) Zinc700 else Zinc300))
                         )
                     }
 
@@ -947,7 +971,7 @@ fun KokonutAvatarPicker(
                     fontSize = 13.sp,
                     fontFamily = GoogleSansFlex,
                     fontWeight = FontWeight.Medium,
-                    color = if (dark) Zinc100 else Zinc900,
+                    color = if (useGlassCard) Color.White else (if (dark) Zinc100 else Zinc900),
                     maxLines = 1,
                     overflow = TextOverflow.Ellipsis
                 )
@@ -955,7 +979,7 @@ fun KokonutAvatarPicker(
                     text = "No. ${avatarPad3(shownVariant)}",
                     fontSize = 12.5.sp,
                     fontFamily = FontFamily.Monospace,
-                    color = if (dark) Zinc500 else Zinc400
+                    color = if (useGlassCard) Color.White.copy(alpha = 0.60f) else (if (dark) Zinc500 else Zinc400)
                 )
             }
 
@@ -979,16 +1003,27 @@ fun KokonutAvatarPicker(
                         val isSelected = (i == selectedSlot && customPhotoPath == null)
                         val slotSeed = remember(displayName, slotVariant) { avatarSeed(displayName, slotVariant) }
 
+                        val slotBorderColor = if (useGlassCard) {
+                            if (isSelected) Color.White.copy(alpha = 0.85f) else Color.White.copy(alpha = 0.18f)
+                        } else {
+                            if (isSelected) (if (dark) Zinc700 else Zinc300) else Color.Transparent
+                        }
+                        val slotBgColor = if (useGlassCard) {
+                            if (isSelected) Color.White.copy(alpha = 0.22f) else Color.White.copy(alpha = 0.08f)
+                        } else {
+                            if (isSelected) (if (dark) Zinc900 else Zinc50) else Color.Transparent
+                        }
+
                         Box(
                             modifier = Modifier
                                 .size(40.dp)
                                 .clip(CircleShape)
                                 .border(
                                     width = if (isSelected) 1.5.dp else 1.dp,
-                                    color = if (isSelected) (if (dark) Zinc700 else Zinc300) else Color.Transparent,
+                                    color = slotBorderColor,
                                     shape = CircleShape
                                 )
-                                .background(if (isSelected) (if (dark) Zinc900 else Zinc50) else Color.Transparent)
+                                .background(slotBgColor)
                                 .clickable { chooseSlot(i) },
                             contentAlignment = Alignment.Center
                         ) {
@@ -997,7 +1032,7 @@ fun KokonutAvatarPicker(
                                     modifier = Modifier
                                         .size(6.dp)
                                         .clip(CircleShape)
-                                        .background(if (dark) Zinc500 else Zinc400)
+                                        .background(if (useGlassCard) Color.White else (if (dark) Zinc500 else Zinc400))
                                 )
                             } else {
                                 MorphingFace(
@@ -1020,7 +1055,12 @@ fun KokonutAvatarPicker(
                     modifier = Modifier
                         .size(40.dp)
                         .clip(CircleShape)
-                        .border(1.dp, if (dark) Zinc800 else Zinc200, CircleShape)
+                        .background(if (useGlassCard) Color.White.copy(alpha = 0.14f) else Color.Transparent)
+                        .border(
+                            1.dp,
+                            if (useGlassCard) Color.White.copy(alpha = 0.30f) else (if (dark) Zinc800 else Zinc200),
+                            CircleShape
+                        )
                         .clickable {
                             val steps = 5 + Random.nextInt(4)
                             spinBy(steps)
@@ -1030,7 +1070,7 @@ fun KokonutAvatarPicker(
                     Icon(
                         imageVector = Icons.Default.Casino,
                         contentDescription = "Shuffle avatar",
-                        tint = if (dark) Zinc300 else Zinc700,
+                        tint = if (useGlassCard) Color.White else (if (dark) Zinc300 else Zinc700),
                         modifier = Modifier
                             .size(18.dp)
                             .rotate(diceRotation)
@@ -1045,7 +1085,12 @@ fun KokonutAvatarPicker(
                     .fillMaxWidth()
                     .height(40.dp)
                     .clip(RoundedCornerShape(10.dp))
-                    .border(1.dp, if (dark) Zinc800 else Zinc200, RoundedCornerShape(10.dp))
+                    .background(if (useGlassCard) Color.White.copy(alpha = 0.14f) else Color.Transparent)
+                    .border(
+                        1.dp,
+                        if (useGlassCard) Color.White.copy(alpha = 0.30f) else (if (dark) Zinc800 else Zinc200),
+                        RoundedCornerShape(10.dp)
+                    )
                     .clickable {
                         if (customPhotoPath != null) {
                             customPhotoPath = null
@@ -1068,7 +1113,7 @@ fun KokonutAvatarPicker(
                     Icon(
                         imageVector = if (customPhotoPath != null) Icons.Default.Delete else Icons.Default.AddPhotoAlternate,
                         contentDescription = null,
-                        tint = if (dark) Zinc400 else Zinc600,
+                        tint = if (useGlassCard) Color.White else (if (dark) Zinc400 else Zinc600),
                         modifier = Modifier.size(16.dp)
                     )
                     Text(
@@ -1076,7 +1121,7 @@ fun KokonutAvatarPicker(
                         fontSize = 13.5.sp,
                         fontFamily = GoogleSansFlex,
                         fontWeight = FontWeight.Medium,
-                        color = if (dark) Zinc300 else Zinc700
+                        color = if (useGlassCard) Color.White else (if (dark) Zinc300 else Zinc700)
                     )
                 }
             }
@@ -1092,7 +1137,7 @@ fun KokonutAvatarPicker(
                     fontSize = 13.sp,
                     fontFamily = GoogleSansFlex,
                     fontWeight = FontWeight.SemiBold,
-                    color = if (dark) Zinc100 else Zinc900
+                    color = if (useGlassCard) Color.White else (if (dark) Zinc100 else Zinc900)
                 )
 
                 var isFocused by remember { mutableStateOf(false) }
@@ -1100,11 +1145,11 @@ fun KokonutAvatarPicker(
                     value = displayName,
                     onValueChange = { if (it.length <= 32) displayName = it },
                     singleLine = true,
-                    cursorBrush = SolidColor(if (dark) Color(0xFFE5E5E5) else Color(0xFF171717)),
+                    cursorBrush = SolidColor(if (useGlassCard) Color.White else (if (dark) Color(0xFFE5E5E5) else Color(0xFF171717))),
                     textStyle = TextStyle(
                         fontSize = 14.sp,
                         fontFamily = GoogleSansFlex,
-                        color = if (dark) Zinc100 else Zinc900
+                        color = if (useGlassCard) Color.White else (if (dark) Zinc100 else Zinc900)
                     ),
                     modifier = Modifier
                         .fillMaxWidth()
@@ -1112,27 +1157,54 @@ fun KokonutAvatarPicker(
                         .clip(RoundedCornerShape(10.dp))
                         .border(
                             width = 1.dp,
-                            color = if (isFocused) (if (dark) Zinc500 else Zinc400) else (if (dark) Zinc800 else Zinc200),
+                            color = if (useGlassCard) {
+                                if (isFocused) Color.White.copy(alpha = 0.55f) else Color.White.copy(alpha = 0.25f)
+                            } else {
+                                if (isFocused) (if (dark) Zinc500 else Zinc400) else (if (dark) Zinc800 else Zinc200)
+                            },
                             shape = RoundedCornerShape(10.dp)
                         )
-                        .background(if (dark) Zinc900.copy(alpha = 0.35f) else Zinc100.copy(alpha = 0.5f))
+                        .background(
+                            if (useGlassCard) Color.White.copy(alpha = 0.10f)
+                            else (if (dark) Zinc900.copy(alpha = 0.35f) else Zinc100.copy(alpha = 0.5f))
+                        )
                         .onFocusChanged { isFocused = it.isFocused }
                         .padding(horizontal = 14.dp, vertical = 10.dp)
                 )
             }
 
-            // Continue CTA Button: height 44, rounded 10, disabled if name < 2 chars
+            // Continue CTA Button: height 44, rounded 50, glass button
             Spacer(modifier = Modifier.height(16.dp))
             val isNameValid = displayName.trim().length >= AVATAR_MIN_NAME
+
+            val ctaBg = if (useGlassCard) {
+                if (isNameValid) Color.White.copy(alpha = 0.22f) else Color.White.copy(alpha = 0.08f)
+            } else {
+                if (isNameValid) (if (dark) Zinc100 else Zinc900)
+                else (if (dark) Zinc100.copy(alpha = 0.35f) else Zinc900.copy(alpha = 0.35f))
+            }
 
             Box(
                 modifier = Modifier
                     .fillMaxWidth()
-                    .height(44.dp)
-                    .clip(RoundedCornerShape(12.dp))
-                    .background(
-                        if (isNameValid) (if (dark) Zinc100 else Zinc900)
-                        else (if (dark) Zinc100.copy(alpha = 0.35f) else Zinc900.copy(alpha = 0.35f))
+                    .height(48.dp)
+                    .clip(RoundedCornerShape(50))
+                    .background(ctaBg)
+                    .then(
+                        if (useGlassCard) {
+                            Modifier.border(
+                                BorderStroke(
+                                    1.dp,
+                                    Brush.horizontalGradient(
+                                        listOf(
+                                            Color.White.copy(alpha = if (isNameValid) 0.50f else 0.20f),
+                                            Color.White.copy(alpha = if (isNameValid) 0.20f else 0.05f)
+                                        )
+                                    )
+                                ),
+                                RoundedCornerShape(50)
+                            )
+                        } else Modifier
                     )
                     .clickable(enabled = isNameValid) {
                         haptics.click()
@@ -1144,17 +1216,22 @@ fun KokonutAvatarPicker(
                     verticalAlignment = Alignment.CenterVertically,
                     horizontalArrangement = Arrangement.spacedBy(6.dp)
                 ) {
+                    val contentColor = if (useGlassCard) {
+                        if (isNameValid) Color.White else Color.White.copy(alpha = 0.40f)
+                    } else {
+                        if (dark) Zinc900 else Color.White
+                    }
                     Text(
                         text = submitLabel,
-                        fontSize = 14.sp,
+                        fontSize = 14.5.sp,
                         fontFamily = GoogleSansFlex,
                         fontWeight = FontWeight.SemiBold,
-                        color = if (dark) Zinc900 else Color.White
+                        color = contentColor
                     )
                     Icon(
                         imageVector = Icons.AutoMirrored.Filled.ArrowForward,
                         contentDescription = null,
-                        tint = if (dark) Zinc900 else Color.White,
+                        tint = contentColor,
                         modifier = Modifier.size(16.dp)
                     )
                 }
