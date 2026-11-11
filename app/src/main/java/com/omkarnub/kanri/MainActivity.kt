@@ -101,8 +101,11 @@ open class MainActivity : FragmentActivity() {
 
         setContent {
             KanriTheme {
+                val onboardingPrefs = remember { OnboardingPreferences.getInstance(applicationContext) }
+                val hasCompletedOnboarding by onboardingPrefs.hasCompletedFlow.collectAsState()
+
                 var isAppRendered by remember { mutableStateOf(false) }
-                var showSplashScreen by remember { mutableStateOf(true) }
+                var showSplashScreen by remember { mutableStateOf(hasCompletedOnboarding) }
 
                 LaunchedEffect(Unit) {
                     withFrameNanos { }
@@ -131,8 +134,6 @@ open class MainActivity : FragmentActivity() {
                             }
                     ) {
                         com.omkarnub.kanri.ui.common.KanriBackdropHost {
-                            val onboardingPrefs = remember { OnboardingPreferences.getInstance(applicationContext) }
-                            val hasCompletedOnboarding by onboardingPrefs.hasCompletedFlow.collectAsState()
                             var isTestingLock by remember { mutableStateOf(false) }
 
                             val isLocked by SecurityManager.isAppLocked.collectAsState()

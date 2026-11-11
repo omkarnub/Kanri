@@ -76,6 +76,7 @@ import android.view.View
 import android.view.ViewGroup
 import android.webkit.WebSettings
 import android.webkit.WebView
+import android.webkit.WebViewClient
 import androidx.compose.ui.viewinterop.AndroidView
 import androidx.core.app.NotificationManagerCompat
 import com.omkarnub.kanri.util.BatteryOptimizationHelper
@@ -282,6 +283,16 @@ fun OnboardingScreen(
                         cacheMode = WebSettings.LOAD_NO_CACHE
                         loadWithOverviewMode = true
                         useWideViewPort = true
+                    }
+                    webViewClient = object : WebViewClient() {
+                        override fun onPageFinished(view: WebView?, url: String?) {
+                            super.onPageFinished(view, url)
+                            val paperTheme = if (isLight) "light" else "dark"
+                            view?.evaluateJavascript(
+                                "if (window.setPaperTheme) window.setPaperTheme('$paperTheme'); if (window.setOnboardingStep) window.setOnboardingStep($currentSlide, true);",
+                                null
+                            )
+                        }
                     }
                     setBackgroundColor(android.graphics.Color.TRANSPARENT)
                     setLayerType(View.LAYER_TYPE_HARDWARE, null)
@@ -640,7 +651,7 @@ private fun HeroSlide(onGetStarted: () -> Unit) {
                 horizontalAlignment = Alignment.Start,
                 verticalArrangement = Arrangement.SpaceBetween
             ) {
-                // Top block: Intro Logo + Hero Zone + Text block
+                // Top block: Intro Logo + Text block
                 Column(
                     modifier = Modifier.fillMaxWidth(),
                     horizontalAlignment = Alignment.Start
@@ -650,28 +661,12 @@ private fun HeroSlide(onGetStarted: () -> Unit) {
                         isLight = isLight,
                         modifier = Modifier
                             .fillMaxWidth()
-                            .padding(top = 12.dp, bottom = 8.dp)
+                            .padding(top = 16.dp, bottom = 8.dp)
                     )
 
-                    Spacer(modifier = Modifier.height(12.dp))
+                    Spacer(modifier = Modifier.height(36.dp))
 
-                    // 3. Hero zone (about 45-50% height): vertically centered demo stage box
-                    Box(
-                        modifier = Modifier
-                            .fillMaxWidth()
-                            .heightIn(min = 220.dp, max = 280.dp),
-                        contentAlignment = Alignment.Center
-                    ) {
-                        OnboardingHeroDemo(
-                            isExternalPaused = showPrivacySheet,
-                            onPulseChange = {},
-                            modifier = Modifier.fillMaxWidth()
-                        )
-                    }
-
-                    Spacer(modifier = Modifier.height(16.dp))
-
-                    // 4. Text block: Headline + Sub line
+                    // Text block: Headline + Sub line
                     Column(
                         modifier = Modifier
                             .fillMaxWidth()

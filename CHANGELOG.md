@@ -5,6 +5,31 @@ All notable changes to Kanri will be documented in this file.
 The format is based on [Keep a Changelog](https://keepachangelog.com/en/1.0.0/),
 and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0.html).
 
+## [1.17.0] - 2026-11-11
+
+### Added
+- **Official Kanri Monogram Emblem Vector Assets**:
+  - Replaced legacy launcher vector assets with the official geometric Kanri monogram emblem (`kanriicon.svg`).
+  - Updated `panchang_light.xml`, `panchang_dark.xml`, `ic_launcher_monochrome.xml`, and `ic_notification.xml` with mathematically centered vector transforms (`scaleX=0.0350665`, `translateX=18.092`, `translateY=18.092`) fitting within Android adaptive icon safe-zones.
+- **ChapterPlayer Scene 0 Kinetic Logo Reveal (`KanriIntroLogo`)**:
+  - Re-choreographed the onboarding logo entrance using the official Kanri monogram emblem:
+    1. *Landing*: Emblem lands large in the center with exponential ease (`scale 1.85 -> 1.50`, `CubicBezierEasing(0.16f, 1f, 0.3f, 1f)`).
+    2. *Settle & Extend*: Smoothly translates from center to left lockup (`scale 1.50 -> 1.00`, `CubicBezierEasing(0.25f, 1f, 0.35f, 1f)`).
+    3. *Wordmark Emergence*: Staggered kinetic rise and sharpening of the 5 Panchang letters (`K - A - N - R - I`, 65ms intervals).
+    4. *Tagline Reveal*: Elegant fade-in of `"FINANCIAL SERENITY / Know where every rupee went."`
+    5. *Organic Breathing*: Subtle living push-in (`scale 1.0 -> 1.02`) breathing with the living scroll background.
+- **Direct-to-Onboarding First Launch Flow**:
+  - Initialized `showSplashScreen = onboardingPrefs.hasCompletedOnboarding` in `MainActivity.kt`.
+  - First-time users immediately see Scene 0 of the animated Shan Shui background painting while the ChapterPlayer logo animation begins.
+  - Returning users continue to receive the quick splash screen animation.
+- **Unobstructed Living Scroll Wallpaper on Slide 0**:
+  - Removed demo card container from Slide 0 (Hero slide), allowing the East-Asian Shan Shui living scroll landscape to paint unobstructed across the entire screen.
+  - Attached `WebViewClient` on `shan_shui_onboarding.html` to guarantee instant step 0 trigger as soon as the HTML canvas is ready.
+- **Frosted Window Blur for Category Order Sheet (`CategoryReorderSheet`)**:
+  - Replaced standard `ModalBottomSheet` with `KanriModalBottomSheet` in `SettingsComponents.kt`.
+  - Added native `FLAG_BLUR_BEHIND` window blur and frosted glassmorphic styling (`kanriGlass(level = GlassLevel.Strong)`) to the Category Order sheet.
+- Bumped version to `1.17.0` (Build 49).
+
 ## [1.16.0] - 2026-11-11
 
 ### Fixed

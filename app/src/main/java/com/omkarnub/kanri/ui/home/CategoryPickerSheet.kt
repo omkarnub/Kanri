@@ -1,4 +1,4 @@
-﻿package com.omkarnub.kanri.ui.home
+package com.omkarnub.kanri.ui.home
 
 import androidx.activity.compose.BackHandler
 import androidx.compose.animation.AnimatedContent

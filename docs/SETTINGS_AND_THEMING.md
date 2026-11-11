@@ -74,7 +74,7 @@ The settings architecture adheres to:
    - Smart Merchant Rules sub-screen (keyword -> category auto-mapping).
    - Custom Categories management (create, edit, delete with 30+ custom icons).
    - **Category Order Customization** (`CategoryReorderSheet`):
-     - Interactive modal sheet allowing users to customize which categories show first and last.
+     - Interactive modal bottom sheet styled with KanriModalBottomSheet providing native FLAG_BLUR_BEHIND window blur and heavy frosted glassmorphic styling (kanriGlass(level = GlassLevel.Strong)).
      - Move Up / Move Down buttons for quick reordering.
      - "Reset" button to restore factory standard category sequence.
      - Backed by Room DB `display_order` column on `CategoryEntity` (`MIGRATION_11_12`).

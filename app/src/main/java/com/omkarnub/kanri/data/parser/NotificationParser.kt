@@ -1,4 +1,4 @@
-﻿package com.omkarnub.kanri.data.parser
+package com.omkarnub.kanri.data.parser
 
 import java.util.regex.Pattern
 

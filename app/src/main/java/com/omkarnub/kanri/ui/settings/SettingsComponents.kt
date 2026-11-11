@@ -133,6 +133,7 @@ import com.omkarnub.kanri.ui.common.GlassBackgroundType
 import com.omkarnub.kanri.ui.common.GlassLevel
 import com.omkarnub.kanri.ui.common.KanriGlassAlertDialog as AlertDialog
 import com.omkarnub.kanri.ui.common.KanriGlassCard
+import com.omkarnub.kanri.ui.common.KanriModalBottomSheet
 import com.omkarnub.kanri.ui.common.kanriGlassTextFieldColors
 import com.omkarnub.kanri.ui.notification.NotificationAccessHelper
 import com.omkarnub.kanri.ui.theme.DarkOffWhite
@@ -1851,11 +1852,9 @@ fun CategoryReorderSheet(
     val tokens = LocalKanriGlass.current
     val sheetState = rememberModalBottomSheetState(skipPartiallyExpanded = true)
 
-    ModalBottomSheet(
+    KanriModalBottomSheet(
         onDismissRequest = onDismiss,
-        sheetState = sheetState,
-        containerColor = tokens?.tintStrong ?: MaterialTheme.colorScheme.surface,
-        dragHandle = { BottomSheetDefaults.DragHandle() }
+        sheetState = sheetState
     ) {
         Column(
             modifier = Modifier
