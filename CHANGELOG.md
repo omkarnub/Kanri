@@ -5,6 +5,22 @@ All notable changes to Kanri will be documented in this file.
 The format is based on [Keep a Changelog](https://keepachangelog.com/en/1.0.0/),
 and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0.html).
 
+## [1.14.1] - 2026-11-11
+
+### Refined & Perfected
+- **Adaptive Two-Column Layouts & Zero Dead Space**:
+  - Engineered adaptive geometry engine in `WidgetRenderer.kt` utilizing dynamic aspect ratio and width breakpoints (`isWide = width > 220dp`, `isCompactH = height < 115dp`).
+  - Wide 4x2 widgets (`Today`, `Budget`, `Wallets`, `Dues`, `Month Delta`) now render in balanced two-column designs:
+    - **Today Spend (4x2)**: Left column displays title, expense count, hero spent amount, and daily limit badge; right column renders the pacing bar and 4 checkpoint cards (`MORN · AFTN · EVE · NIGHT`).
+    - **Budget (4x2)**: Left column displays title, cycle days remaining, hero remaining amount, and spent of total badge; right column renders dual progress bars and daily safe allowance.
+    - **Wallets (4x2)**: Left column displays title, subtitle, mint net worth hero, and allocation ratio; right column renders two recessed cards for Cash and Bank with balances and dot meters.
+    - **Lend & Borrow (4x2)**: Left column displays title, net balance hero, and total get/owe breakdown; right column renders top contacts in individual cards with `+₹` / `-₹` amounts in Ndot57 numerals.
+    - **Month Delta (4x2)**: Left column displays title, comparison day subtitle, hero delta %, and status indicator; right column renders two comparison tiles for this month to date vs last month same day.
+  - **Wide 4x1 Compact Widgets** (`Goals`, `Streak`, `Safe to Spend`): Replaced left-stacked empty space with balanced side-by-side layouts where hero metrics sit on the left and full-width interactive sliders or 10-flame timelines fill the right half.
+  - **Compact 2x1 Widgets** (`Budget`, `Review Inbox`, `Quick Actions`): Balanced side-by-side layouts preventing text collisions and keeping metrics legible at low vertical heights.
+  - **Square 2x2 Widgets**: Adjusted vertical zone spacing and font auto-scaling to prevent overlap between headers, hero metrics, and bottom visual primitives.
+- Bumped version to `1.14.1` (Build 43).
+
 ## [1.14.0] - 2026-11-11
 
 ### Added & Rebuilt

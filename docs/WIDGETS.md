@@ -1,6 +1,6 @@
 # Kanri Pixel DotTiles Widget System
 
-Current Version: **1.14.0** (Build 42)
+Current Version: **1.14.1** (Build 43)
 
 ## 1. Overview
 Kanri's widget subsystem is unified around a single, cohesive visual language: **Pixel DotTiles** (Nothing-inspired dot-matrix & tactile cards). Designed with precision, restraint, and obsessive detail, the system delivers 12 specialized home screen widgets rendered by a pure Canvas engine shared 1:1 between Android `RemoteViews` bitmaps and Jetpack Compose in-app previews.
@@ -15,9 +15,20 @@ Kanri's widget subsystem is unified around a single, cohesive visual language: *
 - **Optical Indian Currency Alignment**: Sized and optically centered currency symbol (`₹`) with Ndot57 numerals, preventing tofu boxes and glyph clipping.
 - **Zero Distortion & Strict Proportions**: Scaled using `fitCenter` and orientation-aware target dimensions (`minW` x `maxH`), completely eliminating text elongation and stretched aspect ratios.
 
-### Layout Geometry & Zero Overlap Architecture
-- **Adaptive Vertical Zones**: Strict vertical zone boundaries partition Header, Middle Hero Metric, and Bottom Visual.
-- **Compact Height Detection (`isCompactH`)**: When container height is under `115dp` (e.g. `2x1` and `4x1`), hero text size scales dynamically and bottom tick labels are hidden so numbers and visual primitives never collide.
+### Adaptive Layout Geometry & Zero Dead Space Engine
+- **Two-Column Breakpoint (`isWide = width > 220dp`)**:
+  - Wide 4x2 widgets automatically adapt to balanced two-column layouts, utilizing the right side for detailed cards, breakdown meters, or session matrix cards instead of leaving empty dead space.
+  - **Today (4x2)**: Left column has header, hero spend, and daily limit badge; right column renders the pacing bar and 4 checkpoint cards (`MORN · AFTN · EVE · NIGHT`).
+  - **Budget (4x2)**: Left column has remaining hero, days left, and spent-of-total badge; right column renders dual progress bars and daily safe allowance.
+  - **Wallets (4x2)**: Left column has net worth hero and allocation ratio; right column renders two full-width cards for Cash and Bank with balances and dot meters.
+  - **Dues (4x2)**: Left column has net hero and get/owe breakdown; right column renders up to 4 top contacts in individual cards with `+₹` / `-₹` amounts in Ndot57 numerals.
+  - **Month Delta (4x2)**: Left column has hero delta % and pacing status; right column renders two comparison tiles for this month vs last month same day.
+- **Compact Wide Breakpoint (`isWide && isCompactH`)**:
+  - Wide 4x1 widgets (`Goals`, `Streak`, `Safe to Spend`) pair left-aligned hero values with full right-side visual tracks (milestone sliders or 10-flame timeline).
+- **Compact Height Detection (`isCompactH = height < 115dp`)**:
+  - Compact 2x1 and 4x1 widgets adapt font sizing and margins so numbers and tracks never collide.
+- **Strict Vertical Zones in 2x2**:
+  - Square 2x2 widgets enforce strict vertical partitioning between Header, Middle Hero Metric, and Bottom Visual Primitives.
 - **Parabolic Arc Clamping**: The Financial Sky celestial arc strictly computes `x(t), y(t)` inside the recessed well bounds, preventing sun/moon markers from penetrating top or bottom borders.
 
 ### Fluid Animation Engine (`DotVisuals` & `PixelMotion`)
