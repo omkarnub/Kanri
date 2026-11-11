@@ -1,6 +1,6 @@
 # Kanri Onboarding & Stepper System
 
-Current Version: **1.18.0** (Build 51)
+Current Version: **1.18.1** (Build 52)
 
 ## 1. Overview
 The Kanri onboarding experience guides new users through permissions, personal profile configuration, and security settings with transparency, privacy assurances, and immediate tactile feedback.

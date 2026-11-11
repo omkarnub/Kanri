@@ -324,9 +324,9 @@ fun OnboardingScreen(
                     )
                     settings.apply {
                         javaScriptEnabled = true
-                        domStorageEnabled = false
+                        domStorageEnabled = true
                         allowFileAccess = true
-                        allowContentAccess = false
+                        allowContentAccess = true
                         cacheMode = WebSettings.LOAD_NO_CACHE
                         loadWithOverviewMode = true
                         useWideViewPort = true
@@ -334,7 +334,9 @@ fun OnboardingScreen(
                     val bridge = KanriOnboardingBridge(
                         onPaintingFinishedAction = { step ->
                             if (step == 0) {
-                                isScene0PaintingDone = true
+                                coroutineScope.launch {
+                                    isScene0PaintingDone = true
+                                }
                             }
                         },
                         onGlideFinishedAction = {
@@ -343,7 +345,23 @@ fun OnboardingScreen(
                     )
                     addJavascriptInterface(bridge, "AndroidBridge")
 
+                    webChromeClient = object : android.webkit.WebChromeClient() {
+                        override fun onConsoleMessage(consoleMessage: android.webkit.ConsoleMessage?): Boolean {
+                            android.util.Log.d("ShanShuiWebView", "${consoleMessage?.message()} [line ${consoleMessage?.lineNumber()}]")
+                            return true
+                        }
+                    }
+
                     webViewClient = object : WebViewClient() {
+                        override fun onReceivedError(
+                            view: WebView?,
+                            request: android.webkit.WebResourceRequest?,
+                            error: android.webkit.WebResourceError?
+                        ) {
+                            super.onReceivedError(view, request, error)
+                            android.util.Log.e("ShanShuiWebView", "WebView error: ${error?.description} (${error?.errorCode}) url: ${request?.url}")
+                        }
+
                         override fun onPageFinished(view: WebView?, url: String?) {
                             super.onPageFinished(view, url)
                             val paperTheme = if (isLight) "light" else "dark"

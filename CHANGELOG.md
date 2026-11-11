@@ -5,6 +5,16 @@ All notable changes to Kanri will be documented in this file.
 The format is based on [Keep a Changelog](https://keepachangelog.com/en/1.0.0/),
 and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0.html).
 
+## [1.18.1] - 2026-11-11
+
+### Fixed
+- **Shan Shui Living Scroll Canvas Initialization & WebView Runtime**:
+  - Fixed JavaScript `SyntaxError: Identifier 'container' has already been declared` and unclosed block in `shan_shui_onboarding.html` caused by duplicate stepper variable declarations.
+  - Removed query parameters from `file:///android_asset/backgrounds/shan_shui_onboarding.html` preventing Android AssetManager `ERR_FILE_NOT_FOUND` resolution failure.
+  - Added null-safety checks to all HUD and mockup element selectors (`theme-label`, `theme-dot`, `paper-vignette`, `hud-brush-status`, `pace-label`, `mock-android-ui`, etc.) preventing unhandled DOM exceptions.
+  - Guarded Java-to-Compose bridge callbacks with `coroutineScope.launch` for thread-safe state mutations.
+  - Bumped version to `1.18.1` (Build 52).
+
 ## [1.18.0] - 2026-11-11
 
 ### Added
