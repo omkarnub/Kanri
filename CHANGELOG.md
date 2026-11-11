@@ -5,6 +5,27 @@ All notable changes to Kanri will be documented in this file.
 The format is based on [Keep a Changelog](https://keepachangelog.com/en/1.0.0/),
 and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0.html).
 
+## [1.18.4] - 2026-11-11
+
+### Fixed & Cleaned
+- **Pure Black Kanri Monogram Emblem**:
+  - Changed the center landing monogram emblem from cinnabar red to deep solid black (`#000000`), matching the Panchang "KANRI" vector wordmark.
+- **Removed Financial Caption & Subtitle**:
+  - Removed "FINANCIAL SERENITY / Know where every rupee went" tagline completely from Slide 0.
+- **Removed White Tint Box Overlay**:
+  - Removed `#mock-android-ui` and all residual `.dev-hud` elements from `shan_shui_onboarding.html`, eliminating the white frosted box from displaying behind the hero lockup.
+
+### Changed & Refined
+- **Meditative, Calm & Slow Painting Pacing**:
+  - Tuned Shan Shui living scroll pacing to `glideDuration: 3500ms`, `paintDuration: 3000ms`, and `startupDuration: 3500ms`.
+  - Extended transition step delay to 3200ms across all slide changes, giving the painting plenty of time to glide, bloom, and settle in ink.
+- **Top Symmetrical Progress Bar & Bottom-Left Back Button**:
+  - Removed the back button from the top row and centered the progress bar symmetrically in the middle of the screen.
+  - Positioned a circular frosted glass back button at the bottom-left on setup slides 1 through 7.
+- **Elevated Card Placement**:
+  - Shifted all slide cards upwards with `BiasAlignment(0f, -0.38f)`, giving greater breathing room to the panoramic living scroll below.
+- Bumped version to `1.18.4` (Build 55).
+
 ## [1.18.3] - 2026-11-11
 
 ### Fixed

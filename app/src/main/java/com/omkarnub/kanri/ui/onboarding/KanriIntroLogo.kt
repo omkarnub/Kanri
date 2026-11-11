@@ -125,7 +125,7 @@ fun KanriIntroLogo(
     }
 
     LaunchedEffect(ltAnim.value) {
-        if (ltAnim.value >= 2.95f) {
+        if (ltAnim.value >= 2.05f) {
             onIntroReadyForButton()
         }
     }
@@ -204,7 +204,7 @@ fun KanriIntroLogo(
                             scale(scale = markUnitScale, pivot = Offset.Zero) {
                                 drawPath(
                                     path = markPath,
-                                    color = cinnabar.copy(alpha = markAlpha)
+                                    color = inkColor.copy(alpha = markAlpha)
                                 )
                             }
                         }
@@ -261,46 +261,6 @@ fun KanriIntroLogo(
                         }
                     }
                 }
-            }
-        }
-
-        Spacer(modifier = Modifier.height(10.dp))
-
-        // Subtitle line reveals behind mask (revealLine formula: p = seg(lt, 2.15, 2.95))
-        val pSub = seg(lt, 2.15f, 2.95f)
-        val subAlpha = clamp01(pSub * 2.5f) * exitAlpha
-        val subDy = (1f - eExpo(pSub)) * 16f + exitDyPx
-
-        if (subAlpha > 0.01f) {
-            Column(
-                modifier = Modifier
-                    .graphicsLayer {
-                        alpha = subAlpha
-                        translationY = subDy * density
-                    },
-                horizontalAlignment = Alignment.CenterHorizontally
-            ) {
-                Text(
-                    text = "FINANCIAL SERENITY",
-                    fontFamily = Panchang,
-                    fontWeight = FontWeight.SemiBold,
-                    fontSize = 11.5.sp,
-                    letterSpacing = 3.2.sp,
-                    color = cinnabar.copy(alpha = 0.90f),
-                    textAlign = TextAlign.Center
-                )
-
-                Spacer(modifier = Modifier.height(3.dp))
-
-                Text(
-                    text = "Know where every rupee went.",
-                    fontFamily = GoogleSansFlex,
-                    fontWeight = FontWeight.Normal,
-                    fontSize = 13.5.sp,
-                    letterSpacing = 0.4.sp,
-                    color = inkColor.copy(alpha = 0.65f),
-                    textAlign = TextAlign.Center
-                )
             }
         }
     }

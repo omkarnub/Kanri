@@ -1,20 +1,26 @@
 # Kanri Onboarding & Stepper System
 
-Current Version: **1.18.3** (Build 54)
+Current Version: **1.18.4** (Build 55)
 
 ## 1. Overview
 The Kanri onboarding experience guides new users through permissions, personal profile configuration, and security settings with transparency, privacy assurances, and immediate tactile feedback.
 
-In version 1.18.3:
-- **Living Scroll Painting Engine Locked in Light Mode**: Cleaned up startup sequence in `shan_shui_onboarding.html` so ink washes paint smoothly without runtime errors, locked permanently to Xuan paper light mode.
-- **Ultra-Clean Progress Bar**: Replaced previous stepper cards and checkboxes with an edge-to-edge top bar featuring back navigation, bold `"STEP X OF 7"` counter, completion percentage, and a 4dp `LinearProgressIndicator`.
+In version 1.18.4:
+- **Pure Black Kanri Monogram Emblem & Clean Hero**:
+  - The kinetic emblem is deep black (`#000000`), matching the Panchang vector wordmark.
+  - Subtitle tagline and HTML mock UI cards removed completely, giving an unobstructed view of the ink-painted landscape.
+- **Slow, Meditative Pacing**:
+  - Transition duration set to 3500ms glide / 3000ms paint with a 3200ms choreography interval so users can enjoy the calm flow of ink and scenery.
+- **Centered Top Progress Bar & Bottom-Left Back Navigation**:
+  - Symmetrically centered progress bar (`STEP X OF 7` + `LinearProgressIndicator`) at the top.
+  - Circular frosted glass back button anchored at the bottom-left.
+- **Elevated Slide Cards**:
+  - All cards shifted upwards (`BiasAlignment(0f, -0.38f)`), providing an open view of the water and living scroll below.
 - **Frosted Dark Glass Cards with Glass Buttons & White Typography**:
-  - `PermissionCardView`: Dark frosted glass (`#141416` @ 74% opacity) with specular linear gradient border (`Brush.linearGradient`), glass buttons (`#FFFFFF` @ 14% and 22% alpha), and crisp white text (`Color.White`).
-  - `KokonutAvatarPicker`: Configured with `useGlassCard = true`, dark frosted glass container, white display name and variant typography, glass buttons for "Use your own photo" and dice shuffle, and glass CTA button with white text.
+  - `PermissionCardView`: Dark frosted glass (`#141416` @ 74% opacity) with specular linear gradient border (`Brush.linearGradient`), glass buttons, and white text (`Color.White`).
+  - `KokonutAvatarPicker`: Dark frosted glass container, white typography, glass photo picker & dice buttons, and glass CTA button with white text.
   - `OnboardingPrivacySheet`: Dark frosted glass sheet (`#141416` @ 94% opacity) with white typography, icon pills, and glass dismiss button.
 - **1:1 Avatar Cropper (`AvatarCropDialog`)**: Interactive 1:1 avatar cropping modal with pinch-to-zoom (0.5x to 4.0x), drag-to-pan, circular guide overlay, rule-of-thirds grid, and frosted glass action buttons with white text.
-- **Sequential Two-Phase Choreography**: Active card fades out (260ms) $\to$ background living scroll glides to next panoramic landscape and paints ink washes (1350ms) $\to$ next card smoothly fades in (300ms).
-- **Pure Black Kanri Logo**: Emblem mark and Panchang typography in deep black (`#000000`) on Slide 0 hero landscape.
 
 ---
 

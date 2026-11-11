@@ -241,111 +241,6 @@
       <!-- Touch / Swipe / Water Ripple Interaction Catcher -->
       <div id="interaction-layer" title="Swipe left/right to glide between the 8 Shan Shui sceneries, or tap the river to create ink ripples"></div>
 
-      <!-- ========================================================================== -->
-      <!-- OPTIONAL MOCK ANDROID NATIVE ONBOARDING CARD (Test Foreground Readability) -->
-      <!-- ========================================================================== -->
-      <div id="mock-android-ui" class="dev-hud absolute inset-x-0 bottom-28 z-20 px-5 pointer-events-none transition-all duration-500 opacity-0 translate-y-4">
-        <div class="hud-glass rounded-2xl p-5">
-          <div class="flex items-center justify-between mb-1.5">
-            <span id="mock-step-badge" class="text-[10px] font-semibold uppercase tracking-widest px-2.5 py-0.5 rounded-full bg-red-700/15 text-red-700 border border-red-700/25">
-              STEP 01 / 08
-            </span>
-            <span id="mock-jp-seal" class="font-serif-east text-xs opacity-65 tracking-widest">山水・双峰</span>
-          </div>
-          <h2 id="mock-slide-title" class="font-serif-east text-xl font-semibold tracking-tight mb-1">
-            Effortless Financial Serenity
-          </h2>
-          <p id="mock-slide-desc" class="text-xs leading-relaxed opacity-80 mb-3.5">
-            Like a skiff gliding across calm mountain waters, your expenses track themselves automatically.
-          </p>
-          <div class="flex items-center justify-between pt-2.5 border-t border-current/10 text-[11px]">
-            <span id="mock-permission-tag" class="font-mono text-[10px] opacity-65">1. Hero: Get Started</span>
-            <span class="px-3.5 py-1.5 rounded-lg bg-[#2b3540] text-[#f4f1ea] font-medium text-xs shadow-sm">
-              Continue →
-            </span>
-          </div>
-        </div>
-      </div>
-
-      <!-- ========================================================================== -->
-      <!-- TOP MINIMAL PREVIEW BAR (Auto-hidden in Android WebView)                   -->
-      <!-- ========================================================================== -->
-      <div class="dev-hud absolute top-3 inset-x-3 z-30 flex items-center justify-between gap-1.5 transition-all duration-300">
-        <div class="hud-glass px-3 py-1.5 rounded-full flex items-center gap-2">
-          <span class="w-2 h-2 rounded-full bg-[#c43b38]"></span>
-          <div class="text-[11px] leading-none">
-            <span id="hud-slide-num" class="font-mono font-semibold text-[#c43b38]">01/08</span>
-            <span class="mx-1 opacity-30">|</span>
-            <span id="hud-slide-name" class="font-medium">Hero: Get Started</span>
-          </div>
-        </div>
-
-        <div class="flex items-center gap-1">
-          <button id="btn-auto-journey" onclick="window.toggleAutoJourney()" class="hud-glass px-2.5 py-1.5 rounded-full text-[10px] font-medium hover:border-red-700/40 transition flex items-center gap-1" title="Auto-Play 8-Step River Journey (Space)">
-            <span id="auto-journey-dot" class="w-1.5 h-1.5 rounded-full bg-emerald-600 opacity-50"></span>
-            <span id="auto-journey-label">Auto-Journey</span>
-          </button>
-
-          <button id="btn-pace" onclick="window.cycleGlidePace()" class="hud-glass px-2.5 py-1.5 rounded-full text-[10px] font-medium hover:border-red-700/40 transition flex items-center gap-1" title="Change Glide & Painting Pace (P)">
-            <span id="pace-label">Pace: Meditative 4.2s</span>
-          </button>
-
-          <button id="btn-toggle-mock" onclick="window.toggleMockAndroidCard()" class="hud-glass px-2.5 py-1.5 rounded-full text-[10px] font-medium hover:border-red-700/40 transition" title="Toggle Mock Android UI Card (U)">
-            UI Card
-          </button>
-
-          <button id="btn-theme" onclick="window.togglePaperTheme()" class="hud-glass px-2.5 py-1.5 rounded-full text-[10px] font-medium hover:border-red-700/40 transition flex items-center gap-1" title="Switch Warm Xuan Paper (1:1) / Midnight Ink Mode (T)">
-            <span id="theme-dot" class="w-2 h-2 rounded-full bg-[#2b3540]"></span>
-            <span id="theme-label" class="hidden sm:inline">Xuan 1:1</span>
-          </button>
-
-          <button onclick="window.replayPainting()" class="hud-glass px-2.5 py-1.5 rounded-full text-[10px] font-medium hover:text-[#c43b38] transition flex items-center gap-1" title="Re-Paint Current Scenery Ink Strokes (R)">
-            <svg class="w-3.5 h-3.5" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M4 4v5h.582m15.356 2A8.001 8.001 0 004.582 9m0 0H9m11 11v-5h-.581m0 0a8.003 8.003 0 01-15.357-2m15.357 2H15"/></svg>
-            <span class="hidden sm:inline">Replay Paint</span>
-          </button>
-
-          <button onclick="window.toggleHud()" class="hud-glass p-1.5 rounded-full hover:text-[#c43b38] transition" title="Hide HUD Controls (H)">
-            <svg class="w-3.5 h-3.5" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M15 12a3 3 0 11-6 0 3 3 0 016 0z"/><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M2.458 12C3.732 7.943 7.523 5 12 5c4.478 0 8.268 2.943 9.542 7-1.274 4.057-5.064 7-9.542 7-4.477 0-8.268-2.943-9.542-7z"/></svg>
-          </button>
-        </div>
-      </div>
-
-      <button id="btn-restore-hud" onclick="window.toggleHud(true)" class="hidden absolute top-3 right-3 z-40 hud-glass px-3 py-1.5 rounded-full text-[11px] font-medium opacity-60 hover:opacity-100 transition">
-        Show Controls (H)
-      </button>
-
-      <!-- ========================================================================== -->
-      <!-- BOTTOM 8-SLIDE ONBOARDING CONTROLLER & GEMINI ARGON 4 COLOPHON             -->
-      <!-- ========================================================================== -->
-      <div class="dev-hud absolute bottom-3 inset-x-3 z-30 transition-all duration-300">
-        <div class="hud-glass rounded-2xl p-2.5">
-          <div class="flex items-center justify-between text-[11px] mb-2 px-1">
-            <div class="flex items-center gap-1.5 truncate">
-              <span class="font-serif-east text-[#c43b38] font-bold" id="hud-kanji">壱</span>
-              <span class="opacity-85 font-medium truncate" id="hud-motif-desc">Scene I: Twin Peaks & Misty Promontory (1:1)</span>
-            </div>
-            <span class="font-mono text-[10px] opacity-65 shrink-0 ml-2" id="hud-brush-status">Ink Blooming...</span>
-          </div>
-
-          <div class="flex items-center gap-1.5">
-            <button onclick="window.prevOnboardingStep()" class="p-2 rounded-xl bg-black/5 hover:bg-black/10 active:scale-95 transition shrink-0" title="Previous Scenery (Left Arrow)">
-              <svg class="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M15 19l-7-7 7-7"/></svg>
-            </button>
-
-            <div id="step-dots-container" class="grid grid-cols-8 gap-1 flex-1"></div>
-
-            <button onclick="window.nextOnboardingStep()" class="p-2 rounded-xl bg-[#c43b38] hover:bg-[#a8302d] text-white active:scale-95 transition shrink-0 shadow-sm" title="Next Scenery (Right Arrow)">
-              <svg class="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M9 5l7 7-7 7"/></svg>
-            </button>
-          </div>
-
-          <div class="flex items-center justify-between mt-1.5 px-1 pt-1 border-t border-current/10 text-[9px] opacity-55">
-            <span>Swipe or use 1–8 keys • Tap water for ink ripples</span>
-            <span class="font-serif-east tracking-wider">画工：Gemini Argon 4 ・ 雅ゴン四</span>
-          </div>
-        </div>
-      </div>
-
     </div>
   </div>
 
@@ -717,7 +612,7 @@
 
     // Selectable meditative pacing presets (zero spring physics, pure ease-in-out)
     const PACE_PRESETS = [
-      { label: 'Pace: Onboarding Flow', glideDuration: 1300, paintDuration: 1100, startupDuration: 2800 },
+      { label: 'Pace: Onboarding Meditative', glideDuration: 3500, paintDuration: 3000, startupDuration: 3500 },
       { label: 'Pace: Meditative 4.2s', glideDuration: 4200, paintDuration: 3600, startupDuration: 3800 },
       { label: 'Pace: Calm 3.0s',       glideDuration: 3000, paintDuration: 2800, startupDuration: 3000 }
     ];

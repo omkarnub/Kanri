@@ -269,10 +269,10 @@ fun OnboardingScreen(
         haptics.click()
         coroutineScope.launch {
             isStepCardVisible = false
-            delay(260L)
+            delay(300L)
             currentSlide = targetStep
             webViewInstance?.evaluateJavascript("window.setOnboardingStep($targetStep);", null)
-            delay(1350L)
+            delay(3200L)
             isStepCardVisible = true
         }
     }
@@ -281,7 +281,7 @@ fun OnboardingScreen(
         haptics.click()
         coroutineScope.launch {
             isStepCardVisible = false
-            delay(260L)
+            delay(300L)
             if (currentSlide <= 1) {
                 currentSlide = 0
                 isHeroExiting = false
@@ -290,7 +290,7 @@ fun OnboardingScreen(
                 val prev = currentSlide - 1
                 currentSlide = prev
                 webViewInstance?.evaluateJavascript("window.setOnboardingStep($prev);", null)
-                delay(1350L)
+                delay(3200L)
                 isStepCardVisible = true
             }
         }
@@ -397,14 +397,14 @@ fun OnboardingScreen(
                             coroutineScope.launch {
                                 // 1. First fade out logo, emblem and button cleanly
                                 isHeroExiting = true
-                                delay(320L)
+                                delay(380L)
 
                                 // 2. Only then progress background scroll & paint
                                 currentSlide = 1
                                 webViewInstance?.evaluateJavascript("window.setOnboardingStep(1);", null)
 
-                                // 3. Wait for background glide and ink painting to settle
-                                delay(1350L)
+                                // 3. Give the living scroll plenty of time to glide and paint (3200ms)
+                                delay(3200L)
 
                                 // 4. Fade in Step 1 Avatar Picker card
                                 isStepCardVisible = true
@@ -421,7 +421,7 @@ fun OnboardingScreen(
                             .navigationBarsPadding()
                             .displayCutoutPadding()
                     ) {
-                        // Ultra-clean progress bar with step counter (no card, no checkboxes)
+                        // Ultra-clean progress bar centered properly in the middle (no back button here, no checkboxes)
                         val progressValue = ((currentSlide - 1).coerceAtLeast(0).toFloat() / 6f).coerceIn(0f, 1f)
                         val animatedProgress by animateFloatAsState(
                             targetValue = progressValue,
@@ -429,28 +429,18 @@ fun OnboardingScreen(
                             label = "onboarding_progress"
                         )
 
-                        Row(
+                        Box(
                             modifier = Modifier
                                 .fillMaxWidth()
-                                .padding(horizontal = 20.dp, vertical = 10.dp),
-                            verticalAlignment = Alignment.CenterVertically,
-                            horizontalArrangement = Arrangement.spacedBy(10.dp)
+                                .padding(horizontal = 32.dp, vertical = 12.dp),
+                            contentAlignment = Alignment.Center
                         ) {
-                            IconButton(
-                                onClick = { stepBack() },
-                                modifier = Modifier.size(36.dp)
-                            ) {
-                                Icon(
-                                    imageVector = Icons.AutoMirrored.Filled.ArrowBack,
-                                    contentDescription = "Back",
-                                    tint = Color(0xFF1E2229),
-                                    modifier = Modifier.size(20.dp)
-                                )
-                            }
-
                             Column(
-                                modifier = Modifier.weight(1f),
-                                verticalArrangement = Arrangement.spacedBy(5.dp)
+                                modifier = Modifier
+                                    .fillMaxWidth()
+                                    .widthIn(max = 380.dp),
+                                verticalArrangement = Arrangement.spacedBy(6.dp),
+                                horizontalAlignment = Alignment.CenterHorizontally
                             ) {
                                 Row(
                                     modifier = Modifier.fillMaxWidth(),
@@ -486,142 +476,176 @@ fun OnboardingScreen(
                             }
                         }
 
-                // Main Step Content Card with Smooth Fade & Scale Transition
-                val cardAlpha by animateFloatAsState(
-                    targetValue = if (isStepCardVisible) 1f else 0f,
-                    animationSpec = tween(durationMillis = 300, easing = FastOutSlowInEasing),
-                    label = "card_alpha"
-                )
-                val cardScale by animateFloatAsState(
-                    targetValue = if (isStepCardVisible) 1f else 0.96f,
-                    animationSpec = tween(durationMillis = 300, easing = FastOutSlowInEasing),
-                    label = "card_scale"
-                )
-                val cardOffsetY by animateFloatAsState(
-                    targetValue = if (isStepCardVisible) 0f else 16f,
-                    animationSpec = tween(durationMillis = 300, easing = FastOutSlowInEasing),
-                    label = "card_offset_y"
-                )
-
-                Box(
-                    modifier = Modifier
-                        .weight(1f)
-                        .fillMaxWidth()
-                        .graphicsLayer {
-                            alpha = cardAlpha
-                            scaleX = cardScale
-                            scaleY = cardScale
-                            translationY = cardOffsetY * density
-                        },
-                    contentAlignment = Alignment.Center
-                ) {
-                    when (currentSlide) {
-                        1 -> ProfileSetupStepView(
-                            onContinue = { advanceToStep(2) }
+                        // Main Step Content Card shifted upwards with Smooth Fade & Scale Transition
+                        val cardAlpha by animateFloatAsState(
+                            targetValue = if (isStepCardVisible) 1f else 0f,
+                            animationSpec = tween(durationMillis = 300, easing = FastOutSlowInEasing),
+                            label = "card_alpha"
+                        )
+                        val cardScale by animateFloatAsState(
+                            targetValue = if (isStepCardVisible) 1f else 0.96f,
+                            animationSpec = tween(durationMillis = 300, easing = FastOutSlowInEasing),
+                            label = "card_scale"
+                        )
+                        val cardOffsetY by animateFloatAsState(
+                            targetValue = if (isStepCardVisible) 0f else 16f,
+                            animationSpec = tween(durationMillis = 300, easing = FastOutSlowInEasing),
+                            label = "card_offset_y"
                         )
 
-                        2 -> PermissionCardView(
-                            icon = Icons.Default.Sms,
-                            title = "Bank SMS Detection",
-                            description = "Intercepts bank debit & credit alerts 100% offline. The only reliable source for sent payments (UPI, ATM, cards).",
-                            isGranted = hasSmsPermission,
-                            grantLabel = "Enable SMS Detection",
-                            grantedLabel = "SMS Detection Active",
-                            onGrant = {
-                                smsLauncher.launch(
-                                    arrayOf(
-                                        Manifest.permission.RECEIVE_SMS,
-                                        Manifest.permission.READ_SMS
-                                    )
+                        Box(
+                            modifier = Modifier
+                                .weight(1f)
+                                .fillMaxWidth()
+                                .graphicsLayer {
+                                    alpha = cardAlpha
+                                    scaleX = cardScale
+                                    scaleY = cardScale
+                                    translationY = cardOffsetY * density
+                                },
+                            contentAlignment = androidx.compose.ui.BiasAlignment(0f, -0.38f)
+                        ) {
+                            when (currentSlide) {
+                                1 -> ProfileSetupStepView(
+                                    onContinue = { advanceToStep(2) }
                                 )
-                            },
-                            onNext = { advanceToStep(3) },
-                            onSkip = { advanceToStep(3) }
-                        )
 
-                        3 -> PermissionCardView(
-                            icon = Icons.Default.AccountBalanceWallet,
-                            title = "Payment Apps Listener",
-                            description = "Catches incoming money notifications and scratch cards from Google Pay, PhonePe, Paytm, and CRED.",
-                            isGranted = hasNotificationAccess,
-                            grantLabel = "Grant Access",
-                            grantedLabel = "Access Granted",
-                            onGrant = {
-                                NotificationAccessHelper.openNotificationAccessSettings(context)
-                            },
-                            onNext = { advanceToStep(4) },
-                            onSkip = { advanceToStep(4) }
-                        )
+                                2 -> PermissionCardView(
+                                    icon = Icons.Default.Sms,
+                                    title = "Bank SMS Detection",
+                                    description = "Intercepts bank debit & credit alerts 100% offline. The only reliable source for sent payments (UPI, ATM, cards).",
+                                    isGranted = hasSmsPermission,
+                                    grantLabel = "Enable SMS Detection",
+                                    grantedLabel = "SMS Detection Active",
+                                    onGrant = {
+                                        smsLauncher.launch(
+                                            arrayOf(
+                                                Manifest.permission.RECEIVE_SMS,
+                                                Manifest.permission.READ_SMS
+                                            )
+                                        )
+                                    },
+                                    onNext = { advanceToStep(3) },
+                                    onSkip = { advanceToStep(3) }
+                                )
 
-                        4 -> PermissionCardView(
-                            icon = Icons.Default.Bolt,
-                            title = "Instant Overlay",
-                            description = "Display a lightweight popup right after you pay, so you can review and categorize payments the moment they happen.",
-                            isGranted = hasOverlayPermission,
-                            grantLabel = "Enable Overlay",
-                            grantedLabel = "Overlay Enabled",
-                            onGrant = {
-                                OverlayPermissionHelper.requestOverlayPermission(context)
-                            },
-                            onNext = { advanceToStep(5) },
-                            onSkip = { advanceToStep(5) }
-                        )
+                                3 -> PermissionCardView(
+                                    icon = Icons.Default.AccountBalanceWallet,
+                                    title = "Payment Apps Listener",
+                                    description = "Catches incoming money notifications and scratch cards from Google Pay, PhonePe, Paytm, and CRED.",
+                                    isGranted = hasNotificationAccess,
+                                    grantLabel = "Grant Access",
+                                    grantedLabel = "Access Granted",
+                                    onGrant = {
+                                        NotificationAccessHelper.openNotificationAccessSettings(context)
+                                    },
+                                    onNext = { advanceToStep(4) },
+                                    onSkip = { advanceToStep(4) }
+                                )
 
-                        5 -> PermissionCardView(
-                            icon = Icons.Default.PowerSettingsNew,
-                            title = "Background Endurance",
-                            description = "Keep Kanri running unrestricted in the background so Android never puts your expense trackers to sleep.",
-                            isGranted = hasBatteryExemption,
-                            grantLabel = "Allow Background Run",
-                            grantedLabel = "Background Run Active",
-                            onGrant = {
-                                BatteryOptimizationHelper.requestIgnoreBatteryOptimizations(context)
-                            },
-                            onNext = { advanceToStep(6) },
-                            onSkip = { advanceToStep(6) }
-                        )
+                                4 -> PermissionCardView(
+                                    icon = Icons.Default.Bolt,
+                                    title = "Instant Overlay",
+                                    description = "Display a lightweight popup right after you pay, so you can review and categorize payments the moment they happen.",
+                                    isGranted = hasOverlayPermission,
+                                    grantLabel = "Enable Overlay",
+                                    grantedLabel = "Overlay Enabled",
+                                    onGrant = {
+                                        OverlayPermissionHelper.requestOverlayPermission(context)
+                                    },
+                                    onNext = { advanceToStep(5) },
+                                    onSkip = { advanceToStep(5) }
+                                )
 
-                        6 -> PermissionCardView(
-                            icon = Icons.Default.Notifications,
-                            title = "System Alerts",
-                            description = "Receive mindful spend nudges, daily summaries, and backup status notifications right on your phone.",
-                            isGranted = hasNotificationPermission,
-                            grantLabel = "Enable Notifications",
-                            grantedLabel = "Notifications Active",
-                            onGrant = {
-                                if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.TIRAMISU) {
-                                    postNotificationLauncher.launch(Manifest.permission.POST_NOTIFICATIONS)
-                                } else {
-                                    val intent = Intent(Settings.ACTION_APP_NOTIFICATION_SETTINGS).apply {
-                                        putExtra(Settings.EXTRA_APP_PACKAGE, context.packageName)
-                                    }
-                                    context.startActivity(intent)
-                                }
-                            },
-                            onNext = { advanceToStep(7) },
-                            onSkip = { advanceToStep(7) }
-                        )
+                                5 -> PermissionCardView(
+                                    icon = Icons.Default.PowerSettingsNew,
+                                    title = "Background Endurance",
+                                    description = "Keep Kanri running unrestricted in the background so Android never puts your expense trackers to sleep.",
+                                    isGranted = hasBatteryExemption,
+                                    grantLabel = "Allow Background Run",
+                                    grantedLabel = "Background Run Active",
+                                    onGrant = {
+                                        BatteryOptimizationHelper.requestIgnoreBatteryOptimizations(context)
+                                    },
+                                    onNext = { advanceToStep(6) },
+                                    onSkip = { advanceToStep(6) }
+                                )
 
-                        7 -> PermissionCardView(
-                            icon = Icons.Default.Fingerprint,
-                            title = "Biometric Security",
-                            description = "Require Fingerprint, Face Unlock, or Device Lock every time you open your financial scroll.",
-                            isGranted = isLockConfigured,
-                            grantLabel = "Enable App Lock",
-                            grantedLabel = "App Lock Enabled",
-                            onGrant = {
-                                val newState = !isLockConfigured
-                                isLockConfigured = newState
-                                securityPrefs.isLockEnabled = newState
-                            },
-                            onNext = { finishOnboarding() },
-                            onSkip = { finishOnboarding() },
-                            isLastSlide = true
-                        )
+                                6 -> PermissionCardView(
+                                    icon = Icons.Default.Notifications,
+                                    title = "System Alerts",
+                                    description = "Receive mindful spend nudges, daily summaries, and backup status notifications right on your phone.",
+                                    isGranted = hasNotificationPermission,
+                                    grantLabel = "Enable Notifications",
+                                    grantedLabel = "Notifications Active",
+                                    onGrant = {
+                                        if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.TIRAMISU) {
+                                            postNotificationLauncher.launch(Manifest.permission.POST_NOTIFICATIONS)
+                                        } else {
+                                            val intent = Intent(Settings.ACTION_APP_NOTIFICATION_SETTINGS).apply {
+                                                putExtra(Settings.EXTRA_APP_PACKAGE, context.packageName)
+                                            }
+                                            context.startActivity(intent)
+                                        }
+                                    },
+                                    onNext = { advanceToStep(7) },
+                                    onSkip = { advanceToStep(7) }
+                                )
+
+                                7 -> PermissionCardView(
+                                    icon = Icons.Default.Fingerprint,
+                                    title = "Biometric Security",
+                                    description = "Require Fingerprint, Face Unlock, or Device Lock every time you open your financial scroll.",
+                                    isGranted = isLockConfigured,
+                                    grantLabel = "Enable App Lock",
+                                    grantedLabel = "App Lock Enabled",
+                                    onGrant = {
+                                        val newState = !isLockConfigured
+                                        isLockConfigured = newState
+                                        securityPrefs.isLockEnabled = newState
+                                    },
+                                    onNext = { finishOnboarding() },
+                                    onSkip = { finishOnboarding() },
+                                    isLastSlide = true
+                                )
+                            }
+                        }
+
+                        // Bottom Navigation Row: Back button shifted cleanly to bottom-left
+                        Row(
+                            modifier = Modifier
+                                .fillMaxWidth()
+                                .padding(horizontal = 24.dp, vertical = 8.dp),
+                            horizontalArrangement = Arrangement.Start,
+                            verticalAlignment = Alignment.CenterVertically
+                        ) {
+                            IconButton(
+                                onClick = { stepBack() },
+                                modifier = Modifier
+                                    .size(44.dp)
+                                    .clip(CircleShape)
+                                    .background(Color(0xFF141416).copy(alpha = 0.65f))
+                                    .border(
+                                        1.dp,
+                                        Brush.linearGradient(
+                                            listOf(
+                                                Color.White.copy(alpha = 0.35f),
+                                                Color.White.copy(alpha = 0.10f)
+                                            )
+                                        ),
+                                        CircleShape
+                                    )
+                            ) {
+                                Icon(
+                                    imageVector = Icons.AutoMirrored.Filled.ArrowBack,
+                                    contentDescription = "Back",
+                                    tint = Color.White,
+                                    modifier = Modifier.size(20.dp)
+                                )
+                            }
+                        }
                     }
                 }
-            }
-        }
     }
 }
 }
@@ -801,8 +825,8 @@ private fun ProfileSetupStepView(
     Box(
         modifier = Modifier
             .fillMaxSize()
-            .padding(horizontal = 20.dp, vertical = 12.dp),
-        contentAlignment = Alignment.Center
+            .padding(horizontal = 20.dp, vertical = 8.dp),
+        contentAlignment = androidx.compose.ui.BiasAlignment(0f, -0.38f)
     ) {
         KokonutAvatarPicker(
             title = "Personalize your sanctuary",
@@ -841,7 +865,7 @@ private fun PermissionCardView(
         modifier = Modifier
             .fillMaxSize()
             .padding(horizontal = 20.dp),
-        contentAlignment = Alignment.Center
+        contentAlignment = androidx.compose.ui.BiasAlignment(0f, -0.38f)
     ) {
         Box(
             modifier = Modifier
