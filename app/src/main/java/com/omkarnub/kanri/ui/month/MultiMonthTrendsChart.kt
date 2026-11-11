@@ -142,7 +142,7 @@ fun MultiMonthTrendsChart(
                             ) {
                                 if (selectedMetric == TrendMetricType.ALL || selectedMetric == TrendMetricType.SPEND) {
                                     Column(horizontalAlignment = Alignment.End) {
-                                        Text("Spend", color = Color(0xFF8B949E), fontSize = 10.sp)
+                                        Text("Spend", color = MaterialTheme.colorScheme.onSurfaceVariant, fontSize = 10.sp)
                                         Text(
                                             formatCurrency(activeItem.totalSpent),
                                             color = Color(0xFFEF476F),
@@ -153,7 +153,7 @@ fun MultiMonthTrendsChart(
                                 }
                                 if (selectedMetric == TrendMetricType.ALL || selectedMetric == TrendMetricType.RECEIVED) {
                                     Column(horizontalAlignment = Alignment.End) {
-                                        Text("Income", color = Color(0xFF8B949E), fontSize = 10.sp)
+                                        Text("Income", color = MaterialTheme.colorScheme.onSurfaceVariant, fontSize = 10.sp)
                                         Text(
                                             formatCurrency(activeItem.totalReceived),
                                             color = Color(0xFF06D6A0),
@@ -164,7 +164,7 @@ fun MultiMonthTrendsChart(
                                 }
                                 if (selectedMetric == TrendMetricType.ALL || selectedMetric == TrendMetricType.SAVINGS) {
                                     Column(horizontalAlignment = Alignment.End) {
-                                        Text("Savings", color = Color(0xFF8B949E), fontSize = 10.sp)
+                                        Text("Savings", color = MaterialTheme.colorScheme.onSurfaceVariant, fontSize = 10.sp)
                                         Text(
                                             formatCurrency(activeItem.netSavings),
                                             color = if (activeItem.netSavings >= 0) Color(0xFF118AB2) else Color(0xFFEF476F),
@@ -534,7 +534,7 @@ private fun LegendBadge(label: String, color: Color) {
         Spacer(modifier = Modifier.width(6.dp))
         Text(
             text = label,
-            color = Color(0xFF8B949E),
+            color = MaterialTheme.colorScheme.onSurfaceVariant,
             fontSize = 11.sp,
             fontWeight = FontWeight.Medium
         )

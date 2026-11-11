@@ -61,6 +61,7 @@ import androidx.compose.ui.text.font.FontWeight
 import androidx.compose.ui.unit.Dp
 import androidx.compose.ui.unit.dp
 import androidx.compose.ui.unit.sp
+import com.omkarnub.kanri.ui.common.KanriGlassCard
 import com.omkarnub.kanri.ui.theme.GoogleSansFlex
 import com.omkarnub.kanri.util.rememberKanriHaptics
 import com.omkarnub.kanri.widget.core.PixelMotion
@@ -266,7 +267,7 @@ fun WidgetsScreen(
                             fontWeight = FontWeight.Bold,
                             fontSize = 12.sp,
                             letterSpacing = 1.sp,
-                            color = PixelTheme.ColorDotMid,
+                            color = MaterialTheme.colorScheme.primary,
                             modifier = Modifier.padding(start = 4.dp, top = 8.dp, bottom = 4.dp)
                         )
                     }
@@ -298,149 +299,151 @@ fun WidgetGalleryCard(info: WidgetInfo) {
     val (sizeLabel, dimensions) = currentSizePair
     val (widthDp, heightDp) = dimensions
 
-    Column(
-        modifier = Modifier
-            .fillMaxWidth()
-            .clip(RoundedCornerShape(20.dp))
-            .background(Color(0xFF141414))
-            .border(1.dp, Color(0x22FFFFFF), RoundedCornerShape(20.dp))
-            .padding(16.dp)
+    KanriGlassCard(
+        modifier = Modifier.fillMaxWidth(),
+        shape = RoundedCornerShape(20.dp)
     ) {
-        // Header
-        Row(
-            modifier = Modifier.fillMaxWidth(),
-            horizontalArrangement = Arrangement.SpaceBetween,
-            verticalAlignment = Alignment.CenterVertically
-        ) {
-            Column(modifier = Modifier.weight(1f)) {
-                Text(
-                    text = info.title,
-                    fontFamily = GoogleSansFlex,
-                    fontWeight = FontWeight.Bold,
-                    fontSize = 16.sp,
-                    color = Color.White
-                )
-                Text(
-                    text = info.description,
-                    fontFamily = GoogleSansFlex,
-                    fontSize = 12.sp,
-                    color = PixelTheme.ColorDotMid
-                )
-            }
-
-            IconButton(
-                onClick = {
-                    haptics.click()
-                    replayCounter++
-                }
-            ) {
-                Icon(
-                    imageVector = Icons.Default.Refresh,
-                    contentDescription = "Replay Animation",
-                    tint = PixelTheme.ColorDotMid
-                )
-            }
-        }
-
-        Spacer(modifier = Modifier.height(12.dp))
-
-        // Faux Home Screen Wallpaper Backdrop with 1:1 Live Preview
-        Box(
+        Column(
             modifier = Modifier
                 .fillMaxWidth()
-                .clip(RoundedCornerShape(16.dp))
-                .background(
-                    Brush.verticalGradient(
-                        colors = listOf(Color(0xFF1C1C1C), Color(0xFF0E0E0E))
-                    )
-                )
-                .clickable {
-                    haptics.click()
-                    replayCounter++
-                }
-                .padding(vertical = 20.dp, horizontal = 12.dp),
-            contentAlignment = Alignment.Center
+                .padding(16.dp)
         ) {
-            val currentState = state
-            if (currentState != null) {
-                PixelWidgetCanvasPreview(
-                    state = currentState,
-                    widthDp = widthDp,
-                    heightDp = heightDp,
-                    replayTrigger = replayCounter
-                )
-            } else {
-                Box(
-                    modifier = Modifier.size(widthDp, heightDp),
-                    contentAlignment = Alignment.Center
+            // Header
+            Row(
+                modifier = Modifier.fillMaxWidth(),
+                horizontalArrangement = Arrangement.SpaceBetween,
+                verticalAlignment = Alignment.CenterVertically
+            ) {
+                Column(modifier = Modifier.weight(1f)) {
+                    Text(
+                        text = info.title,
+                        fontFamily = GoogleSansFlex,
+                        fontWeight = FontWeight.Bold,
+                        fontSize = 16.sp,
+                        color = MaterialTheme.colorScheme.onSurface
+                    )
+                    Text(
+                        text = info.description,
+                        fontFamily = GoogleSansFlex,
+                        fontSize = 12.sp,
+                        color = MaterialTheme.colorScheme.onSurfaceVariant
+                    )
+                }
+
+                IconButton(
+                    onClick = {
+                        haptics.click()
+                        replayCounter++
+                    }
                 ) {
-                    Text("Loading...", color = PixelTheme.ColorDotMid, fontSize = 12.sp)
+                    Icon(
+                        imageVector = Icons.Default.Refresh,
+                        contentDescription = "Replay Animation",
+                        tint = MaterialTheme.colorScheme.onSurfaceVariant
+                    )
                 }
             }
-        }
 
-        Spacer(modifier = Modifier.height(12.dp))
+            Spacer(modifier = Modifier.height(12.dp))
 
-        // Size Chips & Pin Button Row
-        Row(
-            modifier = Modifier.fillMaxWidth(),
-            horizontalArrangement = Arrangement.SpaceBetween,
-            verticalAlignment = Alignment.CenterVertically
-        ) {
-            // Supported size chips
-            Row(horizontalArrangement = Arrangement.spacedBy(8.dp)) {
-                info.supportedSizes.forEachIndexed { index, (label, _) ->
-                    FilterChip(
-                        selected = (index == selectedSizeIndex),
-                        onClick = {
-                            haptics.click()
-                            selectedSizeIndex = index
-                            replayCounter++
-                        },
-                        label = {
-                            Text(
-                                text = label,
-                                fontFamily = GoogleSansFlex,
-                                fontWeight = FontWeight.Bold,
-                                fontSize = 11.sp
-                            )
-                        },
-                        colors = FilterChipDefaults.filterChipColors(
-                            selectedContainerColor = Color(0x33FFFFFF),
-                            selectedLabelColor = Color.White,
-                            containerColor = Color.Transparent,
-                            labelColor = PixelTheme.ColorDotMid
+            // Faux Home Screen Wallpaper Backdrop with 1:1 Live Preview
+            Box(
+                modifier = Modifier
+                    .fillMaxWidth()
+                    .clip(RoundedCornerShape(16.dp))
+                    .background(
+                        Brush.verticalGradient(
+                            colors = listOf(Color(0xFF1C1C1C), Color(0xFF0E0E0E))
                         )
                     )
+                    .clickable {
+                        haptics.click()
+                        replayCounter++
+                    }
+                    .padding(vertical = 20.dp, horizontal = 12.dp),
+                contentAlignment = Alignment.Center
+            ) {
+                val currentState = state
+                if (currentState != null) {
+                    PixelWidgetCanvasPreview(
+                        state = currentState,
+                        widthDp = widthDp,
+                        heightDp = heightDp,
+                        replayTrigger = replayCounter
+                    )
+                } else {
+                    Box(
+                        modifier = Modifier.size(widthDp, heightDp),
+                        contentAlignment = Alignment.Center
+                    ) {
+                        Text("Loading...", color = PixelTheme.ColorDotMid, fontSize = 12.sp)
+                    }
                 }
             }
 
-            // Pin to Home Screen Action
-            Button(
-                onClick = {
-                    haptics.click()
-                    pinWidgetToHome(context, info.providerClass)
-                },
-                shape = RoundedCornerShape(12.dp),
-                colors = ButtonDefaults.buttonColors(
-                    containerColor = Color(0xFF242424),
-                    contentColor = PixelTheme.ColorDotOn
-                ),
-                contentPadding = PaddingValues(horizontal = 12.dp, vertical = 6.dp)
+            Spacer(modifier = Modifier.height(12.dp))
+
+            // Size Chips & Pin Button Row
+            Row(
+                modifier = Modifier.fillMaxWidth(),
+                horizontalArrangement = Arrangement.SpaceBetween,
+                verticalAlignment = Alignment.CenterVertically
             ) {
-                Icon(
-                    imageVector = Icons.Default.AddCircleOutline,
-                    contentDescription = null,
-                    modifier = Modifier.size(16.dp),
-                    tint = PixelTheme.ColorMint
-                )
-                Spacer(modifier = Modifier.width(6.dp))
-                Text(
-                    text = "Pin",
-                    fontFamily = GoogleSansFlex,
-                    fontWeight = FontWeight.Bold,
-                    fontSize = 12.sp
-                )
+                // Supported size chips
+                Row(horizontalArrangement = Arrangement.spacedBy(8.dp)) {
+                    info.supportedSizes.forEachIndexed { index, (label, _) ->
+                        FilterChip(
+                            selected = (index == selectedSizeIndex),
+                            onClick = {
+                                haptics.click()
+                                selectedSizeIndex = index
+                                replayCounter++
+                            },
+                            label = {
+                                Text(
+                                    text = label,
+                                    fontFamily = GoogleSansFlex,
+                                    fontWeight = FontWeight.Bold,
+                                    fontSize = 11.sp
+                                )
+                            },
+                            colors = FilterChipDefaults.filterChipColors(
+                                selectedContainerColor = MaterialTheme.colorScheme.primary.copy(alpha = 0.18f),
+                                selectedLabelColor = MaterialTheme.colorScheme.primary,
+                                containerColor = MaterialTheme.colorScheme.surfaceContainerHighest.copy(alpha = 0.5f),
+                                labelColor = MaterialTheme.colorScheme.onSurfaceVariant
+                            )
+                        )
+                    }
+                }
+
+                // Pin to Home Screen Action
+                Button(
+                    onClick = {
+                        haptics.click()
+                        pinWidgetToHome(context, info.providerClass)
+                    },
+                    shape = RoundedCornerShape(12.dp),
+                    colors = ButtonDefaults.buttonColors(
+                        containerColor = MaterialTheme.colorScheme.primary,
+                        contentColor = MaterialTheme.colorScheme.onPrimary
+                    ),
+                    contentPadding = PaddingValues(horizontal = 14.dp, vertical = 6.dp)
+                ) {
+                    Icon(
+                        imageVector = Icons.Default.AddCircleOutline,
+                        contentDescription = null,
+                        modifier = Modifier.size(16.dp),
+                        tint = MaterialTheme.colorScheme.onPrimary
+                    )
+                    Spacer(modifier = Modifier.width(6.dp))
+                    Text(
+                        text = "Pin",
+                        fontFamily = GoogleSansFlex,
+                        fontWeight = FontWeight.Bold,
+                        fontSize = 12.sp
+                    )
+                }
             }
         }
     }

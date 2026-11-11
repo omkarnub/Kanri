@@ -31,8 +31,8 @@ import androidx.compose.material.icons.automirrored.filled.Sort
 import androidx.compose.material.icons.filled.SwapVert
 import androidx.compose.material3.Card
 import androidx.compose.material3.CardDefaults
-import androidx.compose.material3.DropdownMenu
-import androidx.compose.material3.DropdownMenuItem
+import com.omkarnub.kanri.ui.common.KanriDropdownMenu
+import com.omkarnub.kanri.ui.common.KanriDropdownMenuItem
 import androidx.compose.material3.Icon
 import androidx.compose.material3.IconButton
 import androidx.compose.material3.LinearProgressIndicator
@@ -416,15 +416,13 @@ fun GoalsScreen(
                         }
                     }
 
-                    DropdownMenu(
+                    KanriDropdownMenu(
                         expanded = isSortMenuOpen,
                         onDismissRequest = { isSortMenuOpen = false },
-                        containerColor = MaterialTheme.colorScheme.surface,
-                        shape = RoundedCornerShape(14.dp),
-                        border = BorderStroke(1.dp, MaterialTheme.colorScheme.outlineVariant)
+                        shape = RoundedCornerShape(14.dp)
                     ) {
                         GoalSortOption.entries.forEach { option ->
-                            DropdownMenuItem(
+                            KanriDropdownMenuItem(
                                 text = {
                                     Text(
                                         text = option.label,

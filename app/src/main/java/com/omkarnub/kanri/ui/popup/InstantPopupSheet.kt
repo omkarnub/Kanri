@@ -135,12 +135,12 @@ fun InstantPopupSheet(
                             text = "Instant Detection & Popups",
                             style = MaterialTheme.typography.titleMedium,
                             fontWeight = FontWeight.Bold,
-                            color = Color(0xFFE6EDF3)
+                            color = MaterialTheme.colorScheme.onSurface
                         )
                         Text(
                             text = "Overlay cards & UPI receive detection",
                             style = MaterialTheme.typography.bodySmall,
-                            color = Color(0xFF8B949E)
+                            color = MaterialTheme.colorScheme.onSurfaceVariant
                         )
                     }
                 }
@@ -148,7 +148,7 @@ fun InstantPopupSheet(
                     Icon(
                         imageVector = Icons.Default.Close,
                         contentDescription = "Close",
-                        tint = Color(0xFF8B949E)
+                        tint = MaterialTheme.colorScheme.onSurfaceVariant
                     )
                 }
             }
@@ -202,7 +202,7 @@ fun InstantPopupSheet(
                     Text(
                         text = "Allows Kanri to display a floating card directly over GPay, PhonePe, Paytm, or any app right when an SMS is received so you can categorize it with 1 tap.",
                         style = MaterialTheme.typography.bodySmall,
-                        color = Color(0xFF8B949E),
+                        color = MaterialTheme.colorScheme.onSurfaceVariant,
                         lineHeight = 18.sp
                     )
 
@@ -280,7 +280,7 @@ fun InstantPopupSheet(
                     Text(
                         text = "Intercepts receive-side payment alerts from Google Pay, PhonePe, Paytm, and Amazon Pay to record credits and rewards instantly with 5-minute SMS deduplication.",
                         style = MaterialTheme.typography.bodySmall,
-                        color = Color(0xFF8B949E),
+                        color = MaterialTheme.colorScheme.onSurfaceVariant,
                         lineHeight = 18.sp
                     )
 
@@ -380,9 +380,9 @@ fun InstantPopupSheet(
                     Toast.makeText(context, "Triggered heads-up notification with action chips!", Toast.LENGTH_SHORT).show()
                 },
                 colors = ButtonDefaults.outlinedButtonColors(
-                    contentColor = Color(0xFF8B949E)
+                    contentColor = MaterialTheme.colorScheme.onSurfaceVariant
                 ),
-                border = androidx.compose.foundation.BorderStroke(1.dp, Color(0xFF30363D)),
+                border = androidx.compose.foundation.BorderStroke(1.dp, MaterialTheme.colorScheme.outlineVariant),
                 shape = RoundedCornerShape(10.dp),
                 modifier = Modifier
                     .fillMaxWidth()
@@ -392,7 +392,7 @@ fun InstantPopupSheet(
                     imageVector = Icons.Default.NotificationsActive,
                     contentDescription = null,
                     modifier = Modifier.size(18.dp),
-                    tint = Color(0xFF8B949E)
+                    tint = MaterialTheme.colorScheme.onSurfaceVariant
                 )
                 Spacer(modifier = Modifier.width(8.dp))
                 Text("Test Notification Fallback Chips", fontWeight = FontWeight.SemiBold)
@@ -446,13 +446,13 @@ private fun FeatureBullet(title: String, desc: String) {
             text = "• $title",
             fontSize = 13.sp,
             fontWeight = FontWeight.SemiBold,
-            color = Color(0xFF58A6FF)
+            color = MaterialTheme.colorScheme.primary
         )
         Spacer(modifier = Modifier.height(2.dp))
         Text(
             text = desc,
             fontSize = 12.sp,
-            color = Color(0xFF8B949E),
+            color = MaterialTheme.colorScheme.onSurfaceVariant,
             lineHeight = 16.sp,
             modifier = Modifier.padding(start = 10.dp)
         )

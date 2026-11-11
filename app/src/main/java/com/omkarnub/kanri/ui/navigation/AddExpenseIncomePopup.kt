@@ -227,9 +227,14 @@ private fun PopupOptionCard(
     val cardShape = RoundedCornerShape(cornerRadius.coerceIn(12.dp, 28.dp))
 
     val isDark = LocalKanriGlass.current?.isDark ?: (MaterialTheme.colorScheme.surface.luminance() < 0.5f)
-    val cardFillColor = if (isDark) Color(0xFF161822).copy(alpha = 0.45f) else Color.White.copy(alpha = 0.55f)
-    val titleTextColor = if (isDark) Color.White else Color(0xFF12141B)
-    val subtitleTextColor = if (isDark) Color.White.copy(alpha = 0.70f) else Color(0xFF5A5C66)
+    val isAmoled = MaterialTheme.colorScheme.background == Color.Black || MaterialTheme.colorScheme.surface == Color.Black
+    val cardFillColor = when {
+        !isDark -> Color.White.copy(alpha = 0.55f)
+        isAmoled -> Color(0xFF0C0C0C).copy(alpha = 0.55f)
+        else -> Color(0xFF141414).copy(alpha = 0.45f)
+    }
+    val titleTextColor = if (isDark) Color(0xFFF2F2F2) else Color(0xFF12141B)
+    val subtitleTextColor = if (isDark) Color(0xFFE0E0E0).copy(alpha = 0.70f) else Color(0xFF5A5C66)
 
     Box(
         modifier = Modifier

@@ -47,6 +47,7 @@ import androidx.compose.material3.Surface
 import androidx.compose.material3.Text
 import androidx.compose.runtime.Composable
 import androidx.compose.runtime.LaunchedEffect
+import androidx.compose.runtime.collectAsState
 import androidx.compose.runtime.getValue
 import androidx.compose.runtime.mutableFloatStateOf
 import androidx.compose.runtime.mutableStateOf
@@ -187,10 +188,16 @@ private fun ThemedInstantPopupCardContent(
         }
     }
 
-    val themeMode = remember { ThemePreferences.getInstance(context).themeMode }
-    val isGlass = themeMode == ThemeMode.GLASS
-    val isLight = themeMode == ThemeMode.LIGHT
-    val isAmoled = themeMode == ThemeMode.AMOLED
+    val themePrefs = remember { ThemePreferences.getInstance(context) }
+    val currentThemeMode by themePrefs.themeModeFlow.collectAsState()
+    val isSystemDark = androidx.compose.foundation.isSystemInDarkTheme()
+    val resolvedMode = when (currentThemeMode) {
+        ThemeMode.SYSTEM -> if (isSystemDark) ThemeMode.DARK else ThemeMode.LIGHT
+        else -> currentThemeMode
+    }
+    val isGlass = resolvedMode == ThemeMode.GLASS
+    val isLight = resolvedMode == ThemeMode.LIGHT
+    val isAmoled = resolvedMode == ThemeMode.AMOLED
 
     // Dynamic semantic styling per theme
     val amountColor = if (isDebit) Color(0xFFE54D2E) else Color(0xFF30A46C)
@@ -356,7 +363,7 @@ private fun ThemedInstantPopupCardContent(
     val cardModifier = when {
         isGlass -> baseModifier
             .clip(cardShape)
-            .background(Color(0xFF141622).copy(alpha = 0.35f))
+            .background(Color(0xFF141414).copy(alpha = 0.35f))
             .background(
                 Brush.verticalGradient(
                     colors = listOf(

@@ -198,7 +198,7 @@ fun CategoryDetailScreen(
                             Text(
                                 text = "TRANSACTION LEDGER",
                                 style = MaterialTheme.typography.labelSmall.copy(
-                                    color = Color(0xFF8B949E),
+                                    color = MaterialTheme.colorScheme.onSurfaceVariant,
                                     letterSpacing = 1.2.sp,
                                     fontWeight = FontWeight.Bold
                                 )
@@ -207,7 +207,7 @@ fun CategoryDetailScreen(
                                 text = "${state.countInScope} txns • ${formatCurrency(state.totalInScope)}",
                                 fontSize = 12.sp,
                                 fontWeight = FontWeight.SemiBold,
-                                color = Color(0xFF8B949E)
+                                color = MaterialTheme.colorScheme.onSurfaceVariant
                             )
                         }
 
@@ -358,8 +358,8 @@ fun CategoryMetricsCard(state: CategoryDetailUiState) {
                 if (state.monthOverMonthDeltaPercent != null) {
                     val delta = state.monthOverMonthDeltaPercent
                     val isIncrease = delta > 0
-                    val badgeBg = if (isIncrease) Color(0xFFF85149).copy(alpha = 0.15f) else Color(0xFF3FB950).copy(alpha = 0.15f)
-                    val badgeText = if (isIncrease) Color(0xFFF85149) else Color(0xFF3FB950)
+                    val badgeBg = if (isIncrease) Color(0xFFE5484D).copy(alpha = 0.15f) else Color(0xFF34C759).copy(alpha = 0.15f)
+                    val badgeText = if (isIncrease) Color(0xFFE5484D) else Color(0xFF34C759)
                     val prefix = if (isIncrease) "▲ +" else "▼ "
 
                     Surface(

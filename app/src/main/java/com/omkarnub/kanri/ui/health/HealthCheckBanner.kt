@@ -79,7 +79,7 @@ fun HealthCheckBanner(
                 Text(
                     text = healthStatus.warningSummary,
                     fontSize = 11.sp,
-                    color = if (tokens != null) tokens.textSecondary else if (isLight) MaterialTheme.colorScheme.onSurfaceVariant else Color(0xFFDCDFE4),
+                    color = if (tokens != null) tokens.textSecondary else MaterialTheme.colorScheme.onSurfaceVariant,
                     lineHeight = 15.sp
                 )
             }
@@ -116,7 +116,7 @@ fun HealthCheckBanner(
                 Icon(
                     imageVector = Icons.Default.Close,
                     contentDescription = "Dismiss",
-                    tint = if (tokens != null) tokens.textTertiary else if (isLight) MaterialTheme.colorScheme.onSurfaceVariant else Color(0xFF8B949E),
+                    tint = if (tokens != null) tokens.textTertiary else MaterialTheme.colorScheme.onSurfaceVariant,
                     modifier = Modifier.size(14.dp)
                 )
             }

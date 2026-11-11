@@ -5,6 +5,38 @@ All notable changes to Kanri will be documented in this file.
 The format is based on [Keep a Changelog](https://keepachangelog.com/en/1.0.0/),
 and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0.html).
 
+## [1.14.2] - 2026-11-11
+
+### Refined & Polished
+- **Complete Final UI/UX Consistency Across All 4 Themes (Light, Dark, AMOLED, Glass)**:
+  - **Floating Dock & Navigation Transitions**:
+    - Purged cool blue undertones (`#14151E`, `#06070A`, `#121318`) from `KanriFloatingDock.kt`, standardizing on pure neutral monochrome `#141414`, `#060606`, and `#121212`.
+    - Harmonized theme lerping in dock background, icons, and text across Light mode cream (`#FAF9F6`), Dark mode, AMOLED true black, and Glass frost blur.
+  - **Instant Popup Card & Floating Overlay**:
+    - Made `InstantPopupCard.kt` dynamically reactive to theme mode changes via `themePrefs.themeModeFlow.collectAsState()`, properly resolving `ThemeMode.SYSTEM` with `isSystemInDarkTheme()`.
+    - Replaced hardcoded cool blue backgrounds with neutral monochrome `#141414` (Dark/Glass) and `#FAF9F5` (Light mode).
+  - **Instant Transaction Popup Sheet**:
+    - Replaced hardcoded GitHub dark colors (`#E6EDF3`, `#8B949E`, `#30363D`) with semantic `MaterialTheme.colorScheme.onSurface`, `onSurfaceVariant`, `outlineVariant`, and `primary` for flawless legibility in Light mode.
+  - **Recurring Payments & Export Statement Sheets**:
+    - Replaced hardcoded white `#F0F6FC` on candidate titles and item amounts with `MaterialTheme.colorScheme.onSurface`, eliminating invisible text in Light mode.
+    - Standardized billing cycles, due date indicators, and delete buttons to `MaterialTheme.colorScheme.onSurfaceVariant`.
+    - Updated `ExportStatementSheet.kt` records summary, transaction counts, and calculation placeholders to adaptive theme text colors.
+  - **Split Expense & Group Bill Splitting**:
+    - Replaced bright cyan `#00D09C` and bright red `#FF6B6B` with `SplitPositiveGreen` (`#30A46C`) and `SplitNegativeRed` (`#E54D2E`), ensuring accessible contrast against both light cream and dark backgrounds.
+    - Updated profile badges and icons to adapt across Light, Dark, AMOLED, and Glass.
+  - **Widget Gallery & Live DotTiles Previews**:
+    - Wrapped `WidgetGalleryCard` in adaptive `KanriGlassCard`, converting the preview cards from hardcoded dark containers to theme-adaptive surfaces with clean borders and typography.
+    - Upgraded size selection filter chips and Pin buttons to theme-adaptive primary colors.
+  - **Health Check & Diagnostics Sheet**:
+    - Converted action buttons in `DiagnosticsSheet.kt` to semantic `primary` and `error` theme colors.
+    - Replaced hardcoded GitHub dark fallback text tints in `HealthCheckBanner.kt` with `MaterialTheme.colorScheme.onSurfaceVariant`.
+  - **Onboarding Hero Interactive Demo**:
+    - Updated `DemoSmsCard` and `DemoParsedCard` in `OnboardingHeroDemo.kt` to use `MaterialTheme.colorScheme.outlineVariant`, `surfaceContainerHighest`, and `onSurfaceVariant`, fixing light mode contrast on the onboarding screen.
+  - **Savings Goals & Category Detail**:
+    - Swapped hardcoded `DropdownMenu` in `GoalsScreen.kt` for `KanriDropdownMenu` with glass blur and surface adaptation.
+    - Updated month-over-month delta badges in `CategoryDetailScreen.kt` to accessible Radix/Material semantic colors.
+- Bumped version to `1.14.2` (Build 44).
+
 ## [1.14.1] - 2026-11-11
 
 ### Refined & Perfected

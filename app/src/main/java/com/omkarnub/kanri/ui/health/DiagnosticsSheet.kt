@@ -246,14 +246,15 @@ fun DiagnosticsSheet(
                                         .height(32.dp),
                                     contentPadding = PaddingValues(horizontal = 12.dp, vertical = 2.dp),
                                     colors = ButtonDefaults.buttonColors(
-                                        containerColor = if (item.isCritical) Color(0xFFE63946) else Color(0xFF00B4D8)
+                                        containerColor = if (item.isCritical) MaterialTheme.colorScheme.error else MaterialTheme.colorScheme.primary,
+                                        contentColor = if (item.isCritical) MaterialTheme.colorScheme.onError else MaterialTheme.colorScheme.onPrimary
                                     )
                                 ) {
                                     Text(
                                         text = item.actionLabel,
                                         fontSize = 11.sp,
                                         fontWeight = FontWeight.Bold,
-                                        color = Color.White
+                                        color = if (item.isCritical) MaterialTheme.colorScheme.onError else MaterialTheme.colorScheme.onPrimary
                                     )
                                 }
                             }

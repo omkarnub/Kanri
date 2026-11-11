@@ -127,7 +127,7 @@ fun AllTimeTrendsView(
                 Text(
                     text = "MONTH-BY-MONTH TRAJECTORY",
                     style = MaterialTheme.typography.labelSmall.copy(
-                        color = Color(0xFF8B949E),
+                        color = MaterialTheme.colorScheme.onSurfaceVariant,
                         letterSpacing = 1.2.sp,
                         fontWeight = FontWeight.Bold
                     )
@@ -136,7 +136,7 @@ fun AllTimeTrendsView(
                 Text(
                     text = "Tap month to drill down",
                     style = MaterialTheme.typography.labelSmall.copy(
-                        color = Color(0xFF58A6FF),
+                        color = MaterialTheme.colorScheme.primary,
                         fontSize = 11.sp
                     )
                 )
@@ -366,7 +366,7 @@ fun MonthTrajectoryCard(
                     )
                     Text(
                         text = "${item.transactionCount} txs",
-                        color = Color(0xFF8B949E),
+                        color = MaterialTheme.colorScheme.onSurfaceVariant,
                         fontSize = 11.sp
                     )
                 }
@@ -376,7 +376,7 @@ fun MonthTrajectoryCard(
                 Icon(
                     imageVector = Icons.AutoMirrored.Filled.ArrowForwardIos,
                     contentDescription = "View Details",
-                    tint = Color(0xFF6E7681),
+                    tint = MaterialTheme.colorScheme.onSurfaceVariant,
                     modifier = Modifier.size(14.dp)
                 )
             }

@@ -262,7 +262,7 @@ fun RecurringPaymentsSheet(
                                     text = candidate.title,
                                     fontSize = 13.sp,
                                     fontWeight = FontWeight.Bold,
-                                    color = Color(0xFFF0F6FC)
+                                    color = MaterialTheme.colorScheme.onSurface
                                 )
                                 Text(
                                     text = "${currencyFormat.format(candidate.amount)} • ${candidate.occurrenceCount}x detected",
@@ -375,7 +375,7 @@ fun RecurringPaymentsSheet(
                                                 modifier = Modifier.padding(horizontal = 6.dp, vertical = 2.dp),
                                                 fontSize = 9.sp,
                                                 fontWeight = FontWeight.SemiBold,
-                                                color = Color(0xFF8B949E)
+                                                color = MaterialTheme.colorScheme.onPrimaryContainer
                                             )
                                         }
                                     }
@@ -386,7 +386,7 @@ fun RecurringPaymentsSheet(
                                         text = currencyFormat.format(item.amount),
                                         fontSize = 15.sp,
                                         fontWeight = FontWeight.ExtraBold,
-                                        color = Color(0xFFF0F6FC)
+                                        color = MaterialTheme.colorScheme.onSurface
                                     )
 
                                     Spacer(modifier = Modifier.height(2.dp))
@@ -395,14 +395,14 @@ fun RecurringPaymentsSheet(
                                         Icon(
                                             imageVector = Icons.Default.CalendarToday,
                                             contentDescription = null,
-                                            tint = Color(0xFF8B949E),
+                                            tint = MaterialTheme.colorScheme.onSurfaceVariant,
                                             modifier = Modifier.size(12.dp)
                                         )
                                         Spacer(modifier = Modifier.width(4.dp))
                                         Text(
                                             text = "Due: $dueDateStr",
                                             fontSize = 11.sp,
-                                            color = Color(0xFF8B949E)
+                                            color = MaterialTheme.colorScheme.onSurfaceVariant
                                         )
                                         Spacer(modifier = Modifier.width(8.dp))
 
@@ -491,7 +491,7 @@ fun RecurringPaymentsSheet(
                                         Icon(
                                             imageVector = Icons.Default.Delete,
                                             contentDescription = "Delete",
-                                            tint = Color(0xFF8B949E),
+                                            tint = MaterialTheme.colorScheme.onSurfaceVariant,
                                             modifier = Modifier.size(16.dp)
                                         )
                                     }

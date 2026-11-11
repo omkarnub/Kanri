@@ -226,7 +226,7 @@ fun ExportStatementSheet(
                                 Text(
                                     text = "${exportSuccessSummary?.transactionCount} records saved as ${selectedFormat.name}",
                                     fontSize = 12.sp,
-                                    color = Color(0xFF8B949E)
+                                    color = MaterialTheme.colorScheme.onSurfaceVariant
                                 )
                             }
                         }
@@ -470,7 +470,7 @@ fun ExportStatementSheet(
                             Text(
                                 text = "${preview.transactionCount} transactions",
                                 fontSize = 12.sp,
-                                color = Color(0xFF8B949E)
+                                color = MaterialTheme.colorScheme.onSurfaceVariant
                             )
                             Text(
                                 text = "Spent: ${formatCurrency(preview.totalDebit)}",
@@ -489,7 +489,7 @@ fun ExportStatementSheet(
                         Text(
                             text = "Calculating summary...",
                             fontSize = 12.sp,
-                            color = Color(0xFF8B949E)
+                            color = MaterialTheme.colorScheme.onSurfaceVariant
                         )
                     }
                 }

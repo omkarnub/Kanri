@@ -127,13 +127,13 @@ fun KanriFloatingDock(
             val dockBgColor = when {
                 isDarkTint -> {
                     val d = (-lightness).coerceIn(0f, 1f)
-                    lerpColor(Color(0xFF14151E), Color(0xFF06070A), d)
+                    lerpColor(Color(0xFF141414), Color(0xFF060606), d)
                 }
                 isLightTint -> {
                     val l = lightness.coerceIn(0f, 1f)
-                    lerpColor(Color(0xFF14151E), Color(0xFFFAF9F6), l)
+                    lerpColor(Color(0xFF141414), Color(0xFFFAF9F6), l)
                 }
-                else -> if (tokens.isDark) Color(0xFF14151E) else Color(0xFFFAF9F5)
+                else -> if (tokens.isDark) Color(0xFF141414) else Color(0xFFFAF9F5)
             }
             val dockBgAlpha = when {
                 isDarkTint -> {
@@ -320,7 +320,7 @@ private fun DockTabItem(
     val baseColor = if (tokens != null) {
         if (tokens.tintLightness > 0.25f) {
             val l = ((tokens.tintLightness - 0.25f) / 0.75f).coerceIn(0f, 1f)
-            lerpColor(tokens.textPrimary, Color(0xFF121318), l)
+            lerpColor(tokens.textPrimary, Color(0xFF121212), l)
         } else {
             tokens.textPrimary
         }
@@ -455,13 +455,13 @@ private fun DockAddButton(
         val dockBgColor = when {
             isDarkTint -> {
                 val d = (-lightness).coerceIn(0f, 1f)
-                lerpColor(Color(0xFF14151E), Color(0xFF06070A), d)
+                lerpColor(Color(0xFF141414), Color(0xFF060606), d)
             }
             isLightTint -> {
                 val l = lightness.coerceIn(0f, 1f)
-                lerpColor(Color(0xFF14151E), Color(0xFFFAF9F6), l)
+                lerpColor(Color(0xFF141414), Color(0xFFFAF9F6), l)
             }
-            else -> if (tokens.isDark) Color(0xFF14151E) else Color(0xFFFAF9F5)
+            else -> if (tokens.isDark) Color(0xFF141414) else Color(0xFFFAF9F5)
         }
 
         val dockBgAlpha = when {
@@ -576,7 +576,7 @@ private fun DockAddButton(
         val addIconColor = if (tokens != null) {
             if (tokens.tintLightness > 0.25f) {
                 val l = ((tokens.tintLightness - 0.25f) / 0.75f).coerceIn(0f, 1f)
-                lerpColor(tokens.accent, Color(0xFF121318), l)
+                lerpColor(tokens.accent, Color(0xFF121212), l)
             } else {
                 tokens.accent
             }

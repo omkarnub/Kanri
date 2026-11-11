@@ -111,6 +111,9 @@ private fun triggerSplitHaptic(context: Context, hapticFeedback: HapticFeedback)
     } catch (_: Exception) {}
 }
 
+private val SplitPositiveGreen = Color(0xFF30A46C)
+private val SplitNegativeRed = Color(0xFFE54D2E)
+
 /**
  * Full-page screen for splitting group expenses with a fully-animated monochrome ring chart.
  */
@@ -364,7 +367,7 @@ fun SplitExpenseScreen(
                     Text(
                         text = errorMessage ?: "",
                         fontFamily = GoogleSansFlex,
-                        color = Color(0xFFFF6B6B),
+                        color = SplitNegativeRed,
                         fontSize = 12.5.sp,
                         fontWeight = FontWeight.SemiBold
                     )
@@ -541,7 +544,7 @@ fun SplitExpenseScreen(
                             Text(
                                 text = errorMessage ?: "",
                                 fontFamily = GoogleSansFlex,
-                                color = Color(0xFFFF6B6B),
+                                color = SplitNegativeRed,
                                 fontSize = 12.5.sp,
                                 fontWeight = FontWeight.SemiBold,
                                 modifier = Modifier.padding(bottom = 8.dp)
@@ -871,7 +874,7 @@ private fun FriendSlotProfileCard(
                     fontFamily = GoogleSansFlex,
                     fontWeight = FontWeight.Bold,
                     fontSize = 12.5.sp,
-                    color = Color(0xFF00D09C)
+                    color = SplitPositiveGreen
                 )
             }
 
@@ -956,7 +959,7 @@ private fun FriendSlotProfileCard(
                         imageVector = if (isExistingProfile) Icons.Default.Person else Icons.Default.PersonAdd,
                         contentDescription = null,
                         modifier = Modifier.size(18.dp),
-                        tint = if (isExistingProfile) Color(0xFF00D09C) else MaterialTheme.colorScheme.onSurfaceVariant
+                        tint = if (isExistingProfile) SplitPositiveGreen else MaterialTheme.colorScheme.onSurfaceVariant
                     )
                 },
                 modifier = Modifier.fillMaxWidth(),
@@ -983,7 +986,7 @@ private fun FriendSlotProfileCard(
                     Icon(
                         imageVector = Icons.Default.Check,
                         contentDescription = null,
-                        tint = Color(0xFF00D09C),
+                        tint = SplitPositiveGreen,
                         modifier = Modifier.size(13.dp)
                     )
                     Spacer(modifier = Modifier.width(4.dp))
@@ -992,7 +995,7 @@ private fun FriendSlotProfileCard(
                         fontFamily = GoogleSansFlex,
                         fontSize = 11.sp,
                         fontWeight = FontWeight.Medium,
-                        color = Color(0xFF00D09C)
+                        color = SplitPositiveGreen
                     )
                 } else if (isNewProfile) {
                     Icon(
@@ -1062,7 +1065,7 @@ private fun PayerProfileCard(
                     fontFamily = GoogleSansFlex,
                     fontWeight = FontWeight.Bold,
                     fontSize = 12.5.sp,
-                    color = Color(0xFFFF6B6B)
+                    color = SplitNegativeRed
                 )
             }
 
@@ -1145,7 +1148,7 @@ private fun PayerProfileCard(
                         imageVector = if (isExistingProfile) Icons.Default.Person else Icons.Default.PersonAdd,
                         contentDescription = null,
                         modifier = Modifier.size(18.dp),
-                        tint = if (isExistingProfile) Color(0xFF00D09C) else MaterialTheme.colorScheme.onSurfaceVariant
+                        tint = if (isExistingProfile) SplitPositiveGreen else MaterialTheme.colorScheme.onSurfaceVariant
                     )
                 },
                 modifier = Modifier.fillMaxWidth(),
@@ -1171,7 +1174,7 @@ private fun PayerProfileCard(
                     Icon(
                         imageVector = Icons.Default.Check,
                         contentDescription = null,
-                        tint = Color(0xFF00D09C),
+                        tint = SplitPositiveGreen,
                         modifier = Modifier.size(13.dp)
                     )
                     Spacer(modifier = Modifier.width(4.dp))
@@ -1180,7 +1183,7 @@ private fun PayerProfileCard(
                         fontFamily = GoogleSansFlex,
                         fontSize = 11.sp,
                         fontWeight = FontWeight.Medium,
-                        color = Color(0xFF00D09C)
+                        color = SplitPositiveGreen
                     )
                 } else if (isNewProfile) {
                     Icon(

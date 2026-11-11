@@ -447,7 +447,7 @@ private fun DemoSmsCard(
         color           = surfaceColor,
         border          = BorderStroke(
             width = 1.dp,
-            color = Color.White.copy(alpha = 0.12f)
+            color = MaterialTheme.colorScheme.outlineVariant
         ),
         shadowElevation = 0.dp
     ) {
@@ -461,21 +461,21 @@ private fun DemoSmsCard(
             ) {
                 Row(verticalAlignment = Alignment.CenterVertically, horizontalArrangement = Arrangement.spacedBy(6.dp)) {
                     Box(
-                        modifier         = Modifier.size(22.dp).clip(CircleShape).background(Color(0xFF2A2A2A)),
+                        modifier         = Modifier.size(22.dp).clip(CircleShape).background(MaterialTheme.colorScheme.surfaceContainerHighest),
                         contentAlignment = Alignment.Center
                     ) {
-                        Icon(Icons.Default.AccountBalance, null, Modifier.size(12.dp), tint = Color(0xFFCCCCCC))
+                        Icon(Icons.Default.AccountBalance, null, Modifier.size(12.dp), tint = MaterialTheme.colorScheme.onSurfaceVariant)
                     }
                     Text(
                         stringResource(R.string.onboarding_bank_sender),
                         fontFamily = GoogleSansFlex, fontSize = 11.sp,
                         fontWeight = FontWeight.SemiBold, letterSpacing = 0.5.sp,
-                        color = Color(0xFFDDDDDD)
+                        color = MaterialTheme.colorScheme.onSurface
                     )
                 }
                 Text(
                     stringResource(R.string.onboarding_timestamp_now),
-                    fontFamily = GoogleSansFlex, fontSize = 10.5.sp, color = Color(0xFF777777)
+                    fontFamily = GoogleSansFlex, fontSize = 10.5.sp, color = MaterialTheme.colorScheme.onSurfaceVariant
                 )
             }
 
@@ -497,7 +497,7 @@ private fun DemoSmsCard(
                                 withStyle(
                                     SpanStyle(
                                         fontWeight = FontWeight.Bold,
-                                        color = Color.White
+                                        color = Color.Unspecified
                                     )
                                 ) {
                                     append(word)
@@ -514,7 +514,7 @@ private fun DemoSmsCard(
                 fontFamily = GoogleSansFlex,
                 fontSize = 12.5.sp,
                 lineHeight = 18.sp,
-                color = Color(0xFFAAAAAA),
+                color = MaterialTheme.colorScheme.onSurfaceVariant,
                 maxLines = 3,
                 overflow = TextOverflow.Ellipsis
             )
@@ -556,7 +556,7 @@ private fun DemoTransactionCard(
         color           = surfaceColor,
         border          = BorderStroke(
             width = if (isActive) 1.5.dp else 1.dp,
-            color = if (isActive) accentColor.copy(alpha = 0.50f) else Color.White.copy(alpha = 0.10f)
+            color = if (isActive) accentColor.copy(alpha = 0.50f) else MaterialTheme.colorScheme.outlineVariant
         ),
         shadowElevation = 0.dp
     ) {
@@ -588,10 +588,10 @@ private fun DemoTransactionCard(
                 Text(payee, fontFamily = GoogleSansFlex, fontWeight = FontWeight.SemiBold, fontSize = 14.5.sp, color = MaterialTheme.colorScheme.onSurface, maxLines = 1, overflow = TextOverflow.Ellipsis)
                 Spacer(Modifier.height(2.dp))
                 Row(verticalAlignment = Alignment.CenterVertically, horizontalArrangement = Arrangement.spacedBy(4.dp)) {
-                    Surface(shape = RoundedCornerShape(4.dp), color = Color(0xFF2A2A2A)) {
-                        Text(sourceName, fontFamily = GoogleSansFlex, fontSize = 9.sp, fontWeight = FontWeight.Bold, color = Color(0xFF888888), modifier = Modifier.padding(horizontal = 5.dp, vertical = 1.5.dp))
+                    Surface(shape = RoundedCornerShape(4.dp), color = MaterialTheme.colorScheme.surfaceContainerHighest) {
+                        Text(sourceName, fontFamily = GoogleSansFlex, fontSize = 9.sp, fontWeight = FontWeight.Bold, color = MaterialTheme.colorScheme.onSurfaceVariant, modifier = Modifier.padding(horizontal = 5.dp, vertical = 1.5.dp))
                     }
-                    Text("• $categoryName", fontFamily = GoogleSansFlex, fontSize = 10.sp, color = Color(0xFF777777), maxLines = 1, overflow = TextOverflow.Ellipsis)
+                    Text("• $categoryName", fontFamily = GoogleSansFlex, fontSize = 10.sp, color = MaterialTheme.colorScheme.onSurfaceVariant, maxLines = 1, overflow = TextOverflow.Ellipsis)
                 }
             }
 
