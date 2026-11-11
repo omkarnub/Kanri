@@ -391,10 +391,15 @@ fun OnboardingScreen(
                 if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.TIRAMISU) {
                     postNotificationLauncher.launch(Manifest.permission.POST_NOTIFICATIONS)
                 } else {
-                    val intent = Intent(Settings.ACTION_APP_NOTIFICATION_SETTINGS).apply {
-                        putExtra(Settings.EXTRA_APP_PACKAGE, context.packageName)
+                    try {
+                        val intent = Intent(Settings.ACTION_APP_NOTIFICATION_SETTINGS).apply {
+                            putExtra(Settings.EXTRA_APP_PACKAGE, context.packageName)
+                            addFlags(Intent.FLAG_ACTIVITY_NEW_TASK)
+                        }
+                        context.startActivity(intent)
+                    } catch (_: Exception) {
+                        // Settings screen unavailable on restricted profiles
                     }
-                    context.startActivity(intent)
                 }
             }
             7 -> {
@@ -450,9 +455,13 @@ fun OnboardingScreen(
                             )
                             settings.apply {
                                 javaScriptEnabled = true
-                                domStorageEnabled = true
-                                allowFileAccess = true
-                                allowContentAccess = true
+                                domStorageEnabled = false
+                                allowFileAccess = false
+                                allowContentAccess = false
+                                @Suppress("DEPRECATION")
+                                allowFileAccessFromFileURLs = false
+                                @Suppress("DEPRECATION")
+                                allowUniversalAccessFromFileURLs = false
                                 cacheMode = WebSettings.LOAD_NO_CACHE
                                 loadWithOverviewMode = true
                                 useWideViewPort = true
@@ -481,6 +490,14 @@ fun OnboardingScreen(
                             }
 
                             webViewClient = object : WebViewClient() {
+                                override fun shouldOverrideUrlLoading(
+                                    view: WebView?,
+                                    request: android.webkit.WebResourceRequest?
+                                ): Boolean {
+                                    val url = request?.url?.toString().orEmpty()
+                                    return !url.startsWith("file:///android_asset/")
+                                }
+
                                 override fun onReceivedError(
                                     view: WebView?,
                                     request: android.webkit.WebResourceRequest?,

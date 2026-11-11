@@ -2,6 +2,7 @@ package com.omkarnub.kanri
 
 import android.content.Context
 import android.graphics.Bitmap
+import android.os.Environment
 import androidx.test.ext.junit.runners.AndroidJUnit4
 import androidx.test.platform.app.InstrumentationRegistry
 import com.omkarnub.kanri.widget.core.BudgetWidgetState
@@ -30,7 +31,8 @@ class ExportWidgetPreviewsTest {
     @Test
     fun exportAllWidgetPreviews() {
         val appContext = InstrumentationRegistry.getInstrumentation().targetContext
-        val outDir = File("/sdcard/Download/widget_previews")
+        val baseDir = appContext.getExternalFilesDir(Environment.DIRECTORY_DOWNLOADS) ?: appContext.cacheDir
+        val outDir = File(baseDir, "widget_previews")
         outDir.mkdirs()
 
         val density = 2.5f

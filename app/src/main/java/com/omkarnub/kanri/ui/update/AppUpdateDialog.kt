@@ -502,11 +502,15 @@ fun AppUpdateDialog(
                                 shape = RoundedCornerShape(10.dp),
                                 onClick = {
                                     haptics.click()
-                                    val intent = android.content.Intent(android.provider.Settings.ACTION_MANAGE_UNKNOWN_APP_SOURCES).apply {
-                                        data = android.net.Uri.parse("package:${context.packageName}")
-                                        flags = android.content.Intent.FLAG_ACTIVITY_NEW_TASK
+                                    try {
+                                        val intent = android.content.Intent(android.provider.Settings.ACTION_MANAGE_UNKNOWN_APP_SOURCES).apply {
+                                            data = android.net.Uri.parse("package:${context.packageName}")
+                                            flags = android.content.Intent.FLAG_ACTIVITY_NEW_TASK
+                                        }
+                                        context.startActivity(intent)
+                                    } catch (_: Exception) {
+                                        android.widget.Toast.makeText(context, "Unable to open install permissions", android.widget.Toast.LENGTH_SHORT).show()
                                     }
-                                    context.startActivity(intent)
                                     // Reset state so when user returns they can tap install
                                     updateState = UpdateState.READY_TO_INSTALL
                                 }

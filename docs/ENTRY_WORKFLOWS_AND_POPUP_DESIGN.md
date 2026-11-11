@@ -1,6 +1,6 @@
 # Entry Workflows & Action Popup Design
 
-**Current Version:** 1.18.11 (Build 62)  
+**Current Version:** 1.18.12 (Build 63)  
 **Last Updated:** 2026-11-11  
 
 ---

@@ -4,8 +4,10 @@ import android.annotation.SuppressLint
 import android.view.MotionEvent
 import android.view.View
 import android.view.ViewGroup
+import android.webkit.WebResourceRequest
 import android.webkit.WebSettings
 import android.webkit.WebView
+import android.webkit.WebViewClient
 import androidx.compose.foundation.background
 import androidx.compose.foundation.layout.Box
 import androidx.compose.foundation.layout.fillMaxSize
@@ -108,12 +110,25 @@ fun GlassShaderBackground(
                 settings.apply {
                     javaScriptEnabled = true
                     domStorageEnabled = false
-                    allowFileAccess = true
+                    allowFileAccess = false
                     allowContentAccess = false
+                    @Suppress("DEPRECATION")
+                    allowFileAccessFromFileURLs = false
+                    @Suppress("DEPRECATION")
+                    allowUniversalAccessFromFileURLs = false
                     cacheMode = WebSettings.LOAD_NO_CACHE
                     loadWithOverviewMode = true
                     useWideViewPort = true
                     mediaPlaybackRequiresUserGesture = false
+                }
+                webViewClient = object : WebViewClient() {
+                    override fun shouldOverrideUrlLoading(
+                        view: WebView?,
+                        request: WebResourceRequest?
+                    ): Boolean {
+                        val url = request?.url?.toString().orEmpty()
+                        return !url.startsWith("file:///android_asset/")
+                    }
                 }
                 setBackgroundColor(android.graphics.Color.TRANSPARENT)
                 setLayerType(View.LAYER_TYPE_HARDWARE, null)

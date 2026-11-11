@@ -269,7 +269,11 @@ fun LendingPersonDetailView(
                                 putExtra(Intent.EXTRA_TEXT, msg)
                                 type = "text/plain"
                             }
-                            context.startActivity(Intent.createChooser(sendIntent, "Send Reminder"))
+                            try {
+                                context.startActivity(Intent.createChooser(sendIntent, "Send Reminder"))
+                            } catch (_: Exception) {
+                                android.widget.Toast.makeText(context, "No sharing app found", android.widget.Toast.LENGTH_SHORT).show()
+                            }
                         },
                         modifier = Modifier.weight(1f)
                     )

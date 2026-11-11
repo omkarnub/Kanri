@@ -1,10 +1,12 @@
 ﻿package com.omkarnub.kanri.ui.health
 
+import android.content.ActivityNotFoundException
 import android.content.Context
 import android.content.Intent
 import android.net.Uri
 import android.os.PowerManager
 import android.provider.Settings
+import android.widget.Toast
 import androidx.core.app.NotificationManagerCompat
 
 data class HealthCheckItem(
@@ -95,39 +97,66 @@ object HealthCheckHelper {
                 if (context is android.app.Activity) {
                     com.omkarnub.kanri.util.SmsPermissionHelper.requestSmsPermissions(context)
                 } else {
-                    val intent = Intent(
-                        Settings.ACTION_APPLICATION_DETAILS_SETTINGS,
-                        Uri.parse("package:${context.packageName}")
-                    ).apply {
-                        addFlags(Intent.FLAG_ACTIVITY_NEW_TASK)
-                    }
-                    context.startActivity(intent)
+                    launchIntentSafely(
+                        context,
+                        Intent(
+                            Settings.ACTION_APPLICATION_DETAILS_SETTINGS,
+                            Uri.parse("package:${context.packageName}")
+                        )
+                    )
                 }
             }
             "notification" -> {
-                val intent = Intent(Settings.ACTION_NOTIFICATION_LISTENER_SETTINGS).apply {
-                    addFlags(Intent.FLAG_ACTIVITY_NEW_TASK)
-                }
-                context.startActivity(intent)
+                launchIntentSafely(
+                    context,
+                    Intent(Settings.ACTION_NOTIFICATION_LISTENER_SETTINGS),
+                    fallback = Intent(Settings.ACTION_SETTINGS)
+                )
             }
             "overlay" -> {
-                val intent = Intent(
-                    Settings.ACTION_MANAGE_OVERLAY_PERMISSION,
-                    Uri.parse("package:${context.packageName}")
-                ).apply {
-                    addFlags(Intent.FLAG_ACTIVITY_NEW_TASK)
-                }
-                context.startActivity(intent)
+                launchIntentSafely(
+                    context,
+                    Intent(
+                        Settings.ACTION_MANAGE_OVERLAY_PERMISSION,
+                        Uri.parse("package:${context.packageName}")
+                    ),
+                    fallback = Intent(
+                        Settings.ACTION_APPLICATION_DETAILS_SETTINGS,
+                        Uri.parse("package:${context.packageName}")
+                    )
+                )
             }
             "battery" -> {
-                val intent = Intent(
-                    Settings.ACTION_REQUEST_IGNORE_BATTERY_OPTIMIZATIONS,
-                    Uri.parse("package:${context.packageName}")
-                ).apply {
-                    addFlags(Intent.FLAG_ACTIVITY_NEW_TASK)
-                }
-                context.startActivity(intent)
+                launchIntentSafely(
+                    context,
+                    Intent(
+                        Settings.ACTION_REQUEST_IGNORE_BATTERY_OPTIMIZATIONS,
+                        Uri.parse("package:${context.packageName}")
+                    ),
+                    fallback = Intent(Settings.ACTION_IGNORE_BATTERY_OPTIMIZATION_SETTINGS)
+                )
             }
+        }
+    }
+
+    private fun launchIntentSafely(
+        context: Context,
+        primary: Intent,
+        fallback: Intent? = null
+    ) {
+        try {
+            primary.addFlags(Intent.FLAG_ACTIVITY_NEW_TASK)
+            context.startActivity(primary)
+        } catch (_: ActivityNotFoundException) {
+            if (fallback != null) {
+                try {
+                    fallback.addFlags(Intent.FLAG_ACTIVITY_NEW_TASK)
+                    context.startActivity(fallback)
+                    return
+                } catch (_: ActivityNotFoundException) {
+                }
+            }
+            Toast.makeText(context, "Unable to open system settings on this device", Toast.LENGTH_SHORT).show()
         }
     }
 }

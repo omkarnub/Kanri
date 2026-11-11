@@ -5,6 +5,19 @@ All notable changes to Kanri will be documented in this file.
 The format is based on [Keep a Changelog](https://keepachangelog.com/en/1.0.0/),
 and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0.html).
 
+## [1.18.12] - 2026-11-11
+
+### Security & Pre-Publish Hardening (Phase 5 Audit)
+- **Network, Backup & WebView Hardening**:
+  - Added `res/xml/network_security_config.xml` (`cleartextTrafficPermitted="false"`) and declared `android:usesCleartextTraffic="false"` in `AndroidManifest.xml`.
+  - Tightened `res/xml/backup_rules.xml` and `res/xml/data_extraction_rules.xml` to exclude `kanri_cloud_backup_secure_prefs.xml` and `crash_logs` from cloud backup and non-transferable Keystore-backed shared preferences from device transfer.
+  - Restricted `WebView` sandboxes in `GlassBackgroundView` and `OnboardingScreen` (`allowFileAccess = false`, `allowContentAccess = false`, `allowFileAccessFromFileURLs = false`, `allowUniversalAccessFromFileURLs = false`, plus `shouldOverrideUrlLoading` blocking non-asset URLs) and added explicit `@JavascriptInterface` R8 keep rules in `app/proguard-rules.pro`.
+- **Biometric Lock & Resilience**:
+  - Updated `QuickEntryActivity` to extend `FragmentActivity`, enforce `SecurityManager` / `SecurityPreferences` biometric/PIN unlock before exposing categories or lending contacts, and insert split-bill lending records inside an atomic `db.withTransaction` block.
+  - Guarded external system/share `startActivity` launches across `HealthCheckHelper`, `SettingsComponents`, `OnboardingScreen`, `LendingPersonDetailView`, `LendingTransactionDetailDialog`, `CrashLogsDialog`, and `AppUpdateDialog` against `ActivityNotFoundException`.
+  - Updated `ExportWidgetPreviewsTest` output path to app-scoped external Downloads/cache storage for Android 13–17 scoped storage compatibility.
+- Bumped version to `1.18.12` (Build 63).
+
 ## [1.18.11] - 2026-11-11
 
 ### Changed & Fixed (Phase 4 Build Configuration & Compiler/Lint Hygiene)

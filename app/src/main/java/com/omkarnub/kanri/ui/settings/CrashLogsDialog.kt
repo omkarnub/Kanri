@@ -2,6 +2,7 @@ package com.omkarnub.kanri.ui.settings
 
 import android.content.Context
 import android.content.Intent
+import android.widget.Toast
 import androidx.compose.foundation.clickable
 import androidx.compose.foundation.layout.Arrangement
 import androidx.compose.foundation.layout.Column
@@ -233,6 +234,10 @@ private fun shareLogFile(context: Context, file: File) {
             putExtra(Intent.EXTRA_TEXT, text)
             putExtra(Intent.EXTRA_SUBJECT, "Kanri Crash Report - ${file.name}")
         }
-        context.startActivity(Intent.createChooser(shareIntent, "Share Crash Log"))
+        try {
+            context.startActivity(Intent.createChooser(shareIntent, "Share Crash Log"))
+        } catch (_: Exception) {
+            Toast.makeText(context, "No app found to share log", Toast.LENGTH_SHORT).show()
+        }
     }
 }

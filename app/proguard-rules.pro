@@ -17,6 +17,11 @@
 -dontwarn com.google.errorprone.annotations.**
 -dontwarn javax.annotation.**
 
+# Preserve WebView @JavascriptInterface callbacks (OnboardingScreen bridge)
+-keepclassmembers class * {
+    @android.webkit.JavascriptInterface <methods>;
+}
+
 # Kotlin Reflection & Coroutines
 -keepclassmembers class kotlin.Metadata {
     public <methods>;

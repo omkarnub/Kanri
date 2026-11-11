@@ -32,6 +32,7 @@ import androidx.compose.foundation.layout.Arrangement
 import androidx.compose.foundation.layout.Box
 import androidx.compose.foundation.layout.Column
 import androidx.compose.foundation.layout.ColumnScope
+import androidx.compose.foundation.layout.FlowRow
 import androidx.compose.foundation.layout.Row
 import androidx.compose.foundation.layout.Spacer
 import androidx.compose.foundation.layout.defaultMinSize
@@ -758,11 +759,15 @@ fun PermissionsStatusOverview(
                 if (context is Activity) {
                     com.omkarnub.kanri.util.SmsPermissionHelper.requestSmsPermissions(context)
                 } else {
-                    val intent = Intent(Settings.ACTION_APPLICATION_DETAILS_SETTINGS).apply {
-                        data = Uri.fromParts("package", context.packageName, null)
-                        addFlags(Intent.FLAG_ACTIVITY_NEW_TASK)
+                    try {
+                        val intent = Intent(Settings.ACTION_APPLICATION_DETAILS_SETTINGS).apply {
+                            data = Uri.fromParts("package", context.packageName, null)
+                            addFlags(Intent.FLAG_ACTIVITY_NEW_TASK)
+                        }
+                        context.startActivity(intent)
+                    } catch (_: Exception) {
+                        Toast.makeText(context, "Unable to open app settings", Toast.LENGTH_SHORT).show()
                     }
-                    context.startActivity(intent)
                 }
             }
         )
@@ -791,11 +796,23 @@ fun PermissionsStatusOverview(
             checked = isNotifAllowed,
             onCheckedChange = {
                 haptics.click()
-                val intent = Intent(Settings.ACTION_APP_NOTIFICATION_SETTINGS).apply {
-                    putExtra(Settings.EXTRA_APP_PACKAGE, context.packageName)
-                    addFlags(Intent.FLAG_ACTIVITY_NEW_TASK)
+                try {
+                    val intent = Intent(Settings.ACTION_APP_NOTIFICATION_SETTINGS).apply {
+                        putExtra(Settings.EXTRA_APP_PACKAGE, context.packageName)
+                        addFlags(Intent.FLAG_ACTIVITY_NEW_TASK)
+                    }
+                    context.startActivity(intent)
+                } catch (_: Exception) {
+                    try {
+                        val fallback = Intent(Settings.ACTION_APPLICATION_DETAILS_SETTINGS).apply {
+                            data = Uri.fromParts("package", context.packageName, null)
+                            addFlags(Intent.FLAG_ACTIVITY_NEW_TASK)
+                        }
+                        context.startActivity(fallback)
+                    } catch (_: Exception) {
+                        Toast.makeText(context, "Unable to open notification settings", Toast.LENGTH_SHORT).show()
+                    }
                 }
-                context.startActivity(intent)
             }
         )
 
@@ -815,11 +832,15 @@ fun PermissionsStatusOverview(
                     }
                     context.startActivity(intent)
                 } catch (_: Exception) {
-                    val fallback = Intent(Settings.ACTION_APPLICATION_DETAILS_SETTINGS).apply {
-                        data = Uri.fromParts("package", context.packageName, null)
-                        addFlags(Intent.FLAG_ACTIVITY_NEW_TASK)
+                    try {
+                        val fallback = Intent(Settings.ACTION_APPLICATION_DETAILS_SETTINGS).apply {
+                            data = Uri.fromParts("package", context.packageName, null)
+                            addFlags(Intent.FLAG_ACTIVITY_NEW_TASK)
+                        }
+                        context.startActivity(fallback)
+                    } catch (_: Exception) {
+                        Toast.makeText(context, "Unable to open overlay settings", Toast.LENGTH_SHORT).show()
                     }
-                    context.startActivity(fallback)
                 }
             }
         )
@@ -1313,8 +1334,9 @@ fun SuggestFeatureDialog(onDismiss: () -> Unit) {
                     color = MaterialTheme.colorScheme.onSurfaceVariant
                 )
 
-                Row(
+                FlowRow(
                     horizontalArrangement = Arrangement.spacedBy(6.dp),
+                    verticalArrangement = Arrangement.spacedBy(4.dp),
                     modifier = Modifier.fillMaxWidth()
                 ) {
                     categories.take(3).forEach { cat ->
