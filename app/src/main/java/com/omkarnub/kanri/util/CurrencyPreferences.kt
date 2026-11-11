@@ -6,10 +6,10 @@ import kotlinx.coroutines.flow.MutableStateFlow
 import kotlinx.coroutines.flow.StateFlow
 import kotlinx.coroutines.flow.asStateFlow
 
-class CurrencyPreferences(private val context: Context) {
+class CurrencyPreferences(context: Context) {
 
     private val prefs: SharedPreferences =
-        context.getSharedPreferences(PREFS_NAME, Context.MODE_PRIVATE)
+        context.applicationContext.getSharedPreferences(PREFS_NAME, Context.MODE_PRIVATE)
 
     private val _currencyFlow = MutableStateFlow(loadCurrency())
     val currencyFlow: StateFlow<AppCurrency> = _currencyFlow.asStateFlow()

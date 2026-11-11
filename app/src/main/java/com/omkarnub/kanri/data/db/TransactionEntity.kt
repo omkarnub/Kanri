@@ -5,10 +5,17 @@ import androidx.room.Entity
 import androidx.room.Index
 import androidx.room.PrimaryKey
 
+@androidx.compose.runtime.Immutable
 @Entity(
     tableName = "transactions",
     indices = [
-        Index(value = ["wallet"], name = "index_transactions_wallet")
+        Index(value = ["wallet"], name = "index_transactions_wallet"),
+        Index(value = ["timestamp"]),
+        Index(value = ["category_id"]),
+        Index(value = ["is_duplicate"]),
+        Index(value = ["needs_review"]),
+        Index(value = ["counterparty"]),
+        Index(value = ["type", "timestamp"])
     ]
 )
 data class TransactionEntity(

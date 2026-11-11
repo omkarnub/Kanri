@@ -61,6 +61,7 @@ enum class SearchFilterSheetTab {
     SORT
 }
 
+@androidx.compose.runtime.Immutable
 data class SearchUiState(
     val query: String = "",
     val typeFilter: TransactionTypeFilter = TransactionTypeFilter.ALL,

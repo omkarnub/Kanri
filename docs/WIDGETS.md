@@ -1,6 +1,6 @@
 # Kanri Pixel DotTiles Widget System
 
-Current Version: **1.18.9** (Build 60)
+Current Version: **1.18.10** (Build 61)
 
 ## 1. Overview
 Kanri's widget subsystem is unified around a single, cohesive visual language: **Pixel DotTiles** (Nothing-inspired dot-matrix & tactile cards). Designed with precision, restraint, and obsessive detail, the system delivers 12 specialized home screen widgets rendered by a pure Canvas engine shared 1:1 between Android `RemoteViews` bitmaps and Jetpack Compose in-app previews, with full multi-currency support (`CurrencyUtils` / `CurrencyPreferences` synchronization), custom budget cycle awareness (`BudgetPreferences.budgetCycleStartDay`), and thread-safe `ThreadLocal` `Paint` rendering.
@@ -124,7 +124,7 @@ Reusable pure Canvas primitives:
 ### Launcher Previews (System Widget Picker)
 - Modern Android launchers (Pixel Launcher, Samsung One UI) display previews in the "Add widgets" sheet.
 - Each widget provider configures a dedicated 1:1 preview in `res/xml/widget_*_info.xml` via `android:previewImage="@drawable/widget_preview_*"`.
-- High-fidelity preview drawables reside in `res/drawable-nodpi/` rendered directly from the pure Canvas engine, providing pixel-accurate previews before placement.
+- High-fidelity preview drawables reside in `res/drawable-nodpi/` (`widget_preview_*.webp`, lossless WebP) rendered directly from the pure Canvas engine, providing pixel-accurate previews before placement.
 - `android:previewLayout` attributes are omitted so the launcher never falls back to an inaccurate generic placeholder.
 
 ---

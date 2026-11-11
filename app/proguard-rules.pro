@@ -1,42 +1,19 @@
 # ProGuard / R8 Rules for Kanri
 
-# Room Database Entities and DAOs
--keep class com.omkarnub.kanri.data.db.** { *; }
--keepclassmembers class * extends androidx.room.RoomDatabase { *; }
+# Room Database and legacy annotations
+-keep class * extends androidx.room.RoomDatabase
+-keep class * extends androidx.room.RoomDatabase$Callback
 -dontwarn androidx.room.paging.**
+-dontwarn com.google.errorprone.annotations.**
+-dontwarn javax.annotation.**
 
-# Backup and JSON serialization
--keep class com.omkarnub.kanri.data.backup.** { *; }
+# Preserve stack trace line numbers & generic signatures without leaking local paths
+-keepattributes Signature,Exceptions,SourceFile,LineNumberTable
+-renamesourcefileattribute SourceFile
 
-# SMS and Notification Parser Models
--keep class com.omkarnub.kanri.data.parser.** { *; }
-
-# Manifest declared components
--keep class com.omkarnub.kanri.KanriApplication { *; }
--keep class com.omkarnub.kanri.MainActivity { *; }
--keep class com.omkarnub.kanri.ui.popup.InstantPopupService { *; }
--keep class com.omkarnub.kanri.ui.popup.InstantPopupReceiver { *; }
--keep class com.omkarnub.kanri.ui.notification.KanriNotificationListenerService { *; }
--keep class com.omkarnub.kanri.widget.** { *; }
-
-# SQLCipher for Android
--keep class net.sqlcipher.** { *; }
--keep class net.sqlcipher.database.** { *; }
--keep class net.zetetic.** { *; }
+# Legacy SQLCipher package warnings if referenced transitively
 -dontwarn net.sqlcipher.**
 -dontwarn net.zetetic.**
-
-# WorkManager
--keep class * extends androidx.work.Worker { *; }
--keep class * extends androidx.work.ListenableWorker { *; }
--keep class * extends androidx.work.CoroutineWorker { *; }
--keep class androidx.work.** { *; }
-
-# Security Crypto / Keystore / Google Tink
--keep class androidx.security.crypto.** { *; }
--keep class com.google.crypto.tink.** { *; }
--dontwarn androidx.security.crypto.**
--dontwarn com.google.crypto.tink.**
 -dontwarn com.google.errorprone.annotations.**
 -dontwarn javax.annotation.**
 

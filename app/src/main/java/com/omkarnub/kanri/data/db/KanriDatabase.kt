@@ -29,7 +29,7 @@ import androidx.room.migration.Migration
         SavingsGoalContributionEntity::class,
         WalletBalanceEntity::class
     ],
-    version = 12,
+    version = 13,
     exportSchema = false
 )
 abstract class KanriDatabase : RoomDatabase() {
@@ -131,6 +131,21 @@ abstract class KanriDatabase : RoomDatabase() {
             }
         }
 
+        val MIGRATION_12_13 = object : Migration(12, 13) {
+            override fun migrate(db: SupportSQLiteDatabase) {
+                db.execSQL("CREATE INDEX IF NOT EXISTS index_transactions_timestamp ON transactions (timestamp)")
+                db.execSQL("CREATE INDEX IF NOT EXISTS index_transactions_category_id ON transactions (category_id)")
+                db.execSQL("CREATE INDEX IF NOT EXISTS index_transactions_is_duplicate ON transactions (is_duplicate)")
+                db.execSQL("CREATE INDEX IF NOT EXISTS index_transactions_needs_review ON transactions (needs_review)")
+                db.execSQL("CREATE INDEX IF NOT EXISTS index_transactions_counterparty ON transactions (counterparty)")
+                db.execSQL("CREATE INDEX IF NOT EXISTS index_transactions_type_timestamp ON transactions (type, timestamp)")
+                db.execSQL("CREATE INDEX IF NOT EXISTS index_lending_records_is_settled ON lending_records (is_settled)")
+                db.execSQL("CREATE INDEX IF NOT EXISTS index_lending_records_linked_transaction_id ON lending_records (linked_transaction_id)")
+                db.execSQL("CREATE INDEX IF NOT EXISTS index_lending_records_person_name ON lending_records (person_name)")
+                db.execSQL("CREATE INDEX IF NOT EXISTS index_lending_records_date ON lending_records (date)")
+            }
+        }
+
         val DEFAULT_CATEGORIES = listOf(
             CategoryEntity(name = "Auto / Taxi Fare", colorHex = "#F59E0B", iconName = "taxi", displayOrder = 1),
             CategoryEntity(name = "Food & Dining", colorHex = "#FF7043", iconName = "restaurant", displayOrder = 2),
@@ -170,7 +185,7 @@ abstract class KanriDatabase : RoomDatabase() {
                     KanriDatabase::class.java,
                     "kanri_database"
                 )
-                    .addMigrations(MIGRATION_5_6, MIGRATION_6_7, MIGRATION_7_8, MIGRATION_8_9, MIGRATION_9_10, MIGRATION_10_11, MIGRATION_11_12)
+                    .addMigrations(MIGRATION_5_6, MIGRATION_6_7, MIGRATION_7_8, MIGRATION_8_9, MIGRATION_9_10, MIGRATION_10_11, MIGRATION_11_12, MIGRATION_12_13)
                     .apply {
                         if (com.omkarnub.kanri.BuildConfig.DEBUG) {
                             fallbackToDestructiveMigration(dropAllTables = false)
@@ -316,7 +331,7 @@ abstract class KanriDatabase : RoomDatabase() {
                     "kanri_database"
                 )
                     .openHelperFactory(factory)
-                    .addMigrations(MIGRATION_5_6, MIGRATION_6_7, MIGRATION_7_8, MIGRATION_8_9, MIGRATION_9_10, MIGRATION_10_11, MIGRATION_11_12)
+                    .addMigrations(MIGRATION_5_6, MIGRATION_6_7, MIGRATION_7_8, MIGRATION_8_9, MIGRATION_9_10, MIGRATION_10_11, MIGRATION_11_12, MIGRATION_12_13)
                     .build()
 
                 encryptedDb.openHelper.writableDatabase.let { db ->

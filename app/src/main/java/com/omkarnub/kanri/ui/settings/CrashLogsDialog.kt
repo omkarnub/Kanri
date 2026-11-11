@@ -155,7 +155,7 @@ fun CrashLogsDialog(
                         .height(280.dp),
                     verticalArrangement = Arrangement.spacedBy(8.dp)
                 ) {
-                    items(logs) { file ->
+                    items(logs, key = { it.absolutePath }) { file ->
                         val dateString = SimpleDateFormat("MMM dd, yyyy HH:mm:ss", currentLocale)
                             .format(Date(file.lastModified()))
                         val isFatal = file.name.startsWith("fatal")

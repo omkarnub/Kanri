@@ -10,12 +10,14 @@ import com.omkarnub.kanri.data.db.LendingEntity
 import com.omkarnub.kanri.data.db.LendingWithRepayments
 import com.omkarnub.kanri.data.lending.LendingMoneyEngine
 import com.omkarnub.kanri.data.lending.LendingTransactionSyncHelper
+import kotlinx.coroutines.Dispatchers
 import kotlinx.coroutines.Job
 import kotlinx.coroutines.delay
 import kotlinx.coroutines.flow.MutableStateFlow
 import kotlinx.coroutines.flow.SharingStarted
 import kotlinx.coroutines.flow.StateFlow
 import kotlinx.coroutines.flow.combine
+import kotlinx.coroutines.flow.flowOn
 import kotlinx.coroutines.flow.stateIn
 import kotlinx.coroutines.launch
 import java.text.SimpleDateFormat
@@ -141,7 +143,7 @@ class LendingHubViewModel @JvmOverloads constructor(
             pendingMergePrompt = pendingMergePrompt,
             canUndoDelete = deletedRecord != null
         )
-    }.stateIn(
+    }.flowOn(Dispatchers.Default).stateIn(
         scope = viewModelScope,
         started = SharingStarted.WhileSubscribed(5000),
         initialValue = LendingHubUiState(isLoading = true)

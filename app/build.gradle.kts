@@ -23,10 +23,24 @@ android {
         applicationId = "com.omkarnub.kanri"
         minSdk = 26
         targetSdk = 37
-        versionCode = 60
-        versionName = "1.18.9"
+        versionCode = 61
+        versionName = "1.18.10"
 
         testInstrumentationRunner = "androidx.test.runner.AndroidJUnitRunner"
+        androidResources {
+            localeFilters += listOf("en")
+        }
+    }
+
+    splits {
+        abi {
+            isEnable = providers.gradleProperty("enableAbiSplits")
+                .map { it.equals("true", ignoreCase = true) }
+                .getOrElse(false)
+            reset()
+            include("arm64-v8a", "armeabi-v7a", "x86", "x86_64")
+            isUniversalApk = true
+        }
     }
 
     signingConfigs {
@@ -77,6 +91,7 @@ dependencies {
     implementation(platform(libs.androidx.compose.bom))
     implementation(libs.androidx.activity.compose)
     implementation(libs.androidx.core.splashscreen)
+    implementation(libs.androidx.profileinstaller)
     implementation(libs.androidx.compose.material3)
     implementation(libs.androidx.compose.ui)
     implementation(libs.androidx.compose.ui.graphics)

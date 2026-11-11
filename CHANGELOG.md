@@ -5,6 +5,21 @@ All notable changes to Kanri will be documented in this file.
 The format is based on [Keep a Changelog](https://keepachangelog.com/en/1.0.0/),
 and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0.html).
 
+## [1.18.10] - 2026-11-11
+
+### Changed & Optimized (Phase 3 Pre-Release Size & Performance Pass)
+- **APK/AAB Size, Assets & R8 Rules**:
+  - Replaced blanket `-keep` directives in `app/proguard-rules.pro` with targeted keep rules (relying on AAR consumer rules and AAPT2 `aapt_rules.txt`), shrinking `classes.dex` from `47,710` to `31,726` method IDs (`-33.5%`) and `7,091` to `5,876` class definitions (`-17.1%`).
+  - Added `androidResources { localeFilters += listOf("en") }` in `app/build.gradle.kts`, reducing `resources.arsc` from `610,388 B` to `90,088 B` (`-85.2%`).
+  - Converted `assets/backgrounds/cherry_canyon.html` embedded `736x1308` PNG (`1,434,530 B`) to `q=98` WebP (`278,388 B`), converted all 12 `res/drawable-nodpi/widget_preview_*.png` drawables to lossless WebP (`253,180 B` → `92,912 B`), and removed 30 redundant legacy PNG/WebP launcher mipmap density files superseded by `<adaptive-icon>` vectors.
+  - Added optional `-PenableAbiSplits=true` ABI splits in `app/build.gradle.kts` (yielding `~11.66 MB` `arm64-v8a` APKs alongside AAB/universal release builds: universal APK `26.85 MB` / `28.16 MB` → `-2.32 MB`; release AAB `20.97 MB` / `21.99 MB` → `-2.22 MB`).
+- **Startup, Baseline Profile & Runtime Performance**:
+  - Added explicit `androidx.profileinstaller:profileinstaller:1.4.0` dependency and `app/src/main/baseline-prof.txt` compiled into `assets/dexopt/baseline.prof`.
+  - Moved non-UI scheduler and notification worker initializations off the main startup path onto `Dispatchers.IO` inside `KanriApplication` and removed duplicate initializers from `MainActivity`.
+  - Upgraded Room schema to **v13** (`MIGRATION_12_13`) adding performance indexes on `transactions` (`timestamp`, `category_id`, `is_duplicate`, `needs_review`, `counterparty`, `(type, timestamp)`) and `lending_records` (`is_settled`, `linked_transaction_id`, `person_name`, `date`) with unit tests verifying migration SQL and indexes (`55 suites`, `343 tests` passing).
+  - Resolved all 8 `StaticFieldLeak` warnings, converted `ThemePreferences` init to async `.apply()`, moved expensive timeline/search transformations onto `Dispatchers.Default`, added `@Immutable` annotations, stable Lazy list `key`s, `mutableIntStateOf`, and lambda `Modifier.offset` optimizations.
+- Bumped version to `1.18.10` (Build 61).
+
 ## [1.18.9] - 2026-11-11
 
 ### Removed & Cleaned (Phase 2 Pre-Release Dead Code & Hygiene Pass)

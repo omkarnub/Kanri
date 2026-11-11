@@ -1,0 +1,33 @@
+# Kanri Baseline Profile (Human Readable Format)
+# Pre-compiles critical cold-start, Splash/Main, Room/SQLCipher, and Home dashboard paths.
+Lcom/omkarnub/kanri/KanriApplication;
+HSPLcom/omkarnub/kanri/KanriApplication;-><init>()V
+HSPLcom/omkarnub/kanri/KanriApplication;->onCreate()V
+Lcom/omkarnub/kanri/MainActivity;
+Lcom/omkarnub/kanri/MainActivityDarkDark;
+Lcom/omkarnub/kanri/MainActivityDarkLight;
+Lcom/omkarnub/kanri/MainActivityLightDark;
+Lcom/omkarnub/kanri/MainActivityLightLight;
+HSPLcom/omkarnub/kanri/MainActivity;->onCreate(Landroid/os/Bundle;)V
+HSPLcom/omkarnub/kanri/MainActivity;->onStart()V
+Lcom/omkarnub/kanri/data/crash/CrashLogger;
+HSPLcom/omkarnub/kanri/data/crash/CrashLogger;->install(Landroid/content/Context;)V
+Lcom/omkarnub/kanri/data/db/KanriDatabase;
+Lcom/omkarnub/kanri/data/db/KanriDatabase$Companion;
+Lcom/omkarnub/kanri/data/db/KanriDatabase_Impl;
+Lcom/omkarnub/kanri/data/db/DatabaseKeyManager;
+HSPLcom/omkarnub/kanri/data/db/KanriDatabase$Companion;->getDatabase(Landroid/content/Context;)Lcom/omkarnub/kanri/data/db/KanriDatabase;
+HSPLcom/omkarnub/kanri/data/db/DatabaseKeyManager;->getOrCreatePassphrase(Landroid/content/Context;)[B
+Lcom/omkarnub/kanri/data/security/SecurityManager;
+Lcom/omkarnub/kanri/data/security/SecurityPreferences;
+HSPLcom/omkarnub/kanri/data/security/SecurityManager;->init(Landroid/content/Context;)V
+Lcom/omkarnub/kanri/ui/theme/ThemePreferences;
+Lcom/omkarnub/kanri/ui/onboarding/OnboardingPreferences;
+Lcom/omkarnub/kanri/ui/home/HomeViewModel;
+Lcom/omkarnub/kanri/ui/home/HomeUiState;
+Lcom/omkarnub/kanri/ui/navigation/MainNavigationScreenKt;
+Lcom/omkarnub/kanri/ui/home/HomeScreenKt;
+Lcom/omkarnub/kanri/ui/splash/KanriSplashScreenKt;
+Lcom/omkarnub/kanri/util/CurrencyUtils;
+Lcom/omkarnub/kanri/util/CurrencyPreferences;
+

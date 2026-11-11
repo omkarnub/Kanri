@@ -167,7 +167,7 @@ fun LendingPeopleView(
                 modifier = Modifier.fillMaxWidth(),
                 horizontalArrangement = Arrangement.spacedBy(8.dp)
             ) {
-                items(PeopleFilter.entries) { filter ->
+                items(PeopleFilter.entries, key = { it.name }) { filter ->
                     val isSelected = selectedFilter == filter
                     Surface(
                         shape = RoundedCornerShape(12.dp),

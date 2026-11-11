@@ -13,10 +13,12 @@ import kotlinx.coroutines.withContext
 import java.io.File
 import java.io.FileOutputStream
 
-class UserProfilePreferences(private val context: Context) {
+class UserProfilePreferences(context: Context) {
+
+    private val appContext = context.applicationContext
 
     private val prefs: SharedPreferences =
-        context.getSharedPreferences(PREFS_NAME, Context.MODE_PRIVATE)
+        appContext.getSharedPreferences(PREFS_NAME, Context.MODE_PRIVATE)
 
     private val _userNameFlow = MutableStateFlow(loadUserName())
     val userNameFlow: StateFlow<String> = _userNameFlow.asStateFlow()
@@ -111,7 +113,7 @@ class UserProfilePreferences(private val context: Context) {
      */
     fun saveBitmapInternal(bitmap: Bitmap): Boolean {
         return try {
-            val file = File(context.filesDir, PROFILE_IMAGE_FILENAME)
+            val file = File(appContext.filesDir, PROFILE_IMAGE_FILENAME)
             val outputStream = FileOutputStream(file)
             // Downscale to max 512x512 for performance & minimal memory
             val maxDim = 512
@@ -141,7 +143,7 @@ class UserProfilePreferences(private val context: Context) {
 
     fun savePhotoFromUri(sourceUri: Uri): Boolean {
         return try {
-            val inputStream = context.contentResolver.openInputStream(sourceUri) ?: return false
+            val inputStream = appContext.contentResolver.openInputStream(sourceUri) ?: return false
             val bitmap = BitmapFactory.decodeStream(inputStream)
             inputStream.close()
             if (bitmap == null) return false
@@ -173,7 +175,7 @@ class UserProfilePreferences(private val context: Context) {
 
     fun removeProfilePhoto() {
         try {
-            val file = File(context.filesDir, PROFILE_IMAGE_FILENAME)
+            val file = File(appContext.filesDir, PROFILE_IMAGE_FILENAME)
             if (file.exists()) {
                 file.delete()
             }

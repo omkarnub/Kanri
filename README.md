@@ -151,7 +151,7 @@ flowchart LR
 | ![WorkManager](https://img.shields.io/badge/WorkManager-2.9.1-3DDC84?style=flat-square&logo=android&logoColor=white) | Background tasks |
 | ![Biometric](https://img.shields.io/badge/Biometric-1.2.0-30A46C?style=flat-square&logo=android&logoColor=white) | Lock screen authentication |
 | ![Haze](https://img.shields.io/badge/Haze-1.3.1-30A46C?style=flat-square) | Glassmorphism effects |
-| ![Tests](https://img.shields.io/badge/Unit%20tests-342%20passing-30A46C?style=flat-square) | 55 suites covering financial, widget, backup & migration logic |
+| ![Tests](https://img.shields.io/badge/Unit%20tests-343%20passing-30A46C?style=flat-square) | 55 suites covering financial, widget, backup & migration logic |
 
 ## Installation :package:
 
@@ -169,7 +169,7 @@ Kanri is available directly on **Orion Store** for automated background updates 
 - **Direct GitHub APK:** Grab the latest signed APK from the [Releases page](https://github.com/omkarnub/Kanri/releases/latest).
 
 - **Package:** `com.omkarnub.kanri`
-- **Size:** ~24.9 MB (R8 minified, shrunk)
+- **Size:** ~11.7 MB (`arm64-v8a` split) / ~26.8 MB (universal APK, R8 minified & shrunk)
 - **Requires:** Android 8.0 (API 26) or later
 
 > [!NOTE]

@@ -45,6 +45,7 @@ import androidx.compose.ui.layout.boundsInWindow
 import androidx.compose.ui.layout.onGloballyPositioned
 import androidx.compose.ui.platform.LocalContext
 import androidx.compose.ui.platform.LocalDensity
+import androidx.compose.ui.platform.LocalWindowInfo
 import androidx.compose.ui.text.font.FontWeight
 import androidx.compose.ui.unit.Dp
 import androidx.compose.ui.unit.TextUnit
@@ -265,13 +266,13 @@ fun SignatureAnimationText(
     // Easing curve for natural handwriting feel
     val handwritingEasing = remember { CubicBezierEasing(0.35f, 0f, 0.15f, 1f) }
 
+    val windowHeightPx = LocalWindowInfo.current.containerSize.height
     BoxWithConstraints(
         modifier = modifier
             .fillMaxWidth()
             .onGloballyPositioned { coordinates ->
                 val bounds = coordinates.boundsInWindow()
-                val screenHeight = context.resources.displayMetrics.heightPixels
-                inViewCoordinates = bounds.top < screenHeight * 0.95f && bounds.bottom > 50
+                inViewCoordinates = bounds.top < windowHeightPx * 0.95f && bounds.bottom > 50
             }
             .pointerInput(Unit) {
                 detectTapGestures(

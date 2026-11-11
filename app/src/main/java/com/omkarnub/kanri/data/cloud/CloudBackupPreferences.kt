@@ -53,18 +53,20 @@ enum class CloudBackupErrorType(val userMessage: String, val actionLabel: String
     )
 }
 
-class CloudBackupPreferences(private val context: Context) {
+class CloudBackupPreferences(context: Context) {
+
+    private val appContext = context.applicationContext
 
     private val prefs: SharedPreferences =
-        context.getSharedPreferences(PREFS_NAME, Context.MODE_PRIVATE)
+        appContext.getSharedPreferences(PREFS_NAME, Context.MODE_PRIVATE)
 
     private val securePrefs: SharedPreferences by lazy {
         try {
-            val masterKey = MasterKey.Builder(context)
+            val masterKey = MasterKey.Builder(appContext)
                 .setKeyScheme(MasterKey.KeyScheme.AES256_GCM)
                 .build()
             EncryptedSharedPreferences.create(
-                context,
+                appContext,
                 SECURE_PREFS_NAME,
                 masterKey,
                 EncryptedSharedPreferences.PrefKeyEncryptionScheme.AES256_SIV,

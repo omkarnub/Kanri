@@ -26,6 +26,7 @@ import androidx.compose.foundation.background
 import androidx.compose.foundation.border
 import androidx.compose.foundation.clickable
 import androidx.compose.ui.graphics.graphicsLayer
+import androidx.compose.ui.unit.IntOffset
 import kotlinx.coroutines.launch
 import androidx.compose.runtime.rememberCoroutineScope
 import com.omkarnub.kanri.ui.theme.ExpenseRed
@@ -761,11 +762,13 @@ private fun RecentTransactionsSection(
                             .padding(horizontal = 14.dp, vertical = 4.dp)
                     ) {
                         transactions.forEachIndexed { index, item ->
-                            TransactionListItem(
-                                item = item,
-                                onClick = { onTransactionClick(item) },
-                                showDivider = index < transactions.size - 1
-                            )
+                            androidx.compose.runtime.key(item.transaction.id) {
+                                TransactionListItem(
+                                    item = item,
+                                    onClick = { onTransactionClick(item) },
+                                    showDivider = index < transactions.size - 1
+                                )
+                            }
                         }
                     }
                 }
@@ -1278,7 +1281,7 @@ private fun SupportContactFooter(modifier: Modifier = Modifier) {
                 tint = MaterialTheme.colorScheme.onSurface.copy(alpha = pulseAlpha),
                 modifier = Modifier
                     .size(11.dp)
-                    .offset(x = arrowOffset.dp)
+                    .offset { IntOffset(arrowOffset.dp.roundToPx(), 0) }
             )
         }
     }

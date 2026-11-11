@@ -24,7 +24,9 @@ import kotlinx.coroutines.tasks.await
 import kotlinx.coroutines.withContext
 import org.json.JSONObject
 
-class GoogleAuthManager(private val context: Context) {
+class GoogleAuthManager(context: Context) {
+
+    private val appContext = context.applicationContext
 
     companion object {
         const val TAG = "GoogleAuthManager"
@@ -41,7 +43,7 @@ class GoogleAuthManager(private val context: Context) {
     }
 
     private val credentialManager: CredentialManager by lazy {
-        CredentialManager.create(context)
+        CredentialManager.create(appContext)
     }
 
     /**
@@ -54,7 +56,7 @@ class GoogleAuthManager(private val context: Context) {
     ): Result<GoogleAccountInfo> = withContext(Dispatchers.IO) {
         try {
             val clientId = serverClientId?.takeIf { it.isNotBlank() } ?: run {
-                val configId = context.getString(com.omkarnub.kanri.R.string.google_web_client_id)
+                val configId = appContext.getString(com.omkarnub.kanri.R.string.google_web_client_id)
                 configId.takeIf { it.isNotBlank() && !it.startsWith("YOUR_") } ?: "kanri-offline-drive.apps.googleusercontent.com"
             }
 
@@ -111,7 +113,7 @@ class GoogleAuthManager(private val context: Context) {
         email: String? = null
     ): Result<DriveAuthResult> = withContext(Dispatchers.IO) {
         try {
-            val authClient = Identity.getAuthorizationClient(context)
+            val authClient = Identity.getAuthorizationClient(appContext)
             val requestedScopes = listOf(Scope(DRIVE_FILE_SCOPE))
 
             val builder = AuthorizationRequest.builder()
@@ -192,7 +194,7 @@ class GoogleAuthManager(private val context: Context) {
      */
     suspend fun syncGoogleProfileToLocalProfile(account: GoogleAccountInfo) = withContext(Dispatchers.IO) {
         try {
-            val userPrefs = UserProfilePreferences.getInstance(context)
+            val userPrefs = UserProfilePreferences.getInstance(appContext)
 
             // 1. Sync Display Name
             val displayName = account.displayName

@@ -6,10 +6,12 @@ import androidx.lifecycle.viewModelScope
 import com.omkarnub.kanri.data.db.KanriDatabase
 import com.omkarnub.kanri.data.db.LendingEntity
 import com.omkarnub.kanri.data.lending.LendingTransactionSyncHelper
+import kotlinx.coroutines.Dispatchers
 import kotlinx.coroutines.flow.MutableStateFlow
 import kotlinx.coroutines.flow.SharingStarted
 import kotlinx.coroutines.flow.StateFlow
 import kotlinx.coroutines.flow.combine
+import kotlinx.coroutines.flow.flowOn
 import kotlinx.coroutines.flow.stateIn
 import kotlinx.coroutines.launch
 
@@ -20,6 +22,7 @@ enum class LendingFilter {
     PENDING_ONLY
 }
 
+@androidx.compose.runtime.Immutable
 data class LendingUiState(
     val records: List<LendingEntity> = emptyList(),
     val totalLentPending: Double = 0.0,
@@ -68,7 +71,7 @@ class LendingViewModel(application: Application) : AndroidViewModel(application)
             activeFilter = filter,
             isLoading = false
         )
-    }.stateIn(
+    }.flowOn(Dispatchers.Default).stateIn(
         scope = viewModelScope,
         started = SharingStarted.WhileSubscribed(5000),
         initialValue = LendingUiState(isLoading = true)

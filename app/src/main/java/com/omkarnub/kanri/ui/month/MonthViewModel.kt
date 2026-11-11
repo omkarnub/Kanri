@@ -18,6 +18,7 @@ import java.text.SimpleDateFormat
 import java.util.Calendar
 import java.util.Locale
 
+@androidx.compose.runtime.Immutable
 data class CategorySpendItem(
     val categoryId: Long?,
     val name: String,
@@ -27,11 +28,13 @@ data class CategorySpendItem(
     val percentage: Float
 )
 
+@androidx.compose.runtime.Immutable
 data class DailySpendItem(
     val day: Int,
     val totalAmount: Double
 )
 
+@androidx.compose.runtime.Immutable
 data class MonthUiState(
     val monthTitle: String = "",
     val monthKey: String = "",

@@ -27,6 +27,8 @@ object DatabaseKeyManager {
         return randomBytes
     }
 
+    // Intentional synchronous disk flush so rotated key survives immediate DB reset/rekey.
+    @android.annotation.SuppressLint("ApplySharedPref")
     @Synchronized
     fun rotatePassphrase(context: Context): ByteArray {
         val prefs = getEncryptedPrefs(context)

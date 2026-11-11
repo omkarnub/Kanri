@@ -22,7 +22,6 @@ import androidx.compose.ui.Modifier
 import androidx.compose.ui.graphics.graphicsLayer
 import androidx.core.splashscreen.SplashScreen.Companion.installSplashScreen
 import androidx.fragment.app.FragmentActivity
-import com.omkarnub.kanri.data.export.ExportScheduler
 import com.omkarnub.kanri.data.security.SecurityManager
 import com.omkarnub.kanri.ui.navigation.MainNavigationScreen
 import com.omkarnub.kanri.ui.onboarding.OnboardingPreferences
@@ -78,9 +77,6 @@ open class MainActivity : FragmentActivity() {
         enableEdgeToEdge()
 
         SecurityManager.init(applicationContext)
-        ExportScheduler.init(applicationContext)
-        com.omkarnub.kanri.data.lending.LendingReminderScheduler.init(applicationContext)
-        com.omkarnub.kanri.util.AppShortcutManager.publishShortcuts(applicationContext)
         com.omkarnub.kanri.widget.KanriWidgetActions.handleIntent(intent)
         if (intent.getBooleanExtra(com.omkarnub.kanri.data.update.AppUpdateManager.EXTRA_SHOW_UPDATE_POPUP, false)) {
             com.omkarnub.kanri.data.update.AppUpdateManager.getInstance(applicationContext).triggerUpdatePopup()

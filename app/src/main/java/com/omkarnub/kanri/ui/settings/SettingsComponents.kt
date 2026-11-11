@@ -1028,7 +1028,7 @@ fun BudgetCycleStartDialog(
     onSelectDay: (Int) -> Unit,
     onDismiss: () -> Unit
 ) {
-    var selectedDay by remember { mutableStateOf(currentDay) }
+    var selectedDay by remember { androidx.compose.runtime.mutableIntStateOf(currentDay) }
     val haptics = rememberKanriHaptics()
 
     AlertDialog(

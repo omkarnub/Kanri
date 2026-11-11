@@ -58,11 +58,54 @@ class DatabaseMigrationTest {
             KanriDatabase.MIGRATION_8_9 to (8 to 9),
             KanriDatabase.MIGRATION_9_10 to (9 to 10),
             KanriDatabase.MIGRATION_10_11 to (10 to 11),
-            KanriDatabase.MIGRATION_11_12 to (11 to 12)
+            KanriDatabase.MIGRATION_11_12 to (11 to 12),
+            KanriDatabase.MIGRATION_12_13 to (12 to 13)
         )
         chain.forEach { (migration, expected) ->
             org.junit.Assert.assertEquals(expected.first, migration.startVersion)
             org.junit.Assert.assertEquals(expected.second, migration.endVersion)
+        }
+    }
+
+    @Test
+    fun testMigration12_13CreatesAllExpectedPerformanceIndexes() {
+        val executedSql = mutableListOf<String>()
+        val dbClass = androidx.sqlite.db.SupportSQLiteDatabase::class.java
+        val fakeDb = java.lang.reflect.Proxy.newProxyInstance(
+            dbClass.classLoader,
+            arrayOf(dbClass)
+        ) { _, method, args ->
+            if (method.name == "execSQL" && args != null && args.isNotEmpty()) {
+                executedSql.add(args[0] as String)
+            }
+            when (method.returnType) {
+                Boolean::class.javaPrimitiveType -> false
+                Int::class.javaPrimitiveType -> 0
+                Long::class.javaPrimitiveType -> 0L
+                else -> null
+            }
+        } as androidx.sqlite.db.SupportSQLiteDatabase
+
+        KanriDatabase.MIGRATION_12_13.migrate(fakeDb)
+
+        val expectedIndexes = listOf(
+            "index_transactions_timestamp",
+            "index_transactions_category_id",
+            "index_transactions_is_duplicate",
+            "index_transactions_needs_review",
+            "index_transactions_counterparty",
+            "index_transactions_type_timestamp",
+            "index_lending_records_is_settled",
+            "index_lending_records_linked_transaction_id",
+            "index_lending_records_person_name",
+            "index_lending_records_date"
+        )
+        org.junit.Assert.assertEquals(expectedIndexes.size, executedSql.size)
+        expectedIndexes.forEach { indexName ->
+            assertTrue(
+                "Missing CREATE INDEX IF NOT EXISTS statement for $indexName",
+                executedSql.any { it.startsWith("CREATE INDEX IF NOT EXISTS $indexName ") }
+            )
         }
     }
 }

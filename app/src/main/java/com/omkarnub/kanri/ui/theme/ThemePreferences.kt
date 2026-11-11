@@ -17,10 +17,12 @@ enum class ThemeMode(val label: String) {
         get() = this == GLASS
 }
 
-class ThemePreferences(private val context: Context) {
+class ThemePreferences(context: Context) {
+
+    private val appContext = context.applicationContext
 
     private val prefs: SharedPreferences =
-        context.getSharedPreferences(PREFS_NAME, Context.MODE_PRIVATE)
+        appContext.getSharedPreferences(PREFS_NAME, Context.MODE_PRIVATE)
 
     private val _themeModeFlow = MutableStateFlow(loadThemeMode())
     val themeModeFlow: StateFlow<ThemeMode> = _themeModeFlow.asStateFlow()
@@ -116,7 +118,7 @@ class ThemePreferences(private val context: Context) {
                 return AppIconStyle.valueOf(saved)
             } catch (e: Exception) {}
         }
-        return AppIconManager.getCurrentIconStyle(context)
+        return AppIconManager.getCurrentIconStyle(appContext)
     }
 
     var themeMode: ThemeMode
@@ -129,7 +131,7 @@ class ThemePreferences(private val context: Context) {
     var appIconStyle: AppIconStyle
         get() = loadAppIconStyle()
         set(value) {
-            prefs.edit().putString(KEY_APP_ICON_STYLE, value.name).commit()
+            prefs.edit().putString(KEY_APP_ICON_STYLE, value.name).apply()
             _appIconStyleFlow.value = value
         }
 

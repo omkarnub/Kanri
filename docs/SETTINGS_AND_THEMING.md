@@ -164,4 +164,5 @@ Kanri combines Google's Jetpack Splash Screen library (`androidx.core:core-splas
   - **Clean Unmount**: After exit transition completes, the splash composable is unmounted from the tree for zero runtime memory footprint.
 - **Notes (`v1.18.8`)**: Category deletions reassign existing transactions and counterparty mappings inside a single Room `withTransaction` block, JSON/cloud backups include recurring payments alongside savings goals and contributions, and `SettingsScreen` dialog state survives configuration changes via `rememberSaveable`.
 - **Notes (`v1.18.9`)**: Removed unused `GlassQuickPresetsRow` / `ShaderPreviewCard` / `CloudBackupDialog` composables, unused preset tokens, duplicate `assets/fonts/LastoriaBoldRegular.otf` fallback, and unused drawable/string resources; gated debug logging in release paths behind `BuildConfig.DEBUG`.
-- **Version**: Kanri `1.18.9` (Build 60).
+- **Notes (`v1.18.10`)**: Added `baseline-prof.txt` + `androidx.profileinstaller` startup profile, moved non-UI application startup initialization to `Dispatchers.IO`, eliminated `StaticFieldLeak` application context leaks in preference/backup singletons, added Room DB v13 query indexes, and optimized release assets/R8 rules.
+- **Version**: Kanri `1.18.10` (Build 61).

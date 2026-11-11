@@ -4,7 +4,16 @@ import androidx.room.ColumnInfo
 import androidx.room.Entity
 import androidx.room.PrimaryKey
 
-@Entity(tableName = "lending_records")
+@androidx.compose.runtime.Immutable
+@Entity(
+    tableName = "lending_records",
+    indices = [
+        androidx.room.Index(value = ["is_settled"]),
+        androidx.room.Index(value = ["linked_transaction_id"]),
+        androidx.room.Index(value = ["person_name"]),
+        androidx.room.Index(value = ["date"])
+    ]
+)
 data class LendingEntity(
     @PrimaryKey(autoGenerate = true)
     val id: Long = 0,

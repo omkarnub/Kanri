@@ -1,5 +1,6 @@
 ﻿package com.omkarnub.kanri.ui.lending
 
+import androidx.compose.runtime.Immutable
 import com.omkarnub.kanri.data.db.LendingWithRepayments
 
 enum class LendingTabOption {
@@ -14,6 +15,7 @@ enum class TimelineFilter {
     SETTLED
 }
 
+@Immutable
 data class PersonSummary(
     val key: String,
     val displayName: String,
@@ -32,11 +34,13 @@ data class PersonSummary(
     val settledEntries: List<LendingWithRepayments>
 )
 
+@Immutable
 data class MonthTimelineGroup(
     val monthYearKey: String,
     val entries: List<LendingWithRepayments>
 )
 
+@Immutable
 data class HeroTotals(
     val toReceive: Double = 0.0,
     val toPay: Double = 0.0,
@@ -44,12 +48,14 @@ data class HeroTotals(
     val isAllSettled: Boolean = true
 )
 
+@Immutable
 data class MergeConfirmationPrompt(
     val sourceName: String,
     val targetName: String,
     val targetPersonKey: String
 )
 
+@Immutable
 data class LendingHubUiState(
     val isLoading: Boolean = false,
     val selectedTab: LendingTabOption = LendingTabOption.PEOPLE,

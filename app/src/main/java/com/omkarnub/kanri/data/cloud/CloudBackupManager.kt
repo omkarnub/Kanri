@@ -1,4 +1,4 @@
-﻿package com.omkarnub.kanri.data.cloud
+package com.omkarnub.kanri.data.cloud
 
 import android.content.Context
 import android.util.Log
@@ -11,11 +11,11 @@ import kotlinx.coroutines.withContext
 import java.security.MessageDigest
 
 class CloudBackupManager(
-    private val context: Context,
-    private val authManager: GoogleAuthManager = GoogleAuthManager.getInstance(context),
+    context: Context,
+    private val authManager: GoogleAuthManager = GoogleAuthManager.getInstance(context.applicationContext),
     private val driveService: IDriveSyncService = GoogleDriveRestService(),
-    private val backupRepository: BackupRepository = BackupRepository(context),
-    private val preferences: CloudBackupPreferences = CloudBackupPreferences.getInstance(context)
+    private val backupRepository: BackupRepository = BackupRepository(context.applicationContext),
+    private val preferences: CloudBackupPreferences = CloudBackupPreferences.getInstance(context.applicationContext)
 ) {
 
     companion object {

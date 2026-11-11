@@ -25,6 +25,7 @@ import androidx.compose.material3.Text
 import androidx.compose.runtime.Composable
 import androidx.compose.runtime.LaunchedEffect
 import androidx.compose.runtime.getValue
+import androidx.compose.runtime.mutableIntStateOf
 import androidx.compose.runtime.mutableStateOf
 import androidx.compose.runtime.remember
 import androidx.compose.runtime.setValue
@@ -61,7 +62,7 @@ fun CategoryTrendLineChart(
 ) {
     val currencySymbol = remember { CurrencyUtils.getCurrencySymbol() }
     var selectedIndex by remember(trendPoints) {
-        mutableStateOf(if (trendPoints.isNotEmpty()) trendPoints.size - 1 else -1)
+        mutableIntStateOf(if (trendPoints.isNotEmpty()) trendPoints.size - 1 else -1)
     }
 
     val animatedProgress = remember { Animatable(0f) }

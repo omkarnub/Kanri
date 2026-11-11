@@ -21,7 +21,7 @@ import java.io.FileOutputStream
 import java.net.HttpURLConnection
 import java.net.URL
 
-class AppUpdateManager private constructor(private val context: Context) {
+class AppUpdateManager private constructor() {
 
     companion object {
         const val GITHUB_OWNER = "omkarnub"
@@ -37,7 +37,7 @@ class AppUpdateManager private constructor(private val context: Context) {
 
         fun getInstance(context: Context): AppUpdateManager {
             return INSTANCE ?: synchronized(this) {
-                INSTANCE ?: AppUpdateManager(context.applicationContext).also { INSTANCE = it }
+                INSTANCE ?: AppUpdateManager().also { INSTANCE = it }
             }
         }
 
