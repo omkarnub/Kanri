@@ -25,6 +25,12 @@ enum class QuickActionType {
 data class TodayWidgetState(
     val spentToday: Double = 0.0,
     val expenseCount: Int = 0,
+    val dailyLimit: Double = 0.0,
+    val spentPercent: Float = 0f,
+    val morningSpend: Double = 0.0,
+    val afternoonSpend: Double = 0.0,
+    val eveningSpend: Double = 0.0,
+    val nightSpend: Double = 0.0,
     val hourlySpend: List<Float?> = List(24) { null },
     val currentHour: Int = 12,
     val pacingStatus: PacingStatus = PacingStatus.HEALTHY,
@@ -64,6 +70,13 @@ data class GoalsWidgetState(
 ) : WidgetState
 
 @Immutable
+data class LendingPersonSummary(
+    val name: String,
+    val netAmount: Double,
+    val isReceivable: Boolean
+)
+
+@Immutable
 data class DuesWidgetState(
     val receivableAmount: Double = 0.0,
     val payableAmount: Double = 0.0,
@@ -71,6 +84,7 @@ data class DuesWidgetState(
     val overdueCount: Int = 0,
     val receivableRatio: Float = 0.5f,
     val payableRatio: Float = 0.5f,
+    val topPersons: List<LendingPersonSummary> = emptyList(),
     override val accessibleDescription: String = "Lend and borrow dues summary"
 ) : WidgetState
 
@@ -80,9 +94,13 @@ data class SkyWidgetState(
     val isDay: Boolean = true,
     val moonPhaseFrac: Float = 0.5f,
     val climateStatus: ClimateStatus = ClimateStatus.CLEAR,
+    val conditionText: String = "CLEAR",
+    val weatherKind: String = "clear",
+    val cityName: String = "LOCAL",
     val todaySpent: Double = 0.0,
     val safeToSpend: Double = 0.0,
     val sevenDayPulse: FloatArray = FloatArray(7) { 0.2f },
+    val weekSpends: List<Pair<String, Double>> = emptyList(),
     override val accessibleDescription: String = "Financial weather and climate"
 ) : WidgetState {
     override fun equals(other: Any?): Boolean {
@@ -92,9 +110,13 @@ data class SkyWidgetState(
                 isDay == other.isDay &&
                 moonPhaseFrac == other.moonPhaseFrac &&
                 climateStatus == other.climateStatus &&
+                conditionText == other.conditionText &&
+                weatherKind == other.weatherKind &&
+                cityName == other.cityName &&
                 todaySpent == other.todaySpent &&
                 safeToSpend == other.safeToSpend &&
-                sevenDayPulse.contentEquals(other.sevenDayPulse)
+                sevenDayPulse.contentEquals(other.sevenDayPulse) &&
+                weekSpends == other.weekSpends
     }
 
     override fun hashCode(): Int {
@@ -102,9 +124,13 @@ data class SkyWidgetState(
         result = 31 * result + isDay.hashCode()
         result = 31 * result + moonPhaseFrac.hashCode()
         result = 31 * result + climateStatus.hashCode()
+        result = 31 * result + conditionText.hashCode()
+        result = 31 * result + weatherKind.hashCode()
+        result = 31 * result + cityName.hashCode()
         result = 31 * result + todaySpent.hashCode()
         result = 31 * result + safeToSpend.hashCode()
         result = 31 * result + sevenDayPulse.contentHashCode()
+        result = 31 * result + weekSpends.hashCode()
         return result
     }
 }

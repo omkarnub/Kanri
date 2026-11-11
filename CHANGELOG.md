@@ -5,6 +5,24 @@ All notable changes to Kanri will be documented in this file.
 The format is based on [Keep a Changelog](https://keepachangelog.com/en/1.0.0/),
 and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0.html).
 
+## [1.14.0] - 2026-11-11
+
+### Added & Rebuilt
+- **Authentic Frosted Glass Blur for Floating Quick Entry**:
+  - Configured native API 31+ window blur behind on `QuickEntryActivity` (`WindowManager.LayoutParams.FLAG_BLUR_BEHIND` with `blurBehindRadius = 120` and `FLAG_DIM_BEHIND` with `0.35f` dim).
+  - Adjusted `GlassLevel.EntrySheet` in `KanriGlass.kt` to use translucent frosted glass fills (`0.52f` alpha in dark mode, `0.58f` in light mode) so the launcher wallpaper shines through with authentic blur.
+  - Tuned scrim alpha in `AddTransactionDialog.kt` and `SplitExpenseEntryDialog.kt` to `0.28f` in glass mode for optimal contrast and luminosity.
+- **Purposeful & Meaningful Widget Visuals**:
+  - **Today Spend Widget**: Replaced the ambiguous 24-dot line with an intuitive Spending Pacing Indicator (`SPENT ₹X / LIMIT ₹Y` with percentage used) and 4-session checkpoint breakdown (`MORN · AFTN · EVE · NIGHT`).
+  - **Budget Widget**: Implemented dual progress bars — Top Bar displays used budget (`USED: ₹X (Y%)`) while Bottom Bar displays the total budget scale (`TOTAL: ₹Z · ₹W LEFT`) with expected time pacing marker.
+  - **Wallets Widget**: Eliminated the arbitrary mini-rise graph; elevated `NET BALANCE` to prominent hero metric in Ndot57 numerals, followed by crisp Cash and Bank account rows with allocation percentages (`CASH (10%)`, `BANK (90%)`).
+  - **Lend & Borrow Widget**: Eliminated the arbitrary bottom rise graph; displays top lend/borrow contacts with name and `+₹amount` (lent / receivable) or `-₹amount` (borrowed / payable) in tabular Ndot57 numerals.
+  - **Financial Sky Widget**: Ported the official `Weather.Sky` dot-matrix recipe on an 8-pitch grid with sun/moon arc, astronomical moon phases, rays, dawn/dusk horizon glow, stars, drifting clouds, and horizon hills; paired with live financial data (today spent, safe to spend per day, and 7-day spending pacing track).
+  - **Month Heatmap Widget**: Redesigned into a true GitHub contribution graph (7 rows Mon..Sun x 5 columns for weeks) with 4 discrete spending intensity levels, day labels (`M`, `W`, `F`), and active today cell indicator.
+  - **Streak Widget**: Replaced progress bar with a row of 7 pixelated flame icons (lit for no-spend days, dim for spend days) alongside large Ndot57 streak counter (`XX DAYS NO SPEND`).
+  - **Quick Actions Widget**: Replaced generic icons with authentic pixelated dot-matrix glyphs: Expense (pixel minus `-`), Income (pixel plus `+`), and Split (pixel division `÷`).
+- Bumped version to `1.14.0` (Build 42).
+
 ## [1.13.2] - 2026-11-11
 
 ### Fixed & Refined

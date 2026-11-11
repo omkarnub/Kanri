@@ -1,6 +1,7 @@
 package com.omkarnub.kanri.ui.quickentry
 
 import android.os.Bundle
+import android.view.WindowManager
 import android.widget.Toast
 import androidx.activity.ComponentActivity
 import androidx.activity.compose.setContent
@@ -19,6 +20,7 @@ import com.omkarnub.kanri.data.db.LendingEntity
 import com.omkarnub.kanri.data.db.TransactionEntity
 import com.omkarnub.kanri.data.wallet.WalletPreferences
 import com.omkarnub.kanri.data.wallet.WalletResolver
+import com.omkarnub.kanri.ui.common.applyWindowBlur
 import com.omkarnub.kanri.ui.home.AddTransactionDialog
 import com.omkarnub.kanri.ui.lending.SplitExpenseEntryDialog
 import com.omkarnub.kanri.ui.theme.KanriTheme
@@ -41,6 +43,9 @@ class QuickEntryActivity : ComponentActivity() {
         super.onCreate(savedInstanceState)
         enableEdgeToEdge()
         window.setBackgroundDrawable(android.graphics.drawable.ColorDrawable(android.graphics.Color.TRANSPARENT))
+        applyWindowBlur(window, 120)
+        window.addFlags(WindowManager.LayoutParams.FLAG_DIM_BEHIND)
+        window.setDimAmount(0.35f)
 
         val action = intent?.action ?: KanriWidgetActions.ACTION_ADD_EXPENSE
         val isIncome = action == KanriWidgetActions.ACTION_ADD_INCOME

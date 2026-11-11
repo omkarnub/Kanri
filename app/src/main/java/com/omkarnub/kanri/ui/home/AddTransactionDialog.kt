@@ -93,6 +93,7 @@ import com.omkarnub.kanri.ui.common.kokonut.SlideConfirmationType
 import com.omkarnub.kanri.ui.common.rememberKanriGlassTheme
 import com.omkarnub.kanri.ui.savings.GoalIcon
 import com.omkarnub.kanri.ui.theme.GoogleSansFlex
+import com.omkarnub.kanri.ui.theme.LocalKanriGlass
 import com.omkarnub.kanri.util.CurrencyUtils
 import com.omkarnub.kanri.util.rememberKanriHaptics
 import dev.chrisbanes.haze.HazeState
@@ -217,8 +218,10 @@ fun AddTransactionDialog(
         }
     })
 
+    val glassTokens = LocalKanriGlass.current
+    val targetScrim = if (!isVisible) 0f else if (glassTokens != null) 0.28f else 0.55f
     val scrimAlpha by animateFloatAsState(
-        targetValue = if (isVisible) 0.55f else 0f,
+        targetValue = targetScrim,
         animationSpec = tween(durationMillis = 260, easing = FastOutSlowInEasing),
         label = "dialogScrimAlpha"
     )

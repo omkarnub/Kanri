@@ -1,6 +1,6 @@
 # Kanri Pixel DotTiles Widget System
 
-Current Version: **1.13.2** (Build 41)
+Current Version: **1.14.0** (Build 42)
 
 ## 1. Overview
 Kanri's widget subsystem is unified around a single, cohesive visual language: **Pixel DotTiles** (Nothing-inspired dot-matrix & tactile cards). Designed with precision, restraint, and obsessive detail, the system delivers 12 specialized home screen widgets rendered by a pure Canvas engine shared 1:1 between Android `RemoteViews` bitmaps and Jetpack Compose in-app previews.
@@ -23,12 +23,13 @@ Kanri's widget subsystem is unified around a single, cohesive visual language: *
 ### Fluid Animation Engine (`DotVisuals` & `PixelMotion`)
 All visual primitives accept an interactive `progress: Float = 1.0f` parameter:
 - **Slider**: Marker block eases from 0 to target position while lit ticks sweep in from left to right.
+- **Dual Progress Bar**: Used budget and total budget tracks animate filled dot meters with expected pacing marker.
 - **Steps**: Histogram bars grow smoothly upward from the axis baseline.
-- **Dots**: 24-hour dots sweep in sequentially with an expanding cyan indicator ring around the current hour.
-- **Blocks**: Session queue blocks illuminate consecutively.
-- **Rise**: 6-tier proportional staircase rises step by step.
-- **Grid**: Calendar dot matrix cells fade and intensify smoothly.
-- **Arc**: Celestial marker rides the parabolic arc trajectory.
+- **Today Pacing**: Spending pacing track with daily budget limit comparison and 4-session checkpoint breakdown.
+- **GitHub Heatmap**: 7-row calendar contribution grid with 4 intensity levels illuminating smoothly.
+- **Pixel Flame Row**: 7-day row of pixelated flame icons (lit for no-spend, dim for spend).
+- **Weather Scene**: Astronomical sun/moon arc, horizon hills, clouds, stars, and rain drops.
+- **Pixel Glyphs**: Authentic 7x7 dot-matrix action icons for Expense (`-`), Income (`+`), and Split (`÷`).
 - **RemoteViews Frame Burst**: 8-frame burst animation on home screen placement and updates.
 - **Interactive In-App Previews**: 60fps Compose animation triggered on tap or replay.
 
@@ -61,14 +62,14 @@ Every tile strictly obeys a three-tiered layout grammar:
 
 ### Shared Visuals Library (`DotVisuals`)
 Reusable pure Canvas primitives:
-- **Slider**: Row of fine ticks with a marker block (glow or fill mode) and threshold color shifts.
+- **Dual Progress Bar**: Two distinct bars: upper used bar with % and lower total budget reference scale with pacing marker.
+- **Today Pacing Bar**: Pacing bar comparing spent vs daily limit with 4 session checkpoints (`MORN`, `AFTN`, `EVE`, `NIGHT`).
 - **Steps**: Stepped histogram bars built of dot columns on a shared scale.
-- **Dots**: 24-slot timeline with dots sized by hourly expenditure and active slot markers.
 - **Blocks**: Sparse solid session blocks for pending review queue items (older items dimmer).
-- **Rise**: 4 to 6-tier stepped gauge for wallet asset split proportions.
-- **Grid**: Calendar dot grid with 5-level percentile quantization and today ring indicator.
-- **Arc**: Dotted celestial arc traversed by sun/moon.
-- **Icon**: 7x7 dot-matrix icons (`PLUS`, `MINUS`, `SPLIT`, `INBOX`, `FLAME`, `ARROW_UP`, `ARROW_DOWN`, `CHECK`, `SUN`, `MOON`).
+- **GitHub Heatmap**: 7 rows (Mon..Sun) by 5 columns (weeks) with 4 discrete intensity levels and day labels (`M`, `W`, `F`).
+- **Pixel Flame Row**: 7x7 pixelated flame glyphs for recent days (lit amber for no-spend, dim for spend).
+- **Weather Scene**: Astronomical sun/moon arc, horizon hills, clouds, stars, and rain drops.
+- **Pixel Glyphs**: 7x7 dot-matrix icons: `EXPENSE` (pixel minus `-`), `INCOME` (pixel plus `+`), `SPLIT` (pixel division `÷`), `TRANSFER` (`⇄`), `FLAME_LIT`, `FLAME_DIM`.
 
 ---
 
@@ -76,18 +77,18 @@ Reusable pure Canvas primitives:
 
 | # | Widget | Provider | Supported Sizes | Visual Primitive | Description |
 |---|--------|----------|-----------------|------------------|-------------|
-| 1 | **Today** | `TodayWidgetProvider` | 2x2, 4x2 | `Dots` timeline | Spent today, count of expenses, 24-hour dot pacing timeline, and average spend comparison. |
-| 2 | **Budget** | `BudgetWidgetProvider` | 2x1, 2x2, 4x2 | `Slider` | Remaining budget amount, % used, days left in cycle, and expected vs actual pacing marker. |
-| 3 | **Wallets** | `WalletsWidgetProvider` | 2x2, 4x2 | `Rise` | Cash, bank, and net worth balances with asset proportion stepped gauge. |
+| 1 | **Today** | `TodayWidgetProvider` | 2x2, 4x2 | `TodayPacing` | Spent today, count of expenses, pacing bar vs daily budget limit, and 4-session checkpoints (`MORN · AFTN · EVE · NIGHT`). |
+| 2 | **Budget** | `BudgetWidgetProvider` | 2x1, 2x2, 4x2 | `DualProgressBar` | Dual progress bars: used budget (% used) and total budget scale with days left and expected pacing marker. |
+| 3 | **Wallets** | `WalletsWidgetProvider` | 2x2, 4x2 | `Breakdown Rows` | Net balance hero metric in large Ndot57 numerals, clean Cash and Bank breakdown rows with allocation percentages. |
 | 4 | **Goals** | `GoalsWidgetProvider` | 2x2, 4x1 | `Slider` | Primary savings target progress, percentage saved, and 25/50/75/100% milestone ticks. |
-| 5 | **Dues** | `DuesWidgetProvider` | 2x2, 4x2 | `Steps` | Receivable (`GET`), payable (`OWE`), net balance, and overdue dues count. |
-| 6 | **Sky** | `SkyWidgetProvider` | 4x2 | `Arc` + `Steps` | Flagship financial weather: sun arc, astronomical moon phase, twinkling stars, terrain silhouette, climate status, and 7-day spend pulse. |
-| 7 | **Month Heatmap**| `HeatmapWidgetProvider` | 4x3, 4x2 | `Grid` | Calendar dot grid with 5 quantized percentile intensity levels and current day ring. |
-| 8 | **No-Spend Streak**| `StreakWidgetProvider` | 2x2, 4x1 | 30-dot row | Consecutive no-spend day streak, all-time best streak, and 30-day timeline. |
+| 5 | **Dues** | `DuesWidgetProvider` | 2x2, 4x2 | `Contact Rows` | Net balance subtitle and top lend/borrow contacts list with name and `+₹amount` (receivable) or `-₹amount` (payable). |
+| 6 | **Sky** | `SkyWidgetProvider` | 4x2 | `WeatherSky` + `Steps` | Flagship financial weather: recessed dot-matrix sky well (sun/moon arc, stars, clouds, hills), today spend, safe to spend per day, and 7-day spending pacing track. |
+| 7 | **Month Heatmap**| `HeatmapWidgetProvider` | 4x3, 4x2 | `GitHubHeatmap` | GitHub-style 7-row (Mon..Sun) by 5-week contribution grid with 4 intensity levels, day labels, and today ring. |
+| 8 | **No-Spend Streak**| `StreakWidgetProvider` | 2x2, 4x1 | `PixelFlameRow` | Consecutive no-spend day streak in Ndot57 numerals, all-time best streak, and a row of 7 pixelated flame icons. |
 | 9 | **Safe to Spend** | `SafeToSpendWidgetProvider` | 2x2, 4x1 | `Slider` | Remaining daily spending allowance until cycle end vs today's spend. |
 | 10 | **Review Inbox** | `ReviewInboxWidgetProvider` | 2x1, 2x2 | `Blocks` | Count of SMS-detected expenses awaiting categorization and pending amount. |
 | 11 | **Month Delta** | `MonthDeltaWidgetProvider` | 2x2, 4x2 | `Steps` | Spend so far this month compared to the exact same day last month with ▲ / ▼ delta %. |
-| 12 | **Quick Actions** | `QuickActionsWidgetProvider` | 4x1, 2x1 | `Icon` buttons | One-tap dot-icon action buttons for `+ EXPENSE`, `+ INCOME`, and `SPLIT BILL`. |
+| 12 | **Quick Actions** | `QuickActionsWidgetProvider` | 4x1, 2x1 | `PixelGlyph` buttons | One-tap pixel-glyph action buttons for `EXPENSE` (`-`), `INCOME` (`+`), and `SPLIT` (`÷`). |
 
 ---
 
@@ -120,10 +121,11 @@ Reusable pure Canvas primitives:
 ## 5. Data Flow & Update Rules
 - All widget queries are centralized in `WidgetDataSource.kt`, using indexed Room aggregate queries.
 - `KanriWidgetsUpdater.updateAllWidgets(context)` updates only widgets that are actively placed on the user's home screen.
-- **Floating Quick Entry Workflow (No Main App Opening)**:
+- **Floating Quick Entry Workflow with True Frosted Glass Blur (No Main App Opening)**:
   - Tapping **Expense**, **Income**, or **Split** on `QuickActionsWidgetProvider`, or tapping the **Today** or **Safe to Spend** widgets, deep-links directly to `QuickEntryActivity.kt`.
   - Configured with `Theme.Kanri.QuickEntry`, `excludeFromRecents="true"`, and `taskAffinity=""`.
-  - Renders the tactile Compose numpad and full manual transaction workflow (`AddTransactionDialog` / `SplitExpenseEntryDialog`) as a transparent floating sheet directly over the home screen.
+  - Applies native API 31+ window blur behind (`FLAG_BLUR_BEHIND` with `blurBehindRadius = 120` and `FLAG_DIM_BEHIND` with `0.35f` dim).
+  - Renders the tactile Compose numpad and full manual transaction workflow (`AddTransactionDialog` / `SplitExpenseEntryDialog`) as a translucent frosted glass sheet directly over the home screen wallpaper.
   - Transactions save instantly to Room DB, trigger an 8-frame burst widget refresh across all placed widgets (`KanriWidgetsUpdater.updateAllWidgets(applicationContext, playBurst = true)`), show a brief confirmation toast, and dismiss without launching `MainActivity`.
 - Other widget deep links route through `KanriWidgetActions.kt` directly into target screens:
   - Month Delta / Heatmap → History & Transactions

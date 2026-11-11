@@ -10,6 +10,7 @@ import com.omkarnub.kanri.widget.core.PixelTheme
 import com.omkarnub.kanri.widget.font.PixelFont
 import kotlin.math.PI
 import kotlin.math.abs
+import kotlin.math.max
 import kotlin.math.sin
 
 /**
@@ -446,6 +447,392 @@ object DotVisuals {
             } else {
                 fillPaint.color = dimColor
                 canvas.drawCircle(x, y, 1.2f * density, fillPaint)
+            }
+        }
+    }
+
+    enum class PixelGlyph {
+        EXPENSE, INCOME, SPLIT, TRANSFER, FLAME_LIT, FLAME_DIM
+    }
+
+    private val GLYPH_MATRICES = mapOf(
+        PixelGlyph.EXPENSE to arrayOf(
+            intArrayOf(0, 0, 0, 0, 0, 0, 0),
+            intArrayOf(0, 0, 0, 0, 0, 0, 0),
+            intArrayOf(0, 0, 0, 0, 0, 0, 0),
+            intArrayOf(0, 1, 1, 1, 1, 1, 0),
+            intArrayOf(0, 0, 0, 0, 0, 0, 0),
+            intArrayOf(0, 0, 0, 0, 0, 0, 0),
+            intArrayOf(0, 0, 0, 0, 0, 0, 0)
+        ),
+        PixelGlyph.INCOME to arrayOf(
+            intArrayOf(0, 0, 0, 1, 0, 0, 0),
+            intArrayOf(0, 0, 0, 1, 0, 0, 0),
+            intArrayOf(0, 0, 0, 1, 0, 0, 0),
+            intArrayOf(1, 1, 1, 1, 1, 1, 1),
+            intArrayOf(0, 0, 0, 1, 0, 0, 0),
+            intArrayOf(0, 0, 0, 1, 0, 0, 0),
+            intArrayOf(0, 0, 0, 1, 0, 0, 0)
+        ),
+        PixelGlyph.SPLIT to arrayOf(
+            intArrayOf(0, 0, 0, 1, 0, 0, 0),
+            intArrayOf(0, 0, 0, 1, 0, 0, 0),
+            intArrayOf(0, 0, 0, 0, 0, 0, 0),
+            intArrayOf(1, 1, 1, 1, 1, 1, 1),
+            intArrayOf(0, 0, 0, 0, 0, 0, 0),
+            intArrayOf(0, 0, 0, 1, 0, 0, 0),
+            intArrayOf(0, 0, 0, 1, 0, 0, 0)
+        ),
+        PixelGlyph.TRANSFER to arrayOf(
+            intArrayOf(0, 0, 1, 0, 0, 0, 0),
+            intArrayOf(0, 1, 1, 1, 1, 1, 0),
+            intArrayOf(1, 0, 1, 0, 0, 0, 0),
+            intArrayOf(0, 0, 0, 0, 0, 0, 0),
+            intArrayOf(0, 0, 0, 0, 1, 0, 1),
+            intArrayOf(0, 1, 1, 1, 1, 1, 0),
+            intArrayOf(0, 0, 0, 0, 1, 0, 0)
+        ),
+        PixelGlyph.FLAME_LIT to arrayOf(
+            intArrayOf(0, 0, 0, 1, 0, 0, 0),
+            intArrayOf(0, 0, 1, 1, 0, 0, 0),
+            intArrayOf(0, 1, 1, 1, 1, 0, 0),
+            intArrayOf(0, 1, 1, 0, 1, 1, 0),
+            intArrayOf(1, 1, 1, 0, 1, 1, 1),
+            intArrayOf(1, 1, 1, 1, 1, 1, 1),
+            intArrayOf(0, 1, 1, 1, 1, 1, 0)
+        ),
+        PixelGlyph.FLAME_DIM to arrayOf(
+            intArrayOf(0, 0, 0, 1, 0, 0, 0),
+            intArrayOf(0, 0, 1, 1, 0, 0, 0),
+            intArrayOf(0, 1, 0, 0, 1, 0, 0),
+            intArrayOf(0, 1, 0, 0, 0, 1, 0),
+            intArrayOf(1, 0, 0, 0, 0, 0, 1),
+            intArrayOf(1, 1, 0, 0, 0, 1, 1),
+            intArrayOf(0, 1, 1, 1, 1, 1, 0)
+        )
+    )
+
+    fun drawPixelGlyph(
+        canvas: Canvas,
+        glyph: PixelGlyph,
+        cx: Float,
+        cy: Float,
+        sizePx: Float,
+        color: Int = PixelTheme.COLOR_DOT_ON_INT
+    ) {
+        val matrix = GLYPH_MATRICES[glyph] ?: return
+        val rows = matrix.size
+        val cols = matrix[0].size
+        val dotPitch = sizePx / cols
+        val dotRadius = dotPitch * 0.42f
+        val startX = cx - (sizePx / 2f) + dotPitch / 2f
+        val startY = cy - (sizePx / 2f) + dotPitch / 2f
+
+        fillPaint.color = color
+        for (r in 0 until rows) {
+            val y = startY + r * dotPitch
+            for (c in 0 until cols) {
+                if (matrix[r][c] == 1) {
+                    val x = startX + c * dotPitch
+                    canvas.drawCircle(x, y, dotRadius, fillPaint)
+                }
+            }
+        }
+    }
+
+    /**
+     * Dual Progress Bar for Budget:
+     * - Top Bar: Used budget amount with fill progress (0..1)
+     * - Bottom Bar: Total budget reference scale with days/remaining indicator
+     */
+    fun drawDualProgressBar(
+        canvas: Canvas,
+        bounds: RectF,
+        usedRatio: Float,
+        totalBudget: Double,
+        spentAmount: Double,
+        remainingAmount: Double,
+        expectedRatio: Float,
+        usedColor: Int = PixelTheme.COLOR_MINT_INT,
+        density: Float = 2.5f,
+        progress: Float = 1.0f
+    ) {
+        val animP = progress.coerceIn(0f, 1f)
+        val animUsedRatio = (usedRatio * animP).coerceIn(0f, 1f)
+        val animSpent = spentAmount * animP
+        val animRemaining = remainingAmount * animP
+
+        val labelSize = (9.5f * density).coerceIn(8.5f, 11f * density)
+        val barH = (5.5f * density).coerceIn(4f, 7f * density)
+        val gap = (8f * density).coerceIn(6f, 12f * density)
+
+        // Upper section: Used Progress
+        val topLabelY = bounds.top + labelSize
+        val pctUsed = (animUsedRatio * 100).toInt()
+        val usedLabel = "USED " + PixelFont.formatIndianCompact(animSpent) + " (" + pctUsed + "%)"
+        PixelFont.drawLabel(canvas, usedLabel, bounds.left, topLabelY, labelSize, usedColor)
+
+        val bar1Y = topLabelY + 4f * density
+        val bar1Rect = RectF(bounds.left, bar1Y, bounds.right, bar1Y + barH)
+        fillPaint.color = PixelTheme.COLOR_DOT_DIM_INT
+        canvas.drawRoundRect(bar1Rect, 2f * density, 2f * density, fillPaint)
+
+        if (animUsedRatio > 0.01f) {
+            val fillW = (bounds.width() * animUsedRatio).coerceAtLeast(3f * density)
+            fillPaint.color = usedColor
+            canvas.drawRoundRect(bar1Rect.left, bar1Rect.top, bar1Rect.left + fillW, bar1Rect.bottom, 2f * density, 2f * density, fillPaint)
+        }
+
+        // Lower section: Total Budget Reference Scale
+        val totalLabelY = bar1Rect.bottom + gap + labelSize
+        val totalLabel = "TOTAL " + PixelFont.formatIndianCompact(totalBudget)
+        val remLabel = PixelFont.formatIndianCompact(animRemaining) + " LEFT"
+        PixelFont.drawLabel(canvas, totalLabel, bounds.left, totalLabelY, labelSize, PixelTheme.COLOR_DOT_MID_INT)
+        PixelFont.drawRightLabel(canvas, remLabel, bounds.right, totalLabelY, labelSize, if (remainingAmount < 0) PixelTheme.COLOR_CORAL_INT else PixelTheme.COLOR_DOT_ON_INT)
+
+        val bar2Y = totalLabelY + 4f * density
+        val bar2Rect = RectF(bounds.left, bar2Y, bounds.right, bar2Y + barH)
+        val segCount = 20
+        val segSpacing = bounds.width() / segCount
+        val segW = segSpacing * 0.65f
+        for (i in 0 until segCount) {
+            val sx = bounds.left + i * segSpacing
+            fillPaint.color = if (i.toFloat() / segCount <= animUsedRatio) usedColor else PixelTheme.COLOR_DOT_DIM_INT
+            canvas.drawRoundRect(sx, bar2Rect.top, sx + segW, bar2Rect.bottom, 1.2f * density, 1.2f * density, fillPaint)
+        }
+
+        // Expected pacing marker
+        val markerX = bounds.left + expectedRatio.coerceIn(0f, 1f) * bounds.width()
+        fillPaint.color = PixelTheme.COLOR_CYAN_INT
+        canvas.drawCircle(markerX, bar2Rect.centerY(), 2.8f * density, fillPaint)
+    }
+
+    /**
+     * Today Spend Pacing Indicator:
+     * Replaces ambiguous 24-dot line with a crystal-clear Pacing Progress Bar
+     * comparing Spent vs Daily Limit, plus 4-session checkpoint breakdown.
+     */
+    fun drawTodayPacing(
+        canvas: Canvas,
+        bounds: RectF,
+        spentToday: Double,
+        dailyLimit: Double,
+        spentPercent: Float,
+        morningSpend: Double,
+        afternoonSpend: Double,
+        eveningSpend: Double,
+        nightSpend: Double,
+        activeColor: Int = PixelTheme.COLOR_MINT_INT,
+        density: Float = 2.5f,
+        progress: Float = 1.0f
+    ) {
+        val animP = progress.coerceIn(0f, 1f)
+        val animSpent = spentToday * animP
+        val animRatio = (spentPercent * animP).coerceIn(0f, 1.5f)
+        val labelSize = (9.5f * density).coerceIn(8.5f, 11f * density)
+
+        // Top Pacing Bar
+        val barH = (5.5f * density).coerceIn(4f, 7f * density)
+        val trackRect = RectF(bounds.left, bounds.top, bounds.right, bounds.top + barH)
+        fillPaint.color = PixelTheme.COLOR_DOT_DIM_INT
+        canvas.drawRoundRect(trackRect, 2f * density, 2f * density, fillPaint)
+
+        val fillW = (bounds.width() * animRatio.coerceIn(0f, 1f)).coerceAtLeast(if (animSpent > 0) 3f * density else 0f)
+        if (fillW > 0) {
+            fillPaint.color = activeColor
+            canvas.drawRoundRect(trackRect.left, trackRect.top, trackRect.left + fillW, trackRect.bottom, 2f * density, 2f * density, fillPaint)
+        }
+
+        // Labels below pacing bar
+        val labelY = trackRect.bottom + 9.5f * density
+        val pctInt = (animRatio * 100).toInt()
+        val limitStr = "LIMIT " + PixelFont.formatIndianCompact(dailyLimit)
+        PixelFont.drawLabel(canvas, "$pctInt% OF DAILY LIMIT", bounds.left, labelY, labelSize, activeColor)
+        PixelFont.drawRightLabel(canvas, limitStr, bounds.right, labelY, labelSize, PixelTheme.COLOR_DOT_MID_INT)
+
+        // 4 Day-Part Checkpoint Sessions: MORN · AFTN · EVE · NIGHT
+        val sessionY = labelY + 13f * density
+        if (sessionY + 10f * density <= bounds.bottom + 10f * density) {
+            val sessions = listOf(
+                Pair("MORN", morningSpend),
+                Pair("AFTN", afternoonSpend),
+                Pair("EVE", eveningSpend),
+                Pair("NIGHT", nightSpend)
+            )
+            val slotW = bounds.width() / 4f
+            val dotR = 2.6f * density
+            for (i in 0 until 4) {
+                val (name, amt) = sessions[i]
+                val sx = bounds.left + i * slotW + slotW / 2f
+                val hasSpend = amt > 0
+                fillPaint.color = if (hasSpend) activeColor else PixelTheme.COLOR_DOT_DIM_INT
+                canvas.drawCircle(sx, sessionY, dotR, fillPaint)
+                PixelFont.drawLabel(
+                    canvas, name,
+                    sx - (name.length * 2.3f * density),
+                    sessionY + 9f * density,
+                    7.5f * density,
+                    if (hasSpend) PixelTheme.COLOR_DOT_ON_INT else PixelTheme.COLOR_DOT_MID_INT
+                )
+            }
+        }
+    }
+
+    /**
+     * GitHub-Style Month Heatmap:
+     * 7 rows (Mon..Sun) by columns (weeks), with 4 distinct spending intensity tiers
+     * and highlighted today cell.
+     */
+    fun drawGithubHeatmap(
+        canvas: Canvas,
+        bounds: RectF,
+        intensities: FloatArray,
+        todayIndex: Int = -1,
+        activeColor: Int = PixelTheme.COLOR_MINT_INT,
+        density: Float = 2.5f,
+        progress: Float = 1.0f
+    ) {
+        val animP = progress.coerceIn(0f, 1f)
+        val rows = 7 // Mon..Sun
+        val cols = 5 // Weeks 1..5
+        val leftPad = 12f * density
+        val gridW = bounds.width() - leftPad
+        val gridH = bounds.height()
+
+        val gap = 2.2f * density
+        val tileSize = ((gridW - (cols - 1) * gap) / cols).coerceAtMost((gridH - (rows - 1) * gap) / rows).coerceAtLeast(3f * density)
+
+        // Day labels: Mon (row 0), Wed (row 2), Fri (row 4)
+        val dayLabels = mapOf(0 to "M", 2 to "W", 4 to "F")
+        for ((r, txt) in dayLabels) {
+            val ly = bounds.top + r * (tileSize + gap) + tileSize * 0.8f
+            PixelFont.drawLabel(canvas, txt, bounds.left, ly, 8f * density, PixelTheme.COLOR_DOT_MID_INT)
+        }
+
+        // Draw cells
+        for (c in 0 until cols) {
+            val tx = bounds.left + leftPad + c * (tileSize + gap)
+            for (r in 0 until rows) {
+                val idx = c * 7 + r
+                val ty = bounds.top + r * (tileSize + gap)
+                val cellRect = RectF(tx, ty, tx + tileSize, ty + tileSize)
+
+                val intensity = if (idx in intensities.indices) intensities[idx] else 0f
+                val animIntensity = intensity * animP
+
+                val tileColor = when {
+                    animIntensity <= 0.05f -> 0x18FFFFFF
+                    animIntensity < 0.35f -> (0x55 shl 24) or (activeColor and 0x00FFFFFF)
+                    animIntensity < 0.70f -> (0x99 shl 24) or (activeColor and 0x00FFFFFF)
+                    else -> (0xFF shl 24) or (activeColor and 0x00FFFFFF)
+                }
+
+                fillPaint.color = tileColor
+                canvas.drawRoundRect(cellRect, 1.5f * density, 1.5f * density, fillPaint)
+
+                if (idx == todayIndex && animP > 0.4f) {
+                    strokePaint.color = PixelTheme.COLOR_CYAN_INT
+                    strokePaint.strokeWidth = 1.2f * density
+                    canvas.drawRoundRect(cellRect, 1.5f * density, 1.5f * density, strokePaint)
+                }
+            }
+        }
+    }
+
+    /**
+     * Weather Sky Scene Canvas Renderer ported directly from Weather.Sky recipe:
+     * - Recessed well
+     * - Horizon hills
+     * - Celestial body (Sun + rays or Moon + phase)
+     * - Stars at night
+     * - Drifting clouds and rain
+     */
+    fun drawWeatherScene(
+        canvas: Canvas,
+        bounds: RectF,
+        sunProgress: Float,
+        isDay: Boolean,
+        moonPhase: Float,
+        weatherKind: String,
+        density: Float = 2.5f,
+        progress: Float = 1.0f
+    ) {
+        val wellRadius = 8f * density
+        fillPaint.color = 0xFF050508.toInt()
+        canvas.drawRoundRect(bounds, wellRadius, wellRadius, fillPaint)
+        strokePaint.color = 0x22FFFFFF
+        strokePaint.strokeWidth = 1f
+        canvas.drawRoundRect(bounds, wellRadius, wellRadius, strokePaint)
+
+        val hzY = bounds.bottom - 4f * density
+        val cols = 36
+        val dotPitch = bounds.width() / cols
+        val dotRadius = dotPitch * 0.38f
+
+        // Hills along horizon
+        fillPaint.color = 0x55FFFFFF
+        for (x in 0 until cols) {
+            val hillDots = max(0, ((3.0 - abs(x - cols * 0.8) / 2.4)).toInt()) +
+                    max(0, ((1.6 - abs(x - cols * 0.15) / 2.2)).toInt())
+            for (dy in 0..hillDots) {
+                val cx = bounds.left + x * dotPitch + dotPitch / 2f
+                val cy = hzY - dy * (dotPitch * 0.9f)
+                canvas.drawCircle(cx, cy, dotRadius * 0.8f, fillPaint)
+            }
+        }
+
+        // Celestial Body
+        val arcW = bounds.width() - 16f * density
+        val peakH = bounds.height() * 0.55f
+        val celestialT = (sunProgress * progress.coerceIn(0f, 1f)).coerceIn(0f, 1f)
+        val bodyX = bounds.left + 8f * density + celestialT * arcW
+        val bodyY = hzY - sin(PI * celestialT).toFloat() * peakH
+
+        if (isDay) {
+            val sunR = 3.5f * density
+            fillPaint.color = PixelTheme.COLOR_AMBER_INT
+            canvas.drawCircle(bodyX, bodyY, sunR, fillPaint)
+            strokePaint.color = PixelTheme.COLOR_AMBER_INT
+            strokePaint.strokeWidth = 1f * density
+            canvas.drawLine(bodyX, bodyY - sunR - 1f * density, bodyX, bodyY - sunR - 4f * density, strokePaint)
+            canvas.drawLine(bodyX, bodyY + sunR + 1f * density, bodyX, bodyY + sunR + 4f * density, strokePaint)
+            canvas.drawLine(bodyX - sunR - 1f * density, bodyY, bodyX - sunR - 4f * density, bodyY, strokePaint)
+            canvas.drawLine(bodyX + sunR + 1f * density, bodyY, bodyX + sunR + 4f * density, bodyY, strokePaint)
+        } else {
+            val moonR = 3.2f * density
+            fillPaint.color = PixelTheme.COLOR_CYAN_INT
+            canvas.drawCircle(bodyX, bodyY, moonR, fillPaint)
+            fillPaint.color = 0xAAFFFFFF.toInt()
+            val starCoords = listOf(
+                Pair(0.15f, 0.25f), Pair(0.35f, 0.18f), Pair(0.55f, 0.30f),
+                Pair(0.72f, 0.15f), Pair(0.88f, 0.28f), Pair(0.25f, 0.50f)
+            )
+            for ((sx, sy) in starCoords) {
+                val starX = bounds.left + sx * bounds.width()
+                val starY = bounds.top + sy * bounds.height()
+                canvas.drawCircle(starX, starY, 1.2f * density, fillPaint)
+            }
+        }
+
+        // Clouds & rain
+        if (weatherKind == "cloud" || weatherKind == "storm" || weatherKind == "partly") {
+            val cloudColor = if (weatherKind == "storm") 0x99A0A0A0.toInt() else 0xCCFFFFFF.toInt()
+            fillPaint.color = cloudColor
+            val cloudBaseX = bounds.left + bounds.width() * 0.45f
+            val cloudBaseY = bounds.top + bounds.height() * 0.35f
+            val cr = 3f * density
+            canvas.drawCircle(cloudBaseX, cloudBaseY, cr, fillPaint)
+            canvas.drawCircle(cloudBaseX + cr * 1.2f, cloudBaseY - cr * 0.4f, cr * 1.3f, fillPaint)
+            canvas.drawCircle(cloudBaseX + cr * 2.5f, cloudBaseY, cr, fillPaint)
+
+            if (weatherKind == "storm") {
+                strokePaint.color = PixelTheme.COLOR_CYAN_INT
+                strokePaint.strokeWidth = 1f * density
+                for (k in 0..4) {
+                    val rx = cloudBaseX + k * (cr * 0.7f)
+                    val ry = cloudBaseY + cr + 2f * density
+                    canvas.drawLine(rx, ry, rx - 2f * density, ry + 6f * density, strokePaint)
+                }
             }
         }
     }

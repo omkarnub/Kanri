@@ -149,8 +149,10 @@ fun SplitExpenseEntryDialog(
         isVisible = true
     }
 
+    val glassTokens = LocalKanriGlass.current
+    val targetScrim = if (!isVisible) 0f else if (glassTokens != null) 0.28f else 0.55f
     val scrimAlpha by animateFloatAsState(
-        targetValue = if (isVisible) 0.55f else 0f,
+        targetValue = targetScrim,
         animationSpec = tween(durationMillis = 260, easing = FastOutSlowInEasing),
         label = "splitScrimAlpha"
     )

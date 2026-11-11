@@ -348,10 +348,10 @@ fun Modifier.kanriGlass(
                 }
             }
             GlassLevel.EntrySheet -> {
-                // Fixed 50dp blur and 10% dark tint for Amount Pad, Transaction Details, and Summary Drawer
+                // Fixed 50dp blur and translucent frosted tint for Amount Pad, Transaction Details, and Summary Drawer
                 val fixedBlur = 50.dp
-                val fixedTint = Color.Black.copy(alpha = 0.10f)
-                val baseBg = if (tokens.isDark) Color(0xFF141414).copy(alpha = 0.85f) else Color(0xFFFAF9F5).copy(alpha = 0.88f)
+                val fixedTint = Color.Black.copy(alpha = 0.08f)
+                val baseBg = if (tokens.isDark) Color(0xFF141414).copy(alpha = 0.52f) else Color(0xFFFAF9F5).copy(alpha = 0.58f)
 
                 if (isBlurCapable && currentHaze != null) {
                     baseModifier.hazeEffect(
@@ -363,6 +363,7 @@ fun Modifier.kanriGlass(
                             noiseFactor = 0.02f
                         )
                     )
+                    .background(baseBg)
                     .background(fixedTint)
                 } else {
                     baseModifier

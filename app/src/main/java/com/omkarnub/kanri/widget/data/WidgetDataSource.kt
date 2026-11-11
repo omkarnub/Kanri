@@ -75,12 +75,37 @@ object WidgetDataSource {
             if (amt <= 0.0) null else (amt / maxHourly).toFloat().coerceIn(0.1f, 1.0f)
         }
 
-        // Pacing: compare with daily average
+        // Pacing: compare with daily average or monthly budget
         val thirtyDaysAgo = startOfDay - (30L * 86400000L)
         val pastTxs = db.transactionDao().getTransactionsBetweenSync(thirtyDaysAgo, startOfDay)
             .filter { it.type.equals("DEBIT", ignoreCase = true) && !it.isTransfer && !it.isDuplicate }
         val avgDailySpend = if (pastTxs.isNotEmpty()) pastTxs.sumOf { it.amount } / 30.0 else 1000.0
-        val pacingRatio = spentToday / max(avgDailySpend, 1.0)
+
+        val calBudget = Calendar.getInstance()
+        val monthKey = SimpleDateFormat("yyyy-MM", Locale.US).format(calBudget.time)
+        val budgetEntity = db.budgetDao().getBudgetForMonthSync(monthKey)
+        val daysInMonth = calBudget.getActualMaximum(Calendar.DAY_OF_MONTH)
+        val dailyLimit = if (budgetEntity != null && budgetEntity.monthlyLimit > 0.0) {
+            budgetEntity.monthlyLimit / daysInMonth
+        } else {
+            avgDailySpend
+        }
+        val spentPercent = (spentToday / max(dailyLimit, 1.0)).toFloat()
+        val pacingRatio = spentToday / max(dailyLimit, 1.0)
+
+        var morn = 0.0
+        var aft = 0.0
+        var eve = 0.0
+        var night = 0.0
+        for (h in 0..23) {
+            val amt = hourlyBuckets[h]
+            when (h) {
+                in 0..11 -> morn += amt
+                in 12..16 -> aft += amt
+                in 17..20 -> eve += amt
+                else -> night += amt
+            }
+        }
 
         val pacing = when {
             pacingRatio > 1.35 -> PacingStatus.OVER
@@ -91,6 +116,12 @@ object WidgetDataSource {
         TodayWidgetState(
             spentToday = spentToday,
             expenseCount = expenseCount,
+            dailyLimit = dailyLimit,
+            spentPercent = spentPercent,
+            morningSpend = morn,
+            afternoonSpend = aft,
+            eveningSpend = eve,
+            nightSpend = night,
             hourlySpend = hourlySpend,
             currentHour = currentHour,
             pacingStatus = pacing,
@@ -209,21 +240,35 @@ object WidgetDataSource {
         var payable = 0.0
         var overdue = 0
         val now = System.currentTimeMillis()
+        val personMap = mutableMapOf<String, Double>()
 
         for (item in records) {
             val rem = item.amount
             if (rem <= 0) continue
 
-            if (item.type.equals("LENT", ignoreCase = true)) {
+            val isLent = item.type.equals("LENT", ignoreCase = true)
+            if (isLent) {
                 receivable += rem
+                personMap[item.personName] = (personMap[item.personName] ?: 0.0) + rem
             } else {
                 payable += rem
+                personMap[item.personName] = (personMap[item.personName] ?: 0.0) - rem
             }
 
             if (item.dueDate != null && item.dueDate < now) {
                 overdue++
             }
         }
+
+        val topPersons = personMap.map { (name, netVal) ->
+            com.omkarnub.kanri.widget.core.LendingPersonSummary(
+                name = name,
+                netAmount = netVal,
+                isReceivable = netVal >= 0
+            )
+        }.filter { it.netAmount != 0.0 }
+        .sortedByDescending { abs(it.netAmount) }
+        .take(4)
 
         val totalDues = max(1.0, receivable + payable)
         val recRatio = (receivable / totalDues).toFloat().coerceIn(0f, 1f)
@@ -237,6 +282,7 @@ object WidgetDataSource {
             overdueCount = overdue,
             receivableRatio = recRatio,
             payableRatio = payRatio,
+            topPersons = topPersons,
             accessibleDescription = "Dues: Receivable ${receivable.toInt()}, Payable ${payable.toInt()}, Net ${net.toInt()}, $overdue overdue"
         )
     }
@@ -266,15 +312,33 @@ object WidgetDataSource {
         val safeToSpend = safeState.dailyAllowance
 
         val climate = when {
-            todaySpent > safeToSpend * 1.25 -> ClimateStatus.STORM
+            todaySpent > safeToSpend * 1.35 -> ClimateStatus.STORM
             todaySpent > safeToSpend * 0.95 -> ClimateStatus.CLOUDY
             cal.get(Calendar.DAY_OF_MONTH) <= 3 -> ClimateStatus.SUNRISE
             !isDay -> ClimateStatus.STARRY
             else -> ClimateStatus.CLEAR
         }
 
-        // 7-day pulse
+        val weatherKind = when (climate) {
+            ClimateStatus.STORM -> "storm"
+            ClimateStatus.CLOUDY -> "cloud"
+            ClimateStatus.SUNRISE -> "clear"
+            ClimateStatus.STARRY -> "clear"
+            ClimateStatus.CLEAR -> "clear"
+        }
+
+        val conditionText = when (climate) {
+            ClimateStatus.STORM -> "STORM OUTFLOW"
+            ClimateStatus.CLOUDY -> "PARTLY CLOUDY"
+            ClimateStatus.SUNRISE -> "DAWN HORIZON"
+            ClimateStatus.STARRY -> "STARRY NIGHT"
+            ClimateStatus.CLEAR -> "CLEAR SKY"
+        }
+
+        // 7-day pulse and week spends
         val pulse = FloatArray(7)
+        val weekSpends = mutableListOf<Pair<String, Double>>()
+        val dayFormat = SimpleDateFormat("EEE", Locale.US)
         val db = KanriDatabase.getDatabase(context)
         val todayStart = (cal.clone() as Calendar).apply {
             set(Calendar.HOUR_OF_DAY, 0)
@@ -290,6 +354,10 @@ object WidgetDataSource {
                 .filter { it.type.equals("DEBIT", ignoreCase = true) && !it.isTransfer && !it.isDuplicate }
             val dayTotal = dayTxs.sumOf { it.amount }
             pulse[i] = (dayTotal / max(safeToSpend * 1.5, 100.0)).toFloat().coerceIn(0.05f, 1f)
+
+            val dCal = Calendar.getInstance().apply { timeInMillis = dStart }
+            val dName = if (i == 6) "TODAY" else dayFormat.format(dCal.time).uppercase()
+            weekSpends.add(Pair(dName, dayTotal))
         }
 
         SkyWidgetState(
@@ -297,10 +365,14 @@ object WidgetDataSource {
             isDay = isDay,
             moonPhaseFrac = moonPhase,
             climateStatus = climate,
+            conditionText = conditionText,
+            weatherKind = weatherKind,
+            cityName = "LOCAL",
             todaySpent = todaySpent,
             safeToSpend = safeToSpend,
             sevenDayPulse = pulse,
-            accessibleDescription = "Financial Sky: ${climate.name}, spent ${todaySpent.toInt()}, safe ${safeToSpend.toInt()}"
+            weekSpends = weekSpends,
+            accessibleDescription = "Financial Sky: $conditionText, spent ${todaySpent.toInt()}, safe ${safeToSpend.toInt()}"
         )
     }
 
