@@ -5,6 +5,19 @@ All notable changes to Kanri will be documented in this file.
 The format is based on [Keep a Changelog](https://keepachangelog.com/en/1.0.0/),
 and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0.html).
 
+## [1.17.1] - 2026-11-11
+
+### Added
+- **Hold & Drag Reordering in Category Order Sheet (`CategoryReorderSheet`)**:
+  - Implemented tactile hold & drag reordering in `CategoryReorderSheet`:
+    - **Long-Press Card Grab**: Long-pressing anywhere on a category card triggers haptic tick feedback, floating the card with elevation (`10.dp`), scale (`1.03f`), and primary highlight border.
+    - **Direct Drag Handle**: Added a dedicated `Icons.Default.DragHandle` icon on the left of each item for instant touch-and-drag.
+    - **Real-Time Animated Reorder**: As the dragged item passes neighboring items, the list updates smoothly in real time with `Modifier.animateItem()` placement transitions.
+    - **Viewport Edge Auto-Scroll**: Dragging an item near the top or bottom of the sheet smoothly auto-scrolls the `LazyColumn`.
+    - **Persistent Batch Updates**: Releasing the item immediately commits the new order sequence to Room database `categories.display_order`.
+    - Preserved existing Move Up / Move Down buttons for single-step bumping and accessibility.
+- Bumped version to `1.17.1` (Build 50).
+
 ## [1.17.0] - 2026-11-11
 
 ### Added

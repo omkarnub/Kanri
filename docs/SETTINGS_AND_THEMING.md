@@ -75,7 +75,9 @@ The settings architecture adheres to:
    - Custom Categories management (create, edit, delete with 30+ custom icons).
    - **Category Order Customization** (`CategoryReorderSheet`):
      - Interactive modal bottom sheet styled with KanriModalBottomSheet providing native FLAG_BLUR_BEHIND window blur and heavy frosted glassmorphic styling (kanriGlass(level = GlassLevel.Strong)).
-     - Move Up / Move Down buttons for quick reordering.
+     - Tactile Hold & Drag reordering via long-press on any card or direct touch on the drag handle icon.
+     - Real-time animated placement glide with spring physics and list edge auto-scrolling.
+     - Move Up / Move Down buttons for quick single-step adjustments.
      - "Reset" button to restore factory standard category sequence.
      - Backed by Room DB `display_order` column on `CategoryEntity` (`MIGRATION_11_12`).
      - Directly powers category ordering across `CategoryPickerSheet` and transaction detail screens.

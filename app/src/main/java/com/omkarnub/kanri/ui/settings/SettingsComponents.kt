@@ -17,14 +17,20 @@ import androidx.compose.material.icons.filled.Email
 import androidx.compose.material.icons.filled.Notifications
 import androidx.compose.material.icons.filled.PowerSettingsNew
 import androidx.compose.animation.AnimatedVisibility
+import androidx.compose.animation.core.animateDpAsState
 import androidx.compose.animation.core.animateFloatAsState
 import androidx.compose.animation.core.spring
 import androidx.compose.foundation.BorderStroke
 import androidx.compose.foundation.background
 import androidx.compose.foundation.border
 import androidx.compose.foundation.clickable
+import androidx.compose.foundation.gestures.detectDragGestures
+import androidx.compose.foundation.gestures.detectDragGesturesAfterLongPress
+import androidx.compose.foundation.gestures.scrollBy
 import androidx.compose.foundation.horizontalScroll
 import androidx.compose.foundation.interaction.MutableInteractionSource
+import androidx.compose.foundation.lazy.rememberLazyListState
+import androidx.compose.material.icons.filled.DragHandle
 import androidx.compose.foundation.layout.Arrangement
 import androidx.compose.foundation.layout.Box
 import androidx.compose.foundation.layout.Column
@@ -99,6 +105,7 @@ import androidx.compose.material3.ripple
 import androidx.compose.runtime.Composable
 import androidx.compose.runtime.collectAsState
 import androidx.compose.runtime.getValue
+import androidx.compose.runtime.mutableFloatStateOf
 import androidx.compose.runtime.mutableStateOf
 import androidx.compose.runtime.remember
 import androidx.compose.runtime.rememberCoroutineScope
@@ -111,12 +118,14 @@ import androidx.compose.ui.graphics.Brush
 import androidx.compose.ui.graphics.Color
 import androidx.compose.ui.graphics.graphicsLayer
 import androidx.compose.ui.graphics.vector.ImageVector
+import androidx.compose.ui.input.pointer.pointerInput
 import androidx.compose.ui.platform.LocalContext
 import androidx.compose.ui.semantics.Role
 import androidx.compose.ui.semantics.contentDescription
 import androidx.compose.ui.semantics.role
 import androidx.compose.ui.semantics.semantics
 import androidx.compose.ui.text.font.FontWeight
+import androidx.compose.ui.zIndex
 import androidx.compose.ui.text.style.TextOverflow
 import androidx.compose.ui.unit.dp
 import androidx.compose.ui.unit.sp
@@ -1847,10 +1856,65 @@ fun CategoryReorderSheet(
     onEditCategory: (CategoryEntity) -> Unit,
     onDeleteCategory: (CategoryEntity) -> Unit,
     onCreateNewCategory: () -> Unit,
-    onDismiss: () -> Unit
+    onDismiss: () -> Unit,
+    onReorder: (List<CategoryEntity>) -> Unit = {}
 ) {
     val tokens = LocalKanriGlass.current
     val sheetState = rememberModalBottomSheetState(skipPartiallyExpanded = true)
+    val haptics = rememberKanriHaptics()
+    val coroutineScope = rememberCoroutineScope()
+
+    var localCategories by remember(allCategories) { mutableStateOf(allCategories) }
+    var draggedId by remember { mutableStateOf<Long?>(null) }
+    var dragOffsetY by remember { mutableFloatStateOf(0f) }
+    val lazyListState = rememberLazyListState()
+
+    fun handleDrag(dragAmountY: Float) {
+        dragOffsetY += dragAmountY
+        val fromIndex = localCategories.indexOfFirst { it.id == draggedId }
+        if (fromIndex == -1) return
+        val visibleItems = lazyListState.layoutInfo.visibleItemsInfo
+        val fromInfo = visibleItems.firstOrNull { it.key == draggedId } ?: return
+
+        val currentTop = fromInfo.offset + dragOffsetY
+        val currentCenter = currentTop + fromInfo.size / 2f
+
+        // Auto-scroll when dragging near viewport edges
+        val viewportStart = lazyListState.layoutInfo.viewportStartOffset
+        val viewportEnd = lazyListState.layoutInfo.viewportEndOffset
+        val edgeThreshold = 65f
+        if (currentTop < viewportStart + edgeThreshold && lazyListState.canScrollBackward) {
+            coroutineScope.launch { lazyListState.scrollBy(-16f) }
+        } else if (currentTop + fromInfo.size > viewportEnd - edgeThreshold && lazyListState.canScrollForward) {
+            coroutineScope.launch { lazyListState.scrollBy(16f) }
+        }
+
+        val targetItem = visibleItems.firstOrNull { item ->
+            item.key != draggedId &&
+            currentCenter in item.offset.toFloat()..(item.offset + item.size).toFloat()
+        }
+
+        if (targetItem != null) {
+            val toIndex = localCategories.indexOfFirst { it.id == targetItem.key }
+            if (toIndex != -1 && toIndex != fromIndex) {
+                val mutable = localCategories.toMutableList()
+                val moved = mutable.removeAt(fromIndex)
+                mutable.add(toIndex, moved)
+                localCategories = mutable
+                dragOffsetY += (fromInfo.offset - targetItem.offset)
+                haptics.tick()
+            }
+        }
+    }
+
+    fun endDrag() {
+        if (draggedId != null) {
+            draggedId = null
+            dragOffsetY = 0f
+            haptics.click()
+            onReorder(localCategories)
+        }
+    }
 
     KanriModalBottomSheet(
         onDismissRequest = onDismiss,
@@ -1879,7 +1943,7 @@ fun CategoryReorderSheet(
                         color = tokens?.textPrimary ?: MaterialTheme.colorScheme.onSurface
                     )
                     Text(
-                        text = "Customize which categories show first and last",
+                        text = "Hold & drag or use arrows to reorder categories",
                         fontFamily = GoogleSansFlex,
                         fontSize = 12.5.sp,
                         color = tokens?.textSecondary ?: MaterialTheme.colorScheme.onSurfaceVariant
@@ -1887,7 +1951,9 @@ fun CategoryReorderSheet(
                 }
 
                 Row(horizontalArrangement = Arrangement.spacedBy(6.dp)) {
-                    TextButton(onClick = onResetOrder) {
+                    TextButton(onClick = {
+                        onResetOrder()
+                    }) {
                         Text("Reset", fontSize = 12.sp)
                     }
                     Button(
@@ -1907,43 +1973,125 @@ fun CategoryReorderSheet(
 
             Spacer(modifier = Modifier.height(8.dp))
 
-            // Scrollable List
+            // Scrollable List with Hold & Drag Reorder
             LazyColumn(
+                state = lazyListState,
                 modifier = Modifier
                     .fillMaxWidth()
                     .heightIn(max = 480.dp)
                     .padding(horizontal = 16.dp),
                 verticalArrangement = Arrangement.spacedBy(6.dp)
             ) {
-                itemsIndexed(allCategories, key = { _, cat -> cat.id }) { index, cat ->
+                itemsIndexed(localCategories, key = { _, cat -> cat.id }) { index, cat ->
                     val isFirst = index == 0
-                    val isLast = index == allCategories.size - 1
+                    val isLast = index == localCategories.size - 1
+                    val isDragging = draggedId == cat.id
+
+                    val scale by animateFloatAsState(
+                        targetValue = if (isDragging) 1.03f else 1f,
+                        animationSpec = spring(dampingRatio = 0.8f, stiffness = 500f),
+                        label = "drag_scale"
+                    )
+                    val elevation by animateDpAsState(
+                        targetValue = if (isDragging) 10.dp else 0.dp,
+                        animationSpec = spring(dampingRatio = 0.8f, stiffness = 500f),
+                        label = "drag_elevation"
+                    )
 
                     Surface(
                         shape = RoundedCornerShape(14.dp),
-                        color = tokens?.tintFlat ?: MaterialTheme.colorScheme.surfaceVariant.copy(alpha = 0.5f),
+                        color = if (isDragging) {
+                            MaterialTheme.colorScheme.primaryContainer.copy(alpha = 0.35f)
+                        } else {
+                            tokens?.tintFlat ?: MaterialTheme.colorScheme.surfaceVariant.copy(alpha = 0.5f)
+                        },
                         border = BorderStroke(
-                            1.dp,
-                            tokens?.borderStart ?: MaterialTheme.colorScheme.outlineVariant.copy(alpha = 0.3f)
+                            width = if (isDragging) 1.5.dp else 1.dp,
+                            color = if (isDragging) {
+                                MaterialTheme.colorScheme.primary
+                            } else {
+                                tokens?.borderStart ?: MaterialTheme.colorScheme.outlineVariant.copy(alpha = 0.3f)
+                            }
                         ),
-                        modifier = Modifier.fillMaxWidth()
+                        modifier = Modifier
+                            .fillMaxWidth()
+                            .animateItem()
+                            .zIndex(if (isDragging) 10f else 1f)
+                            .graphicsLayer {
+                                translationY = if (isDragging) dragOffsetY else 0f
+                                scaleX = scale
+                                scaleY = scale
+                                shadowElevation = elevation.toPx()
+                            }
+                            .pointerInput(cat.id) {
+                                detectDragGesturesAfterLongPress(
+                                    onDragStart = {
+                                        draggedId = cat.id
+                                        dragOffsetY = 0f
+                                        haptics.tick()
+                                    },
+                                    onDrag = { change, dragAmount ->
+                                        change.consume()
+                                        handleDrag(dragAmount.y)
+                                    },
+                                    onDragEnd = { endDrag() },
+                                    onDragCancel = { endDrag() }
+                                )
+                            }
                     ) {
                         Row(
                             modifier = Modifier
                                 .fillMaxWidth()
-                                .padding(horizontal = 12.dp, vertical = 8.dp),
+                                .padding(horizontal = 10.dp, vertical = 8.dp),
                             horizontalArrangement = Arrangement.SpaceBetween,
                             verticalAlignment = Alignment.CenterVertically
                         ) {
                             Row(
                                 verticalAlignment = Alignment.CenterVertically,
-                                horizontalArrangement = Arrangement.spacedBy(10.dp),
+                                horizontalArrangement = Arrangement.spacedBy(8.dp),
                                 modifier = Modifier.weight(1f)
                             ) {
+                                // Drag Handle (touch & drag immediately)
+                                Box(
+                                    modifier = Modifier
+                                        .size(32.dp)
+                                        .pointerInput(cat.id) {
+                                            detectDragGestures(
+                                                onDragStart = {
+                                                    draggedId = cat.id
+                                                    dragOffsetY = 0f
+                                                    haptics.tick()
+                                                },
+                                                onDrag = { change, dragAmount ->
+                                                    change.consume()
+                                                    handleDrag(dragAmount.y)
+                                                },
+                                                onDragEnd = { endDrag() },
+                                                onDragCancel = { endDrag() }
+                                            )
+                                        },
+                                    contentAlignment = Alignment.Center
+                                ) {
+                                    Icon(
+                                        imageVector = Icons.Default.DragHandle,
+                                        contentDescription = "Hold & drag to reorder",
+                                        tint = if (isDragging) {
+                                            MaterialTheme.colorScheme.primary
+                                        } else {
+                                            tokens?.textTertiary ?: MaterialTheme.colorScheme.onSurfaceVariant.copy(alpha = 0.45f)
+                                        },
+                                        modifier = Modifier.size(20.dp)
+                                    )
+                                }
+
                                 // Order Badge
                                 Surface(
                                     shape = CircleShape,
-                                    color = MaterialTheme.colorScheme.primary.copy(alpha = 0.12f),
+                                    color = if (isDragging) {
+                                        MaterialTheme.colorScheme.primary
+                                    } else {
+                                        MaterialTheme.colorScheme.primary.copy(alpha = 0.12f)
+                                    },
                                     modifier = Modifier.size(24.dp)
                                 ) {
                                     Box(contentAlignment = Alignment.Center) {
@@ -1951,7 +2099,11 @@ fun CategoryReorderSheet(
                                             text = "${index + 1}",
                                             fontSize = 11.sp,
                                             fontWeight = FontWeight.Bold,
-                                            color = MaterialTheme.colorScheme.primary
+                                            color = if (isDragging) {
+                                                MaterialTheme.colorScheme.onPrimary
+                                            } else {
+                                                MaterialTheme.colorScheme.primary
+                                            }
                                         )
                                     }
                                 }
@@ -1987,7 +2139,16 @@ fun CategoryReorderSheet(
                             ) {
                                 // Move Up
                                 IconButton(
-                                    onClick = { onMoveUp(cat) },
+                                    onClick = {
+                                        if (!isFirst) {
+                                            val mutable = localCategories.toMutableList()
+                                            val item = mutable.removeAt(index)
+                                            mutable.add(index - 1, item)
+                                            localCategories = mutable
+                                            onMoveUp(cat)
+                                            onReorder(localCategories)
+                                        }
+                                    },
                                     enabled = !isFirst,
                                     modifier = Modifier.size(32.dp)
                                 ) {
@@ -2001,7 +2162,16 @@ fun CategoryReorderSheet(
 
                                 // Move Down
                                 IconButton(
-                                    onClick = { onMoveDown(cat) },
+                                    onClick = {
+                                        if (!isLast) {
+                                            val mutable = localCategories.toMutableList()
+                                            val item = mutable.removeAt(index)
+                                            mutable.add(index + 1, item)
+                                            localCategories = mutable
+                                            onMoveDown(cat)
+                                            onReorder(localCategories)
+                                        }
+                                    },
                                     enabled = !isLast,
                                     modifier = Modifier.size(32.dp)
                                 ) {

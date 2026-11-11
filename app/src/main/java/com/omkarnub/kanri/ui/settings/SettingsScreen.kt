@@ -458,6 +458,13 @@ fun SettingsScreen(
                     }
                 }
             },
+            onReorder = { reorderedList ->
+                scope.launch {
+                    reorderedList.forEachIndexed { i, c ->
+                        db.categoryDao().updateCategoryOrder(c.id, i + 1)
+                    }
+                }
+            },
             onResetOrder = {
                 scope.launch {
                     allCategories.forEachIndexed { i, c ->
