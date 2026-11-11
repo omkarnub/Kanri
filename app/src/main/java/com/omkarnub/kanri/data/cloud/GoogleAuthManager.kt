@@ -1,4 +1,4 @@
-﻿package com.omkarnub.kanri.data.cloud
+package com.omkarnub.kanri.data.cloud
 
 import android.accounts.Account
 import android.content.Context
@@ -253,7 +253,9 @@ class GoogleAuthManager(private val context: Context) {
                 } else null
             } else null
         } catch (e: Exception) {
-            Log.d(TAG, "Could not extract DOB from idToken: ${e.message}")
+            if (com.omkarnub.kanri.BuildConfig.DEBUG) {
+                Log.d(TAG, "Could not extract DOB from idToken: ${e.message}")
+            }
             null
         }
     }

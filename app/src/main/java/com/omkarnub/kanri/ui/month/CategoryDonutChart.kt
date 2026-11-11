@@ -1,10 +1,5 @@
 package com.omkarnub.kanri.ui.month
 
-import androidx.compose.animation.core.FastOutSlowInEasing
-import androidx.compose.animation.core.animateFloatAsState
-import androidx.compose.animation.core.tween
-import androidx.compose.foundation.BorderStroke
-import androidx.compose.foundation.Canvas
 import androidx.compose.foundation.background
 import androidx.compose.foundation.clickable
 import androidx.compose.foundation.layout.Arrangement
@@ -14,7 +9,6 @@ import androidx.compose.foundation.layout.Row
 import androidx.compose.foundation.layout.Spacer
 import androidx.compose.foundation.layout.fillMaxWidth
 import androidx.compose.foundation.layout.height
-import androidx.compose.foundation.layout.navigationBarsPadding
 import androidx.compose.foundation.layout.padding
 import androidx.compose.foundation.layout.size
 import androidx.compose.foundation.layout.width
@@ -26,18 +20,13 @@ import androidx.compose.material.icons.Icons
 import androidx.compose.material.icons.automirrored.filled.KeyboardArrowRight
 import androidx.compose.material.icons.filled.Close
 import androidx.compose.material.icons.filled.PieChart
-import androidx.compose.material3.Card
-import androidx.compose.material3.CardDefaults
 import androidx.compose.material3.ExperimentalMaterial3Api
 import androidx.compose.material3.Icon
 import androidx.compose.material3.IconButton
 import androidx.compose.material3.MaterialTheme
-import androidx.compose.material3.ModalBottomSheet
-import androidx.compose.material3.Surface
 import androidx.compose.material3.Text
 import androidx.compose.material3.rememberModalBottomSheetState
 import androidx.compose.runtime.Composable
-import androidx.compose.runtime.LaunchedEffect
 import androidx.compose.runtime.getValue
 import androidx.compose.runtime.mutableStateOf
 import androidx.compose.runtime.remember
@@ -45,12 +34,9 @@ import androidx.compose.runtime.setValue
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.draw.clip
-import androidx.compose.ui.geometry.Offset
 import androidx.compose.ui.geometry.Size
 import androidx.compose.ui.graphics.Brush
 import androidx.compose.ui.graphics.Color
-import androidx.compose.ui.graphics.StrokeCap
-import androidx.compose.ui.graphics.drawscope.Stroke
 import androidx.compose.ui.text.font.FontWeight
 import androidx.compose.ui.unit.dp
 import androidx.compose.ui.unit.sp
@@ -59,15 +45,11 @@ import com.omkarnub.kanri.ui.common.GlassLevel
 import com.omkarnub.kanri.ui.common.KanriGlassCard
 import com.omkarnub.kanri.ui.common.KanriGlassPill
 import com.omkarnub.kanri.ui.common.KanriModalBottomSheet
-import com.omkarnub.kanri.ui.common.LocalHazeState
-import com.omkarnub.kanri.ui.common.frostedGlass
-import com.omkarnub.kanri.ui.common.rememberKanriGlassTheme
 import com.omkarnub.kanri.ui.theme.LocalKanriGlass
 import com.omkarnub.kanri.ui.home.formatCurrency
 import java.util.Locale
 import com.omkarnub.kanri.ui.common.kokonut.KokonutSpendingRing
 import com.omkarnub.kanri.ui.common.kokonut.SpendingCategory
-import com.omkarnub.kanri.util.CurrencyUtils
 
 val CategoryGradientPairs = listOf(
     // 0: Soft Sage Green to Forest Green
@@ -205,119 +187,6 @@ fun CategoryDonutChart(
     }
 }
 
-@Composable
-fun CategoryBreakdownRow(
-    item: CategorySpendItem,
-    gradient: Pair<Color, Color>? = null,
-    showPercentage: Boolean = false,
-    onClick: (() -> Unit)? = null
-) {
-    val iconBg = gradient?.first?.copy(alpha = 0.14f) ?: MaterialTheme.colorScheme.surfaceVariant
-    val iconTint = gradient?.first ?: MaterialTheme.colorScheme.onSurfaceVariant
-
-    Column(
-        modifier = Modifier
-            .fillMaxWidth()
-            .then(
-                if (onClick != null) {
-                    Modifier
-                        .clip(RoundedCornerShape(12.dp))
-                        .clickable(onClick = onClick)
-                        .padding(horizontal = 6.dp, vertical = 6.dp)
-                } else {
-                    Modifier.padding(vertical = 2.dp)
-                }
-            )
-    ) {
-        Row(
-            modifier = Modifier.fillMaxWidth(),
-            horizontalArrangement = Arrangement.SpaceBetween,
-            verticalAlignment = Alignment.CenterVertically
-        ) {
-            Row(verticalAlignment = Alignment.CenterVertically) {
-                Box(
-                    modifier = Modifier
-                        .size(24.dp)
-                        .clip(CircleShape)
-                        .background(iconBg),
-                    contentAlignment = Alignment.Center
-                ) {
-                    CategoryIcon(
-                        categoryName = item.name,
-                        tint = iconTint,
-                        modifier = Modifier.size(13.dp)
-                    )
-                }
-                Spacer(modifier = Modifier.width(10.dp))
-                Text(
-                    text = item.name,
-                    style = MaterialTheme.typography.bodyMedium.copy(
-                        fontWeight = FontWeight.SemiBold,
-                        color = MaterialTheme.colorScheme.onSurface
-                    )
-                )
-            }
-
-            Row(verticalAlignment = Alignment.CenterVertically) {
-                if (showPercentage) {
-                    Text(
-                        text = String.format(Locale.US, "%.1f%%", item.percentage),
-                        color = MaterialTheme.colorScheme.onSurface,
-                        fontSize = 12.sp,
-                        fontWeight = FontWeight.SemiBold,
-                        modifier = Modifier.padding(end = 8.dp)
-                    )
-                }
-                Text(
-                    text = formatCurrency(item.totalAmount),
-                    style = MaterialTheme.typography.bodyMedium.copy(
-                        fontWeight = FontWeight.Bold,
-                        color = MaterialTheme.colorScheme.onSurface
-                    )
-                )
-                if (onClick != null) {
-                    Spacer(modifier = Modifier.width(4.dp))
-                    Icon(
-                        imageVector = Icons.AutoMirrored.Filled.KeyboardArrowRight,
-                        contentDescription = "View Category Details",
-                        tint = MaterialTheme.colorScheme.onSurfaceVariant,
-                        modifier = Modifier.size(16.dp)
-                    )
-                }
-            }
-        }
-
-        Spacer(modifier = Modifier.height(6.dp))
-
-        val progressBrush = if (gradient != null) {
-            Brush.horizontalGradient(listOf(gradient.first, gradient.second))
-        } else {
-            Brush.horizontalGradient(
-                listOf(
-                    MaterialTheme.colorScheme.onSurface.copy(alpha = 0.85f),
-                    MaterialTheme.colorScheme.onSurface.copy(alpha = 0.85f)
-                )
-            )
-        }
-
-        Box(
-            modifier = Modifier
-                .fillMaxWidth()
-                .height(6.dp)
-                .clip(RoundedCornerShape(3.dp))
-                .background(MaterialTheme.colorScheme.surfaceVariant)
-        ) {
-            Box(
-                modifier = Modifier
-                    .fillMaxWidth((item.percentage / 100f).coerceIn(0f, 1f))
-                    .height(6.dp)
-                    .clip(RoundedCornerShape(3.dp))
-                    .background(progressBrush)
-            )
-        }
-    }
-}
-
 @OptIn(ExperimentalMaterial3Api::class)
 @Composable
 fun CategoryDistributionSheet(
@@ -355,7 +224,7 @@ fun CategoryDistributionSheet(
                         color = MaterialTheme.colorScheme.onSurface
                     )
                     Text(
-                        text = "${categorySpends.size} categories • Total: ${formatCurrency(totalSpent)}",
+                        text = "${categorySpends.size} categories â€¢ Total: ${formatCurrency(totalSpent)}",
                         style = MaterialTheme.typography.bodySmall.copy(
                             color = MaterialTheme.colorScheme.onSurfaceVariant
                         )

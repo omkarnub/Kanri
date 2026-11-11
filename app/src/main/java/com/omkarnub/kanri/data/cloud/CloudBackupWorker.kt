@@ -39,31 +39,43 @@ class CloudBackupWorker(
                 ExistingPeriodicWorkPolicy.UPDATE,
                 workRequest
             )
-            Log.d(TAG, "Scheduled periodic cloud backup (every $DEFAULT_REPEAT_INTERVAL_HOURS hours)")
+            if (com.omkarnub.kanri.BuildConfig.DEBUG) {
+                Log.d(TAG, "Scheduled periodic cloud backup (every $DEFAULT_REPEAT_INTERVAL_HOURS hours)")
+            }
         }
 
         fun cancel(context: Context) {
             WorkManager.getInstance(context).cancelUniqueWork(UNIQUE_WORK_NAME)
-            Log.d(TAG, "Cancelled periodic cloud backup")
+            if (com.omkarnub.kanri.BuildConfig.DEBUG) {
+                Log.d(TAG, "Cancelled periodic cloud backup")
+            }
         }
     }
 
     override suspend fun doWork(): Result {
-        Log.d(TAG, "Starting periodic CloudBackupWorker execution...")
+        if (com.omkarnub.kanri.BuildConfig.DEBUG) {
+            Log.d(TAG, "Starting periodic CloudBackupWorker execution...")
+        }
         val prefs = CloudBackupPreferences.getInstance(applicationContext)
 
         if (prefs.backupMode != BackupMode.CLOUD) {
-            Log.d(TAG, "App is in Fully Offline mode. Skipping cloud backup.")
+            if (com.omkarnub.kanri.BuildConfig.DEBUG) {
+                Log.d(TAG, "App is in Fully Offline mode. Skipping cloud backup.")
+            }
             return Result.success()
         }
 
         if (prefs.accountEmail.isNullOrBlank()) {
-            Log.d(TAG, "No Google account signed in. Skipping cloud backup.")
+            if (com.omkarnub.kanri.BuildConfig.DEBUG) {
+                Log.d(TAG, "No Google account signed in. Skipping cloud backup.")
+            }
             return Result.success()
         }
 
         if (!prefs.isAutoBackupEnabled) {
-            Log.d(TAG, "Auto cloud backup is disabled by user.")
+            if (com.omkarnub.kanri.BuildConfig.DEBUG) {
+                Log.d(TAG, "Auto cloud backup is disabled by user.")
+            }
             return Result.success()
         }
 
@@ -71,7 +83,9 @@ class CloudBackupWorker(
         val result = cloudManager.performCloudBackup()
 
         return if (result.isSuccess) {
-            Log.d(TAG, "Periodic cloud backup completed successfully")
+            if (com.omkarnub.kanri.BuildConfig.DEBUG) {
+                Log.d(TAG, "Periodic cloud backup completed successfully")
+            }
             Result.success()
         } else {
             val error = result.exceptionOrNull()

@@ -44,26 +44,34 @@ class NotificationListenerWatchdogWorker(
                 ExistingPeriodicWorkPolicy.KEEP,
                 request
             )
-            Log.d(TAG, "NotificationListenerWatchdogWorker scheduled with 15-minute interval")
+            if (com.omkarnub.kanri.BuildConfig.DEBUG) {
+                Log.d(TAG, "NotificationListenerWatchdogWorker scheduled with 15-minute interval")
+            }
         }
     }
 
     override suspend fun doWork(): Result {
-        Log.d(TAG, "Executing notification watchdog liveness check...")
+        if (com.omkarnub.kanri.BuildConfig.DEBUG) {
+            Log.d(TAG, "Executing notification watchdog liveness check...")
+        }
 
         val isPermissionGranted = NotificationAccessHelper.isNotificationAccessGranted(context)
         if (!isPermissionGranted) {
-            Log.d(TAG, "Notification listener permission is not granted. Watchdog idle.")
+            if (com.omkarnub.kanri.BuildConfig.DEBUG) {
+                Log.d(TAG, "Notification listener permission is not granted. Watchdog idle.")
+            }
             return Result.success()
         }
 
         val isBound = KanriNotificationListenerService.isConnected
-        Log.d(TAG, "Watchdog status check: permissionGranted=true, isListenerBound=$isBound")
+        if (com.omkarnub.kanri.BuildConfig.DEBUG) {
+            Log.d(TAG, "Watchdog status check: permissionGranted=true, isListenerBound=$isBound")
+        }
 
         if (!isBound) {
             Log.w(TAG, "NotificationListenerService was silently disconnected by Android! Re-requesting binding now...")
             KanriNotificationListenerService.rebindService(context)
-        } else {
+        } else if (com.omkarnub.kanri.BuildConfig.DEBUG) {
             Log.d(TAG, "NotificationListenerService is healthy and active.")
         }
 

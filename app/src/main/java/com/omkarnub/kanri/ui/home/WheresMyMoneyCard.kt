@@ -329,21 +329,6 @@ fun ManageMoneyBalanceCard(
     }
 }
 
-/** Backward compatibility alias */
-@Composable
-fun WheresMyMoneyCard(
-    balances: WalletBalances,
-    onClick: () -> Unit,
-    onSetupClick: () -> Unit,
-    modifier: Modifier = Modifier
-) {
-    ManageMoneyBalanceCard(
-        balances = balances,
-        onClick = onClick,
-        onSetupClick = onSetupClick,
-        modifier = modifier
-    )
-}
 
 @Composable
 private fun BlurredBalanceAmount(

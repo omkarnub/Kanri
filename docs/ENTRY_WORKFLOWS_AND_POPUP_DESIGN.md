@@ -1,6 +1,6 @@
 # Entry Workflows & Action Popup Design
 
-**Current Version:** 1.18.8 (Build 59)  
+**Current Version:** 1.18.9 (Build 60)  
 **Last Updated:** 2026-11-11  
 
 ---
@@ -140,7 +140,6 @@ The popup card shares the exact signature spring motion from `AddExpenseIncomePo
 - `app/src/main/java/com/omkarnub/kanri/ui/common/RollingText.kt`: Jetpack Compose port of GSAP slot-machine rolling digit reel component with `mulberry32` PRNG and `expo.out` easing.
 - `app/src/main/java/com/omkarnub/kanri/ui/popup/InstantPopupService.kt`: Overlay service managing `WindowManager.LayoutParams`, cross-window blur, background scrim, live balance resolution, and lifecycle.
 - `app/src/main/java/com/omkarnub/kanri/ui/common/kokonut/KokonutSlideToConfirm.kt`: Primary tactile slide-to-confirm slider component with ink flooding, spinner, and emerald green success state.
-- `app/src/main/java/com/omkarnub/kanri/ui/popup/InstantPopupSheet.kt`: In-app quick categorization bottom sheet and demo popup triggers.
 - `app/src/main/java/com/omkarnub/kanri/ui/settings/SettingsComponents.kt`: Settings screen item for previewing the detection popup.
 - `app/src/main/java/com/omkarnub/kanri/ui/common/KanriGlass.kt`: Core glassmorphism tokens, `KanriGlassCard`, and `GlassLevel.EntrySheet`.
 - `app/src/main/java/com/omkarnub/kanri/ui/navigation/AddExpenseIncomePopup.kt`: Action popup menu and signature spring motion curves (`KanriMotion`).

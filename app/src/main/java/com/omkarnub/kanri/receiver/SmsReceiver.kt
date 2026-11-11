@@ -180,7 +180,9 @@ class SmsReceiver : BroadcastReceiver() {
                             KanriWidgetsUpdater.updateAllWidgets(context)
                         }
                         is DeduplicationResult.SkippedDuplicate -> {
-                            Log.d(TAG, "Duplicate transaction detected (already captured in tx ${result.existingId}). Skipping.")
+                            if (com.omkarnub.kanri.BuildConfig.DEBUG) {
+                                Log.d(TAG, "Duplicate transaction detected (already captured in tx ${result.existingId}). Skipping.")
+                            }
                         }
                     }
                 } catch (e: Exception) {

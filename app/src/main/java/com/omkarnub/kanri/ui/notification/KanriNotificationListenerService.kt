@@ -63,7 +63,9 @@ class KanriNotificationListenerService : NotificationListenerService() {
             if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.N) {
                 try {
                     requestRebind(componentName)
-                    Log.d(TAG, "requestRebind invoked successfully for $componentName")
+                    if (com.omkarnub.kanri.BuildConfig.DEBUG) {
+                        Log.d(TAG, "requestRebind invoked successfully for $componentName")
+                    }
                 } catch (e: Exception) {
                     Log.e(TAG, "requestRebind failed, proceeding to component toggle fallback", e)
                 }
@@ -82,7 +84,9 @@ class KanriNotificationListenerService : NotificationListenerService() {
                     PackageManager.COMPONENT_ENABLED_STATE_ENABLED,
                     PackageManager.DONT_KILL_APP
                 )
-                Log.d(TAG, "Component enabled state toggled to force Android system rebind")
+                if (com.omkarnub.kanri.BuildConfig.DEBUG) {
+                    Log.d(TAG, "Component enabled state toggled to force Android system rebind")
+                }
             } catch (e: Exception) {
                 Log.e(TAG, "Error toggling component state for rebind", e)
             }
@@ -121,7 +125,9 @@ class KanriNotificationListenerService : NotificationListenerService() {
         val bigText = extras.getCharSequence(Notification.EXTRA_BIG_TEXT)?.toString()
         val subText = extras.getCharSequence(Notification.EXTRA_SUB_TEXT)?.toString()
 
-        Log.d(TAG, "Intercepted payment notification from $packageName: Title='$title', Text='$text', BigText='$bigText'")
+        if (com.omkarnub.kanri.BuildConfig.DEBUG) {
+            Log.d(TAG, "Intercepted payment notification from $packageName: Title='$title', Text='$text', BigText='$bigText'")
+        }
 
         serviceScope.launch(Dispatchers.Default) {
             try {
@@ -142,7 +148,9 @@ class KanriNotificationListenerService : NotificationListenerService() {
                 )
 
                 if (parsedRaw == null) {
-                    Log.d(TAG, "Notification from $packageName is not a recognized payment. Skipping.")
+                    if (com.omkarnub.kanri.BuildConfig.DEBUG) {
+                        Log.d(TAG, "Notification from $packageName is not a recognized payment. Skipping.")
+                    }
                     return@launch
                 }
 
@@ -155,7 +163,9 @@ class KanriNotificationListenerService : NotificationListenerService() {
 
                 // 3. CORE PRINCIPLE ENFORCEMENT: Only process CREDIT (incoming money/rewards).
                 if (parsed.type != TransactionType.CREDIT) {
-                    Log.d(TAG, "Ignoring non-credit notification (${parsed.type}) from $packageName. SMS is the sole authority for debits.")
+                    if (com.omkarnub.kanri.BuildConfig.DEBUG) {
+                        Log.d(TAG, "Ignoring non-credit notification (${parsed.type}) from $packageName. SMS is the sole authority for debits.")
+                    }
                     return@launch
                 }
 
@@ -249,7 +259,9 @@ class KanriNotificationListenerService : NotificationListenerService() {
                         KanriWidgetsUpdater.updateAllWidgets(applicationContext)
                     }
                     is DeduplicationResult.SkippedDuplicate -> {
-                        Log.d(TAG, "Skipped duplicate transaction (already captured in tx ${result.existingId})")
+                        if (com.omkarnub.kanri.BuildConfig.DEBUG) {
+                            Log.d(TAG, "Skipped duplicate transaction (already captured in tx ${result.existingId})")
+                        }
                     }
                 }
             } catch (e: Exception) {

@@ -23,8 +23,8 @@ android {
         applicationId = "com.omkarnub.kanri"
         minSdk = 26
         targetSdk = 37
-        versionCode = 59
-        versionName = "1.18.8"
+        versionCode = 60
+        versionName = "1.18.9"
 
         testInstrumentationRunner = "androidx.test.runner.AndroidJUnitRunner"
     }
@@ -93,7 +93,6 @@ dependencies {
     ksp(libs.androidx.room.compiler)
 
     implementation(libs.sqlcipher)
-    implementation(libs.androidx.graphics.path)
     implementation(libs.androidx.security.crypto)
     implementation(libs.androidx.work.runtime.ktx)
     implementation(libs.androidx.credentials)

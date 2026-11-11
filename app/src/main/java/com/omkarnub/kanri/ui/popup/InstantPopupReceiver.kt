@@ -74,7 +74,9 @@ class InstantPopupReceiver : BroadcastReceiver() {
                 }
             }
             ACTION_DISMISS -> {
-                Log.d("InstantPopupReceiver", "Notification dismissed by user")
+                if (com.omkarnub.kanri.BuildConfig.DEBUG) {
+                    Log.d("InstantPopupReceiver", "Notification dismissed by user")
+                }
             }
         }
     }

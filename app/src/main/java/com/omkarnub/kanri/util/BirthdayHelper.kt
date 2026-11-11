@@ -80,7 +80,9 @@ object BirthdayHelper {
             }
 
             if (!NotificationManagerCompat.from(context).areNotificationsEnabled()) {
-                Log.d(TAG, "Notifications are disabled; skipping birthday notification")
+                if (com.omkarnub.kanri.BuildConfig.DEBUG) {
+                    Log.d(TAG, "Notifications are disabled; skipping birthday notification")
+                }
                 return
             }
 

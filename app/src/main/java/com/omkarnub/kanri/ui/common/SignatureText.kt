@@ -125,16 +125,12 @@ fun SignatureAnimationText(
 
     val fontSizePx = with(density) { fontSize.toPx() }
 
-    // Load typeface from resources (or asset fallback)
+    // Load typeface from font resources
     val typeface = remember(context) {
         try {
             ResourcesCompat.getFont(context, R.font.lastoria_bold_regular)
         } catch (_: Exception) {
-            try {
-                android.graphics.Typeface.createFromAsset(context.assets, "fonts/LastoriaBoldRegular.otf")
-            } catch (_: Exception) {
-                null
-            }
+            null
         }
     }
 

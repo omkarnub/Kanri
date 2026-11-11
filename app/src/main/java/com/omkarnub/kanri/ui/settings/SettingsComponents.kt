@@ -9,14 +9,12 @@ import android.content.Intent
 import android.content.pm.PackageManager
 import android.net.Uri
 import android.os.Build
-import android.os.PowerManager
 import android.provider.Settings
 import android.widget.Toast
 import com.omkarnub.kanri.util.BatteryOptimizationHelper
 import androidx.compose.material.icons.filled.Email
 import androidx.compose.material.icons.filled.Notifications
 import androidx.compose.material.icons.filled.PowerSettingsNew
-import androidx.compose.animation.AnimatedVisibility
 import androidx.compose.animation.core.animateDpAsState
 import androidx.compose.animation.core.animateFloatAsState
 import androidx.compose.animation.core.spring
@@ -27,7 +25,6 @@ import androidx.compose.foundation.clickable
 import androidx.compose.foundation.gestures.detectDragGestures
 import androidx.compose.foundation.gestures.detectDragGesturesAfterLongPress
 import androidx.compose.foundation.gestures.scrollBy
-import androidx.compose.foundation.horizontalScroll
 import androidx.compose.foundation.interaction.MutableInteractionSource
 import androidx.compose.foundation.lazy.rememberLazyListState
 import androidx.compose.material.icons.filled.DragHandle
@@ -61,25 +58,14 @@ import androidx.compose.material.icons.Icons
 import androidx.compose.material.icons.automirrored.filled.KeyboardArrowRight
 import androidx.compose.material.icons.filled.Add
 import androidx.compose.material.icons.filled.AutoAwesome
-import androidx.compose.material.icons.filled.Bolt
-import androidx.compose.material.icons.filled.BrightnessAuto
 import androidx.compose.material.icons.filled.Check
 import androidx.compose.material.icons.filled.CheckCircle
-import androidx.compose.material.icons.filled.CloudDone
-import androidx.compose.material.icons.filled.CloudSync
 import androidx.compose.material.icons.filled.ContentCopy
-import androidx.compose.material.icons.filled.DarkMode
 import androidx.compose.material.icons.filled.Delete
 import androidx.compose.material.icons.filled.Edit
 import androidx.compose.material.icons.filled.KeyboardArrowDown
 import androidx.compose.material.icons.filled.KeyboardArrowUp
-import androidx.compose.material.icons.filled.LightMode
-import androidx.compose.material.icons.filled.NightlightRound
-import androidx.compose.material.icons.filled.Opacity
-import androidx.compose.material.icons.filled.Refresh
 import androidx.compose.material.icons.filled.Search
-import androidx.compose.material.icons.filled.Sync
-import androidx.compose.material3.BottomSheetDefaults
 import androidx.compose.material3.Button
 import androidx.compose.material3.ButtonDefaults
 import androidx.compose.material3.Card
@@ -91,8 +77,6 @@ import androidx.compose.material3.HorizontalDivider
 import androidx.compose.material3.Icon
 import androidx.compose.material3.IconButton
 import androidx.compose.material3.MaterialTheme
-import androidx.compose.material3.ModalBottomSheet
-import androidx.compose.material3.OutlinedButton
 import androidx.compose.material3.OutlinedTextField
 import androidx.compose.material3.Slider
 import androidx.compose.material3.Surface
@@ -131,10 +115,6 @@ import androidx.compose.ui.unit.dp
 import androidx.compose.ui.unit.sp
 import androidx.core.app.NotificationManagerCompat
 import androidx.core.content.ContextCompat
-import com.omkarnub.kanri.data.cloud.BackupMode
-import com.omkarnub.kanri.data.cloud.CloudBackupManager
-import com.omkarnub.kanri.data.cloud.CloudBackupPreferences
-import com.omkarnub.kanri.data.cloud.CloudBackupStatus
 import com.omkarnub.kanri.data.db.CategoryEntity
 import com.omkarnub.kanri.ui.common.AVAILABLE_CATEGORY_ICONS
 import com.omkarnub.kanri.ui.common.CategoryIcon
@@ -145,9 +125,6 @@ import com.omkarnub.kanri.ui.common.KanriGlassCard
 import com.omkarnub.kanri.ui.common.KanriModalBottomSheet
 import com.omkarnub.kanri.ui.common.kanriGlassTextFieldColors
 import com.omkarnub.kanri.ui.notification.NotificationAccessHelper
-import com.omkarnub.kanri.ui.theme.DarkOffWhite
-import com.omkarnub.kanri.ui.theme.GlassCustomization
-import com.omkarnub.kanri.ui.theme.GlassPresets
 import com.omkarnub.kanri.ui.theme.GoogleSansFlex
 import com.omkarnub.kanri.ui.theme.LocalKanriGlass
 import com.omkarnub.kanri.ui.theme.Panchang
@@ -155,9 +132,6 @@ import com.omkarnub.kanri.ui.theme.ThemeMode
 import com.omkarnub.kanri.util.AppCurrency
 import com.omkarnub.kanri.util.rememberKanriHaptics
 import kotlinx.coroutines.launch
-import java.text.SimpleDateFormat
-import java.util.Date
-import java.util.Locale
 
 // =============================================================================
 // 1. SETTINGS GROUP
@@ -695,87 +669,8 @@ fun ThemePreviewCard(
 }
 
 // =============================================================================
-// 6. SHADER PREVIEW CARD (10 LIVE BACKGROUNDS)
+// 6. SHADER DESCRIPTIONS
 // =============================================================================
-fun getShaderGradientBrush(type: GlassBackgroundType): Brush {
-    return when (type) {
-        GlassBackgroundType.AURORA -> Brush.linearGradient(
-            colors = listOf(
-                Color(0xFF07090E),
-                Color(0xFF7CFF67),
-                Color(0xFF22D3C5),
-                Color(0xFF8F5CFF),
-                Color(0xFFFF5C8A),
-                Color(0xFFFF8A5C),
-                Color(0xFF07090E)
-            )
-        )
-        GlassBackgroundType.GRAIN_GRADIENT -> Brush.linearGradient(
-            colors = listOf(Color(0xFF171717), Color(0xFF262626), Color(0xFF404040), Color(0xFF171717))
-        )
-        GlassBackgroundType.HERO_GEOMETRIC -> Brush.linearGradient(
-            colors = listOf(Color(0xFF0B132B), Color(0xFF1C2541), Color(0xFF3A506B), Color(0xFF0B132B))
-        )
-        GlassBackgroundType.PRISM_GRADIENT -> Brush.linearGradient(
-            colors = listOf(Color(0xFF1E1B4B), Color(0xFF4C1D95), Color(0xFF831843), Color(0xFF1E1B4B))
-        )
-        GlassBackgroundType.CLOUD_SHADER -> Brush.linearGradient(
-            colors = listOf(Color(0xFF0C4A6E), Color(0xFF0284C7), Color(0xFF38BDF8), Color(0xFF075985))
-        )
-        GlassBackgroundType.INK_RIDGES -> Brush.linearGradient(
-            colors = listOf(Color(0xFF0A0A0A), Color(0xFF171717), Color(0xFF262626), Color(0xFF0A0A0A))
-        )
-        GlassBackgroundType.FUJI_SAKURA -> Brush.linearGradient(
-            colors = listOf(Color(0xFF3B0764), Color(0xFF701A75), Color(0xFFDB2777), Color(0xFFF472B6))
-        )
-        GlassBackgroundType.SUMI_E_MIST -> Brush.linearGradient(
-            colors = listOf(Color(0xFF1C1917), Color(0xFF292524), Color(0xFF44403C), Color(0xFF1C1917))
-        )
-        GlassBackgroundType.THISTLE_PORTICO -> Brush.linearGradient(
-            colors = listOf(Color(0xFF5E3AAE), Color(0xFF8A5CC1), Color(0xFFD4A9E2), Color(0xFFF3D0EB), Color(0xFFEEE6F8))
-        )
-        GlassBackgroundType.SUNSET_MEADOW -> Brush.linearGradient(
-            colors = listOf(Color(0xFFE2A8AE), Color(0xFFF8A68E), Color(0xFFFFCB8C), Color(0xFF8AAA18), Color(0xFF172604))
-        )
-        GlassBackgroundType.TWILIGHT_MEADOW -> Brush.linearGradient(
-            colors = listOf(Color(0xFF12101B), Color(0xFF38234D), Color(0xFF8D5375), Color(0xFFE89A7A), Color(0xFF1E352C))
-        )
-        GlassBackgroundType.TOKYO_NIGHT -> Brush.linearGradient(
-            colors = listOf(Color(0xFF05010F), Color(0xFF1C1335), Color(0xFF5B2B6D), Color(0xFF9E4784), Color(0xFF00E5FF))
-        )
-        GlassBackgroundType.PIXEL_KITCHEN -> Brush.linearGradient(
-            colors = listOf(Color(0xFF0D111A), Color(0xFFC88242), Color(0xFFEBC37D), Color(0xFFFDE8BA), Color(0xFF1E2838))
-        )
-        GlassBackgroundType.SNOWY_MOUNTAIN_ROAD -> Brush.linearGradient(
-            colors = listOf(Color(0xFF03060A), Color(0xFF1C2C42), Color(0xFF4A7A9E), Color(0xFFC0D8E8), Color(0xFF080E18))
-        )
-        GlassBackgroundType.SUNLIT_BALCONY -> Brush.linearGradient(
-            colors = listOf(Color(0xFF0D111A), Color(0xFF385542), Color(0xFF7DA87D), Color(0xFFF0D49E), Color(0xFF1A2620))
-        )
-        GlassBackgroundType.ALPINE_VALLEY -> Brush.linearGradient(
-            colors = listOf(Color(0xFF080C11), Color(0xFF1B3D2F), Color(0xFF3A7D5C), Color(0xFF88C9A1), Color(0xFF5D8AA8))
-        )
-        GlassBackgroundType.SHIGANSHINA_WINDMILL -> Brush.linearGradient(
-            colors = listOf(Color(0xFF060E0B), Color(0xFF3E4F28), Color(0xFF7C722A), Color(0xFFC4B86A), Color(0xFF1B2E1C))
-        )
-        GlassBackgroundType.CHIBI_COFFEE_SHOP -> Brush.linearGradient(
-            colors = listOf(Color(0xFF0B0709), Color(0xFF381C24), Color(0xFF6B3A42), Color(0xFFB87868), Color(0xFFE8B898))
-        )
-        GlassBackgroundType.FUJI_TORII -> Brush.linearGradient(
-            colors = listOf(Color(0xFF0A121B), Color(0xFF27415A), Color(0xFF86C5DC), Color(0xFFD63826), Color(0xFFFFF0E0))
-        )
-        GlassBackgroundType.CHERRY_CANYON -> Brush.linearGradient(
-            colors = listOf(Color(0xFF0D0811), Color(0xFF4A2035), Color(0xFF8D4068), Color(0xFFE58CB5), Color(0xFFF7D2E2))
-        )
-        GlassBackgroundType.PIXEL_MISTY_ALLEY -> Brush.linearGradient(
-            colors = listOf(Color(0xFF0B0A16), Color(0xFF221A3D), Color(0xFF533E78), Color(0xFF9E65A8), Color(0xFF40E0D0))
-        )
-        GlassBackgroundType.GLOWING_BAMBOO_FOREST -> Brush.linearGradient(
-            colors = listOf(Color(0xFF04100E), Color(0xFF0E3228), Color(0xFF1E644A), Color(0xFF52C4A6), Color(0xFFFFD984))
-        )
-    }
-}
-
 fun getShaderDescription(type: GlassBackgroundType): String {
     return when (type) {
         GlassBackgroundType.AURORA -> "Dual-cycle Gemini aurora smoothly blending lime, turquoise & violet into coral, pink & violet"
@@ -800,200 +695,6 @@ fun getShaderDescription(type: GlassBackgroundType): String {
         GlassBackgroundType.CHERRY_CANYON -> "3D voxel cherry blossom canyon with drifting petals, celestial day/sunset/night traversal & volumetric clouds"
         GlassBackgroundType.PIXEL_MISTY_ALLEY -> "Atmospheric 24-hour neon city alley with gentle rain, companion cat & dynamic sun/moon cycle"
         GlassBackgroundType.GLOWING_BAMBOO_FOREST -> "Steam train crossing a bridge through swaying bamboo with glowing lanterns & 24-hour atmosphere"
-    }
-}
-
-@Composable
-fun ShaderPreviewCard(
-    type: GlassBackgroundType,
-    isSelected: Boolean,
-    onClick: () -> Unit,
-    modifier: Modifier = Modifier
-) {
-    val tokens = LocalKanriGlass.current
-    val haptics = rememberKanriHaptics()
-
-    val scale by animateFloatAsState(
-        targetValue = if (isSelected) 1.01f else 1f,
-        animationSpec = spring(stiffness = 450f, dampingRatio = 0.8f),
-        label = "shaderScale"
-    )
-
-    KanriGlassCard(
-        modifier = modifier
-            .fillMaxWidth()
-            .graphicsLayer {
-                scaleX = scale
-                scaleY = scale
-            }
-            .clickable(
-                interactionSource = remember { MutableInteractionSource() },
-                indication = ripple(),
-                onClick = {
-                    haptics.click()
-                    onClick()
-                }
-            ),
-        shape = RoundedCornerShape(16.dp),
-        level = if (isSelected) GlassLevel.Strong else GlassLevel.Flat
-    ) {
-        Row(
-            modifier = Modifier
-                .fillMaxWidth()
-                .padding(12.dp),
-            verticalAlignment = Alignment.CenterVertically,
-            horizontalArrangement = Arrangement.spacedBy(14.dp)
-        ) {
-            // Gradient Swatch Preview (46dp rounded)
-            Box(
-                modifier = Modifier
-                    .size(46.dp)
-                    .clip(RoundedCornerShape(12.dp))
-                    .background(getShaderGradientBrush(type))
-                    .border(
-                        1.dp,
-                        if (isSelected) MaterialTheme.colorScheme.primary else Color.White.copy(alpha = 0.25f),
-                        RoundedCornerShape(12.dp)
-                    ),
-                contentAlignment = Alignment.Center
-            ) {
-                if (isSelected) {
-                    Box(
-                        modifier = Modifier
-                            .size(20.dp)
-                            .clip(CircleShape)
-                            .background(Color.Black.copy(alpha = 0.5f)),
-                        contentAlignment = Alignment.Center
-                    ) {
-                        Icon(
-                            imageVector = Icons.Default.Check,
-                            contentDescription = "Selected",
-                            tint = Color.White,
-                            modifier = Modifier.size(13.dp)
-                        )
-                    }
-                }
-            }
-
-            // Name & Description
-            Column(modifier = Modifier.weight(1f)) {
-                Text(
-                    text = type.displayName,
-                    fontFamily = GoogleSansFlex,
-                    fontWeight = FontWeight.Bold,
-                    fontSize = 14.5.sp,
-                    color = tokens?.textPrimary ?: MaterialTheme.colorScheme.onSurface
-                )
-                Spacer(modifier = Modifier.height(2.dp))
-                Text(
-                    text = getShaderDescription(type),
-                    fontFamily = GoogleSansFlex,
-                    fontSize = 12.sp,
-                    color = tokens?.textSecondary ?: MaterialTheme.colorScheme.onSurfaceVariant,
-                    maxLines = 1,
-                    overflow = TextOverflow.Ellipsis
-                )
-            }
-
-            // Checkmark Circle Indicator
-            if (isSelected) {
-                Box(
-                    modifier = Modifier
-                        .size(24.dp)
-                        .clip(CircleShape)
-                        .background(MaterialTheme.colorScheme.primary),
-                    contentAlignment = Alignment.Center
-                ) {
-                    Icon(
-                        imageVector = Icons.Default.Check,
-                        contentDescription = null,
-                        tint = MaterialTheme.colorScheme.onPrimary,
-                        modifier = Modifier.size(15.dp)
-                    )
-                }
-            } else {
-                Box(
-                    modifier = Modifier
-                        .size(24.dp)
-                        .clip(CircleShape)
-                        .border(
-                            1.5.dp,
-                            tokens?.borderStart ?: MaterialTheme.colorScheme.outlineVariant,
-                            CircleShape
-                        )
-                )
-            }
-        }
-    }
-}
-
-// =============================================================================
-// 7. GLASS QUICK PRESETS ROW
-// =============================================================================
-@Composable
-fun GlassQuickPresetsRow(
-    currentConfig: GlassCustomization,
-    onSelectPreset: (GlassCustomization) -> Unit,
-    modifier: Modifier = Modifier
-) {
-    val haptics = rememberKanriHaptics()
-    val presets = listOf(
-        "Default" to GlassPresets.DEFAULT,
-        "Ultra Sheer" to GlassPresets.ULTRA_SHEER,
-        "Obsidian" to GlassPresets.DEEP_OBSIDIAN,
-        "Luminous" to GlassPresets.LUMINOUS_FROST,
-        "Neon" to GlassPresets.NEON_CRYSTAL
-    )
-
-    Row(
-        modifier = modifier
-            .fillMaxWidth()
-            .horizontalScroll(rememberScrollState()),
-        horizontalArrangement = Arrangement.spacedBy(8.dp)
-    ) {
-        presets.forEach { (label, preset) ->
-            val isSelected = (currentConfig == preset)
-            Box(
-                modifier = Modifier
-                    .clip(RoundedCornerShape(12.dp))
-                    .background(
-                        if (isSelected) MaterialTheme.colorScheme.primaryContainer
-                        else MaterialTheme.colorScheme.surfaceVariant.copy(alpha = 0.45f)
-                    )
-                    .border(
-                        width = if (isSelected) 1.5.dp else 1.dp,
-                        color = if (isSelected) MaterialTheme.colorScheme.primary else MaterialTheme.colorScheme.outlineVariant,
-                        shape = RoundedCornerShape(12.dp)
-                    )
-                    .clickable {
-                        haptics.click()
-                        onSelectPreset(preset)
-                    }
-                    .padding(horizontal = 14.dp, vertical = 8.dp),
-                contentAlignment = Alignment.Center
-            ) {
-                Row(
-                    verticalAlignment = Alignment.CenterVertically,
-                    horizontalArrangement = Arrangement.spacedBy(5.dp)
-                ) {
-                    if (isSelected) {
-                        Icon(
-                            imageVector = Icons.Default.Check,
-                            contentDescription = null,
-                            tint = MaterialTheme.colorScheme.onPrimaryContainer,
-                            modifier = Modifier.size(13.dp)
-                        )
-                    }
-                    Text(
-                        text = label,
-                        fontFamily = GoogleSansFlex,
-                        fontSize = 12.sp,
-                        fontWeight = if (isSelected) FontWeight.Bold else FontWeight.Medium,
-                        color = if (isSelected) MaterialTheme.colorScheme.onPrimaryContainer else MaterialTheme.colorScheme.onSurface
-                    )
-                }
-            }
-        }
     }
 }
 
@@ -1144,163 +845,6 @@ fun PermissionsStatusOverview(
             }
         )
     }
-}
-
-// =============================================================================
-// 9. CLOUD BACKUP DIALOG
-// =============================================================================
-@Composable
-fun CloudBackupDialog(
-    onDismiss: () -> Unit
-) {
-    val context = LocalContext.current
-    val haptics = rememberKanriHaptics()
-    val scope = rememberCoroutineScope()
-    val cloudPrefs = remember { CloudBackupPreferences.getInstance(context) }
-    val backupManager = remember { CloudBackupManager.getInstance(context) }
-
-    val currentMode by cloudPrefs.backupModeFlow.collectAsState()
-    val accountEmail by cloudPrefs.accountEmailFlow.collectAsState()
-    val lastTimestamp by cloudPrefs.lastBackupTimestampFlow.collectAsState()
-    val lastStatus by cloudPrefs.lastBackupStatusFlow.collectAsState()
-
-    var isSyncing by remember { mutableStateOf(false) }
-
-    AlertDialog(
-        onDismissRequest = onDismiss,
-        icon = {
-            Icon(
-                imageVector = Icons.Default.CloudSync,
-                contentDescription = null,
-                tint = MaterialTheme.colorScheme.primary,
-                modifier = Modifier.size(32.dp)
-            )
-        },
-        title = {
-            Text(
-                text = "Google Drive Cloud Backup",
-                fontWeight = FontWeight.Bold,
-                fontFamily = GoogleSansFlex
-            )
-        },
-        text = {
-            Column(
-                modifier = Modifier.fillMaxWidth(),
-                verticalArrangement = Arrangement.spacedBy(14.dp)
-            ) {
-                Text(
-                    text = "Encrypted client-side backup automatically saved to your private Google Drive under the restricted drive.file scope.",
-                    fontSize = 12.5.sp,
-                    color = MaterialTheme.colorScheme.onSurfaceVariant,
-                    lineHeight = 17.sp
-                )
-
-                // Mode Selector
-                Row(
-                    modifier = Modifier.fillMaxWidth(),
-                    horizontalArrangement = Arrangement.spacedBy(8.dp)
-                ) {
-                    FilterChip(
-                        selected = currentMode == BackupMode.CLOUD,
-                        onClick = {
-                            haptics.tick()
-                            cloudPrefs.backupMode = BackupMode.CLOUD
-                        },
-                        label = { Text("Cloud Backup", fontSize = 12.sp) },
-                        leadingIcon = if (currentMode == BackupMode.CLOUD) {
-                            { Icon(Icons.Default.Check, contentDescription = null, modifier = Modifier.size(14.dp)) }
-                        } else null,
-                        modifier = Modifier.weight(1f)
-                    )
-
-                    FilterChip(
-                        selected = currentMode == BackupMode.OFFLINE,
-                        onClick = {
-                            haptics.tick()
-                            cloudPrefs.backupMode = BackupMode.OFFLINE
-                        },
-                        label = { Text("Fully Offline", fontSize = 12.sp) },
-                        leadingIcon = if (currentMode == BackupMode.OFFLINE) {
-                            { Icon(Icons.Default.Check, contentDescription = null, modifier = Modifier.size(14.dp)) }
-                        } else null,
-                        modifier = Modifier.weight(1f)
-                    )
-                }
-
-                if (currentMode == BackupMode.CLOUD) {
-                    Surface(
-                        shape = RoundedCornerShape(10.dp),
-                        color = MaterialTheme.colorScheme.surfaceVariant.copy(alpha = 0.5f),
-                        border = BorderStroke(1.dp, MaterialTheme.colorScheme.outlineVariant),
-                        modifier = Modifier.fillMaxWidth()
-                    ) {
-                        Column(modifier = Modifier.padding(12.dp)) {
-                            Text(
-                                text = "Account Status",
-                                fontSize = 11.sp,
-                                fontWeight = FontWeight.Bold,
-                                color = MaterialTheme.colorScheme.primary
-                            )
-                            Spacer(modifier = Modifier.height(2.dp))
-                            Text(
-                                text = if (!accountEmail.isNullOrBlank()) accountEmail!! else "Signed in with Google Play Services",
-                                fontSize = 13.sp,
-                                fontWeight = FontWeight.SemiBold,
-                                color = MaterialTheme.colorScheme.onSurface
-                            )
-                            Spacer(modifier = Modifier.height(6.dp))
-                            val currentLocale = androidx.compose.ui.platform.LocalConfiguration.current.locales[0]
-                            val dateStr = if (lastTimestamp > 0L) {
-                                SimpleDateFormat("dd MMM yyyy, HH:mm", currentLocale).format(Date(lastTimestamp))
-                            } else "Never"
-                            Text(
-                                text = "Last synced: $dateStr",
-                                fontSize = 11.5.sp,
-                                color = MaterialTheme.colorScheme.onSurfaceVariant
-                            )
-                        }
-                    }
-
-                    Button(
-                        onClick = {
-                            if (!isSyncing) {
-                                isSyncing = true
-                                haptics.click()
-                                scope.launch {
-                                    try {
-                                        val result = backupManager.performCloudBackup()
-                                        if (result.isSuccess) {
-                                            haptics.success()
-                                            Toast.makeText(context, "Backup synced to Google Drive successfully", Toast.LENGTH_SHORT).show()
-                                        } else {
-                                            haptics.warning()
-                                            Toast.makeText(context, "Sync complete (local ledger secured)", Toast.LENGTH_SHORT).show()
-                                        }
-                                    } catch (e: Exception) {
-                                        Toast.makeText(context, "Sync complete", Toast.LENGTH_SHORT).show()
-                                    } finally {
-                                        isSyncing = false
-                                    }
-                                }
-                            }
-                        },
-                        modifier = Modifier.fillMaxWidth(),
-                        shape = RoundedCornerShape(10.dp),
-                        enabled = !isSyncing
-                    ) {
-                        Icon(Icons.Default.Sync, contentDescription = null, modifier = Modifier.size(16.dp))
-                        Spacer(modifier = Modifier.width(6.dp))
-                        Text(if (isSyncing) "Syncing..." else "Sync to Drive Now")
-                    }
-                }
-            }
-        },
-        confirmButton = {
-            TextButton(onClick = onDismiss) {
-                Text("Done")
-            }
-        }
-    )
 }
 
 // =============================================================================

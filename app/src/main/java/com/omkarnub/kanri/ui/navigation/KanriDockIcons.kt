@@ -26,8 +26,6 @@ import androidx.compose.ui.unit.Dp
 import androidx.compose.ui.unit.dp
 import kotlinx.coroutines.delay
 import kotlinx.coroutines.launch
-import kotlin.math.cos
-import kotlin.math.sin
 
 /**
  * Home Dock Icon: Clean outline house with peaked roof and doorway.
@@ -130,124 +128,6 @@ fun HomeDockIcon(
             path = doorPath,
             color = tint,
             style = if (isSelected) Fill else Stroke(width = strokeWidth, cap = StrokeCap.Round, join = StrokeJoin.Round)
-        )
-    }
-}
-
-/**
- * History Dock Icon: Clean, standard clock rewind icon.
- * Features an outer counter-clockwise rewind circular arc with a crisp arrowhead at top-left,
- * and clock hands (hour and minute) that smoothly sweep forward when selected.
- */
-@Composable
-fun HistoryDockIcon(
-    tint: Color,
-    isSelected: Boolean = false,
-    modifier: Modifier = Modifier,
-    size: Dp = 22.dp
-) {
-    val animScale = remember { Animatable(1f) }
-    val clockHandAngle = remember { Animatable(0f) }
-
-    LaunchedEffect(isSelected) {
-        if (isSelected) {
-            launch {
-                animScale.animateTo(
-                    targetValue = 1.08f,
-                    animationSpec = tween(durationMillis = 280, easing = FastOutSlowInEasing)
-                )
-            }
-            launch {
-                clockHandAngle.snapTo(0f)
-                clockHandAngle.animateTo(
-                    targetValue = 90f,
-                    animationSpec = tween(durationMillis = 350, easing = FastOutSlowInEasing)
-                )
-            }
-        } else {
-            animScale.animateTo(
-                targetValue = 1f,
-                animationSpec = tween(durationMillis = 220, easing = FastOutSlowInEasing)
-            )
-            clockHandAngle.animateTo(
-                targetValue = 0f,
-                animationSpec = tween(durationMillis = 220, easing = FastOutSlowInEasing)
-            )
-        }
-    }
-
-    Canvas(
-        modifier = modifier
-            .size(size)
-            .graphicsLayer {
-                scaleX = animScale.value
-                scaleY = animScale.value
-            }
-    ) {
-        val strokeWidth = (if (isSelected) 2.4.dp else 1.8.dp).toPx()
-        val totalW = size.toPx()
-        val s = totalW / 24f // Normalized 24x24 coordinate scale
-
-        // 1. Counter-Clockwise Rewind Arc
-        // Centered at (12, 12), radius = 8.5
-        val arcPath = Path().apply {
-            val ovalRect = Rect(3.5f * s, 3.5f * s, 20.5f * s, 20.5f * s)
-            addArc(
-                oval = ovalRect,
-                startAngleDegrees = -130f,
-                sweepAngleDegrees = 310f
-            )
-        }
-        drawPath(
-            path = arcPath,
-            color = tint,
-            style = Stroke(width = strokeWidth, cap = StrokeCap.Round)
-        )
-
-        // 2. Crisp Arrowhead at top-left opening pointing counter-clockwise (down/left)
-        // Connected seamlessly to the arc start point at -130° (6.54, 5.49)
-        val arrowTip = Offset(6.54f * s, 5.49f * s)
-        val arrowPath = Path().apply {
-            moveTo(3.2f * s, 3.5f * s)
-            lineTo(arrowTip.x, arrowTip.y)
-            lineTo(3.2f * s, 8.5f * s)
-        }
-        drawPath(
-            path = arrowPath,
-            color = tint,
-            style = Stroke(width = strokeWidth, cap = StrokeCap.Round, join = StrokeJoin.Round)
-        )
-
-        // 3. Clock Hands inside (from center 12, 12)
-        val center = Offset(12f * s, 12f * s)
-        val rot = clockHandAngle.value
-
-        // Hour Hand: pointing to 3 o'clock (0°), smoothly sweeps with rot
-        val hourAngle = Math.toRadians((rot + 0.0)).toFloat()
-        val hourLen = 4.2f * s
-        drawLine(
-            color = tint,
-            start = center,
-            end = Offset(
-                center.x + cos(hourAngle) * hourLen,
-                center.y + sin(hourAngle) * hourLen
-            ),
-            strokeWidth = strokeWidth,
-            cap = StrokeCap.Round
-        )
-
-        // Minute Hand: pointing to 12 o'clock (-90°), smoothly sweeps with rot * 2
-        val minuteAngle = Math.toRadians((rot * 2.0 - 90.0)).toFloat()
-        val minuteLen = 5.6f * s
-        drawLine(
-            color = tint,
-            start = center,
-            end = Offset(
-                center.x + cos(minuteAngle) * minuteLen,
-                center.y + sin(minuteAngle) * minuteLen
-            ),
-            strokeWidth = strokeWidth,
-            cap = StrokeCap.Round
         )
     }
 }

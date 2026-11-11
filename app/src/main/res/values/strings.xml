@@ -55,18 +55,10 @@
     <string name="shortcut_lend_borrow_long">Track debts and dues</string>
 
     <!-- Onboarding Hero Redesign Strings -->
-    <string name="onboarding_headline">Know where every rupee went.</string>
-    <string name="onboarding_subline">Automatic. Private. 100% offline.</string>
     <string name="onboarding_get_started">Get started</string>
     <string name="onboarding_privacy_link">How does Kanri stay private?</string>
     <string name="onboarding_bank_sender">BANK</string>
     <string name="onboarding_timestamp_now">now</string>
-
-    <!-- Feature Highlights -->
-    <string name="onboarding_feature_1">Auto-tracks bank &amp; UPI SMS instantly</string>
-    <string name="onboarding_feature_2">100% private, on-device &amp; offline</string>
-    <string name="onboarding_feature_3">Real-time budget &amp; expense insights</string>
-    <string name="onboarding_feature_4">Split bills &amp; cash wallet balances</string>
 
     <!-- Demo Scenarios -->
     <string name="onboarding_demo_sms_1">Rs.250.00 debited from A/c XX1234 on 11-Oct. UPI to Chai Point. Avl Bal hidden.</string>

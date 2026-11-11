@@ -472,7 +472,9 @@ fun OnboardingScreen(
 
                             webChromeClient = object : android.webkit.WebChromeClient() {
                                 override fun onConsoleMessage(consoleMessage: android.webkit.ConsoleMessage?): Boolean {
-                                    android.util.Log.d("ShanShuiWebView", "${consoleMessage?.message()} [line ${consoleMessage?.lineNumber()}]")
+                                    if (com.omkarnub.kanri.BuildConfig.DEBUG) {
+                                        android.util.Log.d("ShanShuiWebView", "${consoleMessage?.message()} [line ${consoleMessage?.lineNumber()}]")
+                                    }
                                     return true
                                 }
                             }

@@ -101,62 +101,6 @@ object GlassPresets {
         expenseTintOpacity = 0.18f,
         incomeTintOpacity = 0.18f
     )
-    val ULTRA_SHEER = GlassCustomization(
-        blurRadiusDp = 36f,
-        surfaceOpacity = 0.03f,
-        tintLightness = 0.15f,
-        borderOpacity = 0.16f,
-        borderWidthDp = 0.8f,
-        cornerRadiusDp = 24f,
-        buttonOpacity = 0.08f,
-        shadowIntensity = 0.15f,
-        expenseColorHex = 0xFFF43F5EL,
-        incomeColorHex = 0xFF10B981L,
-        expenseTintOpacity = 0.10f,
-        incomeTintOpacity = 0.10f
-    )
-    val DEEP_OBSIDIAN = GlassCustomization(
-        blurRadiusDp = 20f,
-        surfaceOpacity = 0.20f,
-        tintLightness = -0.75f,
-        borderOpacity = 0.35f,
-        borderWidthDp = 1.0f,
-        cornerRadiusDp = 18f,
-        buttonOpacity = 0.22f,
-        shadowIntensity = 0.35f,
-        expenseColorHex = 0xFFDC2626L,
-        incomeColorHex = 0xFF059669L,
-        expenseTintOpacity = 0.25f,
-        incomeTintOpacity = 0.25f
-    )
-    val LUMINOUS_FROST = GlassCustomization(
-        blurRadiusDp = 28f,
-        surfaceOpacity = 0.16f,
-        tintLightness = 0.70f,
-        borderOpacity = 0.42f,
-        borderWidthDp = 1.2f,
-        cornerRadiusDp = 22f,
-        buttonOpacity = 0.24f,
-        shadowIntensity = 0.20f,
-        expenseColorHex = 0xFFFB7185L,
-        incomeColorHex = 0xFF34D399L,
-        expenseTintOpacity = 0.22f,
-        incomeTintOpacity = 0.22f
-    )
-    val NEON_CRYSTAL = GlassCustomization(
-        blurRadiusDp = 14f,
-        surfaceOpacity = 0.05f,
-        tintLightness = 0.0f,
-        borderOpacity = 0.58f,
-        borderWidthDp = 1.6f,
-        cornerRadiusDp = 16f,
-        buttonOpacity = 0.32f,
-        shadowIntensity = 0.30f,
-        expenseColorHex = 0xFFFF3366L,
-        incomeColorHex = 0xFF84CC16L,
-        expenseTintOpacity = 0.32f,
-        incomeTintOpacity = 0.32f
-    )
 }
 
 fun lerpColor(start: Color, stop: Color, fraction: Float): Color {

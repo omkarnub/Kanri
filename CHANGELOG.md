@@ -5,6 +5,20 @@ All notable changes to Kanri will be documented in this file.
 The format is based on [Keep a Changelog](https://keepachangelog.com/en/1.0.0/),
 and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0.html).
 
+## [1.18.9] - 2026-11-11
+
+### Removed & Cleaned (Phase 2 Pre-Release Dead Code & Hygiene Pass)
+- **Dead Kotlin Screens, Cards, Charts & Composables**:
+  - Removed 18 proven unreferenced UI files (`InstantPopupSheet.kt`, `SavingsGoalsSheet.kt`, `SplitExpenseScreen.kt`, `FinancialHealthCard.kt`, `FinancialHealthDetailsSheet.kt`, `CheckFinancialHealthCard.kt`, `PersonalRecordsSection.kt`, `SmallSpendsSection.kt`, `SplitExpensesSummarySection.kt`, `SuggestedBudgetSection.kt`, `WeekendVsWeekdaySection.kt`, `GrainGradientBackground.kt`, `FoldText.kt`, `KokonutStackPanel.kt`, `DotMatrixEngine.kt`, `FinancialSkyScene.kt`, `AnimatedMonochromeRingChart.kt`, `RecurringPaymentsSheet.kt`).
+  - Removed unreferenced symbols and unused imports across `WheresMyMoneyCard.kt` (`WheresMyMoneyCard` wrapper), `AnimatedNumber.kt` (`AnimatedScore`), `CategoryDonutChart.kt` (`CategoryBreakdownRow`), `AddExpenseIncomePopup.kt` (`LendBorrowFlowIcon`, `SplitBillFlowIcon`), `KanriDockIcons.kt` (`HistoryDockIcon`), `SettingsComponents.kt` (`getShaderGradientBrush`, `ShaderPreviewCard`, `GlassQuickPresetsRow`, `CloudBackupDialog`), `KanriGlassTokens.kt` (unused `GlassPresets` entries), and `ScheduledExportWorker.kt` (`copyFile` helper).
+- **Duplicate Assets, Unused Resources & Dependencies**:
+  - Removed duplicate `assets/fonts/LastoriaBoldRegular.otf` and updated `SignatureText.kt` to load `R.font.lastoria_bold_regular` directly.
+  - Removed 6 unused drawable XMLs (`ic_widget_arrow_right`, `ic_widget_split`, `preview_budget_ring`, `preview_goal_ring`, `splash_background_dark`, `splash_background_light`) and 6 unused onboarding strings (`UnusedResources` reduced from `13` to `0`).
+  - Removed unused explicit `androidx.graphics.path` dependency from `app/build.gradle.kts` and `gradle/libs.versions.toml` (retained transitively where Compose requires it).
+- **Release Logging Hygiene**:
+  - Gated residual `Log.d` calls across workers, receivers, services, onboarding WebView, and notification helpers behind `BuildConfig.DEBUG`.
+- Bumped version to `1.18.9` (Build 60).
+
 ## [1.18.8] - 2026-11-11
 
 ### Fixed & Verified (Phase 1 Pre-Release Correctness Audit)

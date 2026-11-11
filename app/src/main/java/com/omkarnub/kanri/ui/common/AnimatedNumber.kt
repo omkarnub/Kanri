@@ -1,9 +1,6 @@
 package com.omkarnub.kanri.ui.common
 
-import androidx.compose.animation.Animatable
-import androidx.compose.animation.core.Animatable
 import androidx.compose.animation.core.CubicBezierEasing
-import androidx.compose.animation.core.FastOutSlowInEasing
 import androidx.compose.animation.core.animateFloatAsState
 import androidx.compose.animation.core.tween
 import androidx.compose.foundation.layout.Arrangement
@@ -18,7 +15,6 @@ import androidx.compose.runtime.Composable
 import androidx.compose.runtime.LaunchedEffect
 import androidx.compose.runtime.getValue
 import androidx.compose.runtime.key
-import androidx.compose.runtime.mutableFloatStateOf
 import androidx.compose.runtime.mutableIntStateOf
 import androidx.compose.runtime.mutableStateOf
 import androidx.compose.runtime.remember
@@ -202,56 +198,5 @@ private fun SingleDigitStrip(
                 }
             }
         }
-    }
-}
-
-/**
- * Score-style animated number with scale and color feedback when value increases or decreases.
- */
-@Composable
-fun AnimatedScore(
-    value: Double,
-    modifier: Modifier = Modifier,
-    style: TextStyle = LocalTextStyle.current,
-    neutralColor: Color = Color.White,
-    positiveColor: Color = Color(0xFF34C759),
-    negativeColor: Color = Color(0xFFE5484D),
-    fontSize: TextUnit = TextUnit.Unspecified,
-    durationMillis: Int = 400
-) {
-    var prevValue by remember { mutableFloatStateOf(value.toFloat()) }
-    val scale = remember { Animatable(1f) }
-    val animatedColor = remember { androidx.compose.animation.Animatable(neutralColor) }
-
-    LaunchedEffect(value) {
-        val current = value.toFloat()
-        if (current != prevValue) {
-            val isIncrease = current > prevValue
-            prevValue = current
-
-            val flashColor = if (isIncrease) positiveColor else negativeColor
-            animatedColor.snapTo(flashColor)
-
-            // Scale burst and return to 1f
-            scale.animateTo(1.25f, tween(durationMillis = 120, easing = FastOutSlowInEasing))
-            scale.animateTo(1f, tween(durationMillis = durationMillis, easing = FastOutSlowInEasing))
-
-            // Fade color back to neutral
-            animatedColor.animateTo(neutralColor, tween(durationMillis = durationMillis))
-        }
-    }
-
-    Box(
-        modifier = modifier.graphicsLayer {
-            scaleX = scale.value
-            scaleY = scale.value
-        }
-    ) {
-        AnimatedNumber(
-            value = value,
-            style = style,
-            color = animatedColor.value,
-            fontSize = fontSize
-        )
     }
 }
