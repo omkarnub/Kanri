@@ -102,6 +102,7 @@ The settings architecture adheres to:
    - App Health & Diagnostic Logs (view, clear, share crash logs).
    - Suggest a Feature dialog (email intent).
    - Contact Support dialog (clipboard & email intent).
+   - **Buy Me a Coffee** (`BuyMeCoffeeSheet`): 3-tab donation bottom sheet (**UPI** with dynamic ZXing QR, `Any`/`₹50`/`₹100`/`₹250` presets, UPI ID copy & `upi://pay` launcher; **Binance Pay** with bundled `@drawable/qr_binance_pay` WebP QR & `FileProvider` share; **USDT** `BEP20 · Base` EVM address QR, copy, network warning & `FileProvider` share).
 
 8. **Danger Zone**:
    - Reset Opening Balances (clears wallet entities).
@@ -169,4 +170,5 @@ Kanri combines Google's Jetpack Splash Screen library (`androidx.core:core-splas
 - **Notes (`v1.18.12`)**: Added `network_security_config.xml` (`usesCleartextTraffic="false"`), excluded Keystore-backed cloud backup prefs and crash logs from cloud backup and device transfer, hardened WebView file/URL sandboxing, gated `QuickEntryActivity` behind biometric/PIN lock when enabled, and wrapped external/settings `startActivity` intents against `ActivityNotFoundException`.
 - **Notes (`v1.18.13`)**: Guarded post-onboarding SMS/battery optimization prompts in `MainActivity` (`savedInstanceState == null`) and marked onboarding-completed flags in `OnboardingScreen.finishOnboarding()` so configuration changes and skipped onboarding steps never hijack screen focus.
 - **Notes (`v1.18.14`)**: Restored crisp white dock SVG icons, labels, indicator dot, and `+` button across Glass, Dark, and AMOLED themes (`KanriFloatingDock`).
-- **Version**: Kanri `1.18.14` (Build 65).
+- **Notes (`v1.19.0`)**: Added **Buy Me a Coffee** donation sheet (`BuyMeCoffeeSheet`, `QrCodeHelper`, `SupportDonationConfig`, `qr_binance_pay.webp`) under **About & Support** with UPI dynamic QR (`Any`, `₹50`, `₹100`, `₹250` + `upi://pay` launcher), Binance Pay QR, and USDT (`BEP20` / `Base`) QR + `FileProvider` share.
+- **Version**: Kanri `1.19.0` (Build 67).

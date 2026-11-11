@@ -52,6 +52,7 @@ import androidx.compose.material.icons.filled.Email
 import androidx.compose.material.icons.filled.FileDownload
 import androidx.compose.material.icons.filled.Info
 import androidx.compose.material.icons.filled.Lightbulb
+import androidx.compose.material.icons.filled.LocalCafe
 import androidx.compose.material.icons.filled.Lock
 import androidx.compose.material.icons.filled.Opacity
 import androidx.compose.material.icons.filled.Paid
@@ -93,12 +94,14 @@ import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.graphics.Color
 import androidx.compose.ui.platform.LocalContext
+import androidx.compose.ui.res.stringResource
 import androidx.compose.ui.text.font.FontWeight
 import androidx.compose.ui.tooling.preview.Preview
 import androidx.compose.ui.unit.dp
 import androidx.compose.ui.unit.sp
 import androidx.room.withTransaction
 import com.omkarnub.kanri.BuildConfig
+import com.omkarnub.kanri.R
 import kotlinx.coroutines.Dispatchers
 import kotlinx.coroutines.withContext
 import com.omkarnub.kanri.widget.KanriWidgetsUpdater
@@ -204,6 +207,7 @@ fun SettingsScreen(
     var showCrashLogsDialog by rememberSaveable { mutableStateOf(false) }
     var showSuggestFeatureDialog by rememberSaveable { mutableStateOf(false) }
     var showContactDialog by rememberSaveable { mutableStateOf(false) }
+    var showBuyMeCoffeeSheet by rememberSaveable { mutableStateOf(false) }
 
     var pendingIconStyle by rememberSaveable { mutableStateOf<AppIconStyle?>(null) }
     var showIconRestartDialog by rememberSaveable { mutableStateOf(false) }
@@ -357,6 +361,10 @@ fun SettingsScreen(
 
     if (showContactDialog) {
         ContactUsDialog(onDismiss = { showContactDialog = false })
+    }
+
+    if (showBuyMeCoffeeSheet) {
+        BuyMeCoffeeSheet(onDismiss = { showBuyMeCoffeeSheet = false })
     }
 
     if (showIconRestartDialog && pendingIconStyle != null) {
@@ -1400,6 +1408,15 @@ fun SettingsScreen(
                     subtitle = "Send developer an email query or feedback",
                     icon = Icons.Default.Email,
                     onClick = { showContactDialog = true }
+                )
+
+                SettingsDivider()
+
+                SettingsRow(
+                    title = stringResource(R.string.buy_me_coffee_title),
+                    subtitle = stringResource(R.string.buy_me_coffee_subtitle),
+                    icon = Icons.Default.LocalCafe,
+                    onClick = { showBuyMeCoffeeSheet = true }
                 )
             }
 

@@ -5,6 +5,16 @@ All notable changes to Kanri will be documented in this file.
 The format is based on [Keep a Changelog](https://keepachangelog.com/en/1.0.0/),
 and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0.html).
 
+## [1.19.0] - 2026-11-12
+
+### Added
+- **Buy Me a Coffee Support Sheet (`SettingsScreen`, `BuyMeCoffeeSheet`, `QrCodeHelper`)**:
+  - Added a **Buy Me a Coffee** row inside Settings under **About & Support** (`SettingsScreen.kt`) opening a dedicated `KanriModalBottomSheet` (`BuyMeCoffeeSheet.kt`).
+  - Added a **UPI** tab powered by `QrCodeHelper` and `SupportDonationConfig` (`QrCodeHelper.kt`) with offline ZXing vector QR generation (`encodeQrMatrix`), quick preset amount chips (`Any`, `₹50`, `₹100`, `₹250`), clipboard copy for UPI ID (`omkaranandsingh80@okaxis`), and a `upi://pay` app chooser (`Open UPI App`).
+  - Added a **Binance Pay** tab displaying the bundled square Binance Pay QR (`res/drawable-nodpi/qr_binance_pay.webp`) with a single-phone gallery/scan tip and `FileProvider` PNG `Share QR Image` action (`Dispatchers.IO`).
+  - Added a **USDT** (`BEP20 · Base`) tab displaying a dynamically encoded ZXing vector QR for the EVM deposit address (`0x55bBEf6752A8d83F3cBb55B02ad574c573708BaD`), monospace copy row, network loss-prevention warning (`BNB Smart Chain (BEP20)` / `Base`), and PNG QR share action.
+  - Added `com.google.zxing:core:3.5.3` dependency in `gradle/libs.versions.toml` / `app/build.gradle.kts`, localized strings in `res/values/strings.xml`, and unit tests in `QrCodeHelperTest.kt` (`346` unit tests across `56` suites).
+
 ## [1.18.15] - 2026-11-12
 
 ### Changed

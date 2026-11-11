@@ -23,8 +23,8 @@ android {
         applicationId = "com.omkarnub.kanri"
         minSdk = 26
         targetSdk = 37
-        versionCode = 66
-        versionName = "1.18.15"
+        versionCode = 67
+        versionName = "1.19.0"
 
         testInstrumentationRunner = "androidx.test.runner.AndroidJUnitRunner"
         androidResources {
@@ -122,6 +122,7 @@ dependencies {
     implementation(libs.kotlinx.coroutines.play.services)
     implementation(libs.haze)
     implementation(libs.androidx.datastore.preferences)
+    implementation(libs.zxing.core)
 
     testImplementation(libs.junit)
     testImplementation(libs.json)

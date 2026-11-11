@@ -104,4 +104,36 @@
     <string name="onboarding_privacy_row_3">Data is encrypted on your phone (AES-256).</string>
     <string name="onboarding_privacy_row_4">No ads, no tracking, no analytics.</string>
     <string name="onboarding_privacy_close">Close</string>
+
+    <!-- Buy Me a Coffee Support Sheet -->
+    <string name="buy_me_coffee_title">Buy Me a Coffee</string>
+    <string name="buy_me_coffee_subtitle">Support Kanri development via UPI or Binance</string>
+    <string name="buy_me_coffee_tagline" formatted="false">Kanri is free, 100% offline, and ad-free. If it helps track your money, thank you for fueling future updates.</string>
+    <string name="buy_me_coffee_tab_upi">UPI</string>
+    <string name="buy_me_coffee_tab_binance_pay">Binance Pay</string>
+    <string name="buy_me_coffee_tab_crypto">USDT</string>
+    <string name="buy_me_coffee_upi_scan_hint">Scan with any UPI app (GPay, PhonePe, Paytm, BHIM)</string>
+    <string name="buy_me_coffee_upi_amount_any">Any</string>
+    <string name="buy_me_coffee_payee_label">Payee</string>
+    <string name="buy_me_coffee_copy_upi">Copy UPI ID</string>
+    <string name="buy_me_coffee_copied_upi">UPI ID copied</string>
+    <string name="buy_me_coffee_open_upi_app">Open UPI App</string>
+    <string name="buy_me_coffee_upi_chooser">Pay with UPI</string>
+    <string name="buy_me_coffee_no_upi_app">No UPI app found on this device</string>
+    <string name="buy_me_coffee_upi_qr_desc">UPI payment QR code for Omkar</string>
+    <string name="buy_me_coffee_binance_heading">Binance Pay</string>
+    <string name="buy_me_coffee_binance_scan_hint">Scan inside the Binance app for instant zero-fee transfer</string>
+    <string name="buy_me_coffee_binance_qr_desc">Binance Pay QR code</string>
+    <string name="buy_me_coffee_share_qr">Share QR Image</string>
+    <string name="buy_me_coffee_share_qr_chooser">Save or Share QR Code</string>
+    <string name="buy_me_coffee_share_qr_error">Unable to share QR code</string>
+    <string name="buy_me_coffee_binance_single_phone_tip">Tip: On the same phone, tap Share QR Image to save to gallery, then open Binance Pay and select Photos.</string>
+    <string name="buy_me_coffee_crypto_heading">USDT (BEP20 · Base)</string>
+    <string name="buy_me_coffee_crypto_sub">Receive tokens via EVM deposit address (Binance Wallet)</string>
+    <string name="buy_me_coffee_crypto_qr_desc">USDT deposit address QR code</string>
+    <string name="buy_me_coffee_crypto_address_label">Deposit Address</string>
+    <string name="buy_me_coffee_copy_address">Copy Address</string>
+    <string name="buy_me_coffee_copied_address">Wallet address copied</string>
+    <string name="buy_me_coffee_crypto_warning">Send assets only on BNB Smart Chain (BEP20) or Base network to avoid permanent loss.</string>
+    <string name="buy_me_coffee_close">Done</string>
 </resources>
