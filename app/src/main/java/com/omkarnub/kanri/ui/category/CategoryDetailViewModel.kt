@@ -6,13 +6,16 @@ import androidx.lifecycle.AndroidViewModel
 import androidx.lifecycle.viewModelScope
 import com.omkarnub.kanri.data.db.KanriDatabase
 import com.omkarnub.kanri.ui.home.parseHexColor
+import kotlinx.coroutines.Dispatchers
 import kotlinx.coroutines.flow.MutableStateFlow
 import kotlinx.coroutines.flow.SharingStarted
 import kotlinx.coroutines.flow.StateFlow
 import kotlinx.coroutines.flow.combine
+import kotlinx.coroutines.flow.flowOn
 import kotlinx.coroutines.flow.stateIn
 import kotlinx.coroutines.launch
 import java.util.Calendar
+import java.util.Locale
 
 data class CategoryDetailFilterConfig(
     val categoryId: Long? = null,
@@ -72,7 +75,11 @@ class CategoryDetailViewModel(application: Application) : AndroidViewModel(appli
         if (monthStartMs != null && monthEndMs != null) {
             for (item in txList) {
                 val tx = item.transaction
-                if (tx.type.equals("DEBIT", ignoreCase = true) && tx.timestamp in monthStartMs..monthEndMs) {
+                if (tx.type.equals("DEBIT", ignoreCase = true) &&
+                    !tx.isTransfer &&
+                    !tx.isDuplicate &&
+                    tx.timestamp in monthStartMs..monthEndMs
+                ) {
                     totalOverallMonthDebit += tx.amount
                 }
             }
@@ -106,7 +113,9 @@ class CategoryDetailViewModel(application: Application) : AndroidViewModel(appli
 
         // 6. Running stats for scope
         val totalInScope = filteredTxs.filter {
-            it.transaction.type.equals("DEBIT", ignoreCase = true)
+            it.transaction.type.equals("DEBIT", ignoreCase = true) &&
+                !it.transaction.isTransfer &&
+                !it.transaction.isDuplicate
         }.sumOf { it.transaction.amount }
 
         CategoryDetailUiState(
@@ -129,7 +138,8 @@ class CategoryDetailViewModel(application: Application) : AndroidViewModel(appli
             countInScope = filteredTxs.size,
             isLoading = false
         )
-    }.stateIn(
+    }.flowOn(Dispatchers.Default)
+    .stateIn(
         scope = viewModelScope,
         started = SharingStarted.WhileSubscribed(5000),
         initialValue = CategoryDetailUiState(isLoading = true)
@@ -171,11 +181,12 @@ class CategoryDetailViewModel(application: Application) : AndroidViewModel(appli
                 transactionDao.updateCategoryForCounterparty(counterparty, newCategoryId)
                 categoryDao.setMapping(
                     com.omkarnub.kanri.data.db.CounterpartyCategoryMapEntity(
-                        counterparty = counterparty.trim().lowercase(),
+                        counterparty = counterparty.trim().lowercase(Locale.ROOT),
                         categoryId = newCategoryId
                     )
                 )
             }
+            com.omkarnub.kanri.widget.KanriWidgetsUpdater.updateAllWidgets(getApplication())
         }
     }
 }

@@ -22,8 +22,10 @@ object FactoryResetManager {
             db.withTransaction {
                 db.transactionDao().deleteAllTransactions()
                 db.budgetDao().deleteAllBudgets()
+                db.lendingDao().deleteAllRepayments()
                 db.lendingDao().deleteAllRecords()
                 db.recurringPaymentDao().deleteAll()
+                db.savingsGoalDao().deleteAllContributions()
                 db.savingsGoalDao().deleteAll()
                 db.walletDao().deleteAll()
                 db.categoryDao().deleteAllMappings()

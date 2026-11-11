@@ -1,11 +1,11 @@
 # Transaction Details, Search & Filters Documentation
 
-Current Version: **1.2.3** (Build 8)
+Current Version: **1.18.8** (Build 59)
 
 ## 1. Overview
 This document covers the UI/UX architecture, data flow, and styling implementations for:
 1. **Transaction Details Screen** (`TransactionDetailScreen.kt`)
-2. **Search, Filters & Sort Experience** (`SearchScreen.kt`, `SearchFilterSheet.kt`, `SearchFilterModels.kt`)
+2. **Search, Filters & Sort Experience** (`SearchScreen.kt`, `SearchFilterSheet.kt`, `SearchFilterModels.kt`) — excluding duplicate-flagged records from totals and dynamically formatting currency preset labels from the active `CurrencyUtils` currency.
 
 ---
 

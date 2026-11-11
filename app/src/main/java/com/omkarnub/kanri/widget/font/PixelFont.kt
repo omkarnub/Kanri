@@ -68,51 +68,64 @@ object PixelFont {
         }
     }
 
-    private val titlePaint by lazy {
+    private val titlePaintLocal = ThreadLocal.withInitial {
         Paint(Paint.ANTI_ALIAS_FLAG).apply {
             typeface = sansMedium
             color = PixelTheme.COLOR_DOT_ON_INT
         }
     }
 
-    private val subPaint by lazy {
+    private val subPaintLocal = ThreadLocal.withInitial {
         Paint(Paint.ANTI_ALIAS_FLAG).apply {
             typeface = sansRegular
             color = PixelTheme.COLOR_DOT_MID_INT
         }
     }
 
-    private val metricPaint by lazy {
+    private val metricPaintLocal = ThreadLocal.withInitial {
         Paint(Paint.ANTI_ALIAS_FLAG)
     }
 
-    private val prefixPaint by lazy {
+    private val prefixPaintLocal = ThreadLocal.withInitial {
         Paint(Paint.ANTI_ALIAS_FLAG).apply {
             typeface = sansMedium
         }
     }
 
-    private val labelPaint by lazy {
+    private val labelPaintLocal = ThreadLocal.withInitial {
         Paint(Paint.ANTI_ALIAS_FLAG).apply {
             typeface = sansMedium
         }
+    }
+
+    private val titlePaint: Paint get() = titlePaintLocal.get()!!
+    private val subPaint: Paint get() = subPaintLocal.get()!!
+    private val metricPaint: Paint get() = metricPaintLocal.get()!!
+    private val prefixPaint: Paint get() = prefixPaintLocal.get()!!
+    private val labelPaint: Paint get() = labelPaintLocal.get()!!
+
+    private val sortedCurrencySymbols: List<String> by lazy {
+        com.omkarnub.kanri.util.AppCurrency.entries
+            .map { it.symbol }
+            .distinct()
+            .sortedByDescending { it.length }
     }
 
     /**
-     * Formats an amount into compact Indian format:
-     * - `₹850` (for < 1,000)
-     * - `₹1.2k` (for >= 1,000)
-     * - `₹12.4k` (for >= 10,000)
-     * - `₹1.2L` (for >= 1,00,000)
-     * - `₹15L` (for >= 10,00,000)
-     * - `₹1.5Cr` (for >= 1,00,00,000)
+     * Formats an amount into compact format respecting the active currency:
+     * - INR: `₹850`, `₹1.2k`, `₹12.4k`, `₹1.2L`, `₹15L`, `₹1.5Cr`
+     * - Other currencies: `$850`, `$1.2k`, `$120k`, `$1.5M`, `$1.2B`
      */
-    fun formatIndianCompact(amount: Double, prefix: String = "₹"): String {
+    fun formatIndianCompact(
+        amount: Double,
+        prefix: String = com.omkarnub.kanri.util.CurrencyUtils.getCurrencySymbol()
+    ): String {
         return DotMatrixFont.formatIndianCompact(amount, prefix)
     }
 
     /**
-     * Splits formatted currency text like "-₹12.4k /d" into prefix ("-₹"), number ("12.4k"), and unit ("/d").
+     * Splits formatted currency text like "-₹12.4k /d" or "CA$500 /d" into
+     * prefix ("-₹" / "CA$"), number ("12.4k" / "500"), and unit (" /d").
      */
     fun splitCurrencyAndUnit(text: String): Triple<String, String, String> {
         val trimmed = text.trim()
@@ -121,22 +134,26 @@ object PixelFont {
         val unit = if (parts.size > 1) " " + parts[1] else ""
 
         val hasMinus = mainToken.startsWith("-")
-        val withoutMinus = if (hasMinus) mainToken.substring(1) else mainToken
+        val hasPlus = !hasMinus && mainToken.startsWith("+")
+        val withoutSign = if (hasMinus || hasPlus) mainToken.substring(1) else mainToken
+        val signPrefix = if (hasMinus) "-" else if (hasPlus) "+" else ""
+
+        val matchedSymbol = sortedCurrencySymbols.firstOrNull { sym ->
+            withoutSign.startsWith(sym) && withoutSign.length > sym.length &&
+                (withoutSign[sym.length].isDigit() || withoutSign[sym.length] == '.')
+        }
 
         val prefix: String
         val number: String
-        if (withoutMinus.startsWith("₹")) {
-            prefix = if (hasMinus) "-₹" else "₹"
-            number = withoutMinus.substring(1).trim()
-        } else if (withoutMinus.startsWith("$")) {
-            prefix = if (hasMinus) "-$" else "$"
-            number = withoutMinus.substring(1).trim()
-        } else if (withoutMinus.startsWith("+")) {
+        if (matchedSymbol != null) {
+            prefix = signPrefix + matchedSymbol
+            number = withoutSign.substring(matchedSymbol.length).trim()
+        } else if (hasPlus) {
             prefix = "+"
-            number = withoutMinus.substring(1).trim()
+            number = withoutSign.trim()
         } else if (hasMinus) {
             prefix = "-"
-            number = withoutMinus.trim()
+            number = withoutSign.trim()
         } else {
             prefix = ""
             number = mainToken.trim()

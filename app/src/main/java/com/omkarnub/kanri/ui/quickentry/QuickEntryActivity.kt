@@ -1,5 +1,6 @@
 package com.omkarnub.kanri.ui.quickentry
 
+import android.content.Intent
 import android.os.Bundle
 import android.view.WindowManager
 import android.widget.Toast
@@ -87,6 +88,13 @@ class QuickEntryActivity : ComponentActivity() {
                                 saveTransaction(amount, type, counterparty, sourceType, categoryId, wallet, timestamp)
                             },
                             onOpenLendBorrow = { _, _, _, _ ->
+                                val openIntent = com.omkarnub.kanri.ui.theme.AppIconManager.createLauncherIntent(this@QuickEntryActivity).apply {
+                                    this.action = KanriWidgetActions.ACTION_OPEN_LENDING
+                                    this.flags = Intent.FLAG_ACTIVITY_NEW_TASK or Intent.FLAG_ACTIVITY_CLEAR_TOP or Intent.FLAG_ACTIVITY_SINGLE_TOP
+                                }
+                                try {
+                                    startActivity(openIntent)
+                                } catch (_: Exception) {}
                                 finish()
                             }
                         )
@@ -124,9 +132,9 @@ class QuickEntryActivity : ComponentActivity() {
             )
 
             val entity = TransactionEntity(
-                type = type.uppercase(),
+                type = type.uppercase(java.util.Locale.ROOT),
                 amount = amount,
-                sourceType = sourceType.uppercase(),
+                sourceType = sourceType.uppercase(java.util.Locale.ROOT),
                 counterparty = counterparty.trim(),
                 displayName = counterparty.trim(),
                 bank = if (sourceType.equals("CASH", ignoreCase = true)) "Cash" else null,

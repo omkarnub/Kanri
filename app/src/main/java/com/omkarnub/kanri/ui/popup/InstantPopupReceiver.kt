@@ -35,8 +35,7 @@ class InstantPopupReceiver : BroadcastReceiver() {
                 val secPrefs = com.omkarnub.kanri.data.security.SecurityPreferences.getInstance(context)
                 if (secPrefs.isLockEnabled && com.omkarnub.kanri.data.security.SecurityManager.isAppLocked.value) {
                     Log.w("InstantPopupReceiver", "App lock is active. Direct notification categorization rejected.")
-                    val launchIntent = (context.packageManager.getLaunchIntentForPackage(context.packageName)
-                        ?: Intent(context, com.omkarnub.kanri.MainActivity::class.java)).apply {
+                    val launchIntent = com.omkarnub.kanri.ui.theme.AppIconManager.createLauncherIntent(context).apply {
                         flags = Intent.FLAG_ACTIVITY_NEW_TASK or Intent.FLAG_ACTIVITY_CLEAR_TOP
                     }
                     context.startActivity(launchIntent)
@@ -57,12 +56,15 @@ class InstantPopupReceiver : BroadcastReceiver() {
                                 db.transactionDao().updateCategoryForCounterparty(counterparty, categoryId)
                                 db.categoryDao().setMapping(
                                     CounterpartyCategoryMapEntity(
-                                        counterparty = counterparty.trim().lowercase(),
+                                        counterparty = counterparty.trim().lowercase(java.util.Locale.ROOT),
                                         categoryId = categoryId
                                     )
                                 )
                             }
-                            Log.d("InstantPopupReceiver", "Assigned category $categoryId to tx $txId & mapped counterparty $counterparty")
+                            com.omkarnub.kanri.widget.KanriWidgetsUpdater.updateAllWidgets(context.applicationContext)
+                            if (com.omkarnub.kanri.BuildConfig.DEBUG) {
+                                Log.d("InstantPopupReceiver", "Assigned category $categoryId to tx $txId")
+                            }
                         } catch (e: Exception) {
                             Log.e("InstantPopupReceiver", "Error assigning category from notification action", e)
                         } finally {

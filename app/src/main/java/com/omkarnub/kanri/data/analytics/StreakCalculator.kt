@@ -54,15 +54,29 @@ object StreakCalculator {
             )
         }
 
-        // Expenses only: filter type == "DEBIT" (excluding transfers)
-        val debitTransactions = transactions.filter {
+        val activeTransactions = transactions.filterNot { it.isDuplicate }
+        if (activeTransactions.isEmpty()) {
+            return StreakState(
+                currentStreak = 0,
+                lastStreak = 0,
+                bestStreak = 0,
+                noSpendDaysThisMonth = 0,
+                currentMonthName = currentMonthName,
+                last7Days = generateLast7Days(emptySet(), null, nowCalendar),
+                isStreakActive = false,
+                isFirstUse = true
+            )
+        }
+
+        // Expenses only: filter type == "DEBIT" (excluding transfers and duplicates)
+        val debitTransactions = activeTransactions.filter {
             it.type.equals("DEBIT", ignoreCase = true) && !it.isTransfer
         }
 
         // Find earliest transaction timestamp (clamped to at most 5 years ago to prevent unbounded loops)
-        val earliestTxTime = transactions.minOf { it.timestamp }
-        val rawFirstDayCal = getStartOfDayCalendar(earliestTxTime)
-        val todayCal = getStartOfDayCalendar(nowCalendar.timeInMillis)
+        val earliestTxTime = activeTransactions.minOf { it.timestamp }
+        val rawFirstDayCal = getStartOfDayCalendar(earliestTxTime, nowCalendar.timeZone)
+        val todayCal = getStartOfDayCalendar(nowCalendar.timeInMillis, nowCalendar.timeZone)
         val fiveYearsAgoCal = (todayCal.clone() as Calendar).apply {
             add(Calendar.YEAR, -5)
         }
@@ -85,7 +99,7 @@ object StreakCalculator {
         // Map dates with expenses (Set of start-of-day millis)
         val expenseDates = HashSet<Long>()
         for (tx in debitTransactions) {
-            val txDayMillis = getStartOfDayMillis(tx.timestamp)
+            val txDayMillis = getStartOfDayMillis(tx.timestamp, nowCalendar.timeZone)
             expenseDates.add(txDayMillis)
         }
 
@@ -214,12 +228,18 @@ object StreakCalculator {
         return list
     }
 
-    private fun getStartOfDayMillis(timestamp: Long): Long {
-        return getStartOfDayCalendar(timestamp).timeInMillis
+    private fun getStartOfDayMillis(
+        timestamp: Long,
+        timeZone: java.util.TimeZone = java.util.TimeZone.getDefault()
+    ): Long {
+        return getStartOfDayCalendar(timestamp, timeZone).timeInMillis
     }
 
-    private fun getStartOfDayCalendar(timestamp: Long): Calendar {
-        return Calendar.getInstance().apply {
+    private fun getStartOfDayCalendar(
+        timestamp: Long,
+        timeZone: java.util.TimeZone = java.util.TimeZone.getDefault()
+    ): Calendar {
+        return Calendar.getInstance(timeZone).apply {
             timeInMillis = timestamp
             set(Calendar.HOUR_OF_DAY, 0)
             set(Calendar.MINUTE, 0)

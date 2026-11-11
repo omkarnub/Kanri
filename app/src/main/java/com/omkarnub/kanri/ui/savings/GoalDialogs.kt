@@ -189,7 +189,7 @@ fun AddEditSavingsGoalDialog(
                 OutlinedTextField(
                     value = targetAmountStr,
                     onValueChange = { targetAmountStr = it },
-                    label = { Text("Target Amount (₹)", fontFamily = GoogleSansFlex) },
+                    label = { Text("Target Amount (${com.omkarnub.kanri.util.CurrencyUtils.getCurrencySymbol()})", fontFamily = GoogleSansFlex) },
                     placeholder = { Text("e.g. 75000", fontFamily = GoogleSansFlex, fontSize = 13.sp) },
                     keyboardOptions = KeyboardOptions(keyboardType = KeyboardType.Number),
                     singleLine = true,
@@ -212,7 +212,7 @@ fun AddEditSavingsGoalDialog(
                     onValueChange = { currentSavedStr = it },
                     label = {
                         Text(
-                            if (isEditMode) "Current Saved Amount (₹)" else "Initial Deposit (Optional ₹)",
+                            if (isEditMode) "Current Saved Amount (${com.omkarnub.kanri.util.CurrencyUtils.getCurrencySymbol()})" else "Initial Deposit (Optional ${com.omkarnub.kanri.util.CurrencyUtils.getCurrencySymbol()})",
                             fontFamily = GoogleSansFlex
                         )
                     },
@@ -417,7 +417,7 @@ fun AddEditSavingsGoalDialog(
                                     color = MaterialTheme.colorScheme.onSurfaceVariant
                                 )
                                 Text(
-                                    text = "Save ₹${monthlyPace.toInt()} / month to hit target on time",
+                                    text = "Save ${com.omkarnub.kanri.util.CurrencyUtils.formatCurrency(monthlyPace, includeDecimals = false)} / month to hit target on time",
                                     fontFamily = GoogleSansFlex,
                                     fontSize = 12.sp,
                                     fontWeight = FontWeight.Bold,
@@ -516,7 +516,7 @@ fun AdjustGoalFundsDialog(
                         color = MaterialTheme.colorScheme.onSurface
                     )
                     Text(
-                        text = "Current: ₹${goal.currentAmount.toInt()} / ₹${goal.targetAmount.toInt()}",
+                        text = "Current: ${com.omkarnub.kanri.util.CurrencyUtils.formatCurrency(goal.currentAmount, includeDecimals = false)} / ${com.omkarnub.kanri.util.CurrencyUtils.formatCurrency(goal.targetAmount, includeDecimals = false)}",
                         fontFamily = GoogleSansFlex,
                         fontSize = 12.sp,
                         color = MaterialTheme.colorScheme.onSurfaceVariant
@@ -590,7 +590,7 @@ fun AdjustGoalFundsDialog(
                                 }
                         ) {
                             Text(
-                                text = "+₹$inc",
+                                text = "+${com.omkarnub.kanri.util.CurrencyUtils.formatCurrency(inc.toDouble(), includeDecimals = false)}",
                                 fontFamily = GoogleSansFlex,
                                 fontSize = 11.5.sp,
                                 fontWeight = FontWeight.SemiBold,
@@ -609,7 +609,7 @@ fun AdjustGoalFundsDialog(
                     onValueChange = { amountStr = it },
                     label = {
                         Text(
-                            if (isDeposit) "Deposit Amount (₹)" else "Withdraw Amount (₹)",
+                            if (isDeposit) "Deposit Amount (${com.omkarnub.kanri.util.CurrencyUtils.getCurrencySymbol()})" else "Withdraw Amount (${com.omkarnub.kanri.util.CurrencyUtils.getCurrencySymbol()})",
                             fontFamily = GoogleSansFlex
                         )
                     },
@@ -667,7 +667,7 @@ fun AdjustGoalFundsDialog(
                                 color = MaterialTheme.colorScheme.onSurfaceVariant
                             )
                             Text(
-                                text = "₹${newProjectedAmount.toInt()} (${newPercent.toInt()}%)",
+                                text = "${com.omkarnub.kanri.util.CurrencyUtils.formatCurrency(newProjectedAmount, includeDecimals = false)} (${newPercent.toInt()}%)",
                                 fontFamily = GoogleSansFlex,
                                 fontSize = 13.sp,
                                 fontWeight = FontWeight.Bold,
@@ -691,7 +691,7 @@ fun AdjustGoalFundsDialog(
                 colors = kanriPrimaryButtonColors()
             ) {
                 Text(
-                    text = if (isDeposit) "Deposit ₹${amount.toInt()}" else "Withdraw ₹${amount.toInt()}",
+                    text = if (isDeposit) "Deposit ${com.omkarnub.kanri.util.CurrencyUtils.formatCurrency(amount, includeDecimals = false)}" else "Withdraw ${com.omkarnub.kanri.util.CurrencyUtils.formatCurrency(amount, includeDecimals = false)}",
                     fontFamily = GoogleSansFlex,
                     fontWeight = FontWeight.Bold,
                     fontSize = 14.sp
@@ -1099,7 +1099,7 @@ fun GoalDetailsSheet(
                                     )
                                 }
                                 Text(
-                                    text = if (isPositive) "+ ₹${item.amount.toInt()}" else "- ₹${(-item.amount).toInt()}",
+                                    text = if (isPositive) "+ ${com.omkarnub.kanri.util.CurrencyUtils.formatCurrency(item.amount, includeDecimals = false)}" else "- ${com.omkarnub.kanri.util.CurrencyUtils.formatCurrency(-item.amount, includeDecimals = false)}",
                                     fontFamily = GoogleSansFlex,
                                     fontSize = 14.sp,
                                     fontWeight = FontWeight.Bold,

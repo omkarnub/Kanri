@@ -159,10 +159,14 @@ class KanriNotificationListenerService : NotificationListenerService() {
                     return@launch
                 }
 
-                Log.i(
-                    TAG,
-                    "Parsed Incoming Notification: Type=${parsed.type}, Amount=${parsed.amount}, Counterparty=${parsed.counterparty}, Bank=${parsed.bank}, Ref=${parsed.refNo}"
-                )
+                if (com.omkarnub.kanri.BuildConfig.DEBUG) {
+                    Log.i(
+                        TAG,
+                        "Parsed Incoming Notification: Type=${parsed.type}, Amount=${parsed.amount}, Counterparty=${parsed.counterparty}, Bank=${parsed.bank}, Ref=${parsed.refNo}"
+                    )
+                } else {
+                    Log.i(TAG, "Parsed incoming notification: type=${parsed.type}, source=${parsed.sourceType}")
+                }
 
                 val db = KanriDatabase.getDatabase(applicationContext)
                 val atmMode = com.omkarnub.kanri.data.wallet.WalletPreferences.getInstance(applicationContext).atmWithdrawalMode
@@ -230,7 +234,11 @@ class KanriNotificationListenerService : NotificationListenerService() {
                         KanriWidgetsUpdater.updateAllWidgets(applicationContext)
                     }
                     is DeduplicationResult.Enriched -> {
-                        Log.i(TAG, "Notification enriched existing transaction ${result.id} with counterparty: ${result.updatedCounterparty}")
+                        if (com.omkarnub.kanri.BuildConfig.DEBUG) {
+                            Log.i(TAG, "Notification enriched existing transaction ${result.id} with counterparty: ${result.updatedCounterparty}")
+                        } else {
+                            Log.i(TAG, "Notification enriched existing transaction ${result.id}")
+                        }
                         DevCaptureLogger.logDeduplicationMerge(
                             context = applicationContext,
                             source = "Notification",

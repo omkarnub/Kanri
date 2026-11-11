@@ -307,7 +307,7 @@ fun SplitExpenseScreen(
                             verticalAlignment = Alignment.CenterVertically
                         ) {
                             Text(
-                                text = "₹",
+                                text = com.omkarnub.kanri.util.CurrencyUtils.getCurrencySymbol(),
                                 fontFamily = GoogleSansFlex,
                                 fontWeight = FontWeight.Bold,
                                 fontSize = if (amountText.length > 6) 28.sp else 36.sp,

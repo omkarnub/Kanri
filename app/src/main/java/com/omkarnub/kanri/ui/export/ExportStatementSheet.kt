@@ -414,9 +414,10 @@ fun ExportStatementSheet(
                         )
                     },
                     label = {
+                        val currentLocale = androidx.compose.ui.platform.LocalConfiguration.current.locales[0]
                         val customLabel = if (isCustomSelected) {
                             val custom = selectedRange as ExportRange.Custom
-                            val sdf = SimpleDateFormat("dd MMM", Locale.getDefault())
+                            val sdf = SimpleDateFormat("dd MMM", currentLocale)
                             "${sdf.format(Date(custom.startMillis))} – ${sdf.format(Date(custom.endMillis))}"
                         } else {
                             "Custom Range…"
@@ -593,7 +594,7 @@ fun ExportStatementSheet(
                 headline = {
                     val start = dateRangePickerState.selectedStartDateMillis
                     val end = dateRangePickerState.selectedEndDateMillis
-                    val sdf = SimpleDateFormat("dd MMM yyyy", Locale.getDefault())
+                    val sdf = SimpleDateFormat("dd MMM yyyy", androidx.compose.ui.platform.LocalConfiguration.current.locales[0])
                     val headlineText = if (start != null && end != null) {
                         "${sdf.format(Date(start))} – ${sdf.format(Date(end))}"
                     } else if (start != null) {

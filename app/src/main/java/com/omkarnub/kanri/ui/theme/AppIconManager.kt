@@ -31,6 +31,14 @@ object AppIconManager {
         }
     }
 
+    fun createLauncherIntent(context: Context): Intent {
+        val launchIntent = context.packageManager.getLaunchIntentForPackage(context.packageName)
+        if (launchIntent != null) return launchIntent
+        val themePrefs = ThemePreferences.getInstance(context)
+        val targetClass = getTargetActivityClass(themePrefs.appIconStyle, themePrefs.themeMode)
+        return Intent(context, targetClass)
+    }
+
     fun syncLauncherComponents(context: Context, iconStyle: AppIconStyle, themeMode: ThemeMode) {
         val pm = context.packageManager
         val targetClass = getTargetActivityClass(iconStyle, themeMode)

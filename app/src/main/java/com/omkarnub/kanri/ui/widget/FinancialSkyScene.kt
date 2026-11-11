@@ -400,7 +400,7 @@ fun FinancialWeekPulse(
             verticalAlignment = Alignment.CenterVertically
         ) {
             Text("7-Day Spend Pulse", fontSize = 11.sp, fontWeight = FontWeight.Bold, color = Color(0x88FFFFFF))
-            Text("₹0 — " + CurrencyUtils.formatCompactCurrency(maxScale), fontSize = 10.sp, color = Color(0x66FFFFFF))
+            Text(CurrencyUtils.formatCurrency(0.0, includeDecimals = false) + " — " + CurrencyUtils.formatCompactCurrency(maxScale), fontSize = 10.sp, color = Color(0x66FFFFFF))
         }
 
         // Each Day's Row
@@ -486,7 +486,7 @@ fun FinancialWeatherWidget(
 ) {
     var replayCounter by remember { mutableIntStateOf(0) }
     val now = Calendar.getInstance()
-    val timeStr = String.format("%02d:%02d", now.get(Calendar.HOUR_OF_DAY), now.get(Calendar.MINUTE))
+    val timeStr = String.format(java.util.Locale.US, "%02d:%02d", now.get(Calendar.HOUR_OF_DAY), now.get(Calendar.MINUTE))
     val monthName = SimpleDateFormat("MMMM", java.util.Locale.US).format(now.time)
     val dayOfMonth = now.get(Calendar.DAY_OF_MONTH)
 

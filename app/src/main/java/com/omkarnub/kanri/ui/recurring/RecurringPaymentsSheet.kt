@@ -592,7 +592,7 @@ fun AddSubscriptionDialog(
                 OutlinedTextField(
                     value = amountStr,
                     onValueChange = { amountStr = it },
-                    label = { Text("Amount (₹)") },
+                    label = { Text("Amount (${com.omkarnub.kanri.util.CurrencyUtils.getCurrencySymbol()})") },
                     keyboardOptions = KeyboardOptions(keyboardType = KeyboardType.Number),
                     singleLine = true,
                     modifier = Modifier.fillMaxWidth()

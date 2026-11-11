@@ -105,4 +105,62 @@ class BudgetCalculatorTest {
         assertEquals(2500.0, BudgetCalculator.getDefaultMonthlyBudget(com.omkarnub.kanri.util.AppCurrency.USD), 0.001)
         assertEquals(300000.0, BudgetCalculator.getDefaultMonthlyBudget(com.omkarnub.kanri.util.AppCurrency.JPY), 0.001)
     }
+
+    @Test
+    fun testCycleStartDay31_inFebruaryLeapAndNonLeapYear() {
+        // Leap year: 2024-02-29 with cycleStartDay 31 -> clamps start to Feb 29, ends Mar 30 23:59:59.999
+        val leapCal = Calendar.getInstance().apply {
+            set(2024, Calendar.FEBRUARY, 29, 12, 0, 0)
+            set(Calendar.MILLISECOND, 0)
+        }
+        val leapStart = Calendar.getInstance().apply {
+            timeInMillis = BudgetCalculator.getStartOfCycleMillis(31, leapCal)
+        }
+        val leapEnd = Calendar.getInstance().apply {
+            timeInMillis = BudgetCalculator.getEndOfCycleMillis(31, leapCal)
+        }
+        assertEquals(2024, leapStart.get(Calendar.YEAR))
+        assertEquals(Calendar.FEBRUARY, leapStart.get(Calendar.MONTH))
+        assertEquals(29, leapStart.get(Calendar.DAY_OF_MONTH))
+        assertEquals(2024, leapEnd.get(Calendar.YEAR))
+        assertEquals(Calendar.MARCH, leapEnd.get(Calendar.MONTH))
+        assertEquals(30, leapEnd.get(Calendar.DAY_OF_MONTH))
+
+        // Non-leap year: 2026-02-15 with cycleStartDay 31 -> started Jan 31, ends Feb 27 23:59:59.999
+        val nonLeapCal = Calendar.getInstance().apply {
+            set(2026, Calendar.FEBRUARY, 15, 12, 0, 0)
+            set(Calendar.MILLISECOND, 0)
+        }
+        val nonLeapStart = Calendar.getInstance().apply {
+            timeInMillis = BudgetCalculator.getStartOfCycleMillis(31, nonLeapCal)
+        }
+        val nonLeapEnd = Calendar.getInstance().apply {
+            timeInMillis = BudgetCalculator.getEndOfCycleMillis(31, nonLeapCal)
+        }
+        assertEquals(Calendar.JANUARY, nonLeapStart.get(Calendar.MONTH))
+        assertEquals(31, nonLeapStart.get(Calendar.DAY_OF_MONTH))
+        assertEquals(Calendar.FEBRUARY, nonLeapEnd.get(Calendar.MONTH))
+        assertEquals(27, nonLeapEnd.get(Calendar.DAY_OF_MONTH))
+    }
+
+    @Test
+    fun testDaysRemainingInCycle_dstTransitionsReturnExactCalendarDays() {
+        val nyTz = java.util.TimeZone.getTimeZone("America/New_York")
+
+        // Spring-forward DST is Sunday March 8, 2026 (23-hour day).
+        // On Mar 7 23:30 with cycleStartDay 10 (ends Mar 9 23:59:59.999): Mar 7, Mar 8, Mar 9 = 3 days.
+        val springCal = Calendar.getInstance(nyTz).apply {
+            set(2026, Calendar.MARCH, 7, 23, 30, 0)
+            set(Calendar.MILLISECOND, 0)
+        }
+        assertEquals(3, BudgetCalculator.getDaysRemainingInCycle(10, springCal))
+
+        // Fall-back DST is Sunday November 1, 2026 (25-hour day).
+        // On Oct 31 00:30 with cycleStartDay 5 (ends Nov 4 23:59:59.999): Oct 31, Nov 1, Nov 2, Nov 3, Nov 4 = 5 days.
+        val fallCal = Calendar.getInstance(nyTz).apply {
+            set(2026, Calendar.OCTOBER, 31, 0, 30, 0)
+            set(Calendar.MILLISECOND, 0)
+        }
+        assertEquals(5, BudgetCalculator.getDaysRemainingInCycle(5, fallCal))
+    }
 }

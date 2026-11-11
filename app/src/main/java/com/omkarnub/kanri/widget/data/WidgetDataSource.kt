@@ -2,8 +2,12 @@ package com.omkarnub.kanri.widget.data
 
 import android.content.Context
 import com.omkarnub.kanri.data.analytics.StreakCalculator
+import com.omkarnub.kanri.data.budget.BudgetCalculator
+import com.omkarnub.kanri.data.budget.BudgetPreferences
 import com.omkarnub.kanri.data.db.KanriDatabase
 import com.omkarnub.kanri.data.wallet.WalletBalanceCalculator
+import com.omkarnub.kanri.util.CurrencyPreferences
+import com.omkarnub.kanri.util.CurrencyUtils
 import com.omkarnub.kanri.widget.core.ClimateStatus
 import com.omkarnub.kanri.widget.core.PacingStatus
 import com.omkarnub.kanri.widget.core.TodayWidgetState
@@ -36,7 +40,13 @@ object WidgetDataSource {
     const val NEW_MOON_REF_MILLIS = 947182440000L
     const val SYNODIC_MONTH_DAYS = 29.53058867
 
+    private fun ensureCurrencySynced(context: Context) {
+        val prefs = CurrencyPreferences.getInstance(context)
+        CurrencyUtils.setCurrency(prefs.currency)
+    }
+
     suspend fun getTodayState(context: Context): TodayWidgetState = withContext(Dispatchers.IO) {
+        ensureCurrencySynced(context)
         val db = KanriDatabase.getDatabase(context)
         val cal = Calendar.getInstance()
         val currentHour = cal.get(Calendar.HOUR_OF_DAY)
@@ -82,11 +92,14 @@ object WidgetDataSource {
         val avgDailySpend = if (pastTxs.isNotEmpty()) pastTxs.sumOf { it.amount } / 30.0 else 1000.0
 
         val calBudget = Calendar.getInstance()
-        val monthKey = SimpleDateFormat("yyyy-MM", Locale.US).format(calBudget.time)
-        val budgetEntity = db.budgetDao().getBudgetForMonthSync(monthKey)
-        val daysInMonth = calBudget.getActualMaximum(Calendar.DAY_OF_MONTH)
+        val cycleStartDay = BudgetPreferences.getInstance(context).budgetCycleStartDay
+        val cycleKey = BudgetCalculator.getCurrentCycleKey(cycleStartDay, calBudget)
+        val budgetEntity = db.budgetDao().getBudgetForMonthSync(cycleKey)
+        val cycleStart = BudgetCalculator.getStartOfCycleMillis(cycleStartDay, calBudget)
+        val cycleEnd = BudgetCalculator.getEndOfCycleMillis(cycleStartDay, calBudget)
+        val totalCycleDays = (((cycleEnd - cycleStart) / 86400000L) + 1).toInt().coerceIn(28, 31)
         val dailyLimit = if (budgetEntity != null && budgetEntity.monthlyLimit > 0.0) {
-            budgetEntity.monthlyLimit / daysInMonth
+            budgetEntity.monthlyLimit / totalCycleDays
         } else {
             avgDailySpend
         }
@@ -125,51 +138,41 @@ object WidgetDataSource {
             hourlySpend = hourlySpend,
             currentHour = currentHour,
             pacingStatus = pacing,
-            accessibleDescription = "Spent today: ${spentToday.toInt()} rupees across $expenseCount expenses"
+            accessibleDescription = "Spent today: ${CurrencyUtils.formatCurrency(spentToday, includeDecimals = false)} across $expenseCount expenses"
         )
     }
 
     suspend fun getBudgetState(context: Context): BudgetWidgetState = withContext(Dispatchers.IO) {
+        ensureCurrencySynced(context)
         val db = KanriDatabase.getDatabase(context)
         val cal = Calendar.getInstance()
-        val monthKey = SimpleDateFormat("yyyy-MM", Locale.US).format(cal.time)
-        val budgetEntity = db.budgetDao().getBudgetForMonthSync(monthKey)
+        val cycleStartDay = BudgetPreferences.getInstance(context).budgetCycleStartDay
+        val cycleKey = BudgetCalculator.getCurrentCycleKey(cycleStartDay, cal)
+        val budgetEntity = db.budgetDao().getBudgetForMonthSync(cycleKey)
 
         if (budgetEntity == null || budgetEntity.monthlyLimit <= 0.0) {
             return@withContext BudgetWidgetState(
                 hasBudget = false,
-                accessibleDescription = "No budget configured for this month"
+                accessibleDescription = "No budget configured for this cycle"
             )
         }
 
         val totalBudget = budgetEntity.monthlyLimit
-        val startOfMonth = (cal.clone() as Calendar).apply {
-            set(Calendar.DAY_OF_MONTH, 1)
-            set(Calendar.HOUR_OF_DAY, 0)
-            set(Calendar.MINUTE, 0)
-            set(Calendar.SECOND, 0)
-            set(Calendar.MILLISECOND, 0)
-        }.timeInMillis
+        val startOfCycle = BudgetCalculator.getStartOfCycleMillis(cycleStartDay, cal)
+        val endOfCycle = BudgetCalculator.getEndOfCycleMillis(cycleStartDay, cal)
 
-        val endOfMonth = (cal.clone() as Calendar).apply {
-            set(Calendar.DAY_OF_MONTH, cal.getActualMaximum(Calendar.DAY_OF_MONTH))
-            set(Calendar.HOUR_OF_DAY, 23)
-            set(Calendar.MINUTE, 59)
-            set(Calendar.SECOND, 59)
-            set(Calendar.MILLISECOND, 999)
-        }.timeInMillis
-
-        val monthTxs = db.transactionDao().getTransactionsBetweenSync(startOfMonth, endOfMonth)
+        val monthTxs = db.transactionDao().getTransactionsBetweenSync(startOfCycle, endOfCycle)
             .filter { it.type.equals("DEBIT", ignoreCase = true) && !it.isTransfer && !it.isDuplicate }
 
         val spentAmount = monthTxs.sumOf { it.amount }
         val remainingAmount = totalBudget - spentAmount
         val percentUsed = (spentAmount / totalBudget).toFloat()
 
-        val maxDays = cal.getActualMaximum(Calendar.DAY_OF_MONTH)
-        val currentDay = cal.get(Calendar.DAY_OF_MONTH)
-        val daysLeft = max(0, maxDays - currentDay)
-        val pacingExpectedRatio = (currentDay.toFloat() / maxDays).coerceIn(0f, 1f)
+        val daysRemainingInclToday = BudgetCalculator.getDaysRemainingInCycle(cycleStartDay, cal)
+        val totalCycleDays = (((endOfCycle - startOfCycle) / 86400000L) + 1).toInt().coerceIn(28, 31)
+        val daysLeft = max(0, daysRemainingInclToday - 1)
+        val elapsedDays = (totalCycleDays - daysRemainingInclToday + 1).coerceIn(1, totalCycleDays)
+        val pacingExpectedRatio = (elapsedDays.toFloat() / totalCycleDays).coerceIn(0f, 1f)
 
         BudgetWidgetState(
             hasBudget = true,
@@ -179,13 +182,14 @@ object WidgetDataSource {
             percentUsed = percentUsed,
             daysLeft = daysLeft,
             pacingExpectedRatio = pacingExpectedRatio,
-            accessibleDescription = "Budget: ${remainingAmount.toInt()} rupees remaining, ${(percentUsed * 100).toInt()}% used, $daysLeft days left"
+            accessibleDescription = "Budget: ${CurrencyUtils.formatCurrency(remainingAmount, includeDecimals = false)} remaining, ${(percentUsed * 100).toInt()}% used, $daysLeft days left"
         )
     }
 
     suspend fun getWalletsState(context: Context): WalletsWidgetState = withContext(Dispatchers.IO) {
+        ensureCurrencySynced(context)
         val db = KanriDatabase.getDatabase(context)
-        val openings = db.walletDao().getBalancesSync().associateBy { it.walletId.uppercase() }
+        val openings = db.walletDao().getBalancesSync().associateBy { it.walletId.uppercase(Locale.ROOT) }
         val txs = db.transactionDao().getWalletTransactionsSync()
         val balances = WalletBalanceCalculator.balances(openings, txs)
 
@@ -200,11 +204,12 @@ object WidgetDataSource {
             bankBalance = bank,
             netWorth = total,
             cashProportion = cashRatio,
-            accessibleDescription = "Wallets: Cash ${cash.toInt()} rupees, Bank ${bank.toInt()} rupees, Net Worth ${total.toInt()} rupees"
+            accessibleDescription = "Wallets: Cash ${CurrencyUtils.formatCurrency(cash, includeDecimals = false)}, Bank ${CurrencyUtils.formatCurrency(bank, includeDecimals = false)}, Net Worth ${CurrencyUtils.formatCurrency(total, includeDecimals = false)}"
         )
     }
 
     suspend fun getGoalsState(context: Context): GoalsWidgetState = withContext(Dispatchers.IO) {
+        ensureCurrencySynced(context)
         val db = KanriDatabase.getDatabase(context)
         val goals = db.savingsGoalDao().getActiveGoalsSync()
 
@@ -228,11 +233,12 @@ object WidgetDataSource {
             targetAmount = target,
             percentSaved = ratio.coerceIn(0f, 1f),
             isCompleted = isDone,
-            accessibleDescription = "Goal ${primary.title}: ${saved.toInt()} of ${target.toInt()} saved (${(ratio * 100).toInt()}%)"
+            accessibleDescription = "Goal ${primary.title}: ${CurrencyUtils.formatCurrency(saved, includeDecimals = false)} of ${CurrencyUtils.formatCurrency(target, includeDecimals = false)} saved (${(ratio * 100).toInt()}%)"
         )
     }
 
     suspend fun getDuesState(context: Context): DuesWidgetState = withContext(Dispatchers.IO) {
+        ensureCurrencySynced(context)
         val db = KanriDatabase.getDatabase(context)
         val records = db.lendingDao().getAllRecordsSync().filter { !it.isSettled }
 
@@ -283,11 +289,12 @@ object WidgetDataSource {
             receivableRatio = recRatio,
             payableRatio = payRatio,
             topPersons = topPersons,
-            accessibleDescription = "Dues: Receivable ${receivable.toInt()}, Payable ${payable.toInt()}, Net ${net.toInt()}, $overdue overdue"
+            accessibleDescription = "Dues: Receivable ${CurrencyUtils.formatCurrency(receivable, includeDecimals = false)}, Payable ${CurrencyUtils.formatCurrency(payable, includeDecimals = false)}, Net ${CurrencyUtils.formatCurrency(net, includeDecimals = false)}, $overdue overdue"
         )
     }
 
     suspend fun getSkyState(context: Context): SkyWidgetState = withContext(Dispatchers.IO) {
+        ensureCurrencySynced(context)
         val cal = Calendar.getInstance()
         val hour = cal.get(Calendar.HOUR_OF_DAY)
         val minute = cal.get(Calendar.MINUTE)
@@ -356,7 +363,7 @@ object WidgetDataSource {
             pulse[i] = (dayTotal / max(safeToSpend * 1.5, 100.0)).toFloat().coerceIn(0.05f, 1f)
 
             val dCal = Calendar.getInstance().apply { timeInMillis = dStart }
-            val dName = if (i == 6) "TODAY" else dayFormat.format(dCal.time).uppercase()
+            val dName = if (i == 6) "TODAY" else dayFormat.format(dCal.time).uppercase(Locale.US)
             weekSpends.add(Pair(dName, dayTotal))
         }
 
@@ -372,11 +379,12 @@ object WidgetDataSource {
             safeToSpend = safeToSpend,
             sevenDayPulse = pulse,
             weekSpends = weekSpends,
-            accessibleDescription = "Financial Sky: $conditionText, spent ${todaySpent.toInt()}, safe ${safeToSpend.toInt()}"
+            accessibleDescription = "Financial Sky: $conditionText, spent ${CurrencyUtils.formatCurrency(todaySpent, includeDecimals = false)}, safe ${CurrencyUtils.formatCurrency(safeToSpend, includeDecimals = false)}"
         )
     }
 
     suspend fun getHeatmapState(context: Context): HeatmapWidgetState = withContext(Dispatchers.IO) {
+        ensureCurrencySynced(context)
         val db = KanriDatabase.getDatabase(context)
         val cal = Calendar.getInstance()
         val monthName = SimpleDateFormat("MMM", Locale.US).format(cal.time)
@@ -448,7 +456,7 @@ object WidgetDataSource {
             dailyIntensities = grid,
             todayCellIndex = if (todayIdx in 0..34) todayIdx else -1,
             maxActiveCellIndex = if (maxActive in 0..34) maxActive else 34,
-            accessibleDescription = "Heatmap for $monthName: Total spend ${monthTotal.toInt()} rupees"
+            accessibleDescription = "Heatmap for $monthName: Total spend ${CurrencyUtils.formatCurrency(monthTotal, includeDecimals = false)}"
         )
     }
 
@@ -494,12 +502,12 @@ object WidgetDataSource {
     }
 
     suspend fun getSafeToSpendState(context: Context): SafeToSpendWidgetState = withContext(Dispatchers.IO) {
+        ensureCurrencySynced(context)
         val budgetState = getBudgetState(context)
         val todayState = getTodayState(context)
         val cal = Calendar.getInstance()
-        val daysInMonth = cal.getActualMaximum(Calendar.DAY_OF_MONTH)
-        val currentDay = cal.get(Calendar.DAY_OF_MONTH)
-        val daysRemainingInclToday = max(1, daysInMonth - currentDay + 1)
+        val cycleStartDay = BudgetPreferences.getInstance(context).budgetCycleStartDay
+        val daysRemainingInclToday = BudgetCalculator.getDaysRemainingInCycle(cycleStartDay, cal).coerceAtLeast(1)
 
         val allowance = if (budgetState.hasBudget && budgetState.remainingAmount > 0) {
             budgetState.remainingAmount / daysRemainingInclToday
@@ -521,11 +529,12 @@ object WidgetDataSource {
             spentRatio = ratio,
             isOverAllowance = isOver,
             hasBudget = budgetState.hasBudget,
-            accessibleDescription = "Safe to spend: ${allowance.toInt()} rupees per day. Today spent: ${todayState.spentToday.toInt()}"
+            accessibleDescription = "Safe to spend: ${CurrencyUtils.formatCurrency(allowance, includeDecimals = false)} per day. Today spent: ${CurrencyUtils.formatCurrency(todayState.spentToday, includeDecimals = false)}"
         )
     }
 
     suspend fun getReviewInboxState(context: Context): ReviewInboxWidgetState = withContext(Dispatchers.IO) {
+        ensureCurrencySynced(context)
         val db = KanriDatabase.getDatabase(context)
         val unreviewedTxs = db.transactionDao().getAllTransactionsSync().filter {
             (it.needsReview || it.categoryId == null) && it.transferToWallet == null && !it.isDuplicate

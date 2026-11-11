@@ -61,10 +61,10 @@ interface TransactionDao {
     @Query("SELECT * FROM transactions ORDER BY timestamp DESC")
     suspend fun getAllTransactionsWithCategorySync(): List<TransactionWithCategory>
 
-    @Query("SELECT COUNT(*) FROM transactions WHERE (needs_review = 1 OR category_id IS NULL) AND transfer_to_wallet IS NULL")
+    @Query("SELECT COUNT(*) FROM transactions WHERE (needs_review = 1 OR category_id IS NULL) AND transfer_to_wallet IS NULL AND is_duplicate = 0")
     fun observeReviewCount(): Flow<Int>
 
-    @Query("SELECT * FROM transactions WHERE (needs_review = 1 OR category_id IS NULL) AND transfer_to_wallet IS NULL ORDER BY timestamp DESC")
+    @Query("SELECT * FROM transactions WHERE (needs_review = 1 OR category_id IS NULL) AND transfer_to_wallet IS NULL AND is_duplicate = 0 ORDER BY timestamp DESC")
     fun observeReviewQueue(): Flow<List<TransactionEntity>>
 
     @Query("UPDATE transactions SET needs_review = 0, review_reason = NULL WHERE id = :transactionId")

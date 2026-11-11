@@ -81,6 +81,36 @@ class CsvExporterTest {
         assertTrue(csv.contains("# Net Cash Flow: INR -250.75"))
     }
 
+    @Test
+    fun testGenerateCsv_usesActiveCurrencyCodeAndExcludesTransfersAndDuplicatesFromSummary() {
+        try {
+            com.omkarnub.kanri.util.CurrencyUtils.setCurrency(com.omkarnub.kanri.util.AppCurrency.USD)
+            val validDebit = createTx(id = 1, amount = 100.0, type = "DEBIT", counterparty = "Cafe")
+            val validCredit = createTx(id = 2, amount = 400.0, type = "CREDIT", counterparty = "Salary")
+            val dupRaw = createTx(id = 3, amount = 999.0, type = "DEBIT", counterparty = "Dup")
+            val dupTx = dupRaw.copy(transaction = dupRaw.transaction.copy(isDuplicate = true))
+            val transferRaw = createTx(id = 4, amount = 500.0, type = "DEBIT", counterparty = "ATM")
+            val transferTx = transferRaw.copy(
+                transaction = transferRaw.transaction.copy(wallet = "ONLINE", transferToWallet = "CASH")
+            )
+
+            val allTxs = listOf(validDebit, validCredit, dupTx, transferTx)
+            val summary = CsvExporter.calculateSummary(allTxs)
+            assertEquals(100.0, summary.totalDebit, 0.001)
+            assertEquals(400.0, summary.totalCredit, 0.001)
+            assertEquals(300.0, summary.netAmount, 0.001)
+
+            val csv = CsvExporter.generateCsv(allTxs, "October 2026")
+            assertTrue(csv.contains("Amount (USD)"))
+            assertTrue(csv.contains("# Total Spent (Debit): USD 100.00"))
+            assertTrue(csv.contains("# Total Received (Credit): USD 400.00"))
+            assertTrue(csv.contains("# Net Cash Flow: USD 300.00"))
+            assertTrue(csv.contains("TRANSFER,500.00"))
+        } finally {
+            com.omkarnub.kanri.util.CurrencyUtils.setCurrency(com.omkarnub.kanri.util.AppCurrency.INR)
+        }
+    }
+
     private fun createTx(
         id: Long,
         amount: Double,

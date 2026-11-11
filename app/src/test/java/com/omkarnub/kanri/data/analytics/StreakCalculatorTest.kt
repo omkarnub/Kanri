@@ -255,4 +255,55 @@ class StreakCalculatorTest {
         assertTrue("Transfer debit on Sep 19 must not break no-spend streak", yesterdayItem.isNoSpend)
         assertEquals(10, state.currentStreak) // Sep 11 to Sep 20 = 10 days
     }
+
+    @Test
+    fun calculateStreak_duplicateDebit_doesNotBreakStreak() {
+        val nowCal = Calendar.getInstance().apply {
+            set(2026, Calendar.SEPTEMBER, 20, 15, 0, 0)
+        }
+
+        val baseTx = createTx(100.0, "DEBIT", 2026, 9, 10)
+        val duplicateTx = createTx(500.0, "DEBIT", 2026, 9, 19).copy(isDuplicate = true)
+
+        val state = StreakCalculator.calculateStreak(listOf(baseTx, duplicateTx), nowCal)
+
+        val yesterdayItem = state.last7Days[5]
+        assertTrue("Duplicate debit on Sep 19 must not break no-spend streak", yesterdayItem.isNoSpend)
+        assertEquals(10, state.currentStreak)
+    }
+
+    @Test
+    fun calculateStreak_respectsInjectedCalendarTimeZone() {
+        // 2026-09-20T05:00:00Z = Sep 19 22:00 PDT in America/Los_Angeles, Sep 20 14:00 JST in Asia/Tokyo
+        val utcCal = Calendar.getInstance(java.util.TimeZone.getTimeZone("UTC")).apply {
+            set(2026, Calendar.SEPTEMBER, 20, 5, 0, 0)
+            set(Calendar.MILLISECOND, 0)
+        }
+        val boundaryTx = TransactionEntity(
+            id = 1,
+            type = "DEBIT",
+            amount = 250.0,
+            sourceType = "UPI",
+            counterparty = "MidnightMerchant",
+            bank = "HDFC",
+            refNo = "REF_TZ",
+            timestamp = utcCal.timeInMillis,
+            rawSms = "SMS"
+        )
+
+        val laNow = Calendar.getInstance(java.util.TimeZone.getTimeZone("America/Los_Angeles")).apply {
+            set(2026, Calendar.SEPTEMBER, 20, 12, 0, 0)
+            set(Calendar.MILLISECOND, 0)
+        }
+        val laState = StreakCalculator.calculateStreak(listOf(boundaryTx), laNow)
+        assertTrue("In LA, 05:00Z is Sep 19 (yesterday), so Sep 20 (today) has no spend", laState.last7Days[6].isNoSpend)
+        assertFalse("In LA, yesterday (Sep 19) should record the spend", laState.last7Days[5].isNoSpend)
+
+        val tokyoNow = Calendar.getInstance(java.util.TimeZone.getTimeZone("Asia/Tokyo")).apply {
+            set(2026, Calendar.SEPTEMBER, 20, 20, 0, 0)
+            set(Calendar.MILLISECOND, 0)
+        }
+        val tokyoState = StreakCalculator.calculateStreak(listOf(boundaryTx), tokyoNow)
+        assertFalse("In Tokyo, 05:00Z is Sep 20 (today), so today should record the spend", tokyoState.last7Days[6].isNoSpend)
+    }
 }

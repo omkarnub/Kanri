@@ -490,7 +490,7 @@ fun AddTransactionDialog(
                                                     modifier = Modifier.size(16.dp)
                                                 )
                                                 Text(
-                                                    text = SimpleDateFormat("dd MMM yyyy", Locale.getDefault()).format(Date(transactionTimestamp)),
+                                                    text = SimpleDateFormat("dd MMM yyyy", androidx.compose.ui.platform.LocalConfiguration.current.locales[0]).format(Date(transactionTimestamp)),
                                                     color = MaterialTheme.colorScheme.onSurface,
                                                     fontSize = 12.5.sp,
                                                     fontWeight = FontWeight.Medium,
@@ -539,8 +539,9 @@ fun AddTransactionDialog(
                                                     tint = MaterialTheme.colorScheme.onSurface,
                                                     modifier = Modifier.size(16.dp)
                                                 )
+                                                val timePattern = if (android.text.format.DateFormat.is24HourFormat(context)) "HH:mm" else "hh:mm a"
                                                 Text(
-                                                    text = SimpleDateFormat("hh:mm a", Locale.getDefault()).format(Date(transactionTimestamp)),
+                                                    text = SimpleDateFormat(timePattern, androidx.compose.ui.platform.LocalConfiguration.current.locales[0]).format(Date(transactionTimestamp)),
                                                     color = MaterialTheme.colorScheme.onSurface,
                                                     fontSize = 12.5.sp,
                                                     fontWeight = FontWeight.Medium,
@@ -968,10 +969,14 @@ fun AddTransactionDialog(
                         val defaultNote = if (isDebit) "Expense" else "Income"
                         var resolvedPayee = payeeText.ifBlank { defaultNote }
 
+                        val currentLocale = androidx.compose.ui.platform.LocalConfiguration.current.locales[0]
+                        val is24HrSummary = android.text.format.DateFormat.is24HourFormat(context)
+                        val dateTimePattern = if (is24HrSummary) "dd MMM yyyy, HH:mm" else "dd MMM yyyy, hh:mm a"
+                        val shortDateTimePattern = if (is24HrSummary) "dd MMM, HH:mm" else "dd MMM, hh:mm a"
                         val detailRows = listOfNotNull(
                             DrawerDetailRow(title = "Type", value = if (isDebit) "Expense" else "Income"),
                             DrawerDetailRow(title = "Category", value = selectedCategory?.name ?: "General"),
-                            DrawerDetailRow(title = "Date & Time", value = SimpleDateFormat("dd MMM yyyy, hh:mm a", Locale.getDefault()).format(Date(transactionTimestamp))),
+                            DrawerDetailRow(title = "Date & Time", value = SimpleDateFormat(dateTimePattern, currentLocale).format(Date(transactionTimestamp))),
                             if (payeeText.isNotBlank()) DrawerDetailRow(title = "Note / Payee", value = payeeText) else null,
                             DrawerDetailRow(title = "Payment", value = selectedSource),
                             DrawerDetailRow(title = "Account", value = if (selectedWallet == "ONLINE") "Online" else if (selectedWallet == "CASH") "Cash" else "Unlinked")
@@ -983,7 +988,7 @@ fun AddTransactionDialog(
                         ) {
                             KokonutSmoothDrawer(
                                 title = if (isDebit) "Review expense" else "Review income",
-                                description = "${selectedCategory?.name ?: "General"} • ${SimpleDateFormat("dd MMM, hh:mm a", Locale.getDefault()).format(Date(transactionTimestamp))}",
+                                description = "${selectedCategory?.name ?: "General"} • ${SimpleDateFormat(shortDateTimePattern, currentLocale).format(Date(transactionTimestamp))}",
                                 totalAmount = amount,
                                 slideLabel = if (isDebit) "Slide to save expense" else "Slide to save income",
                                 detailRows = detailRows,
@@ -1007,10 +1012,11 @@ fun AddTransactionDialog(
                                                     )
                                                 )
                                             }
-                                            resolvedPayee = "[Saved ₹${amount.toInt()} for ${chosenGoal.title}] $resolvedPayee"
+                                            val formattedSaved = com.omkarnub.kanri.util.CurrencyUtils.formatCurrency(amount, includeDecimals = false)
+                                            resolvedPayee = "[Saved $formattedSaved for ${chosenGoal.title}] $resolvedPayee"
                                             android.widget.Toast.makeText(
                                                 context,
-                                                "₹${amount.toInt()} allocated to ${chosenGoal.title}",
+                                                "$formattedSaved allocated to ${chosenGoal.title}",
                                                 android.widget.Toast.LENGTH_SHORT
                                             ).show()
                                         }

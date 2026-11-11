@@ -5,6 +5,9 @@ import com.omkarnub.kanri.data.db.CategoryEntity
 import com.omkarnub.kanri.data.db.CounterpartyCategoryMapEntity
 import com.omkarnub.kanri.data.db.LendingEntity
 import com.omkarnub.kanri.data.db.LendingRepaymentEntity
+import com.omkarnub.kanri.data.db.RecurringPaymentEntity
+import com.omkarnub.kanri.data.db.SavingsGoalContributionEntity
+import com.omkarnub.kanri.data.db.SavingsGoalEntity
 import com.omkarnub.kanri.data.db.TransactionEntity
 import com.omkarnub.kanri.data.db.WalletBalanceEntity
 import org.json.JSONArray
@@ -20,7 +23,10 @@ data class BackupPayload(
     val lendingRecords: List<LendingEntity>,
     val counterpartyMappings: List<CounterpartyCategoryMapEntity>,
     val lendingRepayments: List<LendingRepaymentEntity> = emptyList(),
-    val walletBalances: List<WalletBalanceEntity> = emptyList()
+    val walletBalances: List<WalletBalanceEntity> = emptyList(),
+    val recurringPayments: List<RecurringPaymentEntity> = emptyList(),
+    val savingsGoals: List<SavingsGoalEntity> = emptyList(),
+    val savingsGoalContributions: List<SavingsGoalContributionEntity> = emptyList()
 ) {
     companion object {
         const val CURRENT_VERSION = 3
@@ -34,7 +40,9 @@ data class BackupStats(
     val lendingCount: Int,
     val mappingCount: Int,
     val repaymentCount: Int = 0,
-    val walletCount: Int = 0
+    val walletCount: Int = 0,
+    val recurringCount: Int = 0,
+    val goalCount: Int = 0
 )
 
 object BackupJsonParser {
@@ -143,6 +151,54 @@ object BackupJsonParser {
             walletArray.put(obj)
         }
         root.put("walletBalances", walletArray)
+
+        // Recurring Payments
+        val recurringArray = JSONArray()
+        payload.recurringPayments.forEach { rp ->
+            val obj = JSONObject()
+            obj.put("id", rp.id)
+            obj.put("title", rp.title)
+            obj.put("amount", rp.amount)
+            obj.put("billingCycle", rp.billingCycle)
+            obj.put("categoryId", rp.categoryId ?: JSONObject.NULL)
+            obj.put("counterparty", rp.counterparty ?: JSONObject.NULL)
+            obj.put("nextDueTimestamp", rp.nextDueTimestamp)
+            obj.put("autoDetectKeyword", rp.autoDetectKeyword ?: JSONObject.NULL)
+            obj.put("isActive", rp.isActive)
+            obj.put("lastPaidTimestamp", rp.lastPaidTimestamp ?: JSONObject.NULL)
+            recurringArray.put(obj)
+        }
+        root.put("recurringPayments", recurringArray)
+
+        // Savings Goals
+        val goalArray = JSONArray()
+        payload.savingsGoals.forEach { g ->
+            val obj = JSONObject()
+            obj.put("id", g.id)
+            obj.put("title", g.title)
+            obj.put("targetAmount", g.targetAmount)
+            obj.put("currentAmount", g.currentAmount)
+            obj.put("targetDate", g.targetDate ?: JSONObject.NULL)
+            obj.put("colorHex", g.colorHex)
+            obj.put("emoji", g.emoji)
+            obj.put("isCompleted", g.isCompleted)
+            goalArray.put(obj)
+        }
+        root.put("savingsGoals", goalArray)
+
+        // Savings Goal Contributions
+        val contribArray = JSONArray()
+        payload.savingsGoalContributions.forEach { c ->
+            val obj = JSONObject()
+            obj.put("id", c.id)
+            obj.put("goalId", c.goalId)
+            obj.put("amount", c.amount)
+            obj.put("timestamp", c.timestamp)
+            obj.put("note", c.note ?: JSONObject.NULL)
+            obj.put("sourceTransactionId", c.sourceTransactionId ?: JSONObject.NULL)
+            contribArray.put(obj)
+        }
+        root.put("savingsGoalContributions", contribArray)
 
         return root.toString(2)
     }
@@ -298,6 +354,63 @@ object BackupJsonParser {
             )
         }
 
+        // Parse recurring payments
+        val recurringList = mutableListOf<RecurringPaymentEntity>()
+        val recurringArray = root.optJSONArray("recurringPayments") ?: JSONArray()
+        for (i in 0 until recurringArray.length()) {
+            val obj = recurringArray.getJSONObject(i)
+            recurringList.add(
+                RecurringPaymentEntity(
+                    id = obj.optLong("id", 0),
+                    title = obj.getString("title"),
+                    amount = obj.getDouble("amount"),
+                    billingCycle = obj.optString("billingCycle", "MONTHLY"),
+                    categoryId = if (obj.isNull("categoryId")) null else obj.getLong("categoryId"),
+                    counterparty = if (obj.isNull("counterparty")) null else obj.getString("counterparty"),
+                    nextDueTimestamp = obj.getLong("nextDueTimestamp"),
+                    autoDetectKeyword = if (obj.isNull("autoDetectKeyword")) null else obj.getString("autoDetectKeyword"),
+                    isActive = obj.optBoolean("isActive", true),
+                    lastPaidTimestamp = if (obj.isNull("lastPaidTimestamp")) null else obj.getLong("lastPaidTimestamp")
+                )
+            )
+        }
+
+        // Parse savings goals
+        val goalList = mutableListOf<SavingsGoalEntity>()
+        val goalArray = root.optJSONArray("savingsGoals") ?: JSONArray()
+        for (i in 0 until goalArray.length()) {
+            val obj = goalArray.getJSONObject(i)
+            goalList.add(
+                SavingsGoalEntity(
+                    id = obj.optLong("id", 0),
+                    title = obj.getString("title"),
+                    targetAmount = obj.getDouble("targetAmount"),
+                    currentAmount = obj.optDouble("currentAmount", 0.0),
+                    targetDate = if (obj.isNull("targetDate")) null else obj.getLong("targetDate"),
+                    colorHex = obj.optString("colorHex", "#06D6A0"),
+                    emoji = obj.optString("emoji", "target"),
+                    isCompleted = obj.optBoolean("isCompleted", false)
+                )
+            )
+        }
+
+        // Parse savings goal contributions
+        val contributionList = mutableListOf<SavingsGoalContributionEntity>()
+        val contributionArray = root.optJSONArray("savingsGoalContributions") ?: JSONArray()
+        for (i in 0 until contributionArray.length()) {
+            val obj = contributionArray.getJSONObject(i)
+            contributionList.add(
+                SavingsGoalContributionEntity(
+                    id = obj.optLong("id", 0),
+                    goalId = obj.getLong("goalId"),
+                    amount = obj.getDouble("amount"),
+                    timestamp = obj.optLong("timestamp", System.currentTimeMillis()),
+                    note = if (obj.isNull("note")) null else obj.getString("note"),
+                    sourceTransactionId = if (obj.isNull("sourceTransactionId")) null else obj.getLong("sourceTransactionId")
+                )
+            )
+        }
+
         return BackupPayload(
             version = version,
             createdAt = createdAt,
@@ -308,7 +421,10 @@ object BackupJsonParser {
             lendingRecords = lendingList,
             counterpartyMappings = mapList,
             lendingRepayments = repaymentList,
-            walletBalances = walletList
+            walletBalances = walletList,
+            recurringPayments = recurringList,
+            savingsGoals = goalList,
+            savingsGoalContributions = contributionList
         )
     }
 }

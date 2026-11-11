@@ -1,6 +1,7 @@
 package com.omkarnub.kanri.data.export
 
 import com.omkarnub.kanri.data.db.TransactionWithCategory
+import com.omkarnub.kanri.util.CurrencyUtils
 import java.text.DecimalFormat
 import java.text.DecimalFormatSymbols
 import java.text.SimpleDateFormat
@@ -16,25 +17,25 @@ data class ExportSummary(
 
 object CsvExporter {
 
-    private val dateFormat = SimpleDateFormat("yyyy-MM-dd", Locale.US)
-    private val timeFormat = SimpleDateFormat("HH:mm:ss", Locale.US)
-    private val amountFormat = DecimalFormat("0.00", DecimalFormatSymbols(Locale.US))
-
     fun generateCsv(
         transactions: List<TransactionWithCategory>,
         periodTitle: String
     ): String {
         val sb = StringBuilder()
+        val dateFormat = SimpleDateFormat("yyyy-MM-dd", Locale.US)
+        val timeFormat = SimpleDateFormat("HH:mm:ss", Locale.US)
+        val amountFormat = DecimalFormat("0.00", DecimalFormatSymbols(Locale.US))
+        val currencyCode = CurrencyUtils.getCurrencyCode()
 
         // Metadata Header
-        val generatedAt = SimpleDateFormat("yyyy-MM-dd HH:mm:ss", Locale.getDefault()).format(Date())
+        val generatedAt = SimpleDateFormat("yyyy-MM-dd HH:mm:ss", Locale.US).format(Date())
         sb.append("# Kanri Financial Statement\n")
         sb.append("# Period: ").append(escapeCsv(periodTitle)).append("\n")
         sb.append("# Generated At: ").append(generatedAt).append("\n")
         sb.append("# Total Records: ").append(transactions.size).append("\n#\n")
 
         // Column Headers
-        sb.append("Date,Time,Type,Amount (INR),Category,Counterparty,Source,Bank,Reference No,Notes,Wallet,Transfer To Wallet\n")
+        sb.append("Date,Time,Type,Amount ($currencyCode),Category,Counterparty,Source,Bank,Reference No,Notes,Wallet,Transfer To Wallet\n")
 
         var totalDebit = 0.0
         var totalCredit = 0.0
@@ -60,7 +61,7 @@ object CsvExporter {
             val walletStr = t.wallet
             val transferToStr = t.transferToWallet ?: ""
 
-            if (!t.isTransfer) {
+            if (!t.isTransfer && !t.isDuplicate) {
                 if (t.type.equals("DEBIT", ignoreCase = true)) {
                     totalDebit += t.amount
                 } else if (t.type.equals("CREDIT", ignoreCase = true)) {
@@ -86,9 +87,9 @@ object CsvExporter {
         val net = totalCredit - totalDebit
         sb.append("#\n")
         sb.append("# SUMMARY\n")
-        sb.append("# Total Spent (Debit): INR ").append(amountFormat.format(totalDebit)).append("\n")
-        sb.append("# Total Received (Credit): INR ").append(amountFormat.format(totalCredit)).append("\n")
-        sb.append("# Net Cash Flow: INR ").append(amountFormat.format(net)).append("\n")
+        sb.append("# Total Spent (Debit): $currencyCode ").append(amountFormat.format(totalDebit)).append("\n")
+        sb.append("# Total Received (Credit): $currencyCode ").append(amountFormat.format(totalCredit)).append("\n")
+        sb.append("# Net Cash Flow: $currencyCode ").append(amountFormat.format(net)).append("\n")
         sb.append("# Total Transactions: ").append(transactions.size).append("\n")
 
         return sb.toString()
@@ -98,7 +99,7 @@ object CsvExporter {
         var debit = 0.0
         var credit = 0.0
         for (item in transactions) {
-            if (item.transaction.isTransfer) continue
+            if (item.transaction.isTransfer || item.transaction.isDuplicate) continue
             if (item.transaction.type.equals("DEBIT", ignoreCase = true)) {
                 debit += item.transaction.amount
             } else if (item.transaction.type.equals("CREDIT", ignoreCase = true)) {

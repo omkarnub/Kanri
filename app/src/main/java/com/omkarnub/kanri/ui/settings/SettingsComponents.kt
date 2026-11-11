@@ -1249,8 +1249,9 @@ fun CloudBackupDialog(
                                 color = MaterialTheme.colorScheme.onSurface
                             )
                             Spacer(modifier = Modifier.height(6.dp))
+                            val currentLocale = androidx.compose.ui.platform.LocalConfiguration.current.locales[0]
                             val dateStr = if (lastTimestamp > 0L) {
-                                SimpleDateFormat("dd MMM yyyy, HH:mm", Locale.getDefault()).format(Date(lastTimestamp))
+                                SimpleDateFormat("dd MMM yyyy, HH:mm", currentLocale).format(Date(lastTimestamp))
                             } else "Never"
                             Text(
                                 text = "Last synced: $dateStr",

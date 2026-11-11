@@ -1368,7 +1368,7 @@ private fun EditTransactionSheet(
                 value = amountText,
                 onValueChange = { amountText = it.filter { ch -> ch.isDigit() || ch == '.' } },
                 label = { Text("Amount") },
-                prefix = { Text("₹ ", fontWeight = FontWeight.Bold) },
+                prefix = { Text("${com.omkarnub.kanri.util.CurrencyUtils.getCurrencySymbol()} ", fontWeight = FontWeight.Bold) },
                 singleLine = true,
                 keyboardOptions = KeyboardOptions(
                     keyboardType = KeyboardType.Decimal,

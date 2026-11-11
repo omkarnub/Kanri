@@ -17,6 +17,7 @@ class OnboardingPreferences(context: Context) {
     companion object {
         private const val PREFS_NAME = "kanri_onboarding_prefs"
         private const val KEY_COMPLETED = "has_completed_onboarding"
+        private const val KEY_SMS_PROMPTED = "has_prompted_post_onboarding_sms"
 
         @Volatile
         private var INSTANCE: OnboardingPreferences? = null
@@ -35,7 +36,14 @@ class OnboardingPreferences(context: Context) {
             _hasCompletedFlow.value = value
         }
 
+    var hasPromptedPostOnboardingSms: Boolean
+        get() = prefs.getBoolean(KEY_SMS_PROMPTED, false)
+        set(value) {
+            prefs.edit().putBoolean(KEY_SMS_PROMPTED, value).apply()
+        }
+
     fun reset() {
         hasCompletedOnboarding = false
+        hasPromptedPostOnboardingSms = false
     }
 }

@@ -20,7 +20,7 @@ object AllTimeTrendsCalculator {
             )
         }
 
-        val txCal = Calendar.getInstance()
+        val txCal = referenceCalendar.clone() as Calendar
 
         // 1. Group transactions by "yyyy-MM"
         val monthBuckets = mutableMapOf<String, MutableList<TransactionEntity>>()
@@ -28,6 +28,7 @@ object AllTimeTrendsCalculator {
         var earliestMonth = referenceCalendar.get(Calendar.MONTH)
 
         for (tx in transactions) {
+            if (tx.isTransfer || tx.isDuplicate) continue
             txCal.timeInMillis = tx.timestamp
             val year = txCal.get(Calendar.YEAR)
             val month = txCal.get(Calendar.MONTH) // 0..11
@@ -49,7 +50,7 @@ object AllTimeTrendsCalculator {
         startCal.set(Calendar.DAY_OF_MONTH, 1)
         startCal.add(Calendar.MONTH, -5) // default 6 months window
 
-        val earliestCal = Calendar.getInstance().apply {
+        val earliestCal = (referenceCalendar.clone() as Calendar).apply {
             set(Calendar.YEAR, earliestYear)
             set(Calendar.MONTH, earliestMonth)
             set(Calendar.DAY_OF_MONTH, 1)
@@ -78,6 +79,7 @@ object AllTimeTrendsCalculator {
             var received = 0.0
 
             for (tx in monthTxs) {
+                if (tx.isTransfer || tx.isDuplicate) continue
                 if (tx.type.equals("DEBIT", ignoreCase = true)) {
                     spent += tx.amount
                 } else if (tx.type.equals("CREDIT", ignoreCase = true)) {

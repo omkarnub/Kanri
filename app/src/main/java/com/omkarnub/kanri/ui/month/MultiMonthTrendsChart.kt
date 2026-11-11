@@ -541,10 +541,5 @@ private fun LegendBadge(label: String, color: Color) {
     }
 }
 
-private fun formatAxisAmount(amount: Double): String {
-    return when {
-        amount >= 100000 -> "₹${(amount / 100000).toInt()}L"
-        amount >= 1000 -> "₹${(amount / 1000).toInt()}k"
-        else -> "₹${amount.toInt()}"
-    }
-}
+private fun formatAxisAmount(amount: Double): String =
+    com.omkarnub.kanri.util.CurrencyUtils.formatCompactCurrency(amount)

@@ -1008,10 +1008,13 @@ fun LendingEntryDialog(
                     }
 
                     LendingEntryStep.SUMMARY_DRAWER -> {
+                        val currentLocale = androidx.compose.ui.platform.LocalConfiguration.current.locales[0]
+                        val is24HrSummary = DateFormat.is24HourFormat(context)
+                        val shortDateTimePattern = if (is24HrSummary) "dd MMM, HH:mm" else "dd MMM, hh:mm a"
                         val detailRows = listOfNotNull(
                             DrawerDetailRow(title = "Type", value = if (type == "LENT") "Lent" else "Borrowed"),
                             DrawerDetailRow(title = if (type == "LENT") "To" else "From", value = personName.trim()),
-                            if (dueDate != null) DrawerDetailRow(title = "Expected Return", value = SimpleDateFormat("dd MMM yyyy", Locale.getDefault()).format(Date(dueDate!!))) else null,
+                            if (dueDate != null) DrawerDetailRow(title = "Expected Return", value = SimpleDateFormat("dd MMM yyyy", currentLocale).format(Date(dueDate!!))) else null,
                             if (notes.isNotBlank()) DrawerDetailRow(title = "Note", value = notes.trim()) else null,
                             DrawerDetailRow(title = "Account", value = if (selectedWallet == "ONLINE") "Online" else if (selectedWallet == "CASH") "Cash" else "Unlinked")
                         )
@@ -1022,9 +1025,9 @@ fun LendingEntryDialog(
                         ) {
                             KokonutSmoothDrawer(
                                 title = if (type == "LENT") "Review loan" else "Review borrowing",
-                                description = "${personName.trim()} • ${SimpleDateFormat("dd MMM, hh:mm a", Locale.getDefault()).format(Date(entryDate))}",
+                                description = "${personName.trim()} • ${SimpleDateFormat(shortDateTimePattern, currentLocale).format(Date(entryDate))}",
                                 totalAmount = amount,
-                                slideLabel = if (type == "LENT") "Slide to lend ₹${amount.toInt()}" else "Slide to record borrowing",
+                                slideLabel = if (type == "LENT") "Slide to lend ${com.omkarnub.kanri.util.CurrencyUtils.formatCurrency(amount, includeDecimals = false)}" else "Slide to record borrowing",
                                 detailRows = detailRows,
                                 accountType = if (selectedWallet == "ONLINE") "Online" else if (selectedWallet == "CASH") "Cash" else "Unlinked",
                                 confirmationType = if (type == "LENT") SlideConfirmationType.LEND else SlideConfirmationType.BORROW,

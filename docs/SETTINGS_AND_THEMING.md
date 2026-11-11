@@ -162,4 +162,5 @@ Kanri combines Google's Jetpack Splash Screen library (`androidx.core:core-splas
   - **Render-Gated App Transition**: The splash screen stays mounted until the main application Compose hierarchy and databases are fully measured and rendered (confirmed via double `withFrameNanos`), guaranteeing zero blank flickers or layout jumps.
   - **Fluid Staggered Exit**: Once rendering and the reveal conclude, the letters slide up and out staggered into the ceiling (`0%` -> `-110%`) while the splash overlay cross-fades out and the main app smoothly scales up with `KanriMotion.SnappySpring`.
   - **Clean Unmount**: After exit transition completes, the splash composable is unmounted from the tree for zero runtime memory footprint.
-- **Version**: Kanri `1.9.0` (Build 32).
+- **Notes (`v1.18.8`)**: Category deletions reassign existing transactions and counterparty mappings inside a single Room `withTransaction` block, JSON/cloud backups include recurring payments alongside savings goals and contributions, and `SettingsScreen` dialog state survives configuration changes via `rememberSaveable`.
+- **Version**: Kanri `1.18.8` (Build 59).

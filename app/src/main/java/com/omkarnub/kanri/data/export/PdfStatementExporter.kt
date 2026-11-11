@@ -24,14 +24,13 @@ object PdfStatementExporter {
     private const val MARGIN = 36f
     private const val CONTENT_WIDTH = PAGE_WIDTH - (MARGIN * 2)
 
-    private val dateFormat = SimpleDateFormat("dd MMM yyyy", Locale.getDefault())
-
     fun exportPdf(
         context: Context,
         transactions: List<TransactionWithCategory>,
         periodTitle: String,
         outputStream: OutputStream
     ) {
+        val dateFormat = SimpleDateFormat("dd MMM yyyy", Locale.getDefault())
         val pdfDocument = PdfDocument()
 
         var pageNumber = 1
@@ -111,8 +110,8 @@ object PdfStatementExporter {
         // 2. EXECUTIVE FINANCIAL KPI CARDS
         // =========================================================================
         val summary = CsvExporter.calculateSummary(transactions)
-        val creditCount = transactions.count { it.transaction.type.equals("CREDIT", ignoreCase = true) }
-        val debitCount = transactions.count { it.transaction.type.equals("DEBIT", ignoreCase = true) }
+        val creditCount = transactions.count { !it.transaction.isTransfer && !it.transaction.isDuplicate && it.transaction.type.equals("CREDIT", ignoreCase = true) }
+        val debitCount = transactions.count { !it.transaction.isTransfer && !it.transaction.isDuplicate && it.transaction.type.equals("DEBIT", ignoreCase = true) }
         val cardGap = 10f
         val cardWidth = (CONTENT_WIDTH - (cardGap * 2f)) / 3f
         val cardHeight = 52f
@@ -174,7 +173,7 @@ object PdfStatementExporter {
         // 3. TOP EXPENSE BREAKDOWN (Clean minimal horizontal cards)
         // =========================================================================
         val categoryBreakdown = transactions
-            .filter { it.transaction.type.equals("DEBIT", ignoreCase = true) }
+            .filter { !it.transaction.isTransfer && !it.transaction.isDuplicate && it.transaction.type.equals("DEBIT", ignoreCase = true) }
             .groupBy { it.category?.name ?: "Uncategorized" }
             .mapValues { entry -> entry.value.sumOf { it.transaction.amount } }
             .toList()

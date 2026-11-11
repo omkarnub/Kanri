@@ -50,7 +50,6 @@ import androidx.savedstate.SavedStateRegistry
 import androidx.savedstate.SavedStateRegistryController
 import androidx.savedstate.SavedStateRegistryOwner
 import androidx.savedstate.setViewTreeSavedStateRegistryOwner
-import com.omkarnub.kanri.MainActivity
 import com.omkarnub.kanri.R
 import com.omkarnub.kanri.data.db.CategoryEntity
 import com.omkarnub.kanri.data.db.CounterpartyCategoryMapEntity
@@ -375,8 +374,7 @@ class InstantPopupService : Service() {
                                 }
                             }
 
-                            val defaultBal = if (isDebit) (15000.0 - amount) else (15000.0 + amount)
-                            PreResolutionResult(dynamicallyRankedCats, foundId, foundNote, foundBal ?: defaultBal)
+                            PreResolutionResult(dynamicallyRankedCats, foundId, foundNote, foundBal)
                         }
 
                         categories = result.categories
@@ -458,7 +456,7 @@ class InstantPopupService : Service() {
                                                         db.transactionDao().updateCategoryForCounterparty(counterparty, catId)
                                                         db.categoryDao().setMapping(
                                                             CounterpartyCategoryMapEntity(
-                                                                counterparty = counterparty.trim().lowercase(),
+                                                                counterparty = counterparty.trim().lowercase(java.util.Locale.ROOT),
                                                                 categoryId = catId
                                                             )
                                                         )
@@ -467,6 +465,7 @@ class InstantPopupService : Service() {
                                                     db.transactionDao().updateNotes(txId, cleanNote)
                                                 }
                                             }
+                                            com.omkarnub.kanri.widget.KanriWidgetsUpdater.updateAllWidgets(applicationContext)
                                     }
                                 },
                                 onSplitBill = {
@@ -474,8 +473,7 @@ class InstantPopupService : Service() {
                                         val cleanMerchant = BrandFormatter.cleanMerchantName(counterparty).ifBlank { "Expense" }
                                         com.omkarnub.kanri.widget.KanriWidgetActions.triggerSplitBill(amount, cleanMerchant)
 
-                                        val openIntent = (packageManager.getLaunchIntentForPackage(packageName)
-                                            ?: Intent(this@InstantPopupService, MainActivity::class.java)).apply {
+                                        val openIntent = com.omkarnub.kanri.ui.theme.AppIconManager.createLauncherIntent(this@InstantPopupService).apply {
                                             action = com.omkarnub.kanri.widget.KanriWidgetActions.ACTION_SPLIT_BILL
                                             putExtra(com.omkarnub.kanri.widget.KanriWidgetActions.EXTRA_AMOUNT, amount)
                                             putExtra(com.omkarnub.kanri.widget.KanriWidgetActions.EXTRA_DESCRIPTION, cleanMerchant)
@@ -484,16 +482,23 @@ class InstantPopupService : Service() {
                                             }
                                             addFlags(Intent.FLAG_ACTIVITY_NEW_TASK or Intent.FLAG_ACTIVITY_CLEAR_TOP or Intent.FLAG_ACTIVITY_SINGLE_TOP)
                                         }
-                                        startActivity(openIntent)
+                                        try {
+                                            startActivity(openIntent)
+                                        } catch (e: Exception) {
+                                            Log.e("InstantPopupService", "Failed to open app for split bill", e)
+                                        }
                                     }
                                 },
                                 onOpenInApp = {
                                     dismissWithAnimation {
-                                        val openIntent = (packageManager.getLaunchIntentForPackage(packageName)
-                                            ?: Intent(this@InstantPopupService, MainActivity::class.java)).apply {
+                                        val openIntent = com.omkarnub.kanri.ui.theme.AppIconManager.createLauncherIntent(this@InstantPopupService).apply {
                                             addFlags(Intent.FLAG_ACTIVITY_NEW_TASK or Intent.FLAG_ACTIVITY_CLEAR_TOP)
                                         }
-                                        startActivity(openIntent)
+                                        try {
+                                            startActivity(openIntent)
+                                        } catch (e: Exception) {
+                                            Log.e("InstantPopupService", "Failed to open app", e)
+                                        }
                                     }
                                 },
                                 onDismiss = {

@@ -131,4 +131,30 @@ class AllTimeTrendsTest {
         assertEquals(10000.0, state.averageMonthlyReceived, 0.001) // (8000 + 12000) / 2
         assertEquals(5000.0, state.averageMonthlySavings, 0.001) // (4000 + 6000) / 2
     }
+
+    @Test
+    fun testExcludesDuplicatesAndWalletTransfers() {
+        val refCal = makeCalendar(2026, Calendar.SEPTEMBER, 15)
+        val sepTs = makeCalendar(2026, Calendar.SEPTEMBER, 10).timeInMillis
+
+        val txList = listOf(
+            createTx(1, "DEBIT", 1500.0, sepTs),
+            createTx(2, "CREDIT", 5000.0, sepTs),
+            createTx(3, "DEBIT", 900.0, sepTs).copy(isDuplicate = true),
+            createTx(4, "CREDIT", 2000.0, sepTs).copy(isDuplicate = true),
+            createTx(5, "DEBIT", 3000.0, sepTs).copy(wallet = "ONLINE", transferToWallet = "CASH")
+        )
+
+        val state = AllTimeTrendsCalculator.calculate(txList, referenceCalendar = refCal)
+
+        assertEquals(1500.0, state.totalAllTimeSpent, 0.001)
+        assertEquals(5000.0, state.totalAllTimeReceived, 0.001)
+        assertEquals(3500.0, state.totalAllTimeSavings, 0.001)
+
+        val sept = state.monthlyTrends.find { it.year == 2026 && it.month == Calendar.SEPTEMBER }
+        assertNotNull(sept)
+        assertEquals(1500.0, sept!!.totalSpent, 0.001)
+        assertEquals(5000.0, sept.totalReceived, 0.001)
+        assertEquals(2, sept.transactionCount)
+    }
 }

@@ -26,6 +26,21 @@ object CurrencyUtils {
         }
     }
 
+    private fun formatIndianNumber(value: java.math.BigDecimal): String {
+        val plain = value.toPlainString()
+        val dotIndex = plain.indexOf('.')
+        val intPart = if (dotIndex >= 0) plain.substring(0, dotIndex) else plain
+        val fracPart = if (dotIndex >= 0) plain.substring(dotIndex) else ""
+        val groupedInt = if (intPart.length <= 3) {
+            intPart
+        } else {
+            val lastThree = intPart.takeLast(3)
+            val restGrouped = intPart.dropLast(3).reversed().chunked(2).joinToString(",").reversed()
+            "$restGrouped,$lastThree"
+        }
+        return "$groupedInt$fracPart"
+    }
+
     /**
      * Standard currency formatting with active currency symbol and locale-appropriate grouping.
      * Examples:
@@ -39,11 +54,26 @@ object CurrencyUtils {
         currency: AppCurrency = activeCurrency
     ): String {
         val symbol = currency.symbol
-        if (amount.isNaN() || amount.isInfinite() || abs(amount) < 0.0001) {
-            return if (includeDecimals) "${symbol}0.00" else "${symbol}0"
-        }
         val formatter = getFormatter(includeDecimals, currency)
-        return if (amount < 0) "-$symbol${formatter.format(abs(amount))}" else "$symbol${formatter.format(amount)}"
+        val fractionDigits = formatter.maximumFractionDigits.coerceAtLeast(0)
+        fun formatAbs(value: java.math.BigDecimal): String {
+            return if (currency == AppCurrency.INR) {
+                formatIndianNumber(value)
+            } else {
+                formatter.format(value)
+            }
+        }
+        val zeroScaled = java.math.BigDecimal.ZERO.setScale(fractionDigits, java.math.RoundingMode.HALF_UP)
+        if (amount.isNaN() || amount.isInfinite()) {
+            return "$symbol${formatAbs(zeroScaled)}"
+        }
+        val roundedAbs = java.math.BigDecimal.valueOf(abs(amount))
+            .setScale(fractionDigits, java.math.RoundingMode.HALF_UP)
+        if (roundedAbs.compareTo(java.math.BigDecimal.ZERO) == 0) {
+            return "$symbol${formatAbs(zeroScaled)}"
+        }
+        val formattedAbs = formatAbs(roundedAbs)
+        return if (amount < 0) "-$symbol$formattedAbs" else "$symbol$formattedAbs"
     }
 
     /**
@@ -64,9 +94,16 @@ object CurrencyUtils {
         amount: Double,
         currency: AppCurrency = activeCurrency
     ): String {
-        val sign = if (amount < 0) "-" else ""
-        val absAmount = abs(amount)
         val symbol = currency.symbol
+        if (amount.isNaN() || amount.isInfinite()) return "${symbol}0"
+        val absAmount = abs(amount)
+        if (absAmount < 1.0 &&
+            java.math.BigDecimal.valueOf(absAmount).setScale(0, java.math.RoundingMode.HALF_UP)
+                .compareTo(java.math.BigDecimal.ZERO) == 0
+        ) {
+            return "${symbol}0"
+        }
+        val sign = if (amount < 0) "-" else ""
 
         val formatted = if (currency == AppCurrency.INR) {
             when {

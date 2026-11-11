@@ -622,7 +622,7 @@ fun GoalsScreen(
                                             if (remaining > 0) append("${currencyFormat.format(remaining)} left")
                                             if (monthlyPace != null && monthlyPace > 0) {
                                                 if (isNotEmpty()) append(" · ")
-                                                append("₹${monthlyPace.toInt()}/mo")
+                                                append("${currencyFormat.format(monthlyPace)}/mo")
                                             } else if (daysRemaining != null) {
                                                 if (isNotEmpty()) append(" · ")
                                                 append(if (daysRemaining > 0) "$daysRemaining days left" else "Due")

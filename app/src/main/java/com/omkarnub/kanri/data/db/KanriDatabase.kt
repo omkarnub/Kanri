@@ -171,7 +171,11 @@ abstract class KanriDatabase : RoomDatabase() {
                     "kanri_database"
                 )
                     .addMigrations(MIGRATION_5_6, MIGRATION_6_7, MIGRATION_7_8, MIGRATION_8_9, MIGRATION_9_10, MIGRATION_10_11, MIGRATION_11_12)
-                    .fallbackToDestructiveMigration(dropAllTables = false)
+                    .apply {
+                        if (com.omkarnub.kanri.BuildConfig.DEBUG) {
+                            fallbackToDestructiveMigration(dropAllTables = false)
+                        }
+                    }
                     .addCallback(object : Callback() {
                         override fun onCreate(db: SupportSQLiteDatabase) {
                             super.onCreate(db)
@@ -312,7 +316,7 @@ abstract class KanriDatabase : RoomDatabase() {
                     "kanri_database"
                 )
                     .openHelperFactory(factory)
-                    .fallbackToDestructiveMigration(dropAllTables = false)
+                    .addMigrations(MIGRATION_5_6, MIGRATION_6_7, MIGRATION_7_8, MIGRATION_8_9, MIGRATION_9_10, MIGRATION_10_11, MIGRATION_11_12)
                     .build()
 
                 encryptedDb.openHelper.writableDatabase.let { db ->
@@ -323,10 +327,12 @@ abstract class KanriDatabase : RoomDatabase() {
                         "transactions",
                         "counterparty_category_map",
                         "budgets",
-                        "lending",
+                        "lending_records",
+                        "lending_repayments",
                         "recurring_payments",
                         "savings_goals",
-                        "savings_goal_contributions"
+                        "savings_goal_contributions",
+                        "wallet_balances"
                     )
                     for (table in tables) {
                         try {

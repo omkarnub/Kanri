@@ -36,7 +36,8 @@ class GoogleDriveRestService : IDriveSyncService {
     ): Result<DriveFileMetadata?> = withContext(Dispatchers.IO) {
         var connection: HttpURLConnection? = null
         try {
-            val query = "name = '$fileName' and trashed = false"
+            val safeFileName = fileName.replace("\\", "\\\\").replace("'", "\\'")
+            val query = "name = '$safeFileName' and trashed = false"
             val encodedQuery = URLEncoder.encode(query, "UTF-8")
             val fields = URLEncoder.encode("files(id,name,size,modifiedTime)", "UTF-8")
             val urlString = "$DRIVE_API_BASE/files?q=$encodedQuery&fields=$fields&spaces=drive"
@@ -90,7 +91,13 @@ class GoogleDriveRestService : IDriveSyncService {
     ): Result<DriveFileMetadata> = withContext(Dispatchers.IO) {
         try {
             // Check if file already exists on Drive
-            val existing = findBackupFile(accessToken, fileName).getOrNull()
+            val findResult = findBackupFile(accessToken, fileName)
+            if (findResult.isFailure) {
+                return@withContext Result.failure(
+                    findResult.exceptionOrNull() ?: Exception("Failed to check existing Drive backup")
+                )
+            }
+            val existing = findResult.getOrNull()
 
             if (existing != null) {
                 // Update existing file content via PATCH

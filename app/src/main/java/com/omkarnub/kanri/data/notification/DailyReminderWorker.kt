@@ -106,8 +106,7 @@ class DailyReminderWorker(
     }
 
     private fun getLaunchPendingIntent(notificationId: Int): PendingIntent {
-        val intent = (applicationContext.packageManager.getLaunchIntentForPackage(applicationContext.packageName)
-            ?: Intent(applicationContext, MainActivityDarkDark::class.java)).apply {
+        val intent = com.omkarnub.kanri.ui.theme.AppIconManager.createLauncherIntent(applicationContext).apply {
             flags = Intent.FLAG_ACTIVITY_NEW_TASK or Intent.FLAG_ACTIVITY_CLEAR_TOP
         }
         return PendingIntent.getActivity(

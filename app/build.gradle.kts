@@ -23,8 +23,8 @@ android {
         applicationId = "com.omkarnub.kanri"
         minSdk = 26
         targetSdk = 37
-        versionCode = 58
-        versionName = "1.18.7"
+        versionCode = 59
+        versionName = "1.18.8"
 
         testInstrumentationRunner = "androidx.test.runner.AndroidJUnitRunner"
     }

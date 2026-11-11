@@ -36,11 +36,12 @@ class StatementExportRepository(private val context: Context) {
     suspend fun getTransactionsForRange(range: ExportRange): List<TransactionWithCategory> =
         withContext(Dispatchers.IO) {
             val (startTime, endTime) = getTimeBounds(range)
-            if (startTime == 0L && endTime == Long.MAX_VALUE) {
+            val rawList = if (startTime == 0L && endTime == Long.MAX_VALUE) {
                 transactionDao.getAllTransactionsWithCategorySync()
             } else {
                 transactionDao.getTransactionsWithCategoryBetweenSync(startTime, endTime)
             }
+            rawList.filterNot { it.transaction.isDuplicate }
         }
 
     suspend fun getPreview(range: ExportRange): ExportSummary = withContext(Dispatchers.IO) {
@@ -109,18 +110,18 @@ class StatementExportRepository(private val context: Context) {
     }
 
     fun getSuggestedFilename(format: ExportFormat, range: ExportRange): String {
-        val dateStamp = SimpleDateFormat("yyyyMMdd", Locale.getDefault()).format(Date())
+        val dateStamp = SimpleDateFormat("yyyyMMdd", Locale.US).format(Date())
         val rangeTag = when (range) {
             ExportRange.CurrentMonth -> {
                 val cal = Calendar.getInstance()
-                String.format(Locale.getDefault(), "%04d_%02d", cal.get(Calendar.YEAR), cal.get(Calendar.MONTH) + 1)
+                String.format(Locale.US, "%04d_%02d", cal.get(Calendar.YEAR), cal.get(Calendar.MONTH) + 1)
             }
             ExportRange.LastMonth -> "last_month"
             ExportRange.YearToDate -> "YTD"
             ExportRange.AllTime -> "all_time"
-            is ExportRange.SpecificMonth -> String.format(Locale.getDefault(), "%04d_%02d", range.year, range.month + 1)
+            is ExportRange.SpecificMonth -> String.format(Locale.US, "%04d_%02d", range.year, range.month + 1)
             is ExportRange.Custom -> {
-                val sdf = SimpleDateFormat("yyyyMMdd", Locale.getDefault())
+                val sdf = SimpleDateFormat("yyyyMMdd", Locale.US)
                 "custom_${sdf.format(Date(range.startMillis))}_${sdf.format(Date(range.endMillis))}"
             }
         }

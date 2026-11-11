@@ -418,7 +418,7 @@ object FinancialHealthCalculator {
                 score = 15,
                 status = "Zero Outflow",
                 description = "No outflows recorded for this period.",
-                display = "₹0/d"
+                display = "${CurrencyUtils.formatCurrency(0.0, includeDecimals = false)}/d"
             )
         }
 
@@ -426,7 +426,7 @@ object FinancialHealthCalculator {
             return PillarResult(
                 score = 1,
                 status = "Budget Exhausted",
-                description = "Remaining monthly allocation is ₹0.",
+                description = "Remaining monthly allocation is ${CurrencyUtils.formatCurrency(0.0, includeDecimals = false)}.",
                 display = "Exhausted"
             )
         }

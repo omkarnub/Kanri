@@ -342,8 +342,9 @@ fun LendingPersonDetailView(
                     val record = entryWithRepayments.lending
                     if (!record.isSettled) {
                         val isLent = record.type.equals("LENT", ignoreCase = true)
-                        val dateStr = SimpleDateFormat("dd MMM yyyy", Locale.getDefault()).format(Date(record.date))
-                        val dueStr = if (record.dueDate != null) " • Due: ${SimpleDateFormat("dd MMM", Locale.getDefault()).format(Date(record.dueDate))}" else ""
+                        val currentLocale = androidx.compose.ui.platform.LocalConfiguration.current.locales[0]
+                        val dateStr = SimpleDateFormat("dd MMM yyyy", currentLocale).format(Date(record.date))
+                        val dueStr = if (record.dueDate != null) " • Due: ${SimpleDateFormat("dd MMM", currentLocale).format(Date(record.dueDate))}" else ""
                         val sub = "${CurrencyUtils.formatCurrency(entryWithRepayments.outstanding)} • $dateStr$dueStr"
 
                         KokonutTearButton(

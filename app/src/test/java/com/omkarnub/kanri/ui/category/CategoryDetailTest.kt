@@ -241,4 +241,44 @@ class CategoryDetailTest {
         assertEquals(999.0, currentPoint.totalSpent, 0.001)
         assertEquals(1, currentPoint.transactionCount)
     }
+
+    @Test
+    fun testFilterTrendAndPayeesExcludeDuplicatesAndTransfers() {
+        val targetYear = 2026
+        val targetMonth = 8
+        val sepTs = getTimeForMonth(targetYear, targetMonth, 12)
+
+        val validTx = createTx(id = 1, amount = 450.0, categoryId = 1L, counterparty = "Swiggy", timestamp = sepTs)
+        val duplicateTx = createTx(id = 2, amount = 450.0, categoryId = 1L, counterparty = "Swiggy", timestamp = sepTs)
+            .let { it.copy(transaction = it.transaction.copy(isDuplicate = true)) }
+        val transferTx = createTx(id = 3, amount = 2000.0, categoryId = 1L, counterparty = "ATM", timestamp = sepTs)
+            .let { it.copy(transaction = it.transaction.copy(wallet = "ONLINE", transferToWallet = "CASH")) }
+
+        val allTxs = listOf(validTx, duplicateTx, transferTx)
+
+        val filtered = CategoryDetailUtils.filterTransactionsByScope(
+            transactions = allTxs,
+            categoryId = 1L,
+            scope = CategoryTimeScope.THIS_MONTH,
+            targetYear = targetYear,
+            targetMonth = targetMonth
+        )
+        assertEquals(1, filtered.size)
+        assertEquals(1L, filtered.first().transaction.id)
+
+        val trend = CategoryDetailUtils.computeSixMonthTrend(
+            transactions = allTxs,
+            categoryId = 1L,
+            targetYear = targetYear,
+            targetMonth = targetMonth
+        )
+        assertEquals(450.0, trend.last().totalSpent, 0.001)
+        assertEquals(1, trend.last().transactionCount)
+
+        val payees = CategoryDetailUtils.computeTopPayees(allTxs)
+        assertEquals(1, payees.size)
+        assertEquals("Swiggy", payees.first().name)
+        assertEquals(450.0, payees.first().amount, 0.001)
+        assertEquals(1, payees.first().transactionCount)
+    }
 }

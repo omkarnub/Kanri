@@ -97,8 +97,7 @@ object KanriWidgetActions {
                 flags = Intent.FLAG_ACTIVITY_NEW_TASK or Intent.FLAG_ACTIVITY_CLEAR_TOP
             }
         } else {
-            (context.packageManager.getLaunchIntentForPackage(context.packageName)
-                ?: Intent(context, MainActivityDarkDark::class.java)).apply {
+            com.omkarnub.kanri.ui.theme.AppIconManager.createLauncherIntent(context).apply {
                 this.action = action
                 flags = Intent.FLAG_ACTIVITY_NEW_TASK or Intent.FLAG_ACTIVITY_CLEAR_TOP or Intent.FLAG_ACTIVITY_SINGLE_TOP
             }

@@ -89,8 +89,7 @@ object BirthdayHelper {
             val rawName = userPrefs.userName.trim()
             val firstName = rawName.split("\\s+".toRegex()).firstOrNull()?.trim() ?: "there"
 
-            val launchIntent = (context.packageManager.getLaunchIntentForPackage(context.packageName)
-                ?: Intent(context, MainActivityDarkDark::class.java)).apply {
+            val launchIntent = com.omkarnub.kanri.ui.theme.AppIconManager.createLauncherIntent(context).apply {
                 flags = Intent.FLAG_ACTIVITY_NEW_TASK or Intent.FLAG_ACTIVITY_CLEAR_TOP
             }
 

@@ -37,19 +37,22 @@ import kotlin.math.sin
  */
 object WidgetRenderer {
 
-    private val bgPaint by lazy {
+    private val bgPaintLocal = ThreadLocal.withInitial {
         Paint(Paint.ANTI_ALIAS_FLAG).apply {
             color = PixelTheme.COLOR_BG_INT
             style = Paint.Style.FILL
         }
     }
 
-    private val terrainPaint by lazy {
+    private val terrainPaintLocal = ThreadLocal.withInitial {
         Paint(Paint.ANTI_ALIAS_FLAG).apply {
             color = PixelTheme.COLOR_DOT_DIM_INT
             style = Paint.Style.FILL
         }
     }
+
+    private val bgPaint: Paint get() = bgPaintLocal.get()!!
+    private val terrainPaint: Paint get() = terrainPaintLocal.get()!!
 
     /**
      * Renders [state] to [canvas] within ([widthPx], [heightPx]).
@@ -117,11 +120,20 @@ object WidgetRenderer {
         density: Float = 2.5f,
         context: Context? = null
     ): Bitmap {
-        val w = widthPx.coerceIn(120, 1400)
-        val h = heightPx.coerceIn(80, 1000)
+        var w = widthPx.coerceIn(120, 1200)
+        var h = heightPx.coerceIn(80, 900)
+        var effectiveDensity = density
+        val maxBytes = 1_500_000L
+        val estimatedBytes = w.toLong() * h.toLong() * 4L
+        if (estimatedBytes > maxBytes) {
+            val scale = kotlin.math.sqrt(maxBytes.toDouble() / estimatedBytes.toDouble()).toFloat()
+            w = (w * scale).toInt().coerceAtLeast(120)
+            h = (h * scale).toInt().coerceAtLeast(80)
+            effectiveDensity = density * scale
+        }
         val bitmap = Bitmap.createBitmap(w, h, Bitmap.Config.ARGB_8888)
         val canvas = Canvas(bitmap)
-        render(canvas, state, w.toFloat(), h.toFloat(), progress, density, context = context)
+        render(canvas, state, w.toFloat(), h.toFloat(), progress, effectiveDensity, context = context)
         return bitmap
     }
 
@@ -903,7 +915,10 @@ object WidgetRenderer {
             val remLabel = PixelFont.formatIndianCompact(remToday) + " LEFT TODAY"
             PixelFont.drawRightLabel(canvas, remLabel, right, heroBaseline, 9.5f * density, PixelTheme.COLOR_DOT_MID_INT, useNdot = true)
 
-            val labels = Pair("₹0", PixelFont.formatIndianCompact(state.dailyAllowance))
+            val labels = Pair(
+                com.omkarnub.kanri.util.CurrencyUtils.formatCurrency(0.0, includeDecimals = false),
+                PixelFont.formatIndianCompact(state.dailyAllowance)
+            )
             DotVisuals.drawSlider(
                 canvas, sliderBounds,
                 value = state.spentRatio,

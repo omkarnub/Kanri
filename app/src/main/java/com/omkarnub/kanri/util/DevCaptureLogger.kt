@@ -19,6 +19,7 @@ object DevCaptureLogger {
         counterparty: String?,
         bank: String?
     ) {
+        if (!com.omkarnub.kanri.BuildConfig.DEBUG) return
         val formattedAmount = String.format(Locale.US, "%.2f", amount)
         val details = listOfNotNull(
             counterparty?.takeIf { it.isNotBlank() },
@@ -36,6 +37,7 @@ object DevCaptureLogger {
         counterparty: String?,
         existingId: Long
     ) {
+        if (!com.omkarnub.kanri.BuildConfig.DEBUG) return
         val formattedAmount = String.format(Locale.US, "%.2f", amount)
         val msg = "Kanri [Dedup Merged]: ₹$formattedAmount from $source merged into Tx #$existingId ($counterparty)"
 

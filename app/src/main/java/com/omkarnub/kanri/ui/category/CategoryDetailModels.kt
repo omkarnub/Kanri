@@ -113,7 +113,12 @@ object CategoryDetailUtils {
                     tx.categoryId == categoryId
                 }
 
-                if (matchesCategory && tx.type.equals("DEBIT", ignoreCase = true) && tx.timestamp in startMs..endMs) {
+                if (matchesCategory &&
+                    tx.type.equals("DEBIT", ignoreCase = true) &&
+                    !tx.isTransfer &&
+                    !tx.isDuplicate &&
+                    tx.timestamp in startMs..endMs
+                ) {
                     monthSpend += tx.amount
                     txCount++
                 }
@@ -159,7 +164,7 @@ object CategoryDetailUtils {
                 tx.timestamp in startMs..endMs
             }
 
-            matchesCategory && inTime
+            matchesCategory && inTime && !tx.isTransfer && !tx.isDuplicate
         }.sortedByDescending { it.transaction.timestamp }
     }
 
@@ -219,7 +224,11 @@ object CategoryDetailUtils {
         transactions: List<TransactionWithCategory>,
         maxCount: Int = 5
     ): List<TopPayeeItem> {
-        val debitTxs = transactions.filter { it.transaction.type.equals("DEBIT", ignoreCase = true) }
+        val debitTxs = transactions.filter {
+            it.transaction.type.equals("DEBIT", ignoreCase = true) &&
+                !it.transaction.isTransfer &&
+                !it.transaction.isDuplicate
+        }
         val totalDebit = debitTxs.sumOf { it.transaction.amount }
         if (totalDebit <= 0.0) return emptyList()
 

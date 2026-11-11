@@ -91,7 +91,7 @@ import kotlin.math.min
  * - Smooth "Continue" CTA button
  */
 
-const val AMOUNT_PAD_MAX_AMOUNT = 250000.0
+const val AMOUNT_PAD_MAX_AMOUNT = 10_000_000.0
 val AmountPadKeys = listOf("1", "2", "3", "4", "5", "6", "7", "8", "9", ".", "0", "back")
 
 sealed class AmountPadKeyResult {

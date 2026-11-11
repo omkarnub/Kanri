@@ -10,6 +10,7 @@ import androidx.credentials.CustomCredential
 import androidx.credentials.GetCredentialRequest
 import androidx.credentials.exceptions.GetCredentialCancellationException
 import androidx.credentials.exceptions.GetCredentialException
+import androidx.credentials.exceptions.NoCredentialException
 import com.google.android.gms.auth.api.identity.AuthorizationRequest
 import com.google.android.gms.auth.api.identity.Identity
 import com.google.android.gms.common.api.ApiException
@@ -53,9 +54,8 @@ class GoogleAuthManager(private val context: Context) {
     ): Result<GoogleAccountInfo> = withContext(Dispatchers.IO) {
         try {
             val clientId = serverClientId?.takeIf { it.isNotBlank() } ?: run {
-                val resId = context.resources.getIdentifier("google_web_client_id", "string", context.packageName)
-                val configId = if (resId != 0) context.getString(resId) else null
-                configId?.takeIf { it.isNotBlank() && !it.startsWith("YOUR_") } ?: "kanri-offline-drive.apps.googleusercontent.com"
+                val configId = context.getString(com.omkarnub.kanri.R.string.google_web_client_id)
+                configId.takeIf { it.isNotBlank() && !it.startsWith("YOUR_") } ?: "kanri-offline-drive.apps.googleusercontent.com"
             }
 
             val googleIdOption = GetGoogleIdOption.Builder()
@@ -91,6 +91,9 @@ class GoogleAuthManager(private val context: Context) {
             }
         } catch (e: GetCredentialCancellationException) {
             Result.failure(Exception("Sign-in cancelled by user"))
+        } catch (e: NoCredentialException) {
+            Log.w(TAG, "No Google credential available on device", e)
+            Result.failure(Exception("No Google account available on this device. Please add a Google account in Settings."))
         } catch (e: GetCredentialException) {
             Log.w(TAG, "Credential Manager error: ${e.message}", e)
             Result.failure(e)
@@ -195,21 +198,27 @@ class GoogleAuthManager(private val context: Context) {
             val displayName = account.displayName
             if (!displayName.isNullOrBlank()) {
                 userPrefs.userName = displayName
-                Log.d(TAG, "Synced Google display name to user profile: $displayName")
+                if (com.omkarnub.kanri.BuildConfig.DEBUG) {
+                    Log.d(TAG, "Synced Google display name to user profile")
+                }
             }
 
             // 2. Sync DOB if present
             val dob = account.dob
             if (!dob.isNullOrBlank()) {
                 userPrefs.userDob = dob
-                Log.d(TAG, "Synced Google DOB to user profile: $dob")
+                if (com.omkarnub.kanri.BuildConfig.DEBUG) {
+                    Log.d(TAG, "Synced Google DOB to user profile")
+                }
             }
 
             // 3. Download and cache profile picture to internal storage
             val photoUrl = account.profilePictureUrl
             if (!photoUrl.isNullOrBlank()) {
                 val success = userPrefs.savePhotoFromUrl(photoUrl)
-                Log.d(TAG, "Downloaded and saved Google profile photo: success=$success")
+                if (com.omkarnub.kanri.BuildConfig.DEBUG) {
+                    Log.d(TAG, "Downloaded and saved Google profile photo: success=$success")
+                }
             }
         } catch (e: Exception) {
             Log.w(TAG, "Error syncing Google profile to local preferences", e)
@@ -234,7 +243,7 @@ class GoogleAuthManager(private val context: Context) {
                 }
                 if (!rawDob.isNullOrBlank() && rawDob != "null") {
                     try {
-                        val inFormat = java.text.SimpleDateFormat("yyyy-MM-dd", java.util.Locale.getDefault())
+                        val inFormat = java.text.SimpleDateFormat("yyyy-MM-dd", java.util.Locale.US)
                         val outFormat = java.text.SimpleDateFormat("dd MMM yyyy", java.util.Locale.getDefault())
                         val parsed = inFormat.parse(rawDob)
                         if (parsed != null) outFormat.format(parsed) else rawDob

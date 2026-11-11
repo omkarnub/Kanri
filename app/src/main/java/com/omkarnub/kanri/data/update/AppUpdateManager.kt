@@ -147,8 +147,7 @@ class AppUpdateManager private constructor(private val context: Context) {
         createNotificationChannel(context)
         val nm = context.getSystemService(Context.NOTIFICATION_SERVICE) as? NotificationManager ?: return
 
-        val launchIntent = (context.packageManager.getLaunchIntentForPackage(context.packageName)
-            ?: Intent(context, MainActivityDarkDark::class.java)).apply {
+        val launchIntent = com.omkarnub.kanri.ui.theme.AppIconManager.createLauncherIntent(context).apply {
             flags = Intent.FLAG_ACTIVITY_NEW_TASK or Intent.FLAG_ACTIVITY_CLEAR_TOP or Intent.FLAG_ACTIVITY_SINGLE_TOP
             putExtra(EXTRA_SHOW_UPDATE_POPUP, true)
         }
@@ -247,31 +246,40 @@ class AppUpdateManager private constructor(private val context: Context) {
             }
 
             val finalConn = connection ?: return@withContext Result.failure(Exception("Failed to establish download connection"))
-            val totalBytes = if (updateInfo.apkSize > 0) updateInfo.apkSize else finalConn.contentLengthLong
+            try {
+                val finalCode = finalConn.responseCode
+                if (finalCode !in 200..299) {
+                    tempFile.delete()
+                    return@withContext Result.failure(Exception("Failed to download update (HTTP $finalCode)"))
+                }
+                val totalBytes = if (updateInfo.apkSize > 0) updateInfo.apkSize else finalConn.contentLengthLong
 
-            finalConn.inputStream.use { input ->
-                FileOutputStream(tempFile).use { output ->
-                    val buffer = ByteArray(8192)
-                    var bytesDownloaded = 0L
-                    var read: Int
+                finalConn.inputStream.use { input ->
+                    FileOutputStream(tempFile).use { output ->
+                        val buffer = ByteArray(8192)
+                        var bytesDownloaded = 0L
+                        var read: Int
 
-                    while (input.read(buffer).also { read = it } != -1) {
-                        output.write(buffer, 0, read)
-                        bytesDownloaded += read
-                        val progress = if (totalBytes > 0) {
-                            (bytesDownloaded.toFloat() / totalBytes.toFloat()).coerceIn(0f, 1f)
-                        } else {
-                            -1f
+                        while (input.read(buffer).also { read = it } != -1) {
+                            output.write(buffer, 0, read)
+                            bytesDownloaded += read
+                            val progress = if (totalBytes > 0) {
+                                (bytesDownloaded.toFloat() / totalBytes.toFloat()).coerceIn(0f, 1f)
+                            } else {
+                                -1f
+                            }
+                            onProgress(progress, bytesDownloaded, totalBytes)
                         }
-                        onProgress(progress, bytesDownloaded, totalBytes)
                     }
                 }
+            } finally {
+                finalConn.disconnect()
             }
-            finalConn.disconnect()
 
             if (tempFile.renameTo(targetFile)) {
                 Result.success(targetFile)
             } else {
+                tempFile.delete()
                 Result.failure(Exception("Failed to finalize downloaded APK file"))
             }
         } catch (e: Exception) {

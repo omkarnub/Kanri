@@ -21,16 +21,25 @@ enum class DateRangePreset(val displayName: String) {
 }
 
 enum class AmountRangePreset(
-    val displayName: String,
     val min: Double?,
     val max: Double?
 ) {
-    ALL("All Amounts", null, null),
-    UNDER_500("Under ₹500", null, 500.0),
-    FROM_500_TO_2000("₹500 – ₹2,000", 500.0, 2000.0),
-    FROM_2000_TO_10000("₹2,000 – ₹10,000", 2000.0, 10000.0),
-    OVER_10000("Over ₹10,000", 10000.0, null),
-    CUSTOM("Custom", null, null)
+    ALL(null, null),
+    UNDER_500(null, 500.0),
+    FROM_500_TO_2000(500.0, 2000.0),
+    FROM_2000_TO_10000(2000.0, 10000.0),
+    OVER_10000(10000.0, null),
+    CUSTOM(null, null);
+
+    val displayName: String
+        get() = when (this) {
+            ALL -> "All Amounts"
+            UNDER_500 -> "Under ${com.omkarnub.kanri.util.CurrencyUtils.formatCurrency(500.0, includeDecimals = false)}"
+            FROM_500_TO_2000 -> "${com.omkarnub.kanri.util.CurrencyUtils.formatCurrency(500.0, includeDecimals = false)} – ${com.omkarnub.kanri.util.CurrencyUtils.formatCurrency(2000.0, includeDecimals = false)}"
+            FROM_2000_TO_10000 -> "${com.omkarnub.kanri.util.CurrencyUtils.formatCurrency(2000.0, includeDecimals = false)} – ${com.omkarnub.kanri.util.CurrencyUtils.formatCurrency(10000.0, includeDecimals = false)}"
+            OVER_10000 -> "Over ${com.omkarnub.kanri.util.CurrencyUtils.formatCurrency(10000.0, includeDecimals = false)}"
+            CUSTOM -> "Custom"
+        }
 }
 
 enum class SortOption(val displayName: String) {
@@ -204,6 +213,7 @@ object SearchFilterUtils {
         walletFilter: WalletFilter = WalletFilter.ALL
     ): Boolean {
         val tx = item.transaction
+        if (tx.isDuplicate) return false
 
         // Wallet check
         when (walletFilter) {

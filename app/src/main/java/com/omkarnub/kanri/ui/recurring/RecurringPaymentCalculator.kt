@@ -60,7 +60,9 @@ object RecurringPaymentCalculator {
     }
 
     fun autoDetectCandidates(transactions: List<TransactionEntity>): List<RecurringCandidate> {
-        val debits = transactions.filter { it.type.equals("DEBIT", ignoreCase = true) }
+        val debits = transactions.filter {
+            it.type.equals("DEBIT", ignoreCase = true) && !it.isTransfer && !it.isDuplicate
+        }
         val grouped = debits.groupBy { (it.counterparty ?: it.displayName ?: "Unknown").trim() }
 
         val candidates = mutableListOf<RecurringCandidate>()

@@ -475,7 +475,7 @@ fun PersonRowItem(
         ) {
             if (person.openCount == 0) {
                 Text(
-                    text = "₹0",
+                    text = com.omkarnub.kanri.util.CurrencyUtils.formatCurrency(0.0, includeDecimals = false),
                     style = MaterialTheme.typography.titleMedium.copy(
                         fontWeight = FontWeight.SemiBold,
                         fontSize = 15.sp

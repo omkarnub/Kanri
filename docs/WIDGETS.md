@@ -1,9 +1,9 @@
 # Kanri Pixel DotTiles Widget System
 
-Current Version: **1.14.1** (Build 43)
+Current Version: **1.18.8** (Build 59)
 
 ## 1. Overview
-Kanri's widget subsystem is unified around a single, cohesive visual language: **Pixel DotTiles** (Nothing-inspired dot-matrix & tactile cards). Designed with precision, restraint, and obsessive detail, the system delivers 12 specialized home screen widgets rendered by a pure Canvas engine shared 1:1 between Android `RemoteViews` bitmaps and Jetpack Compose in-app previews.
+Kanri's widget subsystem is unified around a single, cohesive visual language: **Pixel DotTiles** (Nothing-inspired dot-matrix & tactile cards). Designed with precision, restraint, and obsessive detail, the system delivers 12 specialized home screen widgets rendered by a pure Canvas engine shared 1:1 between Android `RemoteViews` bitmaps and Jetpack Compose in-app previews, with full multi-currency support (`CurrencyUtils` / `CurrencyPreferences` synchronization), custom budget cycle awareness (`BudgetPreferences.budgetCycleStartDay`), and thread-safe `ThreadLocal` `Paint` rendering.
 
 ---
 

@@ -113,9 +113,9 @@ class LendingReminderWorker(
             notificationManager.createNotificationChannel(channel)
         }
 
-        val openIntent = (applicationContext.packageManager.getLaunchIntentForPackage(applicationContext.packageName)
-            ?: Intent(applicationContext, MainActivityDarkDark::class.java)).apply {
-            flags = Intent.FLAG_ACTIVITY_NEW_TASK or Intent.FLAG_ACTIVITY_CLEAR_TOP
+        val openIntent = com.omkarnub.kanri.ui.theme.AppIconManager.createLauncherIntent(applicationContext).apply {
+            action = com.omkarnub.kanri.widget.KanriWidgetActions.ACTION_OPEN_LENDING
+            flags = Intent.FLAG_ACTIVITY_NEW_TASK or Intent.FLAG_ACTIVITY_CLEAR_TOP or Intent.FLAG_ACTIVITY_SINGLE_TOP
             putExtra("EXTRA_NAV_TAB", "LEND_BORROW")
         }
 

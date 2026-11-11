@@ -637,7 +637,7 @@ fun CategoryPickerSheet(
                                             OutlinedTextField(
                                                 value = allocatedGoalAmountStr,
                                                 onValueChange = { allocatedGoalAmountStr = it },
-                                                label = { Text("Amount to Save (₹)", fontFamily = GoogleSansFlex, fontSize = 11.sp) },
+                                                label = { Text("Amount to Save (${com.omkarnub.kanri.util.CurrencyUtils.getCurrencySymbol()})", fontFamily = GoogleSansFlex, fontSize = 11.sp) },
                                                 keyboardOptions = KeyboardOptions(keyboardType = KeyboardType.Number),
                                                 singleLine = true,
                                                 shape = RoundedCornerShape(12.dp),
@@ -663,7 +663,7 @@ fun CategoryPickerSheet(
                                                     }
                                             ) {
                                                 Text(
-                                                    text = "Full ₹${targetTransaction.transaction.amount.toInt()}",
+                                                    text = "Full ${com.omkarnub.kanri.util.CurrencyUtils.formatCurrency(targetTransaction.transaction.amount, includeDecimals = false)}",
                                                     fontFamily = GoogleSansFlex,
                                                     fontSize = 11.sp,
                                                     fontWeight = FontWeight.SemiBold,
@@ -755,11 +755,12 @@ fun CategoryPickerSheet(
                                                         )
                                                     )
                                                 }
-                                                val goalTag = "[Saved ₹${allocAmount.toInt()} for ${chosenGoal.title}]"
+                                                val formattedAlloc = com.omkarnub.kanri.util.CurrencyUtils.formatCurrency(allocAmount, includeDecimals = false)
+                                                val goalTag = "[Saved $formattedAlloc for ${chosenGoal.title}]"
                                                 finalNote = if (finalNote != null) "$goalTag $finalNote" else goalTag
                                                 android.widget.Toast.makeText(
                                                     context,
-                                                    "₹${allocAmount.toInt()} allocated to ${chosenGoal.title}",
+                                                    "$formattedAlloc allocated to ${chosenGoal.title}",
                                                     android.widget.Toast.LENGTH_SHORT
                                                 ).show()
                                             }

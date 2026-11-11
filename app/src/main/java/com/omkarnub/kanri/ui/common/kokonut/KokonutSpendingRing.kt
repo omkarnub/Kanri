@@ -200,8 +200,8 @@ fun getKokonutPalette(): List<Color> {
 private val currencyFormatter2 = DecimalFormat("#,##0.00", DecimalFormatSymbols(Locale.US))
 private val currencyFormatter0 = DecimalFormat("#,##0", DecimalFormatSymbols(Locale.US))
 
-fun formatMoney2(amount: Double): String = "₹" + currencyFormatter2.format(amount)
-fun formatMoney0(amount: Double): String = "₹" + currencyFormatter0.format(amount)
+fun formatMoney2(amount: Double): String = CurrencyUtils.formatCurrency(amount, includeDecimals = true)
+fun formatMoney0(amount: Double): String = CurrencyUtils.formatCurrency(amount, includeDecimals = false)
 
 @Composable
 fun KokonutSpendingRing(

@@ -20,6 +20,11 @@ class BackupRepository(private val context: Context) {
         val repayments = db.lendingDao().getAllRepaymentsSync()
         val mappings = db.categoryDao().getAllMappings()
         val walletBalances = db.walletDao().getBalancesSync()
+        val recurringPayments = db.recurringPaymentDao().getAllRecurringPaymentsSync()
+        val savingsGoals = db.savingsGoalDao().getAllGoalsSync()
+        val savingsGoalContributions = savingsGoals.flatMap { goal ->
+            db.savingsGoalDao().getContributionsForGoalSync(goal.id)
+        }
 
         BackupPayload(
             transactions = txs,
@@ -28,7 +33,10 @@ class BackupRepository(private val context: Context) {
             lendingRecords = lending,
             counterpartyMappings = mappings,
             lendingRepayments = repayments,
-            walletBalances = walletBalances
+            walletBalances = walletBalances,
+            recurringPayments = recurringPayments,
+            savingsGoals = savingsGoals,
+            savingsGoalContributions = savingsGoalContributions
         )
     }
 
@@ -54,7 +62,9 @@ class BackupRepository(private val context: Context) {
                 lendingCount = payload.lendingRecords.size,
                 mappingCount = payload.counterpartyMappings.size,
                 repaymentCount = payload.lendingRepayments.size,
-                walletCount = payload.walletBalances.size
+                walletCount = payload.walletBalances.size,
+                recurringCount = payload.recurringPayments.size,
+                goalCount = payload.savingsGoals.size
             )
             Result.success(stats)
         } catch (e: Exception) {
@@ -113,6 +123,9 @@ class BackupRepository(private val context: Context) {
                     db.budgetDao().deleteAllBudgets()
                     db.lendingDao().deleteAllRepayments()
                     db.lendingDao().deleteAllRecords()
+                    db.recurringPaymentDao().deleteAll()
+                    db.savingsGoalDao().deleteAllContributions()
+                    db.savingsGoalDao().deleteAll()
                     db.categoryDao().deleteAllMappings()
                     db.categoryDao().deleteAllCategories()
                     db.walletDao().deleteAll()
@@ -138,8 +151,25 @@ class BackupRepository(private val context: Context) {
                 }
                 if (payload.walletBalances.isNotEmpty()) {
                     db.walletDao().insertAll(payload.walletBalances)
-                    WalletPreferences.getInstance(context).isWalletSetupCompleted = true
                 }
+                payload.recurringPayments.forEach { rp ->
+                    db.recurringPaymentDao().insert(rp)
+                }
+                payload.savingsGoals.forEach { goal ->
+                    db.savingsGoalDao().insert(goal)
+                }
+                payload.savingsGoalContributions.forEach { contribution ->
+                    db.savingsGoalDao().insertContribution(contribution)
+                }
+            }
+
+            if (payload.walletBalances.isNotEmpty()) {
+                WalletPreferences.getInstance(context).isWalletSetupCompleted = true
+            }
+            try {
+                com.omkarnub.kanri.widget.KanriWidgetsUpdater.updateAllWidgets(context)
+            } catch (_: Exception) {
+                // Widgets are optional if none are placed
             }
 
             val stats = BackupStats(
@@ -149,7 +179,9 @@ class BackupRepository(private val context: Context) {
                 lendingCount = payload.lendingRecords.size,
                 mappingCount = payload.counterpartyMappings.size,
                 repaymentCount = payload.lendingRepayments.size,
-                walletCount = payload.walletBalances.size
+                walletCount = payload.walletBalances.size,
+                recurringCount = payload.recurringPayments.size,
+                goalCount = payload.savingsGoals.size
             )
             Result.success(stats)
         } catch (e: Exception) {

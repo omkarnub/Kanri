@@ -50,4 +50,53 @@ class PixelFontTest {
         // Test passes as long as no unhandled exception is thrown
         assertTrue(true)
     }
+
+    @Test
+    fun testMultiCurrencyAndUnitSplitting() {
+        val (pUsd, nUsd, uUsd) = PixelFont.splitCurrencyAndUnit("$1,240 /d")
+        assertEquals("$", pUsd)
+        assertEquals("1,240", nUsd)
+        assertEquals(" /d", uUsd)
+
+        val (pEur, nEur, uEur) = PixelFont.splitCurrencyAndUnit("-€12.4k")
+        assertEquals("-€", pEur)
+        assertEquals("12.4k", nEur)
+        assertEquals("", uEur)
+
+        val (pGbp, nGbp, uGbp) = PixelFont.splitCurrencyAndUnit("+£500")
+        assertEquals("+£", pGbp)
+        assertEquals("500", nGbp)
+        assertEquals("", uGbp)
+
+        val (pCad, nCad) = PixelFont.splitCurrency("CA$950")
+        assertEquals("CA$", pCad)
+        assertEquals("950", nCad)
+
+        val (pAed, nAed) = PixelFont.splitCurrency("AED4,200")
+        assertEquals("AED", pAed)
+        assertEquals("4,200", nAed)
+
+        val (pBrl, nBrl) = PixelFont.splitCurrency("-R$1.2k")
+        assertEquals("-R$", pBrl)
+        assertEquals("1.2k", nBrl)
+    }
+
+    @Test
+    fun testNonCurrencyTextNotMisclassifiedAsCurrencySymbol() {
+        // "R" is South African Rand, so plain words starting with R like "REVIEW" must not split on "R"
+        val (p, n, u) = PixelFont.splitCurrencyAndUnit("REVIEW")
+        assertEquals("", p)
+        assertEquals("REVIEW", n)
+        assertEquals("", u)
+
+        val (pZar, nZar, _) = PixelFont.splitCurrencyAndUnit("R500")
+        assertEquals("R", pZar)
+        assertEquals("500", nZar)
+    }
+
+    @Test
+    fun testNonInrCompactAndTinyNegative() {
+        assertEquals("$1.5M", PixelFont.formatIndianCompact(1_500_000.0, "$"))
+        assertEquals("₹0", PixelFont.formatIndianCompact(-0.001, "₹"))
+    }
 }

@@ -139,7 +139,6 @@ enum class AppCurrency(
             JPY, TWD, UAH -> listOf(500, 1000, 5000, 10000)
             KRW, KES, NGN, HUF, KZT -> listOf(1000, 5000, 10000, 50000)
             IDR, VND, CLP, COP, ARS -> listOf(10000, 50000, 100000, 500000)
-            else -> listOf(10, 20, 50, 100)
         }
 
     companion object {

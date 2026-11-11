@@ -87,7 +87,11 @@ open class MainActivity : FragmentActivity() {
         }
 
         val onboardingPrefs = com.omkarnub.kanri.ui.onboarding.OnboardingPreferences.getInstance(applicationContext)
-        if (onboardingPrefs.hasCompletedOnboarding && !com.omkarnub.kanri.util.SmsPermissionHelper.hasSmsPermissions(this)) {
+        if (onboardingPrefs.hasCompletedOnboarding &&
+            !onboardingPrefs.hasPromptedPostOnboardingSms &&
+            !com.omkarnub.kanri.util.SmsPermissionHelper.hasSmsPermissions(this)
+        ) {
+            onboardingPrefs.hasPromptedPostOnboardingSms = true
             smsPermissionLauncher.launch(
                 arrayOf(
                     android.Manifest.permission.RECEIVE_SMS,

@@ -59,7 +59,9 @@ class SmsReceiver : BroadcastReceiver() {
             val fullBody = messages.joinToString("") { it.messageBody ?: "" }
             val carrierTimestamp = messages[0].timestampMillis.takeIf { it > 0 } ?: System.currentTimeMillis()
 
-            Log.d(TAG, "SMS broadcast received from '$sender': $fullBody")
+            if (com.omkarnub.kanri.BuildConfig.DEBUG) {
+                Log.d(TAG, "SMS broadcast received from '$sender': $fullBody")
+            }
 
             // 2. High-precision regex parse for amount, type, counterparty, bank, account, refNo, timestamp
             val parsed = SmsParser.parse(
@@ -69,14 +71,20 @@ class SmsReceiver : BroadcastReceiver() {
             )
 
             if (parsed == null) {
-                Log.d(TAG, "SMS not recognized as financial transaction or ignored (OTP/promo/request).")
+                if (com.omkarnub.kanri.BuildConfig.DEBUG) {
+                    Log.d(TAG, "SMS not recognized as financial transaction or ignored (OTP/promo/request).")
+                }
                 return
             }
 
-            Log.i(
-                TAG,
-                "Parsed SMS Transaction: Type=${parsed.type}, Amount=${parsed.amount}, Counterparty=${parsed.counterparty}, Bank=${parsed.bank}, Ref=${parsed.refNo}"
-            )
+            if (com.omkarnub.kanri.BuildConfig.DEBUG) {
+                Log.i(
+                    TAG,
+                    "Parsed SMS Transaction: Type=${parsed.type}, Amount=${parsed.amount}, Counterparty=${parsed.counterparty}, Bank=${parsed.bank}, Ref=${parsed.refNo}"
+                )
+            } else {
+                Log.i(TAG, "Parsed SMS transaction: type=${parsed.type}, source=${parsed.sourceType}")
+            }
 
             val pendingResult = goAsync()
             CoroutineScope(Dispatchers.IO).launch {
@@ -157,7 +165,11 @@ class SmsReceiver : BroadcastReceiver() {
                             }
                         }
                         is DeduplicationResult.Enriched -> {
-                            Log.i(TAG, "SMS enriched existing transaction ${result.id} with counterparty: ${result.updatedCounterparty}")
+                            if (com.omkarnub.kanri.BuildConfig.DEBUG) {
+                                Log.i(TAG, "SMS enriched existing transaction ${result.id} with counterparty: ${result.updatedCounterparty}")
+                            } else {
+                                Log.i(TAG, "SMS enriched existing transaction ${result.id}")
+                            }
                             DevCaptureLogger.logDeduplicationMerge(
                                 context = context,
                                 source = "SMS",

@@ -97,7 +97,11 @@ import androidx.compose.ui.text.font.FontWeight
 import androidx.compose.ui.tooling.preview.Preview
 import androidx.compose.ui.unit.dp
 import androidx.compose.ui.unit.sp
+import androidx.room.withTransaction
 import com.omkarnub.kanri.BuildConfig
+import kotlinx.coroutines.Dispatchers
+import kotlinx.coroutines.withContext
+import com.omkarnub.kanri.widget.KanriWidgetsUpdater
 import com.omkarnub.kanri.data.backup.BackupRepository
 import com.omkarnub.kanri.data.cloud.BackupMode
 import com.omkarnub.kanri.data.cloud.CloudBackupPreferences
@@ -193,43 +197,43 @@ fun SettingsScreen(
     var showMerchantRulesScreen by rememberSaveable { mutableStateOf(false) }
     var showWidgetsScreen by rememberSaveable { mutableStateOf(false) }
 
-    var showCurrencyDialog by remember { mutableStateOf(false) }
-    var showBudgetCycleDialog by remember { mutableStateOf(false) }
-    var showExportStatementSheet by remember { mutableStateOf(false) }
-    var showPrivacyPolicyDialog by remember { mutableStateOf(false) }
-    var showCrashLogsDialog by remember { mutableStateOf(false) }
-    var showSuggestFeatureDialog by remember { mutableStateOf(false) }
-    var showContactDialog by remember { mutableStateOf(false) }
+    var showCurrencyDialog by rememberSaveable { mutableStateOf(false) }
+    var showBudgetCycleDialog by rememberSaveable { mutableStateOf(false) }
+    var showExportStatementSheet by rememberSaveable { mutableStateOf(false) }
+    var showPrivacyPolicyDialog by rememberSaveable { mutableStateOf(false) }
+    var showCrashLogsDialog by rememberSaveable { mutableStateOf(false) }
+    var showSuggestFeatureDialog by rememberSaveable { mutableStateOf(false) }
+    var showContactDialog by rememberSaveable { mutableStateOf(false) }
 
-    var pendingIconStyle by remember { mutableStateOf<AppIconStyle?>(null) }
-    var showIconRestartDialog by remember { mutableStateOf(false) }
+    var pendingIconStyle by rememberSaveable { mutableStateOf<AppIconStyle?>(null) }
+    var showIconRestartDialog by rememberSaveable { mutableStateOf(false) }
 
     var categoryToEdit by remember { mutableStateOf<CategoryEntity?>(null) }
     var categoryToDelete by remember { mutableStateOf<CategoryEntity?>(null) }
-    var showCreateCategoryDialog by remember { mutableStateOf(false) }
-    var showCategoryReorderSheet by remember { mutableStateOf(false) }
+    var showCreateCategoryDialog by rememberSaveable { mutableStateOf(false) }
+    var showCategoryReorderSheet by rememberSaveable { mutableStateOf(false) }
 
-    var showWalletSetupDialog by remember { mutableStateOf(false) }
-    var walletToCorrect by remember { mutableStateOf<String?>(null) }
-    var showResetWalletsDialog by remember { mutableStateOf(false) }
+    var showWalletSetupDialog by rememberSaveable { mutableStateOf(false) }
+    var walletToCorrect by rememberSaveable { mutableStateOf<String?>(null) }
+    var showResetWalletsDialog by rememberSaveable { mutableStateOf(false) }
 
-    var showKillAppDialog by remember { mutableStateOf(false) }
-    var showResetDialog by remember { mutableStateOf(false) }
-    var resetConfirmationInput by remember { mutableStateOf("") }
-    var isResetting by remember { mutableStateOf(false) }
+    var showKillAppDialog by rememberSaveable { mutableStateOf(false) }
+    var showResetDialog by rememberSaveable { mutableStateOf(false) }
+    var resetConfirmationInput by rememberSaveable { mutableStateOf("") }
+    var isResetting by rememberSaveable { mutableStateOf(false) }
 
-    var isCheckingForUpdates by remember { mutableStateOf(false) }
+    var isCheckingForUpdates by rememberSaveable { mutableStateOf(false) }
     var activeUpdateDialogInfo by remember { mutableStateOf<AppUpdateInfo?>(null) }
 
     // Direct Offline Backup Export & Restore
-    var showExportBackupDialog by remember { mutableStateOf(false) }
+    var showExportBackupDialog by rememberSaveable { mutableStateOf(false) }
     var exportPassphraseInput by remember { mutableStateOf("") }
     var pendingExportPassphrase by remember { mutableStateOf<String?>(null) }
 
-    var pendingRestoreUri by remember { mutableStateOf<Uri?>(null) }
-    var isPendingRestoreEncrypted by remember { mutableStateOf(false) }
+    var pendingRestoreUri by rememberSaveable { mutableStateOf<Uri?>(null) }
+    var isPendingRestoreEncrypted by rememberSaveable { mutableStateOf(false) }
     var restorePassphraseInput by remember { mutableStateOf("") }
-    var restoreReplaceExisting by remember { mutableStateOf(false) }
+    var restoreReplaceExisting by rememberSaveable { mutableStateOf(false) }
 
     // Launcher for exporting offline backup JSON
     val exportDataLauncher = rememberLauncherForActivityResult(
@@ -519,10 +523,20 @@ fun SettingsScreen(
                         val catId = cat.id
                         categoryToDelete = null
                         scope.launch {
-                            val otherCat = db.categoryDao().getCategoryByName("Other")
-                            db.transactionDao().reassignTransactionsCategory(catId, otherCat?.id)
-                            db.categoryDao().deleteMappingsForCategory(catId)
-                            db.categoryDao().deleteCategoryById(catId)
+                            if (cat.name.equals("Other", ignoreCase = true) && !cat.isCustom) {
+                                Toast.makeText(context, "Default 'Other' category cannot be deleted", Toast.LENGTH_SHORT).show()
+                                return@launch
+                            }
+                            withContext(Dispatchers.IO) {
+                                db.withTransaction {
+                                    val otherCat = db.categoryDao().getCategoryByName("Other")
+                                    val fallbackId = otherCat?.id?.takeIf { it != catId }
+                                    db.transactionDao().reassignTransactionsCategory(catId, fallbackId)
+                                    db.categoryDao().deleteMappingsForCategory(catId)
+                                    db.categoryDao().deleteCategoryById(catId)
+                                }
+                                KanriWidgetsUpdater.updateAllWidgets(context.applicationContext)
+                            }
                             Toast.makeText(context, "Category '${cat.name}' deleted", Toast.LENGTH_SHORT).show()
                         }
                     },

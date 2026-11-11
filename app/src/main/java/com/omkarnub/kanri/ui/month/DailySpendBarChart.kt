@@ -90,7 +90,7 @@ fun DailySpendBarChart(
                     level = GlassLevel.Flat
                 ) {
                     Text(
-                        text = "Avg: ₹%,.0f/day".format(avgDailySpend),
+                        text = "Avg: ${com.omkarnub.kanri.util.CurrencyUtils.formatCurrency(avgDailySpend, includeDecimals = false)}/day",
                         color = MaterialTheme.colorScheme.primary,
                         fontSize = 11.sp,
                         fontWeight = FontWeight.SemiBold,

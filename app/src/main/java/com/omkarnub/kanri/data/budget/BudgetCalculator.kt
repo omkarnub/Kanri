@@ -83,7 +83,7 @@ object BudgetCalculator {
         calendar: Calendar = Calendar.getInstance()
     ): Long {
         val startMillis = getStartOfCycleMillis(cycleStartDay, calendar)
-        val endCal = Calendar.getInstance().apply {
+        val endCal = (calendar.clone() as Calendar).apply {
             timeInMillis = startMillis
             add(Calendar.MONTH, 1)
             val maxNextMonth = getActualMaximum(Calendar.DAY_OF_MONTH)
@@ -110,10 +110,24 @@ object BudgetCalculator {
             val totalDays = calendar.getActualMaximum(Calendar.DAY_OF_MONTH)
             return (totalDays - currentDay + 1).coerceAtLeast(1)
         }
-        val endMillis = getEndOfCycleMillis(cycleStartDay, calendar)
-        val diffMillis = endMillis - calendar.timeInMillis
-        if (diffMillis <= 0) return 1
-        val days = (diffMillis / (1000L * 60 * 60 * 24)).toInt() + 1
+        val todayCal = (calendar.clone() as Calendar).apply {
+            set(Calendar.HOUR_OF_DAY, 0)
+            set(Calendar.MINUTE, 0)
+            set(Calendar.SECOND, 0)
+            set(Calendar.MILLISECOND, 0)
+        }
+        val endCal = (calendar.clone() as Calendar).apply {
+            timeInMillis = getEndOfCycleMillis(cycleStartDay, calendar)
+            set(Calendar.HOUR_OF_DAY, 0)
+            set(Calendar.MINUTE, 0)
+            set(Calendar.SECOND, 0)
+            set(Calendar.MILLISECOND, 0)
+        }
+        var days = 1
+        while (todayCal.before(endCal)) {
+            todayCal.add(Calendar.DAY_OF_MONTH, 1)
+            days++
+        }
         return days.coerceAtLeast(1)
     }
 
@@ -127,14 +141,14 @@ object BudgetCalculator {
         if (cycleStartDay <= 1) {
             val year = calendar.get(Calendar.YEAR)
             val month = calendar.get(Calendar.MONTH) + 1
-            return "%d-%02d".format(year, month)
+            return String.format(Locale.US, "%d-%02d", year, month)
         }
-        val startCal = Calendar.getInstance().apply {
+        val startCal = (calendar.clone() as Calendar).apply {
             timeInMillis = getStartOfCycleMillis(cycleStartDay, calendar)
         }
         val year = startCal.get(Calendar.YEAR)
         val month = startCal.get(Calendar.MONTH) + 1
-        return "%d-%02d".format(year, month)
+        return String.format(Locale.US, "%d-%02d", year, month)
     }
 
     /**
@@ -148,10 +162,10 @@ object BudgetCalculator {
             val formatter = SimpleDateFormat("MMMM", Locale.getDefault())
             return formatter.format(calendar.time)
         }
-        val startCal = Calendar.getInstance().apply {
+        val startCal = (calendar.clone() as Calendar).apply {
             timeInMillis = getStartOfCycleMillis(cycleStartDay, calendar)
         }
-        val endCal = Calendar.getInstance().apply {
+        val endCal = (calendar.clone() as Calendar).apply {
             timeInMillis = getEndOfCycleMillis(cycleStartDay, calendar)
         }
         val fmt = SimpleDateFormat("d MMM", Locale.getDefault())

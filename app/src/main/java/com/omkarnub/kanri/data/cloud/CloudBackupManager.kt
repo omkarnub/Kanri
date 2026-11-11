@@ -120,7 +120,10 @@ class CloudBackupManager(
                 budgetCount = payload.budgets.size,
                 lendingCount = payload.lendingRecords.size,
                 mappingCount = payload.counterpartyMappings.size,
-                repaymentCount = payload.lendingRepayments.size
+                repaymentCount = payload.lendingRepayments.size,
+                walletCount = payload.walletBalances.size,
+                recurringCount = payload.recurringPayments.size,
+                goalCount = payload.savingsGoals.size
             )
 
             Log.i(TAG, "Cloud backup completed successfully: fileId=${uploadedFile.id}, size=${encryptedBytes.size} bytes")

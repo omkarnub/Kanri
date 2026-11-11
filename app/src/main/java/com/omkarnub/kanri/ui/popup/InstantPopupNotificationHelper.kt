@@ -47,10 +47,9 @@ object InstantPopupNotificationHelper {
         )
     ) {
         createChannel(context)
-        val notificationId = (txId % 100000).toInt().coerceAtLeast(5000)
+        val notificationId = 10000 + (txId % 90000).toInt()
 
-        val openAppIntent = (context.packageManager.getLaunchIntentForPackage(context.packageName)
-            ?: Intent(context, MainActivity::class.java)).apply {
+        val openAppIntent = com.omkarnub.kanri.ui.theme.AppIconManager.createLauncherIntent(context).apply {
             flags = Intent.FLAG_ACTIVITY_NEW_TASK or Intent.FLAG_ACTIVITY_CLEAR_TOP
             putExtra("EXTRA_TRANSACTION_ID", txId)
         }

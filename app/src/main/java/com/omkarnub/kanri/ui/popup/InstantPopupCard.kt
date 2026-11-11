@@ -822,7 +822,7 @@ private fun ThemedInstantPopupCardContent(
         }
     } else {
         CurrentBalanceContent(
-            balance = currentBalance ?: if (isDebit) (15000.0 - amount) else (15000.0 + amount),
+            balance = currentBalance,
             amount = amount,
             isDebit = isDebit,
             brandTitle = brandTag.title,
@@ -838,7 +838,7 @@ private fun ThemedInstantPopupCardContent(
 
 @Composable
 private fun CurrentBalanceContent(
-    balance: Double,
+    balance: Double?,
     amount: Double,
     isDebit: Boolean,
     brandTitle: String,
@@ -874,9 +874,9 @@ private fun CurrentBalanceContent(
 
         Spacer(modifier = Modifier.height(6.dp))
 
-        // "Current Balance" title
+        // Title
         Text(
-            text = "Current Balance",
+            text = if (balance != null) "Current Balance" else "Transaction Saved",
             fontFamily = GoogleSansFlex,
             fontSize = 13.5.sp,
             fontWeight = FontWeight.Medium,
@@ -888,7 +888,7 @@ private fun CurrentBalanceContent(
 
         // Balance amount with rolling text animation + bracketed delta amount (+amount / -amount)
         val formattedBalance = remember(balance) {
-            formatCurrency(balance)
+            balance?.let { formatCurrency(it) }
         }
 
         Row(
@@ -896,19 +896,21 @@ private fun CurrentBalanceContent(
             horizontalArrangement = Arrangement.Center,
             verticalAlignment = Alignment.CenterVertically
         ) {
-            RollingText(
-                text = formattedBalance,
-                textColor = primaryTextColor,
-                fontSize = 32.sp,
-                fontWeight = FontWeight.Bold,
-                fontFamily = GoogleSansFlex,
-                minCycles = 3,
-                cycleVariance = 3,
-                durationSeconds = 1.4f,
-                durationVarianceSeconds = 0.4f
-            )
+            if (formattedBalance != null) {
+                RollingText(
+                    text = formattedBalance,
+                    textColor = primaryTextColor,
+                    fontSize = 32.sp,
+                    fontWeight = FontWeight.Bold,
+                    fontFamily = GoogleSansFlex,
+                    minCycles = 3,
+                    cycleVariance = 3,
+                    durationSeconds = 1.4f,
+                    durationVarianceSeconds = 0.4f
+                )
 
-            Spacer(modifier = Modifier.width(8.dp))
+                Spacer(modifier = Modifier.width(8.dp))
+            }
 
             Text(
                 text = deltaText,

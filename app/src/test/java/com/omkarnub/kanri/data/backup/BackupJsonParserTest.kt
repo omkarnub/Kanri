@@ -277,5 +277,89 @@ class BackupJsonParserTest {
         assertEquals("ONLINE", restored.transactions[0].wallet)
         assertNull(restored.transactions[0].transferToWallet)
         assertTrue(restored.walletBalances.isEmpty())
+        assertTrue(restored.recurringPayments.isEmpty())
+        assertTrue(restored.savingsGoals.isEmpty())
+        assertTrue(restored.savingsGoalContributions.isEmpty())
+    }
+
+    @Test
+    fun testRecurringPaymentsAndSavingsGoalsRoundTrip() {
+        val payload = BackupPayload(
+            transactions = emptyList(),
+            categories = emptyList(),
+            budgets = emptyList(),
+            lendingRecords = emptyList(),
+            counterpartyMappings = emptyList(),
+            recurringPayments = listOf(
+                com.omkarnub.kanri.data.db.RecurringPaymentEntity(
+                    id = 5,
+                    title = "Netflix",
+                    amount = 649.0,
+                    billingCycle = "MONTHLY",
+                    categoryId = 2L,
+                    counterparty = "NETFLIX",
+                    nextDueTimestamp = 1790000000000L,
+                    autoDetectKeyword = "netflix",
+                    isActive = true,
+                    lastPaidTimestamp = 1787321600000L
+                )
+            ),
+            savingsGoals = listOf(
+                com.omkarnub.kanri.data.db.SavingsGoalEntity(
+                    id = 9,
+                    title = "Emergency Fund",
+                    targetAmount = 100000.0,
+                    currentAmount = 25000.0,
+                    targetDate = 1800000000000L,
+                    colorHex = "#06D6A0",
+                    emoji = "shield",
+                    isCompleted = false
+                )
+            ),
+            savingsGoalContributions = listOf(
+                com.omkarnub.kanri.data.db.SavingsGoalContributionEntity(
+                    id = 12,
+                    goalId = 9L,
+                    amount = 5000.0,
+                    timestamp = 1789632000000L,
+                    note = "Monthly stash",
+                    sourceTransactionId = null
+                )
+            )
+        )
+
+        val json = BackupJsonParser.toJson(payload)
+        assertTrue(json.contains("recurringPayments"))
+        assertTrue(json.contains("savingsGoals"))
+        assertTrue(json.contains("savingsGoalContributions"))
+
+        val restored = BackupJsonParser.fromJson(json)
+        assertEquals(1, restored.recurringPayments.size)
+        val rp = restored.recurringPayments.first()
+        assertEquals(5L, rp.id)
+        assertEquals("Netflix", rp.title)
+        assertEquals(649.0, rp.amount, 0.001)
+        assertEquals("MONTHLY", rp.billingCycle)
+        assertEquals(2L, rp.categoryId)
+        assertEquals("netflix", rp.autoDetectKeyword)
+        assertTrue(rp.isActive)
+        assertEquals(1787321600000L, rp.lastPaidTimestamp)
+
+        assertEquals(1, restored.savingsGoals.size)
+        val goal = restored.savingsGoals.first()
+        assertEquals(9L, goal.id)
+        assertEquals("Emergency Fund", goal.title)
+        assertEquals(100000.0, goal.targetAmount, 0.001)
+        assertEquals(25000.0, goal.currentAmount, 0.001)
+        assertEquals(1800000000000L, goal.targetDate)
+        assertEquals("shield", goal.emoji)
+
+        assertEquals(1, restored.savingsGoalContributions.size)
+        val contrib = restored.savingsGoalContributions.first()
+        assertEquals(12L, contrib.id)
+        assertEquals(9L, contrib.goalId)
+        assertEquals(5000.0, contrib.amount, 0.001)
+        assertEquals("Monthly stash", contrib.note)
+        assertNull(contrib.sourceTransactionId)
     }
 }

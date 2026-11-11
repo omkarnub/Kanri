@@ -868,9 +868,9 @@ fun SplitExpenseEntryDialog(
                                     description = "${eventDescription.ifBlank { "Group Expense" }} • $peopleCount people",
                                     totalAmount = if (selectedRole == SplitRole.I_PAID) othersTotal else perPersonShare,
                                     slideLabel = if (selectedRole == SplitRole.I_PAID) {
-                                        "Slide to split (Collect ₹${othersTotal.toInt()})"
+                                        "Slide to split (Collect ${com.omkarnub.kanri.util.CurrencyUtils.formatCurrency(othersTotal, includeDecimals = false)})"
                                     } else {
-                                        "Slide to confirm (Owe ₹${perPersonShare.toInt()})"
+                                        "Slide to confirm (Owe ${com.omkarnub.kanri.util.CurrencyUtils.formatCurrency(perPersonShare, includeDecimals = false)})"
                                     },
                                     detailRows = detailRows,
                                     accountType = if (selectedRole == SplitRole.I_PAID) "Lent Ledger" else "Borrowed Ledger",

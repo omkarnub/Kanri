@@ -7,10 +7,12 @@ import androidx.lifecycle.viewModelScope
 import com.omkarnub.kanri.data.db.KanriDatabase
 import com.omkarnub.kanri.data.db.TransactionWithCategory
 import com.omkarnub.kanri.ui.home.parseHexColor
+import kotlinx.coroutines.Dispatchers
 import kotlinx.coroutines.flow.MutableStateFlow
 import kotlinx.coroutines.flow.SharingStarted
 import kotlinx.coroutines.flow.StateFlow
 import kotlinx.coroutines.flow.combine
+import kotlinx.coroutines.flow.flowOn
 import kotlinx.coroutines.flow.stateIn
 import java.text.SimpleDateFormat
 import java.util.Calendar
@@ -88,9 +90,11 @@ class MonthViewModel(application: Application) : AndroidViewModel(application) {
                 nowCal.get(Calendar.MONTH) == cal.get(Calendar.MONTH)
         val currentDay = if (isCurrentMonth) nowCal.get(Calendar.DAY_OF_MONTH) else daysInMonth
 
-        // Filter transactions (excluding transfers)
+        // Filter transactions (excluding transfers and duplicates)
         val monthTransactions = txList.filter {
-            it.transaction.timestamp in startOfMonth..endOfMonth && !it.transaction.isTransfer
+            it.transaction.timestamp in startOfMonth..endOfMonth &&
+                !it.transaction.isTransfer &&
+                !it.transaction.isDuplicate
         }
 
         var spent = 0.0
@@ -104,6 +108,7 @@ class MonthViewModel(application: Application) : AndroidViewModel(application) {
             dailyMap[day] = 0.0
         }
 
+        val txCal = calClone.clone() as Calendar
         for (item in monthTransactions) {
             val tx = item.transaction
             val isDebit = tx.type.equals("DEBIT", ignoreCase = true)
@@ -117,7 +122,7 @@ class MonthViewModel(application: Application) : AndroidViewModel(application) {
                     categoryObjectMap[catId] = item.category
                 }
 
-                val txCal = Calendar.getInstance().apply { timeInMillis = tx.timestamp }
+                txCal.timeInMillis = tx.timestamp
                 val day = txCal.get(Calendar.DAY_OF_MONTH)
                 dailyMap[day] = (dailyMap[day] ?: 0.0) + tx.amount
             } else if (isCredit) {
@@ -162,7 +167,8 @@ class MonthViewModel(application: Application) : AndroidViewModel(application) {
             transactionCount = monthTransactions.size,
             isLoading = false
         )
-    }.stateIn(
+    }.flowOn(Dispatchers.Default)
+    .stateIn(
         scope = viewModelScope,
         started = SharingStarted.WhileSubscribed(5000),
         initialValue = MonthUiState(isLoading = true)
@@ -181,7 +187,8 @@ class MonthViewModel(application: Application) : AndroidViewModel(application) {
             selectedMetric = metric
         )
         calculated.copy(scrubbedIndex = scrubIdx)
-    }.stateIn(
+    }.flowOn(Dispatchers.Default)
+    .stateIn(
         scope = viewModelScope,
         started = SharingStarted.WhileSubscribed(5000),
         initialValue = AllTimeTrendsUiState(isLoading = true)

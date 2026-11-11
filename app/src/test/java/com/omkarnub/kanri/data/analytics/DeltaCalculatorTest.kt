@@ -215,4 +215,53 @@ class DeltaCalculatorTest {
         val down = delta as Delta.Down
         assertEquals(50, down.percent)
     }
+
+    @Test
+    fun calculateDelta_excludesDuplicateTransactions() {
+        val nowCal = Calendar.getInstance().apply {
+            set(2026, Calendar.SEPTEMBER, 20, 12, 0, 0)
+        }
+
+        val transactions = listOf(
+            createTx(1000.0, "DEBIT", 2026, 9, 5),
+            createTx(5000.0, "DEBIT", 2026, 9, 6).copy(isDuplicate = true),
+            createTx(2000.0, "DEBIT", 2026, 8, 5),
+            createTx(4000.0, "DEBIT", 2026, 8, 7).copy(isDuplicate = true)
+        )
+
+        val delta = DeltaCalculator.calculateDelta(
+            selectedYear = 2026,
+            selectedMonth = 9,
+            transactions = transactions,
+            nowCalendar = nowCal
+        )
+
+        // Real totals: 1,000 vs 2,000 -> -50% (Down)
+        assertTrue(delta is Delta.Down)
+        assertEquals(50, (delta as Delta.Down).percent)
+    }
+
+    @Test
+    fun calculateDelta_yearRolloverJanuaryVsDecember() {
+        val nowCal = Calendar.getInstance().apply {
+            set(2026, Calendar.JANUARY, 15, 12, 0, 0)
+        }
+
+        val transactions = listOf(
+            createTx(3000.0, "DEBIT", 2026, 1, 5),
+            createTx(2000.0, "DEBIT", 2025, 12, 5),
+            createTx(9000.0, "DEBIT", 2025, 12, 25) // after Dec 15 -> excluded
+        )
+
+        val delta = DeltaCalculator.calculateDelta(
+            selectedYear = 2026,
+            selectedMonth = 1,
+            transactions = transactions,
+            nowCalendar = nowCal
+        )
+
+        // 3,000 vs 2,000 -> +50% (Up)
+        assertTrue(delta is Delta.Up)
+        assertEquals(50, (delta as Delta.Up).percent)
+    }
 }

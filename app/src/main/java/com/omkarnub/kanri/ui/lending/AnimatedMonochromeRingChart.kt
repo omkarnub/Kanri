@@ -250,7 +250,7 @@ fun AnimatedMonochromeRingChart(
             Spacer(modifier = Modifier.height(2.dp))
 
             AnimatedContent(
-                targetState = if (totalAmount > 0.0) CurrencyUtils.formatCurrency(perPersonShare) else "₹0",
+                targetState = if (totalAmount > 0.0) CurrencyUtils.formatCurrency(perPersonShare) else CurrencyUtils.formatCurrency(0.0, includeDecimals = false),
                 transitionSpec = {
                     fadeIn(tween(200)) togetherWith fadeOut(tween(200))
                 },

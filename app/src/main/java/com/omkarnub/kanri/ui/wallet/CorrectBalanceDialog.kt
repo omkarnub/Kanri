@@ -127,7 +127,7 @@ fun CorrectBalanceDialog(
                     value = inputAmountStr,
                     onValueChange = { inputAmountStr = it },
                     label = { Text("Actual Current Balance") },
-                    prefix = { Text("₹", fontWeight = FontWeight.Bold) },
+                    prefix = { Text(com.omkarnub.kanri.util.CurrencyUtils.getCurrencySymbol(), fontWeight = FontWeight.Bold) },
                     singleLine = true,
                     keyboardOptions = KeyboardOptions(keyboardType = KeyboardType.Decimal),
                     modifier = Modifier.fillMaxWidth(),

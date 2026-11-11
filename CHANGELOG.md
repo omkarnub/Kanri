@@ -5,6 +5,25 @@ All notable changes to Kanri will be documented in this file.
 The format is based on [Keep a Changelog](https://keepachangelog.com/en/1.0.0/),
 and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0.html).
 
+## [1.18.8] - 2026-11-11
+
+### Fixed & Verified (Phase 1 Pre-Release Correctness Audit)
+- **Multi-Currency, Rounding & Indian Grouping Consistency**:
+  - Updated `CurrencyUtils.formatCurrency` and `formatCompactCurrency` to apply explicit `BigDecimal` `HALF_UP` rounding, prevent signed `-0` / `-0.00` outputs on near-zero negative values or non-finite inputs, and enforce Indian `2,2,3` digit grouping consistently for `INR` alongside global `B`/`M`/`k` compact suffixes for non-INR currencies.
+  - Raised `KokonutAmountPad` manual input ceiling to `10,000,000.0` to match high-denomination currencies and replaced residual hardcoded `"₹"` strings and `.toInt()` truncations across analytics, search, lending, recurring payments, goals, and export UIs.
+- **Financial Calculators, Exports & DAO Accuracy**:
+  - Fixed DST-safe remaining cycle day counting (`BudgetCalculator.getDaysRemainingInCycle`), calendar-instance cloning, duplicate/transfer transaction exclusion across `TransactionDao` review queries, `HomeViewModel`, `SearchFilterModels`, `DeltaCalculator`, `StreakCalculator`, `AllTimeTrendsCalculator`, `CategoryDetailUtils`, and `CsvExporter`.
+  - Made date/number formatters thread-safe in CSV/PDF statement exporters, added `CurrencyUtils.getCurrencyCode()` headers, and propagated coroutine work off main threads via `Dispatchers.Default`/`Dispatchers.IO`.
+- **Widget Engine Multi-Currency & Thread Safety**:
+  - Synchronized `CurrencyPreferences` with `CurrencyUtils` inside `WidgetDataSource`, wired `BudgetPreferences.budgetCycleStartDay` into `Today`/`Budget`/`SafeToSpend` widgets, converted shared `Paint` instances to `ThreadLocal` across `DotVisuals`, `PixelFont`, `DotMatrixFont`, and `WidgetRenderer`, and capped widget bitmap allocations safely.
+- **Database Safety, Backup Completeness & Process/State Preservation**:
+  - Gated Room destructive migration fallback strictly to `BuildConfig.DEBUG` and aligned legacy unencrypted DB migrations (`MIGRATION_5_6..MIGRATION_11_12`) with all schema tables (`lending_records`, `lending_repayments`, `wallet_balances`).
+  - Added `recurringPayments`, `savingsGoals`, and `savingsGoalContributions` to encrypted/JSON backup & restore (`BackupData`, `BackupRepository`, `CloudBackupManager`) and cleaned up `FactoryResetManager` deletion order.
+  - Made category deletion atomic inside a Room transaction (`SettingsScreen`), preserved safe UI dialog states with `rememberSaveable`, routed launcher intents through `AppIconManager.createLauncherIntent`, removed hardcoded `15000.0` fallback balance in `InstantPopupCard`/`InstantPopupService`, escaped Google Drive query literals, resolved all 11 Compose `[NonObservableLocale]` lint errors, and gated sensitive financial logcat output behind `BuildConfig.DEBUG`.
+- **Unit Test Coverage**:
+  - Added `CurrencyUtilsTest` and expanded unit test suites across `DotMatrixFontTest`, `PixelFontTest`, `BackupJsonParserTest`, `DatabaseMigrationTest`, `BudgetCalculatorTest`, `DeltaCalculatorTest`, `StreakCalculatorTest`, `AllTimeTrendsTest`, `CategoryDetailTest`, and `CsvExporterTest` (`55 suites`, `342 tests` passing).
+- Bumped version to `1.18.8` (Build 59).
+
 ## [1.18.7] - 2026-11-11
 
 ### Changed & Refined

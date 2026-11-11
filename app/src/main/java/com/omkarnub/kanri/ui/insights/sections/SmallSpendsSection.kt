@@ -79,7 +79,7 @@ fun SmallSpendsSection(
                             onClick = { onThresholdSelected(th) }
                         ) {
                             Text(
-                                text = "₹${th.toInt()}",
+                                text = com.omkarnub.kanri.util.CurrencyUtils.formatCurrency(th, includeDecimals = false),
                                 color = if (isSelected) MaterialTheme.colorScheme.onSurface else MaterialTheme.colorScheme.onSurfaceVariant,
                                 fontSize = 10.sp,
                                 fontWeight = if (isSelected) FontWeight.Bold else FontWeight.Medium,

@@ -39,9 +39,9 @@ object DeltaCalculator {
         transactions: List<TransactionEntity>,
         nowCalendar: Calendar = Calendar.getInstance()
     ): Delta {
-        // Expenses only: filter type == "DEBIT" (excluding transfers)
+        // Expenses only: filter type == "DEBIT" (excluding transfers and duplicates)
         val expenseTransactions = transactions.filter {
-            it.type.equals("DEBIT", ignoreCase = true) && !it.isTransfer
+            it.type.equals("DEBIT", ignoreCase = true) && !it.isTransfer && !it.isDuplicate
         }
 
         val currentYear = nowCalendar.get(Calendar.YEAR)
@@ -49,7 +49,7 @@ object DeltaCalculator {
         val isCurrentMonth = (selectedYear == currentYear && selectedMonth == currentMonth)
 
         // Previous month (M-1)
-        val prevMonthCal = Calendar.getInstance().apply {
+        val prevMonthCal = (nowCalendar.clone() as Calendar).apply {
             set(Calendar.YEAR, selectedYear)
             set(Calendar.MONTH, selectedMonth - 1) // 0-based
             set(Calendar.DAY_OF_MONTH, 1)
@@ -60,7 +60,7 @@ object DeltaCalculator {
         val prevMonthName = SimpleDateFormat("MMMM", Locale.getDefault()).format(prevMonthCal.time)
 
         // Define start/end millis for current selected month M
-        val startMCal = Calendar.getInstance().apply {
+        val startMCal = (nowCalendar.clone() as Calendar).apply {
             set(Calendar.YEAR, selectedYear)
             set(Calendar.MONTH, selectedMonth - 1)
             set(Calendar.DAY_OF_MONTH, 1)
@@ -74,7 +74,7 @@ object DeltaCalculator {
         }
 
         // Define start/end millis for previous month M-1
-        val startPrevCal = Calendar.getInstance().apply {
+        val startPrevCal = (nowCalendar.clone() as Calendar).apply {
             set(Calendar.YEAR, prevYear)
             set(Calendar.MONTH, prevMonth - 1)
             set(Calendar.DAY_OF_MONTH, 1)

@@ -255,8 +255,8 @@ class HomeViewModel(application: Application) : AndroidViewModel(application) {
 
         for (item in txList) {
             val tx = item.transaction
-            // Transfers do not affect spending or income
-            if (tx.isTransfer) continue
+            // Transfers and duplicates do not affect spending or income
+            if (tx.isTransfer || tx.isDuplicate) continue
 
             if (tx.timestamp >= startOfToday) {
                 if (tx.type.equals("DEBIT", ignoreCase = true)) {
@@ -394,7 +394,7 @@ class HomeViewModel(application: Application) : AndroidViewModel(application) {
         val currentMonth = nowCal.get(Calendar.MONTH) // 0-based
         val currentDay = nowCal.get(Calendar.DAY_OF_MONTH)
 
-        val prevCal = Calendar.getInstance().apply {
+        val prevCal = (nowCal.clone() as Calendar).apply {
             set(Calendar.YEAR, currentYear)
             set(Calendar.MONTH, currentMonth)
             set(Calendar.DAY_OF_MONTH, 1)
@@ -405,7 +405,7 @@ class HomeViewModel(application: Application) : AndroidViewModel(application) {
         val maxDayPrev = prevCal.getActualMaximum(Calendar.DAY_OF_MONTH)
         val clampedDay = currentDay.coerceAtMost(maxDayPrev)
 
-        val startPrev = Calendar.getInstance().apply {
+        val startPrev = (nowCal.clone() as Calendar).apply {
             set(Calendar.YEAR, prevYear)
             set(Calendar.MONTH, prevMonth)
             set(Calendar.DAY_OF_MONTH, 1)
@@ -415,7 +415,7 @@ class HomeViewModel(application: Application) : AndroidViewModel(application) {
             set(Calendar.MILLISECOND, 0)
         }.timeInMillis
 
-        val endPrev = Calendar.getInstance().apply {
+        val endPrev = (nowCal.clone() as Calendar).apply {
             set(Calendar.YEAR, prevYear)
             set(Calendar.MONTH, prevMonth)
             set(Calendar.DAY_OF_MONTH, clampedDay)
@@ -426,7 +426,7 @@ class HomeViewModel(application: Application) : AndroidViewModel(application) {
         }.timeInMillis
 
         val prevSpent = transactions
-            .filter { !it.isTransfer && it.type.equals("DEBIT", ignoreCase = true) && it.timestamp in startPrev..endPrev }
+            .filter { !it.isTransfer && !it.isDuplicate && it.type.equals("DEBIT", ignoreCase = true) && it.timestamp in startPrev..endPrev }
             .sumOf { it.amount }
 
         return if (prevSpent > 0.0) prevSpent else null
@@ -515,12 +515,14 @@ class HomeViewModel(application: Application) : AndroidViewModel(application) {
     fun confirmReview(transactionId: Long) {
         viewModelScope.launch {
             transactionDao.clearReviewFlag(transactionId)
+            com.omkarnub.kanri.widget.KanriWidgetsUpdater.updateAllWidgets(getApplication())
         }
     }
 
     fun confirmAllReviews() {
         viewModelScope.launch {
             transactionDao.clearAllReviewFlags()
+            com.omkarnub.kanri.widget.KanriWidgetsUpdater.updateAllWidgets(getApplication())
         }
     }
 
@@ -548,6 +550,7 @@ class HomeViewModel(application: Application) : AndroidViewModel(application) {
                 categoryDao.setMapping(CounterpartyCategoryMapEntity(clean, categoryId))
                 transactionDao.updateCategoryForCounterparty(clean, categoryId)
             }
+            com.omkarnub.kanri.widget.KanriWidgetsUpdater.updateAllWidgets(getApplication())
         }
     }
 
@@ -558,7 +561,7 @@ class HomeViewModel(application: Application) : AndroidViewModel(application) {
             "upi", "card", "atm", "bank_transfer", "bank transfer",
             "cash", "transaction", "debit", "credit", "other", "payment"
         )
-        return counterparty.trim().lowercase() !in genericNames
+        return counterparty.trim().lowercase(Locale.ROOT) !in genericNames
     }
 
     fun updateMonthlyBudget(newLimit: Double) {
@@ -597,9 +600,9 @@ class HomeViewModel(application: Application) : AndroidViewModel(application) {
             )
 
             val entity = TransactionEntity(
-                type = type.uppercase(),
+                type = type.uppercase(Locale.ROOT),
                 amount = amount,
-                sourceType = sourceType.uppercase(),
+                sourceType = sourceType.uppercase(Locale.ROOT),
                 counterparty = counterparty.trim(),
                 displayName = counterparty.trim(),
                 bank = if (sourceType.equals("CASH", ignoreCase = true)) "Cash" else null,
@@ -695,11 +698,11 @@ class HomeViewModel(application: Application) : AndroidViewModel(application) {
             val existing = transactionDao.getTransactionById(transactionId) ?: return@launch
             val updated = existing.copy(
                 amount = amount,
-                type = type.uppercase(),
+                type = type.uppercase(Locale.ROOT),
                 counterparty = counterparty?.trim(),
                 displayName = displayName?.trim() ?: counterparty?.trim(),
                 categoryId = categoryId,
-                sourceType = sourceType.uppercase(),
+                sourceType = sourceType.uppercase(Locale.ROOT),
                 bank = bank?.trim(),
                 refNo = refNo?.trim(),
                 notes = notes?.trim(),

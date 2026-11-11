@@ -244,7 +244,7 @@ fun MoveMoneyDialog(
                     value = amountStr,
                     onValueChange = { amountStr = it },
                     label = { Text("Transfer Amount") },
-                    prefix = { Text("₹", fontWeight = FontWeight.Bold) },
+                    prefix = { Text(com.omkarnub.kanri.util.CurrencyUtils.getCurrencySymbol(), fontWeight = FontWeight.Bold) },
                     singleLine = true,
                     keyboardOptions = KeyboardOptions(keyboardType = KeyboardType.Decimal),
                     modifier = Modifier.fillMaxWidth(),

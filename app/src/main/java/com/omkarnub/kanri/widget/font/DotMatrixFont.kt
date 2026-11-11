@@ -76,11 +76,13 @@ object DotMatrixFont {
         put(' ', intArrayOf(0, 0, 0, 0, 0, 0, 0))
     }
 
-    private val paint by lazy {
+    private val paintLocal = ThreadLocal.withInitial {
         Paint(Paint.ANTI_ALIAS_FLAG).apply {
             style = Paint.Style.FILL
         }
     }
+
+    private val paint: Paint get() = paintLocal.get()!!
 
     fun getGlyph(c: Char): IntArray {
         val upper = c.uppercaseChar()
@@ -220,29 +222,55 @@ object DotMatrixFont {
      * - `₹1.5Cr` (for >= 1,00,00,000)
      * - `₹850` (for < 1,000)
      */
-    fun formatIndianCompact(amount: Double, prefix: String = "₹"): String {
+    fun formatIndianCompact(
+        amount: Double,
+        prefix: String = com.omkarnub.kanri.util.CurrencyUtils.getCurrencySymbol()
+    ): String {
+        if (amount.isNaN() || amount.isInfinite()) return "${prefix}0"
         val isNegative = amount < 0
         val absVal = abs(amount)
 
-        val formattedNum = when {
-            absVal >= 10_000_000 -> {
-                val cr = absVal / 10_000_000.0
-                if (cr >= 100) String.format(Locale.US, "%.0fCr", cr)
-                else String.format(Locale.US, "%.1fCr", cr).replace(".0Cr", "Cr")
+        val formattedNum = if (prefix == "₹") {
+            when {
+                absVal >= 10_000_000 -> {
+                    val cr = absVal / 10_000_000.0
+                    if (cr >= 100) String.format(Locale.US, "%.0fCr", cr)
+                    else String.format(Locale.US, "%.1fCr", cr).replace(".0Cr", "Cr")
+                }
+                absVal >= 100_000 -> {
+                    val l = absVal / 100_000.0
+                    if (l >= 100) String.format(Locale.US, "%.0fL", l)
+                    else String.format(Locale.US, "%.1fL", l).replace(".0L", "L")
+                }
+                absVal >= 1_000 -> {
+                    val k = absVal / 1_000.0
+                    if (k >= 100) String.format(Locale.US, "%.0fk", k)
+                    else String.format(Locale.US, "%.1fk", k).replace(".0k", "k")
+                }
+                else -> kotlin.math.round(absVal).toInt().toString()
             }
-            absVal >= 100_000 -> {
-                val l = absVal / 100_000.0
-                if (l >= 100) String.format(Locale.US, "%.0fL", l)
-                else String.format(Locale.US, "%.1fL", l).replace(".0L", "L")
+        } else {
+            when {
+                absVal >= 1_000_000_000 -> {
+                    val b = absVal / 1_000_000_000.0
+                    if (b >= 100) String.format(Locale.US, "%.0fB", b)
+                    else String.format(Locale.US, "%.1fB", b).replace(".0B", "B")
+                }
+                absVal >= 1_000_000 -> {
+                    val m = absVal / 1_000_000.0
+                    if (m >= 100) String.format(Locale.US, "%.0fM", m)
+                    else String.format(Locale.US, "%.1fM", m).replace(".0M", "M")
+                }
+                absVal >= 1_000 -> {
+                    val k = absVal / 1_000.0
+                    if (k >= 100) String.format(Locale.US, "%.0fk", k)
+                    else String.format(Locale.US, "%.1fk", k).replace(".0k", "k")
+                }
+                else -> kotlin.math.round(absVal).toInt().toString()
             }
-            absVal >= 1_000 -> {
-                val k = absVal / 1_000.0
-                if (k >= 100) String.format(Locale.US, "%.0fk", k)
-                else String.format(Locale.US, "%.1fk", k).replace(".0k", "k")
-            }
-            else -> absVal.toInt().toString()
         }
 
-        return if (isNegative) "-$prefix$formattedNum" else "$prefix$formattedNum"
+        val showNegative = isNegative && formattedNum != "0"
+        return if (showNegative) "-$prefix$formattedNum" else "$prefix$formattedNum"
     }
 }

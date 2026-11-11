@@ -20,18 +20,21 @@ import kotlin.math.sin
  */
 object DotVisuals {
 
-    private val fillPaint by lazy {
+    private val fillPaintLocal = ThreadLocal.withInitial {
         Paint(Paint.ANTI_ALIAS_FLAG).apply {
             style = Paint.Style.FILL
         }
     }
 
-    private val strokePaint by lazy {
+    private val strokePaintLocal = ThreadLocal.withInitial {
         Paint(Paint.ANTI_ALIAS_FLAG).apply {
             style = Paint.Style.STROKE
             strokeWidth = 2f
         }
     }
+
+    private val fillPaint: Paint get() = fillPaintLocal.get()!!
+    private val strokePaint: Paint get() = strokePaintLocal.get()!!
 
     enum class SliderMode { GLOW, FILL }
 
@@ -56,15 +59,17 @@ object DotVisuals {
     private val cachedPaths: MutableMap<DotIcon, Path?> = mutableMapOf()
 
     private fun getPath(icon: DotIcon): Path? {
-        if (cachedPaths.containsKey(icon)) return cachedPaths[icon]
-        val pathData = SVG_PATHS[icon] ?: return null
-        val path = try {
-            PathParser.createPathFromPathData(pathData)
-        } catch (_: Throwable) {
-            null
+        synchronized(cachedPaths) {
+            if (cachedPaths.containsKey(icon)) return cachedPaths[icon]
+            val pathData = SVG_PATHS[icon] ?: return null
+            val path = try {
+                PathParser.createPathFromPathData(pathData)
+            } catch (_: Throwable) {
+                null
+            }
+            cachedPaths[icon] = path
+            return path
         }
-        cachedPaths[icon] = path
-        return path
     }
 
     /**
@@ -85,7 +90,9 @@ object DotVisuals {
             matrix.setScale(scale, scale)
             matrix.postTranslate(x, y)
             val transformed = Path()
-            path.transform(matrix, transformed)
+            synchronized(path) {
+                path.transform(matrix, transformed)
+            }
             fillPaint.color = color
             canvas.drawPath(transformed, fillPaint)
         } else {
