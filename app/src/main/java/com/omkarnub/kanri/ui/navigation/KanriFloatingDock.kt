@@ -55,6 +55,7 @@ import androidx.compose.ui.text.style.TextOverflow
 import androidx.compose.ui.unit.Dp
 import androidx.compose.ui.unit.dp
 import androidx.compose.ui.unit.sp
+import com.omkarnub.kanri.ui.theme.DarkOffWhite
 import com.omkarnub.kanri.ui.theme.LightBackground
 import com.omkarnub.kanri.ui.theme.ThemeMode
 import com.omkarnub.kanri.ui.theme.ThemePreferences
@@ -205,6 +206,43 @@ fun KanriFloatingDock(
                     shape = RoundedCornerShape(32.dp)
                 )
         } else {
+            val isDark = dockTheme.activeContentColor == DarkOffWhite
+            val dockBg = if (isDark) {
+                Brush.verticalGradient(
+                    listOf(
+                        Color(0xFF242428).copy(alpha = 0.85f),
+                        Color(0xFF141416).copy(alpha = 0.82f)
+                    )
+                )
+            } else {
+                Brush.verticalGradient(
+                    listOf(
+                        Color(0xFFFFFFFF).copy(alpha = 0.90f),
+                        Color(0xFFFAF9F5).copy(alpha = 0.84f)
+                    )
+                )
+            }
+            val dockBorder = if (isDark) {
+                BorderStroke(
+                    0.8.dp,
+                    Brush.verticalGradient(
+                        listOf(
+                            Color.White.copy(alpha = 0.22f),
+                            Color.White.copy(alpha = 0.08f)
+                        )
+                    )
+                )
+            } else {
+                BorderStroke(
+                    0.8.dp,
+                    Brush.verticalGradient(
+                        listOf(
+                            Color.White.copy(alpha = 0.60f),
+                            Color(0xFF161616).copy(alpha = 0.12f)
+                        )
+                    )
+                )
+            }
             Modifier
                 .weight(1f)
                 .height(64.dp)
@@ -215,25 +253,15 @@ fun KanriFloatingDock(
                     scaleY = 0.94f + 0.06f * dockEntrance.value
                 }
                 .shadow(
-                    elevation = dockTheme.shadowElevation,
+                    elevation = if (isDark) 12.dp else 6.dp,
                     shape = RoundedCornerShape(32.dp),
-                    spotColor = dockTheme.shadowColor,
-                    ambientColor = dockTheme.shadowColor.copy(alpha = dockTheme.shadowColor.alpha * 0.6f)
+                    spotColor = Color.Black.copy(alpha = if (isDark) 0.35f else 0.08f),
+                    ambientColor = Color.Black.copy(alpha = if (isDark) 0.20f else 0.04f)
                 )
                 .clip(RoundedCornerShape(32.dp))
-                .background(dockTheme.fallbackBackgroundColor)
-                .then(
-                    if (hazeState != null) {
-                        Modifier.hazeEffect(
-                            state = hazeState,
-                            style = dockTheme.hazeStyle
-                        )
-                    } else {
-                        Modifier
-                    }
-                )
+                .background(dockBg)
                 .border(
-                    dockTheme.glassBorder,
+                    dockBorder,
                     shape = RoundedCornerShape(32.dp)
                 )
         }
@@ -536,28 +564,55 @@ private fun DockAddButton(
                 }
             )
     } else {
+        val isDark = dockTheme.activeContentColor == DarkOffWhite
+        val dockBg = if (isDark) {
+            Brush.verticalGradient(
+                listOf(
+                    Color(0xFF242428).copy(alpha = 0.85f),
+                    Color(0xFF141416).copy(alpha = 0.82f)
+                )
+            )
+        } else {
+            Brush.verticalGradient(
+                listOf(
+                    Color(0xFFFFFFFF).copy(alpha = 0.90f),
+                    Color(0xFFFAF9F5).copy(alpha = 0.84f)
+                )
+            )
+        }
+        val dockBorder = if (isDark) {
+            BorderStroke(
+                0.8.dp,
+                Brush.verticalGradient(
+                    listOf(
+                        Color.White.copy(alpha = 0.22f),
+                        Color.White.copy(alpha = 0.08f)
+                    )
+                )
+            )
+        } else {
+            BorderStroke(
+                0.8.dp,
+                Brush.verticalGradient(
+                    listOf(
+                        Color.White.copy(alpha = 0.60f),
+                        Color(0xFF161616).copy(alpha = 0.12f)
+                    )
+                )
+            )
+        }
         modifier
             .scale(scale)
             .shadow(
-                elevation = dockTheme.shadowElevation,
+                elevation = if (isDark) 12.dp else 6.dp,
                 shape = CircleShape,
-                spotColor = dockTheme.shadowColor,
-                ambientColor = dockTheme.shadowColor.copy(alpha = dockTheme.shadowColor.alpha * 0.6f)
+                spotColor = Color.Black.copy(alpha = if (isDark) 0.35f else 0.08f),
+                ambientColor = Color.Black.copy(alpha = if (isDark) 0.20f else 0.04f)
             )
             .clip(CircleShape)
-            .background(dockTheme.fallbackBackgroundColor)
-            .then(
-                if (hazeState != null) {
-                    Modifier.hazeEffect(
-                        state = hazeState,
-                        style = dockTheme.hazeStyle
-                    )
-                } else {
-                    Modifier
-                }
-            )
+            .background(dockBg)
             .border(
-                dockTheme.glassBorder,
+                dockBorder,
                 shape = CircleShape
             )
             .clickable(
@@ -568,7 +623,6 @@ private fun DockAddButton(
                     onClick()
                 }
             )
-            .background(if (hazeState != null) Color.Transparent else dockTheme.fallbackBackgroundColor)
     }
 
     Box(

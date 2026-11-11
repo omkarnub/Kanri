@@ -5,6 +5,15 @@ All notable changes to Kanri will be documented in this file.
 The format is based on [Keep a Changelog](https://keepachangelog.com/en/1.0.0/),
 and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0.html).
 
+## [1.14.4] - 2026-11-11
+
+### Fixed & Restored
+- **Glass Mode Cards Tint & Backdrop Blur Restored**:
+  - Removed accidental `hazeSource` modifier from `MainNavigationScreen.kt` tabs container, restoring pure capture of `GlassBackdrop` and ensuring all `KanriGlassCard`s render with their full frosted blur, custom tint, and specular rim reflections.
+- **Frosted Translucent Dock for Light & Dark Modes**:
+  - Rebuilt non-glass dock container in `KanriFloatingDock.kt` with dedicated frosted translucent vertical gradients (`0.82f - 0.90f` opacity), luminous top edge highlights, and soft shadows, making the dock frosted and translucent in Light and Dark mode without conflicting with Glass mode shaders.
+- Bumped version to `1.14.4` (Build 46).
+
 ## [1.14.3] - 2026-11-11
 
 ### Fixed & Changed
