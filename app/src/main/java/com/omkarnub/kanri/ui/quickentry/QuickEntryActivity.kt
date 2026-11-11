@@ -4,9 +4,9 @@ import android.content.Intent
 import android.os.Bundle
 import android.view.WindowManager
 import android.widget.Toast
+import androidx.activity.ComponentActivity
 import androidx.activity.compose.setContent
 import androidx.activity.enableEdgeToEdge
-import androidx.fragment.app.FragmentActivity
 import androidx.room.withTransaction
 import androidx.compose.foundation.background
 import androidx.compose.foundation.layout.Box
@@ -20,14 +20,11 @@ import androidx.lifecycle.lifecycleScope
 import com.omkarnub.kanri.data.db.KanriDatabase
 import com.omkarnub.kanri.data.db.LendingEntity
 import com.omkarnub.kanri.data.db.TransactionEntity
-import com.omkarnub.kanri.data.security.SecurityManager
-import com.omkarnub.kanri.data.security.SecurityPreferences
 import com.omkarnub.kanri.data.wallet.WalletPreferences
 import com.omkarnub.kanri.data.wallet.WalletResolver
 import com.omkarnub.kanri.ui.common.applyWindowBlur
 import com.omkarnub.kanri.ui.home.AddTransactionDialog
 import com.omkarnub.kanri.ui.lending.SplitExpenseEntryDialog
-import com.omkarnub.kanri.ui.security.LockScreen
 import com.omkarnub.kanri.ui.theme.KanriTheme
 import com.omkarnub.kanri.widget.KanriWidgetActions
 import com.omkarnub.kanri.widget.KanriWidgetsUpdater
@@ -42,7 +39,7 @@ import kotlinx.coroutines.withContext
  * presenting the tactile numpad and full manual entry workflow without
  * launching the main app.
  */
-class QuickEntryActivity : FragmentActivity() {
+class QuickEntryActivity : ComponentActivity() {
 
     override fun onCreate(savedInstanceState: Bundle?) {
         super.onCreate(savedInstanceState)
@@ -52,7 +49,6 @@ class QuickEntryActivity : FragmentActivity() {
         window.addFlags(WindowManager.LayoutParams.FLAG_DIM_BEHIND)
         window.setDimAmount(0.35f)
 
-        SecurityManager.init(applicationContext)
         val action = intent?.action ?: KanriWidgetActions.ACTION_ADD_EXPENSE
         val isIncome = action == KanriWidgetActions.ACTION_ADD_INCOME
         val isSplit = action == KanriWidgetActions.ACTION_SPLIT_BILL
@@ -62,18 +58,6 @@ class QuickEntryActivity : FragmentActivity() {
 
         setContent {
             KanriTheme {
-                val isLockEnabled = remember {
-                    SecurityPreferences.getInstance(applicationContext).isLockEnabled
-                }
-                val isAppLocked by SecurityManager.isAppLocked.collectAsState()
-
-                if (isLockEnabled && isAppLocked) {
-                    LockScreen(
-                        onUnlocked = { SecurityManager.unlock() }
-                    )
-                    return@KanriTheme
-                }
-
                 val categories by db.categoryDao().getAllCategories().collectAsState(initial = emptyList())
                 val peopleListFlow = remember {
                     db.lendingDao().getAllRecords().map { list -> list.map { it.personName }.distinct() }
