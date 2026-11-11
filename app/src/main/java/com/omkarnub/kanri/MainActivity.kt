@@ -133,20 +133,19 @@ open class MainActivity : FragmentActivity() {
                                 scaleY = contentScale
                             }
                     ) {
-                        com.omkarnub.kanri.ui.common.KanriBackdropHost {
-                            var isTestingLock by remember { mutableStateOf(false) }
+                        var isTestingLock by remember { mutableStateOf(false) }
+                        val isLocked by SecurityManager.isAppLocked.collectAsState()
 
-                            val isLocked by SecurityManager.isAppLocked.collectAsState()
-
-                            when {
-                                !hasCompletedOnboarding -> {
-                                    OnboardingScreen(
-                                        onComplete = {
-                                            onboardingPrefs.hasCompletedOnboarding = true
-                                        }
-                                    )
-                                }
-                                isLocked || isTestingLock -> {
+                        when {
+                            !hasCompletedOnboarding -> {
+                                OnboardingScreen(
+                                    onComplete = {
+                                        onboardingPrefs.hasCompletedOnboarding = true
+                                    }
+                                )
+                            }
+                            isLocked || isTestingLock -> {
+                                com.omkarnub.kanri.ui.common.KanriBackdropHost {
                                     LockScreen(
                                         onUnlocked = {
                                             SecurityManager.unlock()
@@ -154,7 +153,9 @@ open class MainActivity : FragmentActivity() {
                                         }
                                     )
                                 }
-                                else -> {
+                            }
+                            else -> {
+                                com.omkarnub.kanri.ui.common.KanriBackdropHost {
                                     MainNavigationScreen(
                                         onReplayOnboarding = {
                                             onboardingPrefs.hasCompletedOnboarding = false

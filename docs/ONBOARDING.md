@@ -1,17 +1,17 @@
 # Kanri Onboarding & Stepper System
 
-Current Version: **1.18.1** (Build 52)
+Current Version: **1.18.2** (Build 53)
 
 ## 1. Overview
 The Kanri onboarding experience guides new users through permissions, personal profile configuration, and security settings with transparency, privacy assurances, and immediate tactile feedback.
 
-In version 1.18.0, the onboarding flow is completely rebuilt from scratch:
-- **Two-Way JavaScript Bridge**: `AndroidBridge.onPaintingFinished(step)` and `AndroidBridge.onGlideFinished(step)` synchronize the HTML5 canvas living scroll with Compose state.
-- **Screen Fade-In & Synchronized Painting**: Background paints Scene 0 ink washes (3800ms) with foreground UI hidden until the ink bloom finishes.
-- **100% Identical Louis Studios ChapterPlayer Intro Animation**: `KanriIntroLogo.kt` directly implements the mathematical equations and timing from Louis Studios' `ChapterPlayer` (emblem center landing, cubic Hermite lockup settle, kinetic Panchang letter emergence, masked subtitle reveal, and living push-in).
-- **Sequential Two-Phase Transitions**: Tapping **Get Started** or **Continue** fades out the current UI first before progressing the background camera glide.
-- **Unified Slider Rhythm Across All Steps**: Step cards (Avatar Picker, SMS, Apps, Overlay, Battery, Alerts, Lock) enter and exit with matching fade and subtle scale transforms.
-- **Interactive Stepper Navigation**: Steps 1 through 7 feature the top `Stepper` header with haptic navigation and back button support.
+In version 1.18.2:
+- **Strict Light Mode**: Enforced clean light Xuan paper theme throughout onboarding.
+- **Pure Black Kanri Logo**: Emblem mark and Panchang typography in deep black (`#000000`).
+- **Setup Progress Stepper Pattern**: Header with step counter, animated progress indicator, and individual `CheckCircle`/`Circle` status items.
+- **1:1 Avatar Cropper**: Built-in interactive photo cropper dialog with pinch-to-zoom and pan.
+- **Sequential Two-Phase Transitions**: Card components fade out $\to$ background living scroll glides $\to$ new card fades in.
+- **High-Contrast Typography & Buttons**: Guaranteed legible black and white button styles.
 
 ---
 

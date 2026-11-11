@@ -5,6 +5,31 @@ All notable changes to Kanri will be documented in this file.
 The format is based on [Keep a Changelog](https://keepachangelog.com/en/1.0.0/),
 and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0.html).
 
+## [1.18.2] - 2026-11-11
+
+### Added
+- **1:1 Aspect Ratio Avatar Cropper (`AvatarCropDialog`)**:
+  - Integrated interactive 1:1 avatar cropping modal with pinch-to-zoom (0.5x to 4.0x) and drag-to-pan.
+  - Features circular avatar guideline mask and rule-of-thirds grid.
+  - Automatically exports a 512x512 high-resolution bitmap and saves it to user preferences.
+- **Setup Progress Pattern (`SetupProgressPattern`)**:
+  - Replaced dot-and-line stepper with the modern Setup Progress pattern.
+  - Includes progress title header, completion count, animated `LinearProgressIndicator`, and `CheckCircle`/`Circle` step status items.
+
+### Changed & Fixed
+- **Strict Light Mode for Onboarding**:
+  - Enforced light mode exclusively across the onboarding flow, disabling dark mode and forcing Xuan paper light aesthetics.
+- **Black Kanri Logo & Emblem**:
+  - Configured pure black (`#000000`) for both the Kanri monogram emblem and Panchang letter wordmark.
+- **Glass Transparency & Backdrop Decoupling**:
+  - Decoupled Onboarding and `OnboardingPrivacySheet` from `KanriBackdropHost` to eliminate background shader bleeding through glass frost.
+  - Set frosted cards in `ProfileSetupStepView` and `PermissionCardView` to a clean light translucent surface (`#FFFFFF` at 90% alpha with 1dp border).
+- **Sequential Step Choreography**:
+  - Standardized transition sequence: active page components fade out (260ms) $\to$ background living scroll glides and blooms in ink (1350ms) $\to$ next card fades in (300ms).
+- **High-Contrast Button Styling**:
+  - Fixed white-on-white button text issues by enforcing solid black containers (`#0F0E0C`) with crisp white text for primary CTA buttons, and soft green (`#E8F5E9`) with dark green text (`#1B5E20`) for granted permissions.
+- Bumped version to `1.18.2` (Build 53).
+
 ## [1.18.1] - 2026-11-11
 
 ### Fixed

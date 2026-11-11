@@ -27,7 +27,8 @@ import androidx.compose.material3.ExperimentalMaterial3Api
 import androidx.compose.material3.Icon
 import androidx.compose.material3.IconButton
 import androidx.compose.material3.MaterialTheme
-import com.omkarnub.kanri.ui.common.KanriModalBottomSheet
+import androidx.compose.material3.ModalBottomSheet
+import androidx.compose.material3.SheetValue
 import androidx.compose.material3.Surface
 import androidx.compose.material3.Text
 import androidx.compose.material3.rememberModalBottomSheetState
@@ -35,21 +36,18 @@ import androidx.compose.runtime.Composable
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.draw.clip
+import androidx.compose.ui.graphics.Color
 import androidx.compose.ui.graphics.vector.ImageVector
 import androidx.compose.ui.res.stringResource
 import androidx.compose.ui.text.font.FontWeight
 import androidx.compose.ui.unit.dp
 import androidx.compose.ui.unit.sp
 import com.omkarnub.kanri.R
-import com.omkarnub.kanri.ui.common.LocalHazeState
-import com.omkarnub.kanri.ui.common.frostedGlass
-import com.omkarnub.kanri.ui.common.kanriPrimaryButtonColors
-import com.omkarnub.kanri.ui.common.rememberKanriGlassTheme
 import com.omkarnub.kanri.ui.theme.GoogleSansFlex
 import com.omkarnub.kanri.ui.theme.Panchang
 
 /**
- * Frosted glass bottom sheet detailing Kanri's 100% on-device private-by-design guarantees.
+ * Clean, light-themed bottom sheet detailing Kanri's 100% on-device private-by-design guarantees.
  */
 @OptIn(ExperimentalMaterial3Api::class)
 @Composable
@@ -58,13 +56,15 @@ fun OnboardingPrivacySheet(
     modifier: Modifier = Modifier
 ) {
     val sheetState = rememberModalBottomSheetState(skipPartiallyExpanded = true)
-    val glassTheme = rememberKanriGlassTheme()
-    val hazeState = LocalHazeState.current
 
-    KanriModalBottomSheet(
+    ModalBottomSheet(
         onDismissRequest = onDismiss,
         sheetState = sheetState,
         dragHandle = null,
+        containerColor = Color(0xFFFAF9F6),
+        contentColor = Color(0xFF1E2229),
+        scrimColor = Color.Black.copy(alpha = 0.35f),
+        shape = RoundedCornerShape(topStart = 28.dp, topEnd = 28.dp),
         modifier = modifier
     ) {
         Column(
@@ -85,7 +85,7 @@ fun OnboardingPrivacySheet(
                     fontFamily = Panchang,
                     fontWeight = FontWeight.Bold,
                     fontSize = 20.sp,
-                    color = MaterialTheme.colorScheme.onSurface
+                    color = Color(0xFF1E2229)
                 )
 
                 IconButton(
@@ -95,7 +95,7 @@ fun OnboardingPrivacySheet(
                     Icon(
                         imageVector = Icons.Default.Close,
                         contentDescription = stringResource(R.string.onboarding_privacy_close),
-                        tint = MaterialTheme.colorScheme.onSurfaceVariant,
+                        tint = Color(0xFF555555),
                         modifier = Modifier.size(20.dp)
                     )
                 }
@@ -132,20 +132,24 @@ fun OnboardingPrivacySheet(
 
             Spacer(modifier = Modifier.height(28.dp))
 
-            // Primary Dismiss Pill Button
+            // Primary Dismiss Pill Button (High Contrast Solid Black with White Text)
             Button(
                 onClick = onDismiss,
                 modifier = Modifier
                     .fillMaxWidth()
                     .height(52.dp),
                 shape = RoundedCornerShape(50),
-                colors = kanriPrimaryButtonColors()
+                colors = ButtonDefaults.buttonColors(
+                    containerColor = Color(0xFF0F0E0C),
+                    contentColor = Color.White
+                )
             ) {
                 Text(
                     text = stringResource(R.string.onboarding_privacy_close),
                     fontFamily = GoogleSansFlex,
                     fontWeight = FontWeight.Bold,
-                    fontSize = 15.sp
+                    fontSize = 15.sp,
+                    color = Color.White
                 )
             }
         }
@@ -166,13 +170,13 @@ private fun PrivacyFeatureRow(
             modifier = Modifier
                 .size(38.dp)
                 .clip(CircleShape)
-                .background(MaterialTheme.colorScheme.surfaceVariant.copy(alpha = 0.65f)),
+                .background(Color(0xFFF0EDE5)),
             contentAlignment = Alignment.Center
         ) {
             Icon(
                 imageVector = icon,
                 contentDescription = null,
-                tint = MaterialTheme.colorScheme.onSurface,
+                tint = Color(0xFF1E2229),
                 modifier = Modifier.size(19.dp)
             )
         }
@@ -185,7 +189,7 @@ private fun PrivacyFeatureRow(
             fontSize = 14.sp,
             lineHeight = 20.sp,
             fontWeight = FontWeight.Medium,
-            color = MaterialTheme.colorScheme.onSurfaceVariant
+            color = Color(0xFF333333)
         )
     }
 }

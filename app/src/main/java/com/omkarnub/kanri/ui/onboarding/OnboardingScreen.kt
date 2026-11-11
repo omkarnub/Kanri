@@ -101,10 +101,11 @@ import com.omkarnub.kanri.data.cloud.CloudBackupPreferences
 import com.omkarnub.kanri.data.cloud.CloudBackupWorker
 import com.omkarnub.kanri.data.profile.UserProfilePreferences
 import com.omkarnub.kanri.data.security.SecurityPreferences
+import androidx.compose.runtime.CompositionLocalProvider
+import com.omkarnub.kanri.ui.common.LocalHazeState
 import com.omkarnub.kanri.ui.common.kokonut.KokonutAvatarPicker
-import com.omkarnub.kanri.ui.common.stepper.StepItem
-import com.omkarnub.kanri.ui.common.stepper.Stepper
-import com.omkarnub.kanri.ui.common.stepper.StepperSize
+import com.omkarnub.kanri.ui.theme.KanriTheme
+import com.omkarnub.kanri.ui.theme.LocalKanriGlass
 import com.omkarnub.kanri.ui.notification.NotificationAccessHelper
 import com.omkarnub.kanri.ui.popup.OverlayPermissionHelper
 import com.omkarnub.kanri.ui.theme.DarkOffWhite
@@ -161,9 +162,7 @@ fun OnboardingScreen(
 
     val cloudBackupPrefs = remember { CloudBackupPreferences.getInstance(context) }
     val securityPrefs = remember { SecurityPreferences.getInstance(context) }
-    val themePrefs = remember { ThemePreferences.getInstance(context) }
-    val themeMode by themePrefs.themeModeFlow.collectAsState()
-    val isLight = themeMode == ThemeMode.LIGHT
+    val isLight = true
 
     // Reduce motion check
     val reduceMotion = remember {
@@ -196,9 +195,9 @@ fun OnboardingScreen(
     var isStepCardVisible by remember { mutableStateOf(false) }
     var webViewInstance by remember { mutableStateOf<WebView?>(null) }
 
-    // Fallback safety timeout for Scene 0 painting (4000ms)
+    // Fallback safety timeout for Scene 0 painting (3200ms)
     LaunchedEffect(Unit) {
-        delay(4000L)
+        delay(3200L)
         if (!isScene0PaintingDone) {
             isScene0PaintingDone = true
         }
@@ -251,34 +250,26 @@ fun OnboardingScreen(
 
     fun finishOnboarding() {
         haptics.click()
-        OnboardingPreferences.getInstance(context).hasCompletedOnboarding = true
-        cloudBackupPrefs.backupMode = BackupMode.OFFLINE
-        CloudBackupWorker.cancel(context)
-        onComplete()
+        coroutineScope.launch {
+            isStepCardVisible = false
+            delay(260L)
+            OnboardingPreferences.getInstance(context).hasCompletedOnboarding = true
+            cloudBackupPrefs.backupMode = BackupMode.OFFLINE
+            CloudBackupWorker.cancel(context)
+            onComplete()
+        }
     }
 
-    // Stepper items for steps 1-7
-    val onboardingSteps = remember {
-        listOf(
-            StepItem(id = "profile", label = "Profile", icon = Icons.Default.Person),
-            StepItem(id = "sms", label = "SMS", icon = Icons.Default.Sms),
-            StepItem(id = "notifications", label = "Apps", icon = Icons.Default.AccountBalanceWallet),
-            StepItem(id = "overlay", label = "Overlay", icon = Icons.Default.Bolt),
-            StepItem(id = "battery", label = "Battery", icon = Icons.Default.PowerSettingsNew),
-            StepItem(id = "alerts", label = "Alerts", icon = Icons.Default.Notifications),
-            StepItem(id = "lock", label = "Lock", icon = Icons.Default.Fingerprint)
-        )
-    }
-
-    // Transition functions maintaining the sequential choreography
+    // Transition functions maintaining the sequential choreography:
+    // First fade out current card -> progress painting & background scroll -> fade in new card
     fun advanceToStep(targetStep: Int) {
         haptics.click()
         coroutineScope.launch {
             isStepCardVisible = false
-            delay(280L)
+            delay(260L)
             currentSlide = targetStep
             webViewInstance?.evaluateJavascript("window.setOnboardingStep($targetStep);", null)
-            delay(350L)
+            delay(1350L)
             isStepCardVisible = true
         }
     }
@@ -287,7 +278,7 @@ fun OnboardingScreen(
         haptics.click()
         coroutineScope.launch {
             isStepCardVisible = false
-            delay(280L)
+            delay(260L)
             if (currentSlide <= 1) {
                 currentSlide = 0
                 isHeroExiting = false
@@ -296,195 +287,166 @@ fun OnboardingScreen(
                 val prev = currentSlide - 1
                 currentSlide = prev
                 webViewInstance?.evaluateJavascript("window.setOnboardingStep($prev);", null)
-                delay(350L)
+                delay(1350L)
                 isStepCardVisible = true
             }
         }
     }
 
-    // Update WebView theme dynamically
-    LaunchedEffect(isLight, webViewInstance) {
-        val paperTheme = if (isLight) "light" else "dark"
-        webViewInstance?.evaluateJavascript("if (window.setPaperTheme) window.setPaperTheme('$paperTheme');", null)
-    }
-
-    Box(
-        modifier = modifier
-            .fillMaxSize()
-            .graphicsLayer { alpha = screenAlpha.value }
+    CompositionLocalProvider(
+        LocalKanriGlass provides null,
+        LocalHazeState provides null
     ) {
-        // Layer 0: Continuous 8-Step Panoramic Shan Shui Living Scroll Canvas
-        AndroidView(
-            factory = { ctx ->
-                WebView(ctx).apply {
-                    webViewInstance = this
-                    layoutParams = ViewGroup.LayoutParams(
-                        ViewGroup.LayoutParams.MATCH_PARENT,
-                        ViewGroup.LayoutParams.MATCH_PARENT
-                    )
-                    settings.apply {
-                        javaScriptEnabled = true
-                        domStorageEnabled = true
-                        allowFileAccess = true
-                        allowContentAccess = true
-                        cacheMode = WebSettings.LOAD_NO_CACHE
-                        loadWithOverviewMode = true
-                        useWideViewPort = true
-                    }
-                    val bridge = KanriOnboardingBridge(
-                        onPaintingFinishedAction = { step ->
-                            if (step == 0) {
-                                coroutineScope.launch {
-                                    isScene0PaintingDone = true
+        KanriTheme(
+            themeMode = ThemeMode.LIGHT,
+            dynamicColor = false
+        ) {
+            Box(
+                modifier = modifier
+                    .fillMaxSize()
+                    .graphicsLayer { alpha = screenAlpha.value }
+            ) {
+                // Layer 0: Continuous 8-Step Panoramic Shan Shui Living Scroll Canvas
+                AndroidView(
+                    factory = { ctx ->
+                        WebView(ctx).apply {
+                            webViewInstance = this
+                            layoutParams = ViewGroup.LayoutParams(
+                                ViewGroup.LayoutParams.MATCH_PARENT,
+                                ViewGroup.LayoutParams.MATCH_PARENT
+                            )
+                            settings.apply {
+                                javaScriptEnabled = true
+                                domStorageEnabled = true
+                                allowFileAccess = true
+                                allowContentAccess = true
+                                cacheMode = WebSettings.LOAD_NO_CACHE
+                                loadWithOverviewMode = true
+                                useWideViewPort = true
+                            }
+                            val bridge = KanriOnboardingBridge(
+                                onPaintingFinishedAction = { step ->
+                                    if (step == 0) {
+                                        coroutineScope.launch {
+                                            isScene0PaintingDone = true
+                                        }
+                                    }
+                                },
+                                onGlideFinishedAction = {
+                                    // Glide finished
+                                }
+                            )
+                            addJavascriptInterface(bridge, "AndroidBridge")
+
+                            webChromeClient = object : android.webkit.WebChromeClient() {
+                                override fun onConsoleMessage(consoleMessage: android.webkit.ConsoleMessage?): Boolean {
+                                    android.util.Log.d("ShanShuiWebView", "${consoleMessage?.message()} [line ${consoleMessage?.lineNumber()}]")
+                                    return true
                                 }
                             }
-                        },
-                        onGlideFinishedAction = {
-                            // Glide finished
+
+                            webViewClient = object : WebViewClient() {
+                                override fun onReceivedError(
+                                    view: WebView?,
+                                    request: android.webkit.WebResourceRequest?,
+                                    error: android.webkit.WebResourceError?
+                                ) {
+                                    super.onReceivedError(view, request, error)
+                                    android.util.Log.e("ShanShuiWebView", "WebView error: ${error?.description} (${error?.errorCode}) url: ${request?.url}")
+                                }
+
+                                override fun onPageFinished(view: WebView?, url: String?) {
+                                    super.onPageFinished(view, url)
+                                    view?.evaluateJavascript(
+                                        "if (window.setPaperTheme) window.setPaperTheme('light'); if (window.setOnboardingStep) window.setOnboardingStep($currentSlide, true);",
+                                        null
+                                    )
+                                }
+                            }
+                            setBackgroundColor(android.graphics.Color.TRANSPARENT)
+                            setLayerType(View.LAYER_TYPE_HARDWARE, null)
+                            isClickable = false
+                            isFocusable = false
+                            isVerticalScrollBarEnabled = false
+                            isHorizontalScrollBarEnabled = false
+                            setOnTouchListener { _, _ -> false }
+                            loadUrl("file:///android_asset/backgrounds/shan_shui_onboarding.html")
+                        }
+                    },
+                    update = { webView ->
+                        webViewInstance = webView
+                    },
+                    modifier = Modifier.fillMaxSize()
+                )
+
+                // Layer 1: Foreground UI Choreography
+                if (currentSlide == 0) {
+                    // STEP 0: HERO (100% ChapterPlayer Intro Animation + Get Started Button)
+                    HeroSlideView(
+                        isLight = true,
+                        isPaintingDone = isScene0PaintingDone,
+                        isReadyForButton = isIntroReadyForButton,
+                        isExiting = isHeroExiting,
+                        reduceMotion = reduceMotion,
+                        onIntroReadyForButton = { isIntroReadyForButton = true },
+                        onGetStarted = {
+                            haptics.click()
+                            coroutineScope.launch {
+                                // 1. First fade out logo, emblem and button cleanly
+                                isHeroExiting = true
+                                delay(320L)
+
+                                // 2. Only then progress background scroll & paint
+                                currentSlide = 1
+                                webViewInstance?.evaluateJavascript("window.setOnboardingStep(1);", null)
+
+                                // 3. Wait for background glide and ink painting to settle
+                                delay(1350L)
+
+                                // 4. Fade in Step 1 Avatar Picker card
+                                isStepCardVisible = true
+                            }
                         }
                     )
-                    addJavascriptInterface(bridge, "AndroidBridge")
-
-                    webChromeClient = object : android.webkit.WebChromeClient() {
-                        override fun onConsoleMessage(consoleMessage: android.webkit.ConsoleMessage?): Boolean {
-                            android.util.Log.d("ShanShuiWebView", "${consoleMessage?.message()} [line ${consoleMessage?.lineNumber()}]")
-                            return true
-                        }
-                    }
-
-                    webViewClient = object : WebViewClient() {
-                        override fun onReceivedError(
-                            view: WebView?,
-                            request: android.webkit.WebResourceRequest?,
-                            error: android.webkit.WebResourceError?
+                } else {
+                    // STEPS 1 TO 7: SLIDER WORKFLOW
+                    Column(
+                        modifier = Modifier
+                            .fillMaxSize()
+                            .background(Color.Transparent)
+                            .statusBarsPadding()
+                            .navigationBarsPadding()
+                            .displayCutoutPadding()
+                    ) {
+                        // Setup Progress Stepper Pattern (User Pattern: Progress + CheckCircle/Circle)
+                        val setupSteps = remember(
+                            currentSlide,
+                            hasSmsPermission,
+                            hasNotificationAccess,
+                            hasOverlayPermission,
+                            hasBatteryExemption,
+                            hasNotificationPermission,
+                            isLockConfigured
                         ) {
-                            super.onReceivedError(view, request, error)
-                            android.util.Log.e("ShanShuiWebView", "WebView error: ${error?.description} (${error?.errorCode}) url: ${request?.url}")
-                        }
-
-                        override fun onPageFinished(view: WebView?, url: String?) {
-                            super.onPageFinished(view, url)
-                            val paperTheme = if (isLight) "light" else "dark"
-                            view?.evaluateJavascript(
-                                "if (window.setPaperTheme) window.setPaperTheme('$paperTheme'); if (window.setOnboardingStep) window.setOnboardingStep($currentSlide, true);",
-                                null
+                            listOf(
+                                SetupStepItem("Profile", currentSlide > 1),
+                                SetupStepItem("SMS", hasSmsPermission || currentSlide > 2),
+                                SetupStepItem("Apps", hasNotificationAccess || currentSlide > 3),
+                                SetupStepItem("Overlay", hasOverlayPermission || currentSlide > 4),
+                                SetupStepItem("Battery", hasBatteryExemption || currentSlide > 5),
+                                SetupStepItem("Alerts", hasNotificationPermission || currentSlide > 6),
+                                SetupStepItem("Security", isLockConfigured || currentSlide > 7)
                             )
                         }
-                    }
-                    setBackgroundColor(android.graphics.Color.TRANSPARENT)
-                    setLayerType(View.LAYER_TYPE_HARDWARE, null)
-                    isClickable = false
-                    isFocusable = false
-                    isVerticalScrollBarEnabled = false
-                    isHorizontalScrollBarEnabled = false
-                    setOnTouchListener { _, _ -> false }
-                    loadUrl("file:///android_asset/backgrounds/shan_shui_onboarding.html")
-                }
-            },
-            update = { webView ->
-                webViewInstance = webView
-            },
-            modifier = Modifier.fillMaxSize()
-        )
 
-        // Layer 1: Foreground UI Choreography
-        if (currentSlide == 0) {
-            // STEP 0: HERO (100% ChapterPlayer Intro Animation + Get Started Button)
-            HeroSlideView(
-                isLight = isLight,
-                isPaintingDone = isScene0PaintingDone,
-                isReadyForButton = isIntroReadyForButton,
-                isExiting = isHeroExiting,
-                reduceMotion = reduceMotion,
-                onIntroReadyForButton = { isIntroReadyForButton = true },
-                onGetStarted = {
-                    haptics.click()
-                    coroutineScope.launch {
-                        // 1. First fade out logo, emblem and button cleanly
-                        isHeroExiting = true
-                        delay(320L)
-
-                        // 2. Only then progress background scroll
-                        currentSlide = 1
-                        webViewInstance?.evaluateJavascript("window.setOnboardingStep(1);", null)
-
-                        // 3. Fade in Step 1 Avatar Picker card
-                        delay(380L)
-                        isStepCardVisible = true
-                    }
-                }
-            )
-        } else {
-            // STEPS 1 TO 7: SLIDER WORKFLOW
-            Column(
-                modifier = Modifier
-                    .fillMaxSize()
-                    .background(Color.Transparent)
-                    .statusBarsPadding()
-                    .navigationBarsPadding()
-                    .displayCutoutPadding()
-            ) {
-                // Top Stepper Navigation Header
-                Row(
-                    modifier = Modifier
-                        .fillMaxWidth()
-                        .padding(horizontal = 16.dp, vertical = 8.dp),
-                    verticalAlignment = Alignment.CenterVertically
-                ) {
-                    IconButton(
-                        onClick = { stepBack() },
-                        modifier = Modifier.size(36.dp)
-                    ) {
-                        Icon(
-                            imageVector = Icons.AutoMirrored.Filled.ArrowBack,
-                            contentDescription = "Back",
-                            tint = MaterialTheme.colorScheme.onSurface.copy(alpha = 0.8f),
-                            modifier = Modifier.size(20.dp)
+                        SetupProgressPattern(
+                            steps = setupSteps,
+                            activeStepIndex = currentSlide - 1,
+                            onStepClick = { stepIndex ->
+                                advanceToStep(stepIndex + 1)
+                            },
+                            onBackClick = { stepBack() }
                         )
-                    }
-
-                    Spacer(modifier = Modifier.width(6.dp))
-
-                    Stepper(
-                        steps = onboardingSteps,
-                        activeStep = currentSlide - 1,
-                        onStepClick = { stepIndex ->
-                            advanceToStep(stepIndex + 1)
-                        },
-                        size = StepperSize.SM,
-                        showLabels = false,
-                        modifier = Modifier.weight(1f)
-                    )
-                }
-
-                // Step Counter & Title
-                val currentStepItem = onboardingSteps.getOrNull(currentSlide - 1)
-                Row(
-                    modifier = Modifier
-                        .fillMaxWidth()
-                        .padding(horizontal = 24.dp, vertical = 2.dp),
-                    horizontalArrangement = Arrangement.SpaceBetween,
-                    verticalAlignment = Alignment.CenterVertically
-                ) {
-                    Text(
-                        text = "STEP $currentSlide OF ${onboardingSteps.size}",
-                        fontFamily = GoogleSansFlex,
-                        fontWeight = FontWeight.Bold,
-                        fontSize = 10.5.sp,
-                        letterSpacing = 1.5.sp,
-                        color = MaterialTheme.colorScheme.onSurface.copy(alpha = 0.45f)
-                    )
-                    if (currentStepItem?.label != null) {
-                        Text(
-                            text = currentStepItem.label.uppercase(),
-                            fontFamily = GoogleSansFlex,
-                            fontWeight = FontWeight.SemiBold,
-                            fontSize = 10.5.sp,
-                            letterSpacing = 1.2.sp,
-                            color = MaterialTheme.colorScheme.primary
-                        )
-                    }
-                }
 
                 // Main Step Content Card with Smooth Fade & Scale Transition
                 val cardAlpha by animateFloatAsState(
@@ -624,6 +586,8 @@ fun OnboardingScreen(
         }
     }
 }
+}
+}
 
 /**
  * Slide 0: Hero with 100% ChapterPlayer Intro Logo + Synchronized Get Started Button.
@@ -667,8 +631,8 @@ private fun HeroSlideView(
         if (isButtonPressed) haptics.tick()
     }
 
-    val buttonBgColor = if (isLight) MonochromeBlack else DarkOffWhite
-    val buttonContentColor = if (isLight) DarkOffWhite else MonochromeBlack
+    val buttonBgColor = Color(0xFF0F0E0C)
+    val buttonContentColor = Color.White
 
     val exitAlpha = if (isExiting) 0f else 1f
     val exitAlphaAnimated by animateFloatAsState(
@@ -751,7 +715,7 @@ private fun HeroSlideView(
                     fontFamily = GoogleSansFlex,
                     fontSize = 12.5.sp,
                     fontWeight = FontWeight.Medium,
-                    color = MaterialTheme.colorScheme.onSurface.copy(alpha = 0.60f),
+                    color = Color(0xFF555555),
                     textAlign = TextAlign.Center,
                     modifier = Modifier
                         .clickable(
@@ -797,6 +761,7 @@ private fun ProfileSetupStepView(
             submitLabel = "Continue",
             initialName = initialName,
             initialVariant = initialVariant,
+            forceLight = true,
             onComplete = { name, variant, _ ->
                 profilePrefs.userName = name
                 profilePrefs.avatarVariant = variant
@@ -808,7 +773,7 @@ private fun ProfileSetupStepView(
 }
 
 /**
- * Slides 2 to 7: Permission & Security Cards with clean Glassmorphism.
+ * Slides 2 to 7: Permission & Security Cards with clean, light-mode high-contrast surfaces.
  */
 @Composable
 private fun PermissionCardView(
@@ -823,8 +788,6 @@ private fun PermissionCardView(
     onSkip: () -> Unit,
     isLastSlide: Boolean = false
 ) {
-    val tokens = com.omkarnub.kanri.ui.theme.LocalKanriGlass.current
-
     Box(
         modifier = Modifier
             .fillMaxSize()
@@ -833,31 +796,27 @@ private fun PermissionCardView(
     ) {
         Surface(
             shape = RoundedCornerShape(24.dp),
-            color = tokens?.tintStrong ?: MaterialTheme.colorScheme.surface.copy(alpha = 0.85f),
-            border = BorderStroke(
-                1.dp,
-                tokens?.borderStart ?: MaterialTheme.colorScheme.outlineVariant.copy(alpha = 0.25f)
-            ),
+            color = Color.White.copy(alpha = 0.90f),
+            border = BorderStroke(1.dp, Color(0xFF141414).copy(alpha = 0.12f)),
+            shadowElevation = 2.dp,
             modifier = Modifier.fillMaxWidth()
         ) {
             Column(
                 modifier = Modifier
                     .fillMaxWidth()
-                    .padding(horizontal = 24.dp, vertical = 32.dp),
+                    .padding(horizontal = 24.dp, vertical = 28.dp),
                 horizontalAlignment = Alignment.CenterHorizontally,
                 verticalArrangement = Arrangement.Center
             ) {
-                // Monochrome Icon Circle
+                // Monochrome/Green Icon Circle
                 Box(
                     modifier = Modifier
-                        .size(80.dp)
+                        .size(76.dp)
                         .clip(CircleShape)
+                        .background(if (isGranted) Color(0xFFE8F5E9) else Color(0xFFF2EFE8))
                         .border(
                             width = 1.5.dp,
-                            color = if (isGranted)
-                                MaterialTheme.colorScheme.onBackground
-                            else
-                                MaterialTheme.colorScheme.outlineVariant,
+                            color = if (isGranted) Color(0xFF81C784) else Color(0xFF141414).copy(alpha = 0.20f),
                             shape = CircleShape
                         ),
                     contentAlignment = Alignment.Center
@@ -865,75 +824,71 @@ private fun PermissionCardView(
                     Icon(
                         imageVector = if (isGranted) Icons.Default.Check else icon,
                         contentDescription = null,
-                        tint = MaterialTheme.colorScheme.onBackground,
-                        modifier = Modifier.size(34.dp)
+                        tint = if (isGranted) Color(0xFF1B5E20) else Color(0xFF0F0E0C),
+                        modifier = Modifier.size(32.dp)
                     )
                 }
 
-                Spacer(modifier = Modifier.height(24.dp))
+                Spacer(modifier = Modifier.height(20.dp))
 
                 Text(
                     text = title,
-                    fontSize = 22.sp,
+                    fontFamily = GoogleSansFlex,
+                    fontSize = 21.sp,
                     fontWeight = FontWeight.Bold,
-                    color = MaterialTheme.colorScheme.onBackground,
+                    color = Color(0xFF0F0E0C),
                     textAlign = TextAlign.Center
                 )
 
-                Spacer(modifier = Modifier.height(10.dp))
+                Spacer(modifier = Modifier.height(8.dp))
 
                 Text(
                     text = description,
+                    fontFamily = GoogleSansFlex,
                     fontSize = 13.5.sp,
                     lineHeight = 20.sp,
-                    color = MaterialTheme.colorScheme.onSurfaceVariant,
+                    color = Color(0xFF4A4A4A),
                     textAlign = TextAlign.Center,
-                    modifier = Modifier.fillMaxWidth(0.9f)
+                    modifier = Modifier.fillMaxWidth(0.92f)
                 )
 
-                Spacer(modifier = Modifier.height(28.dp))
+                Spacer(modifier = Modifier.height(24.dp))
 
-                // Grant Button
+                // Grant Button (Solid Black when not granted; Soft Green when granted)
                 Button(
                     onClick = { if (!isGranted) onGrant() },
                     modifier = Modifier
-                        .fillMaxWidth(0.65f)
+                        .fillMaxWidth(0.72f)
                         .height(48.dp),
                     shape = RoundedCornerShape(50),
                     colors = ButtonDefaults.buttonColors(
-                        containerColor = if (isGranted)
-                            Color.Transparent
-                        else
-                            MaterialTheme.colorScheme.onBackground,
-                        contentColor = if (isGranted)
-                            MaterialTheme.colorScheme.onBackground
-                        else
-                            MaterialTheme.colorScheme.background
+                        containerColor = if (isGranted) Color(0xFFE8F5E9) else Color(0xFF0F0E0C),
+                        contentColor = if (isGranted) Color(0xFF1B5E20) else Color.White
                     ),
-                    border = if (isGranted)
-                        BorderStroke(1.dp, MaterialTheme.colorScheme.onBackground)
-                    else
-                        null,
+                    border = if (isGranted) BorderStroke(1.dp, Color(0xFF81C784)) else null,
                     elevation = ButtonDefaults.buttonElevation(0.dp, 0.dp)
                 ) {
                     if (isGranted) {
                         Icon(
                             imageVector = Icons.Default.Check,
                             contentDescription = null,
+                            tint = Color(0xFF1B5E20),
                             modifier = Modifier.size(16.dp)
                         )
                         Spacer(modifier = Modifier.width(6.dp))
                     }
                     Text(
                         text = if (isGranted) grantedLabel else grantLabel,
+                        fontFamily = GoogleSansFlex,
                         fontWeight = FontWeight.SemiBold,
-                        fontSize = 13.5.sp
+                        fontSize = 13.5.sp,
+                        color = if (isGranted) Color(0xFF1B5E20) else Color.White
                     )
                 }
 
-                Spacer(modifier = Modifier.height(20.dp))
+                Spacer(modifier = Modifier.height(16.dp))
 
-                // Continue / Finish Button
+                // Continue CTA Button (Always Solid Black Container with Crisp White Text)
                 Button(
                     onClick = onNext,
                     modifier = Modifier
@@ -941,15 +896,17 @@ private fun PermissionCardView(
                         .height(50.dp),
                     shape = RoundedCornerShape(50),
                     colors = ButtonDefaults.buttonColors(
-                        containerColor = MaterialTheme.colorScheme.primary,
-                        contentColor = MaterialTheme.colorScheme.onPrimary
+                        containerColor = Color(0xFF0F0E0C),
+                        contentColor = Color.White
                     ),
                     elevation = ButtonDefaults.buttonElevation(0.dp, 0.dp)
                 ) {
                     Text(
                         text = if (isLastSlide) "Finish Setup" else "Continue",
+                        fontFamily = GoogleSansFlex,
                         fontWeight = FontWeight.SemiBold,
-                        fontSize = 14.5.sp
+                        fontSize = 14.5.sp,
+                        color = Color.White
                     )
                 }
 
@@ -958,9 +915,10 @@ private fun PermissionCardView(
                     TextButton(onClick = onSkip) {
                         Text(
                             text = "Skip for now",
-                            fontSize = 12.5.sp,
+                            fontFamily = GoogleSansFlex,
+                            fontSize = 13.sp,
                             fontWeight = FontWeight.Medium,
-                            color = MaterialTheme.colorScheme.onSurfaceVariant.copy(alpha = 0.65f)
+                            color = Color(0xFF555555)
                         )
                     }
                 }

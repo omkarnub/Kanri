@@ -717,8 +717,8 @@
 
     // Selectable meditative pacing presets (zero spring physics, pure ease-in-out)
     const PACE_PRESETS = [
+      { label: 'Pace: Onboarding Flow', glideDuration: 1300, paintDuration: 1100, startupDuration: 2800 },
       { label: 'Pace: Meditative 4.2s', glideDuration: 4200, paintDuration: 3600, startupDuration: 3800 },
-      { label: 'Pace: Cinema 5.5s',     glideDuration: 5500, paintDuration: 4600, startupDuration: 4800 },
       { label: 'Pace: Calm 3.0s',       glideDuration: 3000, paintDuration: 2800, startupDuration: 3000 }
     ];
     let currentPaceIdx = 0;
@@ -3109,10 +3109,7 @@
       detailSceneCanvas.width = W;
       detailSceneCanvas.height = H;
 
-      const params = new URLSearchParams(window.location.search);
-      if (params.get('theme') === 'dark') {
-        currentTheme = 'dark';
-      }
+      currentTheme = 'light';
 
       renderXuanPaperAndGrain();
       buildAllEightSceneries();

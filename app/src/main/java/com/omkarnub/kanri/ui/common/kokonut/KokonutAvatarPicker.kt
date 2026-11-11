@@ -1,5 +1,6 @@
 package com.omkarnub.kanri.ui.common.kokonut
 
+import android.graphics.Bitmap
 import android.graphics.BitmapFactory
 import android.net.Uri
 import androidx.activity.compose.rememberLauncherForActivityResult
@@ -19,6 +20,9 @@ import androidx.compose.foundation.border
 import androidx.compose.foundation.clickable
 import androidx.compose.foundation.gestures.detectDragGestures
 import androidx.compose.foundation.horizontalScroll
+import androidx.compose.ui.draw.shadow
+import com.omkarnub.kanri.ui.common.kanriGlass
+import com.omkarnub.kanri.ui.theme.LocalKanriGlass
 import com.omkarnub.kanri.ui.theme.isAppInDarkTheme
 import androidx.compose.foundation.layout.Arrangement
 import androidx.compose.foundation.layout.Box
@@ -611,9 +615,10 @@ fun KokonutAvatarPicker(
     description: String = "Made from your name. Spin it or pick one.",
     submitLabel: String = "Continue",
     onComplete: (displayName: String, variant: Int, photoUri: String?) -> Unit,
+    forceLight: Boolean = false,
     modifier: Modifier = Modifier
 ) {
-    val dark = isAppInDarkTheme()
+    val dark = if (forceLight) false else isAppInDarkTheme()
     val haptics = rememberKanriHaptics()
     val scope = rememberCoroutineScope()
     val density = LocalDensity.current
@@ -634,19 +639,25 @@ fun KokonutAvatarPicker(
         mutableStateOf<String?>(userPrefs.profilePhotoPath)
     }
     var photoVersion by remember { mutableLongStateOf(System.currentTimeMillis()) }
+    var pendingCropBitmap by remember { mutableStateOf<Bitmap?>(null) }
 
     val photoPickerLauncher = rememberLauncherForActivityResult(
         contract = ActivityResultContracts.PickVisualMedia()
     ) { uri: Uri? ->
         if (uri != null) {
             scope.launch {
-                val ok = withContext(Dispatchers.IO) {
-                    userPrefs.savePhotoFromUri(uri)
+                val bitmap = withContext(Dispatchers.IO) {
+                    try {
+                        val stream = context.contentResolver.openInputStream(uri)
+                        val bmp = BitmapFactory.decodeStream(stream)
+                        stream?.close()
+                        bmp
+                    } catch (e: Exception) {
+                        null
+                    }
                 }
-                if (ok) {
-                    customPhotoPath = userPrefs.profilePhotoPath
-                    photoVersion = System.currentTimeMillis()
-                    haptics.success()
+                if (bitmap != null) {
+                    pendingCropBitmap = bitmap
                 }
             }
         }
@@ -705,11 +716,19 @@ fun KokonutAvatarPicker(
         haptics.click()
     }
 
-    KanriGlassCard(
-        modifier = modifier.fillMaxWidth(),
-        level = GlassLevel.Blur,
-        shape = RoundedCornerShape(20.dp)
-    ) {
+    val tokens = LocalKanriGlass.current
+    val cardModifier = if (tokens != null && !forceLight) {
+        modifier.fillMaxWidth().kanriGlass(level = GlassLevel.Blur, shape = RoundedCornerShape(20.dp))
+    } else {
+        modifier
+            .fillMaxWidth()
+            .shadow(2.dp, RoundedCornerShape(20.dp), spotColor = Color.Black.copy(alpha = 0.05f))
+            .clip(RoundedCornerShape(20.dp))
+            .background(Color.White.copy(alpha = 0.90f))
+            .border(1.dp, Color(0xFF141414).copy(alpha = 0.12f), RoundedCornerShape(20.dp))
+    }
+
+    Box(modifier = cardModifier) {
         Column(
             modifier = Modifier
                 .fillMaxWidth()
@@ -1141,6 +1160,26 @@ fun KokonutAvatarPicker(
                 }
             }
         }
+    }
+
+    pendingCropBitmap?.let { bmp ->
+        AvatarCropDialog(
+            sourceBitmap = bmp,
+            onDismiss = { pendingCropBitmap = null },
+            onCropSaved = { cropped ->
+                scope.launch {
+                    val ok = withContext(Dispatchers.IO) {
+                        userPrefs.saveBitmapInternal(cropped)
+                    }
+                    if (ok) {
+                        customPhotoPath = userPrefs.profilePhotoPath
+                        photoVersion = System.currentTimeMillis()
+                        haptics.success()
+                    }
+                    pendingCropBitmap = null
+                }
+            }
+        )
     }
 }
 

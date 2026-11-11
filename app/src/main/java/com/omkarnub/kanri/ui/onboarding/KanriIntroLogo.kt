@@ -139,7 +139,7 @@ fun KanriIntroLogo(
     val lt = ltAnim.value
     val exitP = exitAnim.value
 
-    val inkColor = if (isLight) Color(0xFF1E2229) else Color(0xFFF7F5F0)
+    val inkColor = Color(0xFF000000) // Pure black for both emblem mark and Panchang text logo
     val cinnabar = Color(0xFFC43B38) // Cinnabar Red from living scroll aesthetics
 
     // Exit transforms (ChapterPlayer formula: alpha = 1 - eInOut(out), dy = -eInOut(out) * 14)
