@@ -1,9 +1,23 @@
 # Kanri Onboarding & Stepper System
 
-Current Version: **1.18.5** (Build 56)
+Current Version: **1.18.6** (Build 57)
 
 ## 1. Overview
 The Kanri onboarding experience guides new users through permissions, personal profile configuration, and security settings with transparency, privacy assurances, and immediate tactile feedback.
+
+In version 1.18.6:
+- **Top-Left Painting-Integrated Permission Prompts (`PaintingPermissionView`)**:
+  - Slides 2 through 7 shift each permission's title and caption directly into the open top-left sky of the living Shan Shui painting (`Alignment.TopStart`, capped clear of the top-right vertical calligraphy and cinnabar seal).
+  - Replaces multi-button stacks with a single frosted dark glass Enable button (switching to `"Continue"` if returning on an already-granted step) paired cleanly beside a compact `"Skip"` action button.
+- **Automatic Transition on Permission Grant**:
+  - Tapping Enable on Slides 2–7 arms `awaitAutoAdvanceForStep`. Whether granted inline via OS permission dialog, enabled in Android Settings and returning via `ON_RESUME`, or toggled in-app on Step 7, Kanri briefly flashes the emerald checkmark feedback (`520ms`) and automatically advances to the next slide.
+- **Minimalist Shan Shui Easter Eggs**:
+  - Every permission slide subtly enriches the painting with a themed detail without cluttering minimalism: lit SMS handset & envelope (Step 2), cinnabar chime sparks (Step 3), hovering washi overlay card (Step 4), infinity firefly loop (Step 5), swaying pavilion wind-bell (Step 6), and pulsing biometric fingerprint ridges inside the red seal (Step 7).
+- **Step 8 Final Sanctuary Slide (`FinalAllSetSlideView`)**:
+  - Adds a 9th peaceful open-horizon scene (`buildScenery8_BaseWashes`) showcasing the pure black `KanriLogoLockup`, `"You're all set"` heading, subtitle, and a bottom frosted dark glass `"Finish"` button.
+- **Balanced Calm Pacing & Default Sumi-e Mist Shader**:
+  - Faster yet unhurried `1850ms` glide / `1650ms` paint (`1800ms` startup) pacing with `1750ms`–`1800ms` Compose transition synchronization.
+  - First-launch live Glass shader defaults to `Sumi-e Mist` (`GlassBackgroundType.SUMI_E_MIST`).
 
 In version 1.18.5:
 - **Cardless, Painting-Integrated Permission Prompts (`PaintingPermissionView`)**:
@@ -44,11 +58,13 @@ The onboarding sequence consists of a Hero intro followed by 7 setup slides, wit
 | 4 | **Overlay** | *Quick Entry Overlay* | **Glowing Moonbridge & Silver Lanterns** | Prompts for `SYSTEM_ALERT_WINDOW` permission to enable the instant floating entry pad. |
 | 5 | **Battery** | *Background Reliability* | **Bamboo Sanctuary & Floating Fireflies** | Requests battery optimization exemption (`REQUEST_IGNORE_BATTERY_OPTIMIZATIONS`) for auto-rebind. |
 | 6 | **Alerts** | *Spending Reminders* | **Sunset Pavilion Ripples & Gold Horizon** | Configures daily budget pacing alerts and scheduled digests (`POST_NOTIFICATIONS`). |
-| 7 | **Lock** | *App Lock & Biometrics* | **Sacred Pagoda & Mountain Constellations** | Enables optional biometric or device PIN authentication on app resume. |
+| 7 | **Lock** | *Biometric Security* | **Sacred Pagoda & Seal Fingerprint** | Enables biometric/device lock (`SecurityPreferences`); pulses subtle fingerprint ridges inside the cinnabar seal. |
+| 8 | **Done** | *You're all set* | **Dawn Sanctuary & Open River** | Displays pure black Kanri logo lockup and `"Finish"` button to enter the main app. |
 
 ---
 
 ## 3. Panoramic Shan Shui Living Scroll (`shan_shui_onboarding.html`)
+- **9 Synchronized Sceneries**: Expands across Hero (0), Profile (1), 6 permission scenes with contextual minimalist Easter eggs (2–7), and the Final Dawn Sanctuary scene (8).
 - **Zero HUD & Controls**: All developer bars, chapter switchers, and audio controls are stripped for a pure wallpaper experience (`display: none !important`).
 - **Hardware-Accelerated 2D Canvas**: Renders ink wash mountains, pine branches, waterfall particles, and water reflections smoothly at 60fps. In Android `webview-mode`, heavy CPU-bound SVG filters and scratch canvas masks are bypassed so hardware acceleration remains rock-solid.
 - **Dynamic Step Synchronization**: In `OnboardingScreen.kt`, the background `WebView` listens to step updates and page load completions via `WebViewClient`:
@@ -98,10 +114,10 @@ Package: `com.omkarnub.kanri.ui.common.stepper`
 
 ---
 
-## 4. State Management & Navigation Flow
-- Managed in `OnboardingScreen.kt` using `rememberSaveable` state (`currentSlide: Int`).
-- Slide 0 is the initial Hero screen.
-- Slides 1 through 7 display the fixed top `Stepper` header with back button support.
-- Clicking the back button or tapping an earlier step in the stepper decrements `currentSlide`.
-- Once Slide 7 is completed (or skipped), `onFinished()` writes `is_onboarding_completed = true` to `DataStore` and launches `MainActivity`.
+## 6. State Management & Navigation Flow
+- Managed in `OnboardingScreen.kt` using `currentSlide: Int` (`0..8`) and `awaitAutoAdvanceForStep: Int`.
+- Slide 0 is the initial Hero screen (`HeroSlideView`).
+- Slides 1 through 7 display the centered top linear progress bar (`STEP 1..7 OF 7`); Slide 8 hides the progress bar for an open dawn arrival (`FinalAllSetSlideView`).
+- A circular frosted glass Back button remains anchored at bottom-left across Slides 1 through 8 (`stepBack()`).
+- Granting any permission on Slides 2 through 7 triggers an automatic `520ms` confirmation beat followed by smooth progression to the next slide; tapping `"Finish"` on Slide 8 writes `hasCompletedOnboarding = true` and launches the home ledger.
 

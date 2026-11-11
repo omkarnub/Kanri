@@ -49,7 +49,7 @@ enum class GlassBackgroundType(val id: String, val displayName: String, val file
 
     companion object {
         fun fromId(id: String?): GlassBackgroundType {
-            return entries.firstOrNull { it.id.equals(id, ignoreCase = true) } ?: AURORA
+            return entries.firstOrNull { it.id.equals(id, ignoreCase = true) } ?: SUMI_E_MIST
         }
     }
 }

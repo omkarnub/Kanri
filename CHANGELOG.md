@@ -5,6 +5,32 @@ All notable changes to Kanri will be documented in this file.
 The format is based on [Keep a Changelog](https://keepachangelog.com/en/1.0.0/),
 and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0.html).
 
+## [1.18.6] - 2026-11-11
+
+### Added
+- **Step 8 Final "You're all set" Sanctuary Slide (`FinalAllSetSlideView`)**:
+  - Added a dedicated 9th Shan Shui dawn scene (`buildScenery8_BaseWashes`) with low open mountain horizons, shoreline reeds, and an anchored serene sampan boat.
+  - Displays the pure black Kanri logo (`KanriLogoLockup`), `"You're all set"` completion heading, privacy tagline, and a frosted dark glass `"Finish"` button.
+- **Minimalist Shan Shui Permission Easter Eggs**:
+  - **Step 2 (SMS Detection)**: One seated traveler on the sampan holds an illuminated handset with a tiny brushed SMS envelope rising above it.
+  - **Step 3 (Payment Apps)**: Subtle gold-cinnabar chime sparks glow softly above the second traveler beneath the 4 swallows.
+  - **Step 4 (Instant Overlay)**: Minimalist translucent floating miniature washi card hovers gracefully above the boat.
+  - **Step 5 (Background Endurance)**: Warm bamboo fireflies trace a quiet infinity loop (`∞`) above the boat canopy.
+  - **Step 6 (System Alerts)**: A hanging temple wind-bell (`furin`) gently sways beneath the cliff pavilion roof eave with soft acoustic arcs.
+  - **Step 7 (Biometric Security)**: Delicate concentric biometric fingerprint ridges pulse inside the cinnabar red seal at `(928, 460)`.
+- **Automatic Progression on Permission Grant**:
+  - Tapping Enable on Steps 2–7 arms auto-advance (`awaitAutoAdvanceForStep`) across OS runtime permission dialogs, system Settings returns (`ON_RESUME`), and in-app App Lock activation, briefly displaying the emerald confirmation state before gliding cleanly to the next scene.
+
+### Changed & Refined
+- **True Top-Left Painting-Integrated Permission Layout (`PaintingPermissionView`)**:
+  - Removed the centered circular icon badge and two-button stack; anchored each permission's title and caption directly in the open top-left sky (`fillMaxWidth(0.78f)`) clear of the top-right vertical calligraphy and seal.
+  - Replaced stacked actions with a single frosted dark glass Enable/Continue pill button and a compact `"Skip"` button right beside it.
+- **Responsive Calm Pacing**:
+  - Tuned Shan Shui living scroll pacing from `3500ms / 3000ms` down to `glideDuration: 1850ms`, `paintDuration: 1650ms`, and `startupDuration: 1800ms`, with matching `240ms` UI fades and `1750ms`–`1800ms` Compose transition choreography.
+- **Default Live Shader Changed to Sumi-e Mist**:
+  - Changed the first-launch and preference-reset default background in `ThemePreferences` and `GlassBackgroundType.fromId()` from `Gemini Aurora` to `Sumi-e Mist`.
+- Bumped version to `1.18.6` (Build 57).
+
 ## [1.18.5] - 2026-11-11
 
 ### Changed & Redesigned

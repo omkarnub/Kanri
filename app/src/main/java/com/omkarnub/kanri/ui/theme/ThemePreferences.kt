@@ -101,11 +101,11 @@ class ThemePreferences(private val context: Context) {
     }
 
     private fun loadGlassBackground(): com.omkarnub.kanri.ui.common.GlassBackgroundType {
-        val savedName = prefs.getString(KEY_GLASS_BACKGROUND, com.omkarnub.kanri.ui.common.GlassBackgroundType.AURORA.name)
+        val savedName = prefs.getString(KEY_GLASS_BACKGROUND, com.omkarnub.kanri.ui.common.GlassBackgroundType.SUMI_E_MIST.name)
         return try {
-            com.omkarnub.kanri.ui.common.GlassBackgroundType.valueOf(savedName ?: com.omkarnub.kanri.ui.common.GlassBackgroundType.AURORA.name)
+            com.omkarnub.kanri.ui.common.GlassBackgroundType.valueOf(savedName ?: com.omkarnub.kanri.ui.common.GlassBackgroundType.SUMI_E_MIST.name)
         } catch (e: Exception) {
-            com.omkarnub.kanri.ui.common.GlassBackgroundType.AURORA
+            com.omkarnub.kanri.ui.common.GlassBackgroundType.SUMI_E_MIST
         }
     }
 
@@ -181,7 +181,7 @@ class ThemePreferences(private val context: Context) {
     fun reset() {
         themeMode = ThemeMode.GLASS
         appIconStyle = AppIconStyle.DARK
-        glassBackground = com.omkarnub.kanri.ui.common.GlassBackgroundType.AURORA
+        glassBackground = com.omkarnub.kanri.ui.common.GlassBackgroundType.SUMI_E_MIST
         isDynamicColor = false
         isReduceTransparency = false
         resetGlassCustomization()

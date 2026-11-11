@@ -33,6 +33,7 @@ import androidx.compose.foundation.interaction.collectIsPressedAsState
 import androidx.compose.foundation.layout.Arrangement
 import androidx.compose.foundation.layout.Box
 import androidx.compose.foundation.layout.Column
+import androidx.compose.foundation.layout.PaddingValues
 import androidx.compose.foundation.layout.Row
 import androidx.compose.foundation.layout.Spacer
 import androidx.compose.foundation.layout.displayCutoutPadding
@@ -185,14 +186,14 @@ fun OnboardingScreen(
         }
     }
 
-    // Step state: 0 = Hero, 1 = Profile, 2 = SMS, 3 = UPI, 4 = Overlay, 5 = Battery, 6 = Alerts, 7 = Lock
+    // Step state: 0 = Hero, 1 = Profile, 2 = SMS, 3 = UPI, 4 = Overlay, 5 = Battery, 6 = Alerts, 7 = Lock, 8 = All Set
     var currentSlide by remember { mutableIntStateOf(0) }
-    val totalSlides = 8
+    val totalSlides = 9
 
     // App launch screen fade-in
     val screenAlpha = remember { Animatable(if (reduceMotion) 1f else 0f) }
     LaunchedEffect(Unit) {
-        screenAlpha.animateTo(1f, tween(400, easing = LinearEasing))
+        screenAlpha.animateTo(1f, tween(360, easing = LinearEasing))
     }
 
     // Painting & Bridge state
@@ -200,11 +201,12 @@ fun OnboardingScreen(
     var isIntroReadyForButton by remember { mutableStateOf(false) }
     var isHeroExiting by remember { mutableStateOf(false) }
     var isStepCardVisible by remember { mutableStateOf(false) }
+    var awaitAutoAdvanceForStep by remember { mutableIntStateOf(-1) }
     var webViewInstance by remember { mutableStateOf<WebView?>(null) }
 
-    // Fallback safety timeout for Scene 0 painting (3200ms)
+    // Fallback safety timeout for Scene 0 painting (1800ms)
     LaunchedEffect(Unit) {
-        delay(3200L)
+        delay(1800L)
         if (!isScene0PaintingDone) {
             isScene0PaintingDone = true
         }
@@ -324,9 +326,10 @@ fun OnboardingScreen(
 
     fun finishOnboarding() {
         haptics.click()
+        awaitAutoAdvanceForStep = -1
         coroutineScope.launch {
             isStepCardVisible = false
-            delay(260L)
+            delay(240L)
             OnboardingPreferences.getInstance(context).hasCompletedOnboarding = true
             cloudBackupPrefs.backupMode = BackupMode.OFFLINE
             CloudBackupWorker.cancel(context)
@@ -335,24 +338,27 @@ fun OnboardingScreen(
     }
 
     // Transition functions maintaining the sequential choreography:
-    // First fade out current card -> progress painting & background scroll -> fade in new card
+    // First fade out current UI -> progress painting & background scroll -> fade in new step
     fun advanceToStep(targetStep: Int) {
         haptics.click()
+        awaitAutoAdvanceForStep = -1
+        val clampedStep = targetStep.coerceIn(0, totalSlides - 1)
         coroutineScope.launch {
             isStepCardVisible = false
-            delay(300L)
-            currentSlide = targetStep
-            webViewInstance?.evaluateJavascript("window.setOnboardingStep($targetStep);", null)
-            delay(3200L)
+            delay(240L)
+            currentSlide = clampedStep
+            webViewInstance?.evaluateJavascript("window.setOnboardingStep($clampedStep);", null)
+            delay(1750L)
             isStepCardVisible = true
         }
     }
 
     fun stepBack() {
         haptics.click()
+        awaitAutoAdvanceForStep = -1
         coroutineScope.launch {
             isStepCardVisible = false
-            delay(300L)
+            delay(240L)
             if (currentSlide <= 1) {
                 currentSlide = 0
                 isHeroExiting = false
@@ -361,9 +367,61 @@ fun OnboardingScreen(
                 val prev = currentSlide - 1
                 currentSlide = prev
                 webViewInstance?.evaluateJavascript("window.setOnboardingStep($prev);", null)
-                delay(3200L)
+                delay(1750L)
                 isStepCardVisible = true
             }
+        }
+    }
+
+    fun launchPermissionForStep(step: Int) {
+        haptics.click()
+        awaitAutoAdvanceForStep = step
+        when (step) {
+            2 -> smsLauncher.launch(
+                arrayOf(
+                    Manifest.permission.RECEIVE_SMS,
+                    Manifest.permission.READ_SMS
+                )
+            )
+            3 -> NotificationAccessHelper.openNotificationAccessSettings(context)
+            4 -> OverlayPermissionHelper.requestOverlayPermission(context)
+            5 -> BatteryOptimizationHelper.requestIgnoreBatteryOptimizations(context)
+            6 -> {
+                if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.TIRAMISU) {
+                    postNotificationLauncher.launch(Manifest.permission.POST_NOTIFICATIONS)
+                } else {
+                    val intent = Intent(Settings.ACTION_APP_NOTIFICATION_SETTINGS).apply {
+                        putExtra(Settings.EXTRA_APP_PACKAGE, context.packageName)
+                    }
+                    context.startActivity(intent)
+                }
+            }
+            7 -> {
+                isLockConfigured = true
+                securityPrefs.isLockEnabled = true
+            }
+        }
+    }
+
+    val isCurrentPermissionGranted = when (currentSlide) {
+        2 -> hasSmsPermission
+        3 -> hasNotificationAccess
+        4 -> hasOverlayPermission
+        5 -> hasBatteryExemption
+        6 -> hasNotificationPermission
+        7 -> isLockConfigured
+        else -> false
+    }
+
+    LaunchedEffect(currentSlide, isStepCardVisible, awaitAutoAdvanceForStep, isCurrentPermissionGranted) {
+        if (currentSlide in 2..7 &&
+            awaitAutoAdvanceForStep == currentSlide &&
+            isStepCardVisible &&
+            isCurrentPermissionGranted
+        ) {
+            awaitAutoAdvanceForStep = -1
+            delay(520L)
+            advanceToStep(currentSlide + 1)
         }
     }
 
@@ -468,14 +526,14 @@ fun OnboardingScreen(
                             coroutineScope.launch {
                                 // 1. First fade out logo, emblem and button cleanly
                                 isHeroExiting = true
-                                delay(380L)
+                                delay(260L)
 
                                 // 2. Only then progress background scroll & paint
                                 currentSlide = 1
                                 webViewInstance?.evaluateJavascript("window.setOnboardingStep(1);", null)
 
-                                // 3. Give the living scroll plenty of time to glide and paint (3200ms)
-                                delay(3200L)
+                                // 3. Give the living scroll calm time to glide and paint (~1800ms)
+                                delay(1800L)
 
                                 // 4. Fade in Step 1 Avatar Picker card
                                 isStepCardVisible = true
@@ -483,7 +541,7 @@ fun OnboardingScreen(
                         }
                     )
                 } else {
-                    // STEPS 1 TO 7: SLIDER WORKFLOW
+                    // STEPS 1 TO 8: SLIDER WORKFLOW
                     Column(
                         modifier = Modifier
                             .fillMaxSize()
@@ -492,75 +550,77 @@ fun OnboardingScreen(
                             .navigationBarsPadding()
                             .displayCutoutPadding()
                     ) {
-                        // Ultra-clean progress bar centered properly in the middle (no back button here, no checkboxes)
-                        val progressValue = ((currentSlide - 1).coerceAtLeast(0).toFloat() / 6f).coerceIn(0f, 1f)
-                        val animatedProgress by animateFloatAsState(
-                            targetValue = progressValue,
-                            animationSpec = tween(durationMillis = 350, easing = FastOutSlowInEasing),
-                            label = "onboarding_progress"
-                        )
+                        // Ultra-clean centered progress bar on setup steps 1..7; hidden on final Step 8 ("You're all set")
+                        if (currentSlide in 1..7) {
+                            val progressValue = ((currentSlide - 1).coerceAtLeast(0).toFloat() / 6f).coerceIn(0f, 1f)
+                            val animatedProgress by animateFloatAsState(
+                                targetValue = progressValue,
+                                animationSpec = tween(durationMillis = 320, easing = FastOutSlowInEasing),
+                                label = "onboarding_progress"
+                            )
 
-                        Box(
-                            modifier = Modifier
-                                .fillMaxWidth()
-                                .padding(horizontal = 32.dp, vertical = 12.dp),
-                            contentAlignment = Alignment.Center
-                        ) {
-                            Column(
+                            Box(
                                 modifier = Modifier
                                     .fillMaxWidth()
-                                    .widthIn(max = 380.dp),
-                                verticalArrangement = Arrangement.spacedBy(6.dp),
-                                horizontalAlignment = Alignment.CenterHorizontally
+                                    .padding(horizontal = 32.dp, vertical = 12.dp),
+                                contentAlignment = Alignment.Center
                             ) {
-                                Row(
-                                    modifier = Modifier.fillMaxWidth(),
-                                    horizontalArrangement = Arrangement.SpaceBetween,
-                                    verticalAlignment = Alignment.CenterVertically
-                                ) {
-                                    Text(
-                                        text = "STEP $currentSlide OF 7",
-                                        fontFamily = GoogleSansFlex,
-                                        fontWeight = FontWeight.Bold,
-                                        fontSize = 11.5.sp,
-                                        letterSpacing = 1.2.sp,
-                                        color = Color(0xFF1E2229)
-                                    )
-                                    Text(
-                                        text = "${(progressValue * 100).toInt()}%",
-                                        fontFamily = GoogleSansFlex,
-                                        fontWeight = FontWeight.SemiBold,
-                                        fontSize = 11.sp,
-                                        color = Color(0xFF555555)
-                                    )
-                                }
-
-                                LinearProgressIndicator(
-                                    progress = { animatedProgress },
+                                Column(
                                     modifier = Modifier
                                         .fillMaxWidth()
-                                        .height(4.dp)
-                                        .clip(RoundedCornerShape(2.dp)),
-                                    color = Color(0xFF0F0E0C),
-                                    trackColor = Color(0xFF0F0E0C).copy(alpha = 0.15f)
-                                )
+                                        .widthIn(max = 380.dp),
+                                    verticalArrangement = Arrangement.spacedBy(6.dp),
+                                    horizontalAlignment = Alignment.CenterHorizontally
+                                ) {
+                                    Row(
+                                        modifier = Modifier.fillMaxWidth(),
+                                        horizontalArrangement = Arrangement.SpaceBetween,
+                                        verticalAlignment = Alignment.CenterVertically
+                                    ) {
+                                        Text(
+                                            text = "STEP $currentSlide OF 7",
+                                            fontFamily = GoogleSansFlex,
+                                            fontWeight = FontWeight.Bold,
+                                            fontSize = 11.5.sp,
+                                            letterSpacing = 1.2.sp,
+                                            color = Color(0xFF1E2229)
+                                        )
+                                        Text(
+                                            text = "${(progressValue * 100).toInt()}%",
+                                            fontFamily = GoogleSansFlex,
+                                            fontWeight = FontWeight.SemiBold,
+                                            fontSize = 11.sp,
+                                            color = Color(0xFF555555)
+                                        )
+                                    }
+
+                                    LinearProgressIndicator(
+                                        progress = { animatedProgress },
+                                        modifier = Modifier
+                                            .fillMaxWidth()
+                                            .height(4.dp)
+                                            .clip(RoundedCornerShape(2.dp)),
+                                        color = Color(0xFF0F0E0C),
+                                        trackColor = Color(0xFF0F0E0C).copy(alpha = 0.15f)
+                                    )
+                                }
                             }
                         }
 
-                        // Main Step Content Card shifted upwards with Smooth Fade & Scale Transition
+                        // Main Step Content with Smooth Fade & Scale Transition
                         val cardAlpha by animateFloatAsState(
                             targetValue = if (isStepCardVisible) 1f else 0f,
-                            animationSpec = tween(durationMillis = 300, easing = FastOutSlowInEasing),
+                            animationSpec = tween(durationMillis = 240, easing = FastOutSlowInEasing),
                             label = "card_alpha"
                         )
                         val cardScale by animateFloatAsState(
-                            targetValue = if (isStepCardVisible) 1f else 0.96f,
-                            animationSpec = tween(durationMillis = 300, easing = FastOutSlowInEasing),
+                            targetValue = if (isStepCardVisible) 1f else 0.97f,
+                            animationSpec = tween(durationMillis = 240, easing = FastOutSlowInEasing),
                             label = "card_scale"
                         )
                         val cardOffsetY by animateFloatAsState(
-                            targetValue = if (isStepCardVisible) 0f else 16f,
-                            animationSpec = tween(durationMillis = 300, easing = FastOutSlowInEasing),
+                            targetValue = if (isStepCardVisible) 0f else 14f,
+                            animationSpec = tween(durationMillis = 240, easing = FastOutSlowInEasing),
                             label = "card_offset_y"
                         )
 
@@ -573,8 +633,7 @@ fun OnboardingScreen(
                                     scaleX = cardScale
                                     scaleY = cardScale
                                     translationY = cardOffsetY * density
-                                },
-                            contentAlignment = androidx.compose.ui.BiasAlignment(0f, -0.38f)
+                                }
                         ) {
                             when (currentSlide) {
                                 1 -> ProfileSetupStepView(
@@ -584,66 +643,27 @@ fun OnboardingScreen(
                                 in 2..7 -> {
                                     val cfg = permissionConfigs[currentSlide]
                                     if (cfg != null) {
-                                        val isGranted = when (currentSlide) {
-                                            2 -> hasSmsPermission
-                                            3 -> hasNotificationAccess
-                                            4 -> hasOverlayPermission
-                                            5 -> hasBatteryExemption
-                                            6 -> hasNotificationPermission
-                                            7 -> isLockConfigured
-                                            else -> false
-                                        }
                                         PaintingPermissionView(
                                             config = cfg,
-                                            isGranted = isGranted,
-                                            onGrant = {
-                                                haptics.click()
-                                                when (currentSlide) {
-                                                    2 -> smsLauncher.launch(
-                                                        arrayOf(
-                                                            Manifest.permission.RECEIVE_SMS,
-                                                            Manifest.permission.READ_SMS
-                                                        )
-                                                    )
-                                                    3 -> NotificationAccessHelper.openNotificationAccessSettings(context)
-                                                    4 -> OverlayPermissionHelper.requestOverlayPermission(context)
-                                                    5 -> BatteryOptimizationHelper.requestIgnoreBatteryOptimizations(context)
-                                                    6 -> {
-                                                        if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.TIRAMISU) {
-                                                            postNotificationLauncher.launch(Manifest.permission.POST_NOTIFICATIONS)
-                                                        } else {
-                                                            val intent = Intent(Settings.ACTION_APP_NOTIFICATION_SETTINGS).apply {
-                                                                putExtra(Settings.EXTRA_APP_PACKAGE, context.packageName)
-                                                            }
-                                                            context.startActivity(intent)
-                                                        }
-                                                    }
-                                                    7 -> {
-                                                        val newState = !isLockConfigured
-                                                        isLockConfigured = newState
-                                                        securityPrefs.isLockEnabled = newState
-                                                    }
-                                                }
-                                            },
-                                            onNext = {
-                                                if (currentSlide == 7) {
-                                                    finishOnboarding()
-                                                } else {
-                                                    advanceToStep(currentSlide + 1)
-                                                }
-                                            },
+                                            isGranted = isCurrentPermissionGranted,
+                                            isAutoAdvancing = awaitAutoAdvanceForStep == currentSlide,
+                                            onGrant = { launchPermissionForStep(currentSlide) },
+                                            onNext = { advanceToStep(currentSlide + 1) },
                                             onRequestSkip = {
                                                 haptics.tick()
                                                 pendingSkipConfig = cfg
-                                            },
-                                            isLastSlide = currentSlide == 7
+                                            }
                                         )
                                     }
                                 }
+
+                                8 -> FinalAllSetSlideView(
+                                    onFinish = { finishOnboarding() }
+                                )
                             }
                         }
 
-                        // Bottom Navigation Row: Back button shifted cleanly to bottom-left
+                        // Bottom Navigation Row: Back button kept cleanly on bottom-left
                         Row(
                             modifier = Modifier
                                 .fillMaxWidth()
@@ -684,43 +704,14 @@ fun OnboardingScreen(
                     PermissionSkipWarningDialog(
                         config = cfg,
                         onGrant = {
-                            haptics.click()
-                            when (cfg.step) {
-                                2 -> smsLauncher.launch(
-                                    arrayOf(
-                                        Manifest.permission.RECEIVE_SMS,
-                                        Manifest.permission.READ_SMS
-                                    )
-                                )
-                                3 -> NotificationAccessHelper.openNotificationAccessSettings(context)
-                                4 -> OverlayPermissionHelper.requestOverlayPermission(context)
-                                5 -> BatteryOptimizationHelper.requestIgnoreBatteryOptimizations(context)
-                                6 -> {
-                                    if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.TIRAMISU) {
-                                        postNotificationLauncher.launch(Manifest.permission.POST_NOTIFICATIONS)
-                                    } else {
-                                        val intent = Intent(Settings.ACTION_APP_NOTIFICATION_SETTINGS).apply {
-                                            putExtra(Settings.EXTRA_APP_PACKAGE, context.packageName)
-                                        }
-                                        context.startActivity(intent)
-                                    }
-                                }
-                                7 -> {
-                                    val newState = !isLockConfigured
-                                    isLockConfigured = newState
-                                    securityPrefs.isLockEnabled = newState
-                                }
-                            }
+                            val step = cfg.step
                             pendingSkipConfig = null
+                            launchPermissionForStep(step)
                         },
                         onSkipAnyway = {
                             val step = cfg.step
                             pendingSkipConfig = null
-                            if (step == 7) {
-                                finishOnboarding()
-                            } else {
-                                advanceToStep(step + 1)
-                            }
+                            advanceToStep(step + 1)
                         },
                         onDismiss = { pendingSkipConfig = null }
                     )
@@ -778,7 +769,7 @@ private fun HeroSlideView(
     val exitAlpha = if (isExiting) 0f else 1f
     val exitAlphaAnimated by animateFloatAsState(
         targetValue = exitAlpha,
-        animationSpec = tween(durationMillis = 320, easing = FastOutSlowInEasing),
+        animationSpec = tween(durationMillis = 260, easing = FastOutSlowInEasing),
         label = "hero_exit_alpha"
     )
 
@@ -936,131 +927,99 @@ private data class PermissionStepConfig(
 )
 
 /**
- * Slides 2 to 7: Permission & Security integrated seamlessly onto the living Shan Shui painting.
+ * Slides 2 to 7: Minimalist permission title, caption, primary action, and small Skip button
+ * painted directly onto the open top-left sky of the living Shan Shui canvas.
  */
 @Composable
 private fun PaintingPermissionView(
     config: PermissionStepConfig,
     isGranted: Boolean,
+    isAutoAdvancing: Boolean,
     onGrant: () -> Unit,
     onNext: () -> Unit,
-    onRequestSkip: () -> Unit,
-    isLastSlide: Boolean = false
+    onRequestSkip: () -> Unit
 ) {
+    val showGrantedState = isGranted && isAutoAdvancing
+    val primaryLabel = when {
+        showGrantedState -> config.grantedLabel
+        isGranted -> "Continue"
+        else -> config.grantLabel
+    }
+
     Box(
         modifier = Modifier
             .fillMaxSize()
-            .padding(horizontal = 24.dp),
-        contentAlignment = androidx.compose.ui.BiasAlignment(0f, -0.32f)
+            .padding(start = 24.dp, end = 24.dp, top = 22.dp),
+        contentAlignment = Alignment.TopStart
     ) {
-        Box(
-            modifier = Modifier
-                .fillMaxWidth()
-                .widthIn(max = 420.dp),
-            contentAlignment = Alignment.Center
+        Column(
+            modifier = Modifier.fillMaxWidth(),
+            horizontalAlignment = Alignment.Start
         ) {
-            // Subtle radial feathered parchment veil behind floating ink typography (no box/borders)
-            Box(
-                modifier = Modifier
-                    .matchParentSize()
-                    .background(
-                        brush = Brush.radialGradient(
-                            colors = listOf(
-                                Color(0xFFEFEAE0).copy(alpha = 0.62f),
-                                Color(0xFFEFEAE0).copy(alpha = 0.32f),
-                                Color.Transparent
-                            )
-                        )
-                    )
-            )
-
+            // Keep heading & caption left-weighted so they stay clear of top-right calligraphy & seal
             Column(
                 modifier = Modifier
-                    .fillMaxWidth()
-                    .padding(horizontal = 8.dp, vertical = 20.dp),
-                horizontalAlignment = Alignment.CenterHorizontally,
-                verticalArrangement = Arrangement.Center
+                    .fillMaxWidth(0.78f)
+                    .widthIn(max = 300.dp),
+                horizontalAlignment = Alignment.Start
             ) {
-                // Translucent Floating Ink Seal Icon
-                Box(
-                    modifier = Modifier
-                        .size(74.dp)
-                        .clip(CircleShape)
-                        .background(
-                            if (isGranted) Color(0xFF1B5E20).copy(alpha = 0.85f)
-                            else Color(0xFF141416).copy(alpha = 0.78f)
-                        )
-                        .border(
-                            width = 1.dp,
-                            brush = Brush.linearGradient(
-                                listOf(
-                                    Color.White.copy(alpha = 0.45f),
-                                    Color.White.copy(alpha = 0.14f)
-                                )
-                            ),
-                            shape = CircleShape
-                        ),
-                    contentAlignment = Alignment.Center
-                ) {
-                    Icon(
-                        imageVector = if (isGranted) Icons.Default.Check else config.icon,
-                        contentDescription = null,
-                        tint = if (isGranted) Color(0xFF81C784) else Color.White,
-                        modifier = Modifier.size(32.dp)
-                    )
-                }
-
-                Spacer(modifier = Modifier.height(22.dp))
-
                 Text(
                     text = config.title,
                     fontFamily = GoogleSansFlex,
-                    fontSize = 24.sp,
+                    fontSize = 25.sp,
+                    lineHeight = 30.sp,
                     fontWeight = FontWeight.Bold,
                     color = Color(0xFF121418),
-                    textAlign = TextAlign.Center,
-                    letterSpacing = (-0.3).sp,
+                    textAlign = TextAlign.Start,
+                    letterSpacing = (-0.4).sp,
                     style = TextStyle(
                         shadow = Shadow(
-                            color = Color(0xFFEFEAE0).copy(alpha = 0.90f),
-                            offset = Offset.Zero,
-                            blurRadius = 12f
-                        )
-                    )
-                )
-
-                Spacer(modifier = Modifier.height(10.dp))
-
-                Text(
-                    text = config.description,
-                    fontFamily = GoogleSansFlex,
-                    fontSize = 14.5.sp,
-                    lineHeight = 22.sp,
-                    color = Color(0xFF282C34),
-                    textAlign = TextAlign.Center,
-                    modifier = Modifier
-                        .fillMaxWidth(0.94f)
-                        .padding(horizontal = 4.dp),
-                    style = TextStyle(
-                        shadow = Shadow(
-                            color = Color(0xFFEFEAE0).copy(alpha = 0.90f),
+                            color = Color(0xFFEFEAE0).copy(alpha = 0.92f),
                             offset = Offset.Zero,
                             blurRadius = 10f
                         )
                     )
                 )
 
-                Spacer(modifier = Modifier.height(28.dp))
+                Spacer(modifier = Modifier.height(8.dp))
 
-                // Allow Permission Glass Button
+                Text(
+                    text = config.description,
+                    fontFamily = GoogleSansFlex,
+                    fontSize = 14.sp,
+                    lineHeight = 20.sp,
+                    color = Color(0xFF282D37),
+                    textAlign = TextAlign.Start,
+                    style = TextStyle(
+                        shadow = Shadow(
+                            color = Color(0xFFEFEAE0).copy(alpha = 0.94f),
+                            offset = Offset.Zero,
+                            blurRadius = 10f
+                        )
+                    )
+                )
+            }
+
+            Spacer(modifier = Modifier.height(18.dp))
+
+            Row(
+                verticalAlignment = Alignment.CenterVertically,
+                horizontalArrangement = Arrangement.spacedBy(8.dp)
+            ) {
                 Button(
-                    onClick = { if (!isGranted) onGrant() },
-                    modifier = Modifier
-                        .fillMaxWidth(0.86f)
-                        .height(50.dp),
+                    onClick = {
+                        if (isGranted) {
+                            if (!isAutoAdvancing) onNext()
+                        } else {
+                            onGrant()
+                        }
+                    },
                     shape = RoundedCornerShape(50),
+                    contentPadding = PaddingValues(horizontal = 18.dp, vertical = 10.dp),
+                    modifier = Modifier.height(44.dp),
                     colors = ButtonDefaults.buttonColors(
-                        containerColor = if (isGranted) Color(0xFF1B5E20).copy(alpha = 0.88f) else Color(0xFF141416).copy(alpha = 0.82f),
+                        containerColor = if (isGranted) Color(0xFF1B5E20).copy(alpha = 0.88f)
+                        else Color(0xFF141416).copy(alpha = 0.84f),
                         contentColor = Color.White
                     ),
                     border = BorderStroke(
@@ -1075,78 +1034,162 @@ private fun PaintingPermissionView(
                             imageVector = Icons.Default.Check,
                             contentDescription = null,
                             tint = Color(0xFF81C784),
-                            modifier = Modifier.size(18.dp)
+                            modifier = Modifier.size(16.dp)
                         )
-                        Spacer(modifier = Modifier.width(8.dp))
+                        Spacer(modifier = Modifier.width(6.dp))
                     }
                     Text(
-                        text = if (isGranted) config.grantedLabel else config.grantLabel,
+                        text = primaryLabel,
                         fontFamily = GoogleSansFlex,
                         fontWeight = FontWeight.SemiBold,
-                        fontSize = 14.sp,
+                        fontSize = 13.5.sp,
+                        maxLines = 1,
                         color = Color.White
                     )
                 }
 
-                Spacer(modifier = Modifier.height(12.dp))
-
-                // Continue / Finish Setup Glass Button
-                Button(
-                    onClick = {
-                        if (isGranted) {
-                            onNext()
-                        } else {
-                            onRequestSkip()
-                        }
-                    },
-                    modifier = Modifier
-                        .fillMaxWidth(0.86f)
-                        .height(50.dp),
-                    shape = RoundedCornerShape(50),
-                    colors = ButtonDefaults.buttonColors(
-                        containerColor = if (isGranted) Color(0xFF0F0E0C).copy(alpha = 0.92f) else Color(0xFF141416).copy(alpha = 0.60f),
-                        contentColor = Color.White
-                    ),
-                    border = BorderStroke(
-                        1.dp,
-                        Brush.horizontalGradient(
-                            listOf(
-                                Color.White.copy(alpha = 0.45f),
-                                Color.White.copy(alpha = 0.15f)
-                            )
-                        )
-                    ),
-                    elevation = ButtonDefaults.buttonElevation(defaultElevation = 0.dp, pressedElevation = 0.dp)
-                ) {
-                    Text(
-                        text = if (isLastSlide) "Finish Setup" else "Continue",
-                        fontFamily = GoogleSansFlex,
-                        fontWeight = FontWeight.Bold,
-                        fontSize = 14.5.sp,
-                        color = Color.White
-                    )
-                }
-
-                if (!isLastSlide || !isGranted) {
-                    Spacer(modifier = Modifier.height(8.dp))
-                    TextButton(onClick = onRequestSkip) {
+                if (!isGranted) {
+                    TextButton(
+                        onClick = onRequestSkip,
+                        modifier = Modifier.height(44.dp),
+                        contentPadding = PaddingValues(horizontal = 10.dp, vertical = 8.dp)
+                    ) {
                         Text(
-                            text = "Skip for now",
+                            text = "Skip",
                             fontFamily = GoogleSansFlex,
-                            fontSize = 13.5.sp,
+                            fontSize = 13.sp,
                             fontWeight = FontWeight.Medium,
-                            color = Color(0xFF282C34),
+                            color = Color(0xFF3E444F),
                             style = TextStyle(
                                 shadow = Shadow(
                                     color = Color(0xFFEFEAE0).copy(alpha = 0.92f),
                                     offset = Offset.Zero,
-                                    blurRadius = 10f
+                                    blurRadius = 8f
                                 )
                             )
                         )
                     }
                 }
             }
+        }
+    }
+}
+
+/**
+ * Slide 8: Serene dawn completion view with static Kanri logo, "You're all set", and Finish button.
+ */
+@Composable
+private fun FinalAllSetSlideView(
+    onFinish: () -> Unit
+) {
+    val haptics = rememberKanriHaptics()
+    val buttonInteractionSource = remember { MutableInteractionSource() }
+    val isButtonPressed by buttonInteractionSource.collectIsPressedAsState()
+    val buttonScale by animateFloatAsState(
+        targetValue = if (isButtonPressed) 0.97f else 1f,
+        animationSpec = spring(stiffness = Spring.StiffnessMediumLow),
+        label = "final_finish_press"
+    )
+
+    LaunchedEffect(isButtonPressed) {
+        if (isButtonPressed) haptics.tick()
+    }
+
+    Box(
+        modifier = Modifier
+            .fillMaxSize()
+            .padding(horizontal = 24.dp, vertical = 16.dp)
+    ) {
+        Column(
+            modifier = Modifier
+                .align(androidx.compose.ui.BiasAlignment(0f, -0.34f))
+                .widthIn(max = 360.dp)
+                .fillMaxWidth(),
+            horizontalAlignment = Alignment.CenterHorizontally
+        ) {
+            KanriLogoLockup()
+
+            Spacer(modifier = Modifier.height(24.dp))
+
+            Text(
+                text = "You're all set",
+                fontFamily = GoogleSansFlex,
+                fontSize = 27.sp,
+                fontWeight = FontWeight.Bold,
+                color = Color(0xFF121418),
+                textAlign = TextAlign.Center,
+                letterSpacing = (-0.4).sp,
+                style = TextStyle(
+                    shadow = Shadow(
+                        color = Color(0xFFEFEAE0).copy(alpha = 0.92f),
+                        offset = Offset.Zero,
+                        blurRadius = 12f
+                    )
+                )
+            )
+
+            Spacer(modifier = Modifier.height(8.dp))
+
+            Text(
+                text = "Your private financial sanctuary is ready.",
+                fontFamily = GoogleSansFlex,
+                fontSize = 14.5.sp,
+                lineHeight = 20.sp,
+                color = Color(0xFF3E444F),
+                textAlign = TextAlign.Center,
+                style = TextStyle(
+                    shadow = Shadow(
+                        color = Color(0xFFEFEAE0).copy(alpha = 0.92f),
+                        offset = Offset.Zero,
+                        blurRadius = 10f
+                    )
+                )
+            )
+        }
+
+        Button(
+            onClick = {
+                haptics.click()
+                onFinish()
+            },
+            interactionSource = buttonInteractionSource,
+            modifier = Modifier
+                .align(Alignment.BottomCenter)
+                .widthIn(max = 420.dp)
+                .fillMaxWidth()
+                .padding(bottom = 8.dp)
+                .height(56.dp)
+                .graphicsLayer {
+                    scaleX = buttonScale
+                    scaleY = buttonScale
+                },
+            shape = RoundedCornerShape(50),
+            colors = ButtonDefaults.buttonColors(
+                containerColor = Color(0xFF141416).copy(alpha = 0.84f),
+                contentColor = Color.White
+            ),
+            border = BorderStroke(
+                1.dp,
+                Brush.horizontalGradient(
+                    listOf(
+                        Color.White.copy(alpha = 0.45f),
+                        Color.White.copy(alpha = 0.15f)
+                    )
+                )
+            ),
+            elevation = ButtonDefaults.buttonElevation(
+                defaultElevation = 0.dp,
+                pressedElevation = 0.dp
+            )
+        ) {
+            Text(
+                text = "Finish",
+                fontFamily = GoogleSansFlex,
+                fontWeight = FontWeight.Bold,
+                fontSize = 16.sp,
+                letterSpacing = 0.3.sp,
+                color = Color.White
+            )
         }
     }
 }

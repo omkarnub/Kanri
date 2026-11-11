@@ -24,7 +24,7 @@ The settings architecture adheres to:
          - `Cloudscape`: Volumetric cumulus cloudscape.
          - `Ink Ridges`: Japanese ink wash topographical flow.
          - `Fuji & Sakura`: 9:16 pixel hanging scroll (Mt. Fuji, golden mist, pagoda, torii gate & sakura blossoms).
-         - `Sumi-e Mist`: Minimalist monochrome ink diffusion.
+         - `Sumi-e Mist`: Minimalist monochrome ink diffusion (default live shader on first startup).
          - `Thistle Portico`: Gothic stone portico in wisteria bloom with castle vista & drifting petals.
          - `Still Sunset Meadow` (24h): 3D voxel meadow with interactive grass, voxel flora & dynamic photorealistic 24-hour day/sunset/night cycle driven by local time.
          - `Twilight Meadow`: Pixel art twilight alpine lake with wildflower asters & crescent moon.

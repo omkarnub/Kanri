@@ -265,3 +265,89 @@ fun KanriIntroLogo(
         }
     }
 }
+
+/**
+ * Crisp static Kanri emblem + Panchang wordmark lockup in pure black ink,
+ * used on the final "You're all set" onboarding summary slide.
+ */
+@Composable
+fun KanriLogoLockup(
+    modifier: Modifier = Modifier
+) {
+    val markPath = remember {
+        try {
+            PathParser.createPathFromPathData(MARK_PATH_DATA).asComposePath()
+        } catch (_: Exception) {
+            Path()
+        }
+    }
+
+    val letterPaths = remember {
+        listOf(PATH_K, PATH_A, PATH_N, PATH_R, PATH_I).map {
+            PathParser.createPathFromPathData(it).asComposePath()
+        }
+    }
+
+    val inkColor = Color(0xFF000000)
+
+    Box(
+        modifier = modifier
+            .fillMaxWidth()
+            .height(64.dp),
+        contentAlignment = Alignment.Center
+    ) {
+        Canvas(
+            modifier = Modifier
+                .fillMaxWidth()
+                .height(64.dp)
+        ) {
+            val canvasW = size.width
+            val cy = size.height * 0.5f
+
+            val desiredMarkH = 40.dp.toPx()
+            val desiredMarkW = (MARK_WIDTH / MARK_HEIGHT) * desiredMarkH
+
+            val desiredWordH = 26.dp.toPx()
+            val desiredWordW = (SVG_TOTAL_WIDTH / SVG_TOTAL_HEIGHT) * desiredWordH
+            val gap = 14.dp.toPx()
+            val totalLockupW = desiredMarkW + gap + desiredWordW
+
+            val mx = canvasW / 2f - totalLockupW / 2f + desiredMarkW / 2f
+            val markUnitScale = desiredMarkH / MARK_HEIGHT
+
+            translate(
+                left = mx - (MARK_CENTER_X * markUnitScale),
+                top = cy - (MARK_CENTER_Y * markUnitScale)
+            ) {
+                scale(scale = markUnitScale, pivot = Offset.Zero) {
+                    drawPath(
+                        path = markPath,
+                        color = inkColor
+                    )
+                }
+            }
+
+            val wordStartX = canvasW / 2f - totalLockupW / 2f + desiredMarkW + gap
+            val wordScaleX = desiredWordW / SVG_TOTAL_WIDTH
+            val wordScaleY = desiredWordH / SVG_TOTAL_HEIGHT
+
+            letterPaths.forEach { path ->
+                translate(
+                    left = wordStartX - SVG_TOTAL_MIN_X * wordScaleX,
+                    top = cy - (desiredWordH / 2f) - SVG_TOTAL_MIN_Y * wordScaleY
+                ) {
+                    scale(
+                        scaleX = wordScaleX,
+                        scaleY = wordScaleY,
+                        pivot = Offset.Zero
+                    ) {
+                        drawPath(
+                            path = path,
+                            color = inkColor
+                        )
+                    }
+                }
+            }
+        }
+    }
+}
