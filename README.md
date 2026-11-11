@@ -45,15 +45,15 @@ Everything runs fully offline — there's no Kanri backend to breach, because th
 ## Screenshots :framed_picture:
 
 <p align="center">
-  <img src="docs/screenshots/home.jpeg" width="180" alt="Home screen" />
+  <img src="docs/screenshots/home.png" width="180" alt="Home screen" />
   &nbsp;&nbsp;
-  <img src="docs/screenshots/insights.jpeg" width="180" alt="Insights screen" />
+  <img src="docs/screenshots/insights.png" width="180" alt="Insights screen" />
   &nbsp;&nbsp;
-  <img src="docs/screenshots/lend-borrow.jpeg" width="180" alt="Lend & Borrow screen" />
+  <img src="docs/screenshots/lend-borrow.png" width="180" alt="Lend & Borrow screen" />
   &nbsp;&nbsp;
-  <img src="docs/screenshots/goals.jpeg" width="180" alt="Goals screen" />
+  <img src="docs/screenshots/goals.png" width="180" alt="Goals screen" />
   &nbsp;&nbsp;
-  <img src="docs/screenshots/profile.jpeg" width="180" alt="Profile screen" />
+  <img src="docs/screenshots/profile.png" width="180" alt="Profile screen" />
 </p>
 
 <p align="center">
