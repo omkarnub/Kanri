@@ -720,6 +720,36 @@ fun getShaderGradientBrush(type: GlassBackgroundType): Brush {
         GlassBackgroundType.TOKYO_NIGHT -> Brush.linearGradient(
             colors = listOf(Color(0xFF05010F), Color(0xFF1C1335), Color(0xFF5B2B6D), Color(0xFF9E4784), Color(0xFF00E5FF))
         )
+        GlassBackgroundType.PIXEL_KITCHEN -> Brush.linearGradient(
+            colors = listOf(Color(0xFF0D111A), Color(0xFFC88242), Color(0xFFEBC37D), Color(0xFFFDE8BA), Color(0xFF1E2838))
+        )
+        GlassBackgroundType.SNOWY_MOUNTAIN_ROAD -> Brush.linearGradient(
+            colors = listOf(Color(0xFF03060A), Color(0xFF1C2C42), Color(0xFF4A7A9E), Color(0xFFC0D8E8), Color(0xFF080E18))
+        )
+        GlassBackgroundType.SUNLIT_BALCONY -> Brush.linearGradient(
+            colors = listOf(Color(0xFF0D111A), Color(0xFF385542), Color(0xFF7DA87D), Color(0xFFF0D49E), Color(0xFF1A2620))
+        )
+        GlassBackgroundType.ALPINE_VALLEY -> Brush.linearGradient(
+            colors = listOf(Color(0xFF080C11), Color(0xFF1B3D2F), Color(0xFF3A7D5C), Color(0xFF88C9A1), Color(0xFF5D8AA8))
+        )
+        GlassBackgroundType.SHIGANSHINA_WINDMILL -> Brush.linearGradient(
+            colors = listOf(Color(0xFF060E0B), Color(0xFF3E4F28), Color(0xFF7C722A), Color(0xFFC4B86A), Color(0xFF1B2E1C))
+        )
+        GlassBackgroundType.CHIBI_COFFEE_SHOP -> Brush.linearGradient(
+            colors = listOf(Color(0xFF0B0709), Color(0xFF381C24), Color(0xFF6B3A42), Color(0xFFB87868), Color(0xFFE8B898))
+        )
+        GlassBackgroundType.FUJI_TORII -> Brush.linearGradient(
+            colors = listOf(Color(0xFF0A121B), Color(0xFF27415A), Color(0xFF86C5DC), Color(0xFFD63826), Color(0xFFFFF0E0))
+        )
+        GlassBackgroundType.CHERRY_CANYON -> Brush.linearGradient(
+            colors = listOf(Color(0xFF0D0811), Color(0xFF4A2035), Color(0xFF8D4068), Color(0xFFE58CB5), Color(0xFFF7D2E2))
+        )
+        GlassBackgroundType.PIXEL_MISTY_ALLEY -> Brush.linearGradient(
+            colors = listOf(Color(0xFF0B0A16), Color(0xFF221A3D), Color(0xFF533E78), Color(0xFF9E65A8), Color(0xFF40E0D0))
+        )
+        GlassBackgroundType.GLOWING_BAMBOO_FOREST -> Brush.linearGradient(
+            colors = listOf(Color(0xFF04100E), Color(0xFF0E3228), Color(0xFF1E644A), Color(0xFF52C4A6), Color(0xFFFFD984))
+        )
     }
 }
 
@@ -737,6 +767,16 @@ fun getShaderDescription(type: GlassBackgroundType): String {
         GlassBackgroundType.SUNSET_MEADOW -> "3D voxel meadow with interactive grass, voxel flora & dynamic day/sunset/night cycle"
         GlassBackgroundType.TWILIGHT_MEADOW -> "Pixel art twilight alpine lake with swaying wildflower asters & crescent moon"
         GlassBackgroundType.TOKYO_NIGHT -> "Pixel art Tokyo night skyline with mountain bench, companion cat & neon city lights"
+        GlassBackgroundType.PIXEL_KITCHEN -> "Cozy 24-hour pixel kitchen with warm kettle, day/night window lighting & subtle steam"
+        GlassBackgroundType.SNOWY_MOUNTAIN_ROAD -> "Atmospheric 24-hour winter mountain road with drifting snow, headlight beams & real-time sky"
+        GlassBackgroundType.SUNLIT_BALCONY -> "Quiet 24-hour sunlit balcony with potted plants, gentle breeze & evening fireflies"
+        GlassBackgroundType.ALPINE_VALLEY -> "Animated 9:16 pixel art mountain valley with winding river, wildflower meadow & soaring birds"
+        GlassBackgroundType.SHIGANSHINA_WINDMILL -> "4-bit animated pixel art windmill with calm wind gusts & 24-hour dawn-to-night lighting cycle"
+        GlassBackgroundType.CHIBI_COFFEE_SHOP -> "Cozy chibi cafe window on a rainy evening with steaming mugs, warm lanterns & cat companion"
+        GlassBackgroundType.FUJI_TORII -> "Japanese vermilion torii gate before Mount Fuji with drifting sakura petals & glowing valley mist"
+        GlassBackgroundType.CHERRY_CANYON -> "3D voxel cherry blossom canyon with drifting petals, celestial day/sunset/night traversal & volumetric clouds"
+        GlassBackgroundType.PIXEL_MISTY_ALLEY -> "Atmospheric 24-hour neon city alley with gentle rain, companion cat & dynamic sun/moon cycle"
+        GlassBackgroundType.GLOWING_BAMBOO_FOREST -> "Steam train crossing a bridge through swaying bamboo with glowing lanterns & 24-hour atmosphere"
     }
 }
 

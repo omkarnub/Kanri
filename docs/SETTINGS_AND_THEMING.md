@@ -16,11 +16,30 @@ The settings architecture adheres to:
    - **Themes Sub-Window** (`ThemeSettingsScreen`):
      - Visual phone preview cards for `System`, `Light`, `Dark`, `AMOLED`, and `Glass`.
      - When `Glass` is selected:
-       - **Live Shader Backgrounds**: Minimalist, single-column vertical list view of 12 animated WebGL / Canvas backgrounds (`Gemini Aurora`, `Grain Gradient`, `Hero Geometric`, `Prism Swirl`, `Cloudscape`, `Ink Ridges`, `Fuji & Sakura` [9:16 pixel hanging scroll], `Sumi-e Mist`, `Thistle Portico`, `Still Sunset Meadow`, `Twilight Meadow` [pixel art lake & wildflowers], `Tokyo Night` [pixel art night vista & companion cat]).
-         - **No Previews**: Removed gradient preview swatches for a clean, distraction-free typographic list view.
-         - **Apply / Applied Button**: Each row features a dedicated right-aligned action button ("Apply" with outline when unselected, or filled "Applied" with a checkmark when active), allowing instant selection alongside direct row-tapping.
-         - **Thistle Portico**: High-performance Canvas 2D scene with pointed Gothic arch, castle view, wisteria racemes swaying in the wind, falling petals, and luminous light shafts.
-         - **Still Sunset Meadow**: 3D voxel landscape with interactive grass parting, blocky flowers, rolling hills, and a 15-keyframe photorealistic 24-hour day cycle (Golden Rose sunrise, crisp morning azure, real-life Rayleigh daylight blue, fiery sunset peak, and starry cosmic night) driven by the user's local time zone.
+       - **Live Shader Backgrounds**: Minimalist, single-column vertical list view of 22 animated WebGL, Three.js, and Canvas 2D backgrounds:
+         - `Gemini Aurora`: Dual-cycle neural aurora morphing between lime, turquoise, violet, coral, and pink.
+         - `Grain Gradient`: Film-grade atmospheric organic grain.
+         - `Hero Geometric`: Precision isometric low-poly geometry.
+         - `Prism Swirl`: Dynamic refractive glass caustics.
+         - `Cloudscape`: Volumetric cumulus cloudscape.
+         - `Ink Ridges`: Japanese ink wash topographical flow.
+         - `Fuji & Sakura`: 9:16 pixel hanging scroll (Mt. Fuji, golden mist, pagoda, torii gate & sakura blossoms).
+         - `Sumi-e Mist`: Minimalist monochrome ink diffusion.
+         - `Thistle Portico`: Gothic stone portico in wisteria bloom with castle vista & drifting petals.
+         - `Still Sunset Meadow` (24h): 3D voxel meadow with interactive grass, voxel flora & dynamic photorealistic 24-hour day/sunset/night cycle driven by local time.
+         - `Twilight Meadow`: Pixel art twilight alpine lake with wildflower asters & crescent moon.
+         - `Tokyo Night`: Pixel art Tokyo night skyline vista with mountain bench & companion cat.
+         - `Pixel Kitchen` (24h): Cozy pixel kitchen with warm kettle, day/night window lighting & subtle steam.
+         - `Snowy Mountain Road` (24h): Atmospheric winter mountain road with drifting snow, headlight beams & real-time sky.
+         - `Sunlit Balcony` (24h): Quiet sunlit balcony with potted plants, gentle breeze & evening fireflies.
+         - `Alpine Valley`: Animated 9:16 pixel art mountain valley with winding river, wildflower meadow & soaring birds.
+         - `Shiganshina Windmill` (24h): 4-bit animated pixel art windmill with calm wind gusts & 24-hour dawn-to-night lighting cycle.
+         - `Chibi Coffee Shop`: Cozy chibi cafe window on a rainy evening with steaming mugs, warm lanterns & cat companion.
+         - `Fuji Torii Gate`: Japanese vermilion torii gate before Mount Fuji with drifting sakura petals & glowing valley mist.
+         - `Cherry Blossom Canyon` (24h): 3D voxel cherry blossom canyon with drifting petals, celestial day/sunset/night traversal & volumetric clouds.
+         - `Pixel Misty Alley` (24h): Atmospheric neon city alley with gentle rain, companion cat & dynamic sun/moon cycle.
+         - `Glowing Bamboo Forest` (24h): Steam train crossing a bridge through swaying bamboo with glowing lanterns & 24-hour atmosphere.
+         - **Pure Loop & No HUD**: All HUD elements (digital clocks, time badges, audio hints, controls) are completely stripped so only the pure wallpaper plays seamlessly in the background. Backgrounds with 24-hour cycles automatically synchronize with the user's real-time clock.
         - **Customise Glass Components** action row navigating to `GlassCustomizerScreen`:
           - **Frosted Blur (0 to 50 dp)**: Directly scales hardware backdrop blur through Haze / RenderNode without restrictive minimum clamping, allowing clean transitions from crystal clear glass (0 dp) up to silky, heavy frosted diffusion (50 dp).
           - **Glass Tint (-1.0 to +1.0)**: Center-neutral slider (default `0.0f` = "No tint") allowing smooth adjustment to dark smoky obsidian glass (sliding left) or luminous crystalline white frost glass (sliding right), complete with quick-snap buttons (`Dark -50%`, `No tint 0%`, `Light +50%`). Both the content cards and the floating navigation dock actively follow this tint in real time.

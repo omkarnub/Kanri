@@ -5,6 +5,30 @@ All notable changes to Kanri will be documented in this file.
 The format is based on [Keep a Changelog](https://keepachangelog.com/en/1.0.0/),
 and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0.html).
 
+## [1.15.0] - 2026-11-11
+
+### Added
+- **10 New Animated Glass Backgrounds Added**:
+  - `Pixel Kitchen` (24h): Cozy pixel kitchen with warm kettle, day/night window lighting & subtle steam.
+  - `Snowy Mountain Road` (24h): Atmospheric winter mountain road with drifting snow, headlight beams & real-time sky.
+  - `Sunlit Balcony` (24h): Quiet sunlit balcony with potted plants, gentle breeze & evening fireflies.
+  - `Alpine Valley`: Animated 9:16 pixel art mountain valley with winding river, wildflower meadow & soaring birds.
+  - `Shiganshina Windmill` (24h): 4-bit animated pixel art windmill with calm wind gusts & 24-hour dawn-to-night lighting cycle.
+  - `Chibi Coffee Shop`: Cozy chibi cafe window on a rainy evening with steaming mugs, warm lanterns & cat companion.
+  - `Fuji Torii Gate`: Japanese vermilion torii gate before Mount Fuji with drifting sakura petals & glowing valley mist.
+  - `Cherry Blossom Canyon` (24h): 3D voxel cherry blossom canyon with drifting petals, celestial day/sunset/night traversal & volumetric clouds.
+  - `Pixel Misty Alley` (24h): Atmospheric neon city alley with gentle rain, companion cat & dynamic sun/moon cycle.
+  - `Glowing Bamboo Forest` (24h): Steam train crossing a bridge through swaying bamboo with glowing lanterns & 24-hour atmosphere.
+- **Pure Wallpaper Loop Without HUD & Controls**:
+  - Stripped all HUD elements (pixel digital clocks, time badges, audio hints, quality badges) and removed audio/click control listeners from all backgrounds so only the pure wallpaper plays in a seamless loop.
+  - Sized backgrounds to fill the viewport seamlessly (`object-fit: cover`) with touch passthrough to the UI.
+- **Local Time 24-Hour Cycle Synchronization**:
+  - Connected all 24-hour cycle backgrounds (`Pixel Kitchen`, `Snowy Mountain Road`, `Sunlit Balcony`, `Shiganshina Windmill`, `Cherry Blossom Canyon`, `Pixel Misty Alley`, `Glowing Bamboo Forest`) to the user's real-time local clock (`new Date()`), matching `Still Sunset Meadow`.
+- **Offline Three.js Support & Video Autoplay**:
+  - Bundled local `three.min.js` reference in `cherry_canyon.html` for zero-network offline loading.
+  - Configured `mediaPlaybackRequiresUserGesture = false` in `GlassBackgroundView.kt` for seamless video loop playback.
+- Bumped version to `1.15.0` (Build 47).
+
 ## [1.14.4] - 2026-11-11
 
 ### Fixed & Restored

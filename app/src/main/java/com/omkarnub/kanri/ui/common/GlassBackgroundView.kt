@@ -35,7 +35,17 @@ enum class GlassBackgroundType(val id: String, val displayName: String, val file
     THISTLE_PORTICO("thistle_portico", "Thistle Portico", "thistle_portico.html"),
     SUNSET_MEADOW("sunset_meadow", "Still Sunset Meadow", "sunset_meadow.html"),
     TWILIGHT_MEADOW("twilight_meadow", "Twilight Meadow", "twilight_meadow.html"),
-    TOKYO_NIGHT("tokyo_night", "Tokyo Night", "tokyo_night.html");
+    TOKYO_NIGHT("tokyo_night", "Tokyo Night", "tokyo_night.html"),
+    PIXEL_KITCHEN("pixel_kitchen", "Pixel Kitchen", "pixel_kitchen.html"),
+    SNOWY_MOUNTAIN_ROAD("snowy_mountain_road", "Snowy Mountain Road", "snowy_mountain_road.html"),
+    SUNLIT_BALCONY("sunlit_balcony", "Sunlit Balcony", "sunlit_balcony.html"),
+    ALPINE_VALLEY("alpine_valley", "Alpine Valley", "alpine_valley.html"),
+    SHIGANSHINA_WINDMILL("shiganshina_windmill", "Shiganshina Windmill", "shiganshina_windmill.html"),
+    CHIBI_COFFEE_SHOP("chibi_coffee_shop", "Chibi Coffee Shop", "chibi_coffee_shop.html"),
+    FUJI_TORII("fuji_torii", "Fuji Torii Gate", "fuji_torii.html"),
+    CHERRY_CANYON("cherry_canyon", "Cherry Blossom Canyon", "cherry_canyon.html"),
+    PIXEL_MISTY_ALLEY("pixel_misty_alley", "Pixel Misty Alley", "pixel_misty_alley.html"),
+    GLOWING_BAMBOO_FOREST("glowing_bamboo_forest", "Glowing Bamboo Forest", "glowing_bamboo_forest.html");
 
     companion object {
         fun fromId(id: String?): GlassBackgroundType {
@@ -102,6 +112,7 @@ fun GlassShaderBackground(
                     cacheMode = WebSettings.LOAD_NO_CACHE
                     loadWithOverviewMode = true
                     useWideViewPort = true
+                    mediaPlaybackRequiresUserGesture = false
                 }
                 setBackgroundColor(android.graphics.Color.TRANSPARENT)
                 setLayerType(View.LAYER_TYPE_HARDWARE, null)

@@ -1129,8 +1129,8 @@ Behind all frosted surfaces runs a 3-layer visual backdrop composition:
 +-------------------------------------------------------+
 ```
 
-##### 12 Dynamic Background Shaders (`GlassBackgroundType`)
-Users can choose between 12 hardware-accelerated animated backgrounds loaded from `android_asset/backgrounds/`:
+##### 22 Dynamic Background Shaders (`GlassBackgroundType`)
+Users can choose between 22 hardware-accelerated animated backgrounds loaded from `android_asset/backgrounds/`:
 
 1. **Gemini Aurora (`aurora.html`)**: Mobile Google Gemini neural aurora featuring simultaneous multi-color fluid orbs smoothly morphing between Cycle 1 (`#7cff67`, `#22d3c5`, `#8f5cff`) and Cycle 2 (`#ff8a5c`, `#ff5c8a`, `#8a5cff`) across the screen.
 2. **Grain Gradient (`grain_gradient.html`)**: Diffuse multi-point color blurs with heavy organic analogue noise.
@@ -1141,9 +1141,19 @@ Users can choose between 12 hardware-accelerated animated backgrounds loaded fro
 7. **Fuji & Sakura (`fuji_sakura.html`)**: 9:16 pixel hanging scroll artwork with Mt. Fuji, golden mist, pagoda, torii gate, koi fish, cranes, cat, and cherry blossom physics.
 8. **Sumi-e Mist (`sumi_e_mist.html`)**: Traditional monochrome ink wash painting with drifting watercolor mist.
 9. **Thistle Portico (`thistle_portico.html`)**: Gothic stone portico in wisteria bloom with castle vista & drifting petals.
-10. **Still Sunset Meadow (`sunset_meadow.html`)**: 3D voxel meadow with interactive grass, voxel flora & dynamic day/sunset/night cycle.
+10. **Still Sunset Meadow (`sunset_meadow.html`)**: 3D voxel meadow with interactive grass, voxel flora & dynamic photorealistic 24-hour day/sunset/night cycle driven by local time.
 11. **Twilight Meadow (`twilight_meadow.html`)**: Pixel art twilight landscape: crescent moon, jagged alpine peaks reflected in a still mountain lake, and sloping meadow with purple wildflower asters.
 12. **Tokyo Night (`tokyo_night.html`)**: Pixel art Tokyo night skyline vista with mountain bench, companion cat, neon city lights, and drifting petals.
+13. **Pixel Kitchen (`pixel_kitchen.html`)**: Cozy 24-hour pixel kitchen with warm kettle, day/night window lighting & subtle steam.
+14. **Snowy Mountain Road (`snowy_mountain_road.html`)**: Atmospheric 24-hour winter mountain road with drifting snow, headlight beams & real-time sky.
+15. **Sunlit Balcony (`sunlit_balcony.html`)**: Quiet 24-hour sunlit balcony with potted plants, gentle breeze & evening fireflies.
+16. **Alpine Valley (`alpine_valley.html`)**: Animated 9:16 pixel art mountain valley with winding river, wildflower meadow & soaring birds.
+17. **Shiganshina Windmill (`shiganshina_windmill.html`)**: 4-bit animated pixel art windmill with calm wind gusts & 24-hour dawn-to-night lighting cycle.
+18. **Chibi Coffee Shop (`chibi_coffee_shop.html`)**: Cozy chibi cafe window on a rainy evening with steaming mugs, warm lanterns & cat companion.
+19. **Fuji Torii Gate (`fuji_torii.html`)**: Japanese vermilion torii gate before Mount Fuji with drifting sakura petals & glowing valley mist.
+20. **Cherry Blossom Canyon (`cherry_canyon.html`)**: 3D voxel cherry blossom canyon with drifting petals, celestial day/sunset/night traversal & volumetric clouds.
+21. **Pixel Misty Alley (`pixel_misty_alley.html`)**: Atmospheric 24-hour neon city alley with gentle rain, companion cat & dynamic sun/moon cycle.
+22. **Glowing Bamboo Forest (`glowing_bamboo_forest.html`)**: Steam train crossing a bridge through swaying bamboo with glowing lanterns & 24-hour atmosphere.
 
 ##### Lifecycle & Performance Safeguards
 - **Lifecycle Awareness**: Observes `LocalLifecycleOwner`. The underlying `WebView` automatically invokes `onPause()` when Kanri enters the background or the screen turns off, suspending WebGL/requestAnimationFrame execution to achieve **zero background CPU/battery consumption**. Calls `onResume()` when returning to the foreground.

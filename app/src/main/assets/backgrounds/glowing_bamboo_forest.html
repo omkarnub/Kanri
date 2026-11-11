@@ -1,0 +1,636 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="utf-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no" />
+  <title>Train Through a Glowing Bamboo Forest — 9:16 Animated Pixel Art (24h Loop)</title>
+  <style>
+    * {
+      box-sizing: border-box;
+      margin: 0;
+      padding: 0;
+      user-select: none;
+      -webkit-user-select: none;
+    }
+    html, body {
+      width: 100%;
+      height: 100%;
+      background: #04100e;
+      overflow: hidden;
+      pointer-events: none;
+    }
+    #bgc {
+      position: fixed;
+      inset: 0;
+      width: 100vw;
+      height: 100vh;
+      object-fit: cover;
+      filter: blur(24px) brightness(0.55) saturate(1.4);
+      transform: scale(1.15);
+      image-rendering: auto;
+      pointer-events: none;
+      z-index: 0;
+    }
+    .art-frame {
+      position: absolute;
+      inset: 0;
+      z-index: 1;
+      width: 100vw;
+      height: 100vh;
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      overflow: hidden;
+      border: none;
+      box-shadow: none;
+      pointer-events: none;
+    }
+    canvas#c {
+      width: 100vw;
+      height: 100vh;
+      object-fit: cover;
+      image-rendering: -moz-crisp-edges;
+      image-rendering: -webkit-crisp-edges;
+      image-rendering: pixelated;
+      image-rendering: crisp-edges;
+      display: block;
+      pointer-events: none;
+    }
+</style>
+</head>
+<body>
+  <canvas id="bgc" width="180" height="320"></canvas>
+  <div class="art-frame">
+    <canvas id="c" width="180" height="320" role="img" aria-label="Train through a glowing bamboo forest: an old steam train with warm paper-lantern windows crossing a wooden trestle bridge through swaying parallax bamboo stalks, fireflies, god rays by day, teal-purple dusk, a watching fox, and rolling rain mist"></canvas>
+  </div>
+  <script>
+    (() => {
+      'use strict';
+      const W = 180, H = 320;
+      const cv = document.getElementById('c');
+      const g = cv.getContext('2d', { alpha: false });
+      g.imageSmoothingEnabled = false;
+      const bg = document.getElementById('bgc').getContext('2d', { alpha: false });
+
+      /* ---------- Dither, Noise & Drawing Helpers ---------- */
+      const BAYM = [
+        [0, 8, 2, 10],
+        [12, 4, 14, 6],
+        [3, 11, 1, 9],
+        [15, 7, 13, 5]
+      ];
+      function bay(x, y) {
+        return (BAYM[y & 3][x & 3] + 0.5) / 16;
+      }
+      function dith(x, y, thr) {
+        return bay(x, y) < thr;
+      }
+      function mkRng(s) {
+        return function() {
+          s |= 0;
+          s = (s + 0x6D2B79F5) | 0;
+          let t = Math.imul(s ^ (s >>> 15), 1 | s);
+          t = (t + Math.imul(t ^ (t >>> 7), 61 | t)) ^ t;
+          return ((t ^ (t >>> 14)) >>> 0) / 4294967296;
+        };
+      }
+      function R(c, x, y, w, h, col) {
+        c.fillStyle = col;
+        c.fillRect(Math.round(x), Math.round(y), Math.round(w), Math.round(h));
+      }
+      function line(c, x0, y0, x1, y1, col, w) {
+        const n = Math.max(Math.abs(x1 - x0), Math.abs(y1 - y0), 1);
+        const sz = w || 1;
+        c.fillStyle = col;
+        for (let i = 0; i <= n; i++) {
+          c.fillRect(Math.round(x0 + (x1 - x0) * i / n), Math.round(y0 + (y1 - y0) * i / n), sz, sz);
+        }
+      }
+      function disc(c, cx, cy, r, col) {
+        c.fillStyle = col;
+        const ix = Math.round(cx), iy = Math.round(cy);
+        for (let y = -r; y <= r; y++) {
+          for (let x = -r; x <= r; x++) {
+            if (x * x + y * y <= r * r + r * 0.5) {
+              c.fillRect(ix + x, iy + y, 1, 1);
+            }
+          }
+        }
+      }
+      function lerpRGB(c0, c1, t) {
+        return [
+          Math.round(c0[0] + (c1[0] - c0[0]) * t),
+          Math.round(c0[1] + (c1[1] - c0[1]) * t),
+          Math.round(c0[2] + (c1[2] - c0[2]) * t)
+        ];
+      }
+      function rgbStr(rgb) {
+        return 'rgb(' + rgb[0] + ',' + rgb[1] + ',' + rgb[2] + ')';
+      }
+
+      /* ---------- 24-Hour Forest Atmosphere Palette ---------- */
+      // [hour, skyTop, skyMid, ravineBot, farBamboo, midBambooMain, midBambooHi, fgBamboo]
+      const FOREST_KEYS = [
+        // Night: Deep green, dark teal & bioluminescent midnight
+        [0.0,  [5, 16, 20],   [10, 34, 38],  [16, 52, 54],  [12, 42, 44],  [18, 58, 52],  [42, 112, 96],  [6, 20, 20]],
+        [4.5,  [8, 22, 28],   [16, 44, 52],  [26, 66, 68],  [18, 48, 52],  [24, 68, 62],  [56, 126, 110], [8, 24, 24]],
+        // Dawn: Soft jade mist & golden-green awakening
+        [6.5,  [28, 68, 58],  [54, 112, 88], [98, 158, 116],[38, 84, 68],  [46, 102, 74], [112, 184, 122],[16, 42, 32]],
+        // Day: Soft sunlit green with emerald god-ray haze
+        [12.0, [42, 98, 68],  [78, 148, 98], [134, 196, 132],[52, 114, 78],[58, 128, 82], [136, 208, 134],[22, 54, 36]],
+        [16.0, [34, 84, 66],  [66, 132, 96], [116, 178, 128],[44, 102, 74],[52, 116, 78], [122, 192, 128],[18, 46, 34]],
+        // Dusk: Teal and twilight purple!
+        [18.2, [36, 26, 64],  [68, 46, 102], [42, 98, 108], [46, 38, 78],  [28, 72, 82],  [76, 148, 148], [16, 22, 42]],
+        [19.8, [18, 18, 44],  [32, 38, 74],  [24, 72, 80],  [22, 38, 58],  [20, 62, 66],  [54, 124, 116], [10, 18, 28]],
+        // Night
+        [21.5, [5, 16, 20],   [10, 34, 38],  [16, 52, 54],  [12, 42, 44],  [18, 58, 52],  [42, 112, 96],  [6, 20, 20]],
+        [24.0, [5, 16, 20],   [10, 34, 38],  [16, 52, 54],  [12, 42, 44],  [18, 58, 52],  [42, 112, 96],  [6, 20, 20]]
+      ];
+
+      function getForestTheme(hr) {
+        const h = ((hr % 24) + 24) % 24;
+        let i = 0;
+        while (i < FOREST_KEYS.length - 2 && FOREST_KEYS[i + 1][0] <= h) i++;
+        const a = FOREST_KEYS[i], b = FOREST_KEYS[i + 1];
+        const f = Math.max(0, Math.min(1, (h - a[0]) / Math.max(0.001, b[0] - a[0])));
+        const s = f * f * (3 - 2 * f);
+        return {
+          top: lerpRGB(a[1], b[1], s),
+          mid: lerpRGB(a[2], b[2], s),
+          bot: lerpRGB(a[3], b[3], s),
+          farB: lerpRGB(a[4], b[4], s),
+          midB: lerpRGB(a[5], b[5], s),
+          midHi: lerpRGB(a[6], b[6], s),
+          fgB: lerpRGB(a[7], b[7], s)
+        };
+      }
+
+      /* ---------- Pre-generated Parallax Bamboo Stalks ---------- */
+      const rng = mkRng(2049);
+      const bambooFar = [];
+      for (let i = 0; i < 24; i++) {
+        bambooFar.push({
+          x: Math.floor(i * 7.8 + (rng() - 0.5) * 4),
+          w: 2 + (i % 2),
+          tilt: (rng() - 0.5) * 0.025,
+          phase: rng() * 6.283,
+          nodeStep: 15 + Math.floor(rng() * 5)
+        });
+      }
+      const bambooMid = [];
+      for (let i = 0; i < 15; i++) {
+        const leaves = [];
+        for (let y = 18; y < 290; y += 22 + Math.floor(rng() * 14)) {
+          leaves.push({
+            y,
+            dir: rng() > 0.5 ? 1 : -1,
+            len: 8 + Math.floor(rng() * 7)
+          });
+        }
+        bambooMid.push({
+          x: Math.floor(i * 12.5 + (rng() - 0.5) * 5),
+          w: 3 + (i % 3 === 0 ? 1 : 0),
+          tilt: (rng() - 0.5) * 0.03,
+          phase: rng() * 6.283,
+          nodeStep: 18 + Math.floor(rng() * 6),
+          leaves
+        });
+      }
+      // Foreground framing bamboo stalks on left & right edges so bridge & train stay clear in center
+      const fgXs = [6, 16, 28, 42, 142, 156, 168, 175];
+      const bambooFg = fgXs.map((bx, i) => {
+        const leaves = [];
+        for (let y = 14; y < 300; y += 24 + (i % 3) * 6) {
+          leaves.push({
+            y,
+            dir: bx < 90 ? 1 : -1,
+            len: 11 + (i % 4) * 2
+          });
+        }
+        return {
+          x: bx,
+          w: 4 + (i % 2),
+          tilt: (bx < 90 ? 0.012 : -0.012),
+          phase: i * 0.9,
+          nodeStep: 22,
+          leaves
+        };
+      });
+
+      function drawBambooLayer(c, list, swayAmp, swaySpeed, t, colMain, colHi, colLeaf) {
+        for (let i = 0; i < list.length; i++) {
+          const st = list[i];
+          const w = st.w;
+          // Draw vertical segmented stalk
+          for (let y = 0; y < H; y += 2) {
+            const heightFactor = (H - y) / H;
+            const sway = Math.sin(t * swaySpeed + st.phase + y * 0.012) * swayAmp * heightFactor * heightFactor;
+            const sx = Math.round(st.x + (H - y) * st.tilt + sway);
+            c.fillStyle = colMain;
+            c.fillRect(sx, y, w, 2);
+            if (colHi && w >= 3) {
+              c.fillStyle = colHi;
+              c.fillRect(sx, y, 1, 2);
+            }
+            // Bamboo node ring
+            if ((y + i * 7) % st.nodeStep < 2) {
+              c.fillStyle = colHi || colMain;
+              c.fillRect(sx - 1, y, w + 2, 1);
+            }
+          }
+          // Feathery bamboo leaf clusters
+          if (st.leaves) {
+            c.fillStyle = colLeaf || colMain;
+            for (let l = 0; l < st.leaves.length; l++) {
+              const lf = st.leaves[l];
+              const hf = (H - lf.y) / H;
+              const sw = Math.sin(t * swaySpeed + st.phase + lf.y * 0.012) * swayAmp * hf * hf;
+              const lx = Math.round(st.x + (H - lf.y) * st.tilt + sw + (lf.dir > 0 ? w : 0));
+              const flutter = Math.sin(t * 2.6 + l + st.phase) * 1.4;
+              for (let b = -1; b <= 1; b++) {
+                const tipX = lx + lf.dir * lf.len;
+                const tipY = lf.y + 3 + b * 3 + flutter;
+                line(c, lx, lf.y, tipX, tipY, colLeaf || colMain, 1);
+              }
+            }
+          }
+        }
+      }
+
+      /* ---------- Fireflies & Floating Spores ---------- */
+      const fireflies = [];
+      for (let i = 0; i < 42; i++) {
+        fireflies.push({
+          x: rng() * W,
+          y: 24 + rng() * 270,
+          vx: (rng() - 0.5) * 6,
+          vy: -2.5 - rng() * 4.5,
+          phase: rng() * 6.283,
+          warm: i % 3 !== 0 // Warm amber fireflies + pale cyan/green forest spores
+        });
+      }
+
+      /* ---------- Rain Mist Droplets (End of Loop) ---------- */
+      const rainDrops = [];
+      for (let i = 0; i < 55; i++) {
+        rainDrops.push({
+          x: rng() * W,
+          y: rng() * H,
+          sp: 110 + rng() * 50,
+          len: 4 + Math.floor(rng() * 4)
+        });
+      }
+
+       // Start in glowing night / late dusk mode so lantern train & fireflies shine immediately
+      
+
+      function frame(ms) {
+        const t = ms / 1000;
+        const nowTime = new Date(); const hr = nowTime.getHours() + nowTime.getMinutes() / 60 + nowTime.getSeconds() / 3600;
+        const dayWave = Math.max(0, Math.sin(((hr - 6) / 12) * Math.PI));
+        const nightAmt = Math.min(1, Math.max(0, 1 - dayWave * 1.4));
+        const duskAmt = Math.max(0, 1 - Math.abs(hr - 18.4) / 2.2);
+        const theme = getForestTheme(hr);
+
+        // 20-second seamless scene loop; rain mist rolls through during the final 5.5s of the loop
+        const loopPh = (t % 20.0) / 20.0;
+        const mistAmt = loopPh > 0.68 ? Math.sin(((loopPh - 0.68) / 0.32) * Math.PI) : 0.0;
+
+        // 1. Background Canopy & Ravine Gradient (Bayer Dithered)
+        for (let y = 0; y < H; y++) {
+          let c0, c1, f;
+          if (y < 140) {
+            c0 = theme.top; c1 = theme.mid; f = y / 140;
+          } else {
+            c0 = theme.mid; c1 = theme.bot; f = Math.min(1, (y - 140) / 180);
+          }
+          const rgbA = lerpRGB(c0, c1, Math.max(0, f - 0.06));
+          const rgbB = lerpRGB(c0, c1, Math.min(1, f + 0.06));
+          const colA = rgbStr(rgbA), colB = rgbStr(rgbB);
+          for (let x = 0; x < W; x++) {
+            g.fillStyle = dith(x, y, (f * 8) % 1) ? colB : colA;
+            g.fillRect(x, y, 1, 1);
+          }
+        }
+
+        // 2. Far Parallax Bamboo Silhouettes
+        drawBambooLayer(g, bambooFar, 1.4, 0.9, t, rgbStr(theme.farB), null, rgbStr(theme.farB));
+
+        // 3. Daytime Soft Green God Rays Filtering Through Canopy
+        if (dayWave > 0.15) {
+          const shafts = [
+            { x0: 14, w: 14, a: 0.28 },
+            { x0: 54, w: 18, a: 0.34 },
+            { x0: 98, w: 15, a: 0.26 },
+            { x0: 136, w: 12, a: 0.22 }
+          ];
+          for (let s = 0; s < shafts.length; s++) {
+            const sh = shafts[s];
+            const pulse = 0.7 + 0.3 * Math.sin(t * 0.6 + s * 1.7);
+            const strength = sh.a * dayWave * pulse;
+            for (let y = 0; y < 250; y++) {
+              const sx = Math.round(sh.x0 + y * 0.28);
+              const fadeY = 1 - y / 250;
+              for (let dx = 0; dx < sh.w; dx++) {
+                const px = sx + dx;
+                if (px >= 0 && px < W && dith(px, y, strength * fadeY)) {
+                  R(g, px, y, 1, 1, '#c8f7c4');
+                }
+              }
+            }
+          }
+        }
+
+        // 4. Mid-Ground Swaying Bamboo Layer (with segmented nodes & leaves)
+        drawBambooLayer(
+          g,
+          bambooMid,
+          2.6,
+          1.25,
+          t,
+          rgbStr(theme.midB),
+          rgbStr(theme.midHi),
+          rgbStr(lerpRGB(theme.midB, theme.midHi, 0.45))
+        );
+
+        // 5. Wooden Trestle Bridge Spanning the Ravine (y = 176..268)
+        const bridgeY = 176;
+        const timberDark = nightAmt > 0.5 ? '#1b1412' : '#2f2018';
+        const timberMid  = nightAmt > 0.5 ? '#32231c' : '#523626';
+        const timberHi   = nightAmt > 0.5 ? '#5e422e' : '#7d553a';
+        // Trestle vertical bents and X-bracing
+        for (let bx = 10; bx < W; bx += 22) {
+          // Two battered timber posts per bent
+          line(g, bx, bridgeY + 4, bx - 4, 268, timberDark, 2);
+          line(g, bx + 10, bridgeY + 4, bx + 14, 268, timberDark, 2);
+          line(g, bx, bridgeY + 4, bx - 4, 268, timberMid, 1);
+          line(g, bx + 10, bridgeY + 4, bx + 14, 268, timberMid, 1);
+          // Horizontal girts & X-diagonals
+          for (let ty = bridgeY + 18; ty < 260; ty += 22) {
+            R(g, bx - 3, ty, 16, 2, timberMid);
+            line(g, bx - 2, ty - 18, bx + 12, ty, timberHi, 1);
+            line(g, bx + 12, ty - 18, bx - 2, ty, timberMid, 1);
+          }
+        }
+        // Main bridge deck stringers, wooden ties & guardrails
+        R(g, 0, bridgeY, W, 5, timberDark);
+        R(g, 0, bridgeY + 1, W, 2, timberMid);
+        for (let tx = 0; tx < W; tx += 4) {
+          R(g, tx, bridgeY - 1, 2, 6, timberHi);
+        }
+        // Hanging bridge paper lanterns on posts
+        for (let lx = 26; lx < W; lx += 44) {
+          R(g, lx, bridgeY - 8, 1, 8, timberMid);
+          const lSw = Math.round(Math.sin(t * 2.1 + lx) * 1);
+          R(g, lx + lSw - 1, bridgeY - 5, 3, 4, '#ffae42');
+          R(g, lx + lSw, bridgeY - 4, 1, 2, '#fff3c4');
+          if (nightAmt > 0.2 || duskAmt > 0.2) {
+            for (let dy = -7; dy <= 7; dy++) {
+              for (let dx = -7; dx <= 7; dx++) {
+                const d = Math.sqrt(dx * dx + dy * dy);
+                if (d <= 7 && dith(lx + dx, bridgeY - 3 + dy, (1 - d / 7) * 0.5)) {
+                  R(g, lx + dx, bridgeY - 3 + dy, 1, 1, '#ffb84d');
+                }
+              }
+            }
+          }
+        }
+
+        // 6. Old Steam Train with Paper-Lantern Windows Crossing the Trestle Bridge
+        // Train moves smoothly across the bridge in a 20-second loop
+        const trainSpan = W + 190;
+        const trainHeadX = Math.round(((t * 18) % trainSpan) - 30);
+        const railY = bridgeY - 1;
+
+        // Warm headlamp beam projecting ahead of the locomotive
+        if (trainHeadX > -30 && trainHeadX < W + 40) {
+          for (let step = 2; step < 52; step++) {
+            const bx = trainHeadX + step;
+            if (bx < 0 || bx >= W) continue;
+            const halfH = 1 + Math.floor(step * 0.16);
+            const alpha = (1 - step / 52) * (0.35 + 0.45 * nightAmt);
+            for (let dy = -halfH; dy <= halfH; dy++) {
+              const py = railY - 10 + dy;
+              if (dith(bx, py, alpha * (1 - Math.abs(dy) / (halfH + 1)))) {
+                R(g, bx, py, 1, 1, '#ffe699');
+              }
+            }
+          }
+        }
+
+        // Steam Locomotive (head at trainHeadX, length 34px)
+        const locoX = trainHeadX - 34;
+        if (locoX < W + 10 && locoX + 40 > -10) {
+          // Cowcatcher, boiler, cab & smokestack
+          line(g, locoX + 34, railY - 6, locoX + 39, railY - 1, '#5e422e', 1);
+          line(g, locoX + 34, railY - 3, locoX + 38, railY - 1, '#c98a3e', 1);
+          R(g, locoX + 2, railY - 15, 32, 11, '#1d2628'); // Boiler & chassis
+          R(g, locoX + 12, railY - 16, 20, 2, '#2d3b3e');
+          // Brass boiler bands
+          R(g, locoX + 16, railY - 15, 1, 10, '#d4943a');
+          R(g, locoX + 24, railY - 15, 1, 10, '#d4943a');
+          R(g, locoX + 31, railY - 15, 1, 10, '#d4943a');
+          // Smokestack & steam dome
+          R(g, locoX + 28, railY - 22, 4, 7, '#1d2628');
+          R(g, locoX + 27, railY - 23, 6, 2, '#d4943a');
+          disc(g, locoX + 20, railY - 17, 3, '#c98a3e');
+          // Engineer cab with warm paper-lantern window
+          R(g, locoX, railY - 20, 12, 16, '#281d19');
+          R(g, locoX - 1, railY - 21, 14, 2, '#8c5830');
+          R(g, locoX + 3, railY - 17, 6, 6, '#ffae42');
+          R(g, locoX + 4, railY - 16, 4, 4, '#fff2b8');
+          // Headlamp
+          R(g, locoX + 34, railY - 13, 3, 4, '#ffe699');
+          R(g, locoX + 36, railY - 12, 1, 2, '#ffffff');
+          // Driving wheels & chugging side rod
+          const rodOffX = Math.round(Math.cos(t * 9) * 2);
+          const rodOffY = Math.round(Math.sin(t * 9) * 1);
+          for (let wx = locoX + 5; wx <= locoX + 27; wx += 7) {
+            disc(g, wx, railY - 2, 3, '#38261c');
+            R(g, wx, railY - 2, 1, 1, '#d4943a');
+          }
+          R(g, locoX + 5 + rodOffX, railY - 2 + rodOffY, 22, 1, '#e8b25f');
+
+          // Rising steam & warm amber sparks from smokestack
+          for (let p = 0; p < 7; p++) {
+            const age = ((t * 1.4 + p * 0.14) % 1.0);
+            const sx = Math.round(locoX + 29 - age * 28 + Math.sin(age * 8 + p) * 2);
+            const sy = Math.round(railY - 24 - age * 22);
+            const rad = 2 + Math.floor(age * 4);
+            for (let dy = -rad; dy <= rad; dy++) {
+              for (let dx = -rad; dx <= rad; dx++) {
+                if (dx * dx + dy * dy <= rad * rad && dith(sx + dx, sy + dy, (1 - age) * 0.6)) {
+                  R(g, sx + dx, sy + dy, 1, 1, age < 0.25 ? '#ffd480' : '#a8d8cd');
+                }
+              }
+            }
+          }
+        }
+
+        // 3 Vintage Wooden Passenger Carriages with Warm Paper-Lantern Windows
+        for (let cIdx = 0; cIdx < 3; cIdx++) {
+          const carX = locoX - 42 * (cIdx + 1);
+          if (carX > W + 10 || carX + 40 < -10) continue;
+          // Coupling bar
+          R(g, carX + 38, railY - 6, 4, 2, '#1d2628');
+          // Clerestory roof
+          R(g, carX + 3, railY - 22, 32, 2, '#4a2e1e');
+          R(g, carX + 1, railY - 20, 36, 2, '#7c4e29');
+          // Wooden carriage body
+          R(g, carX + 2, railY - 18, 34, 14, '#362117');
+          R(g, carX + 2, railY - 9, 34, 1, '#b87a38');
+          // 4 Glowing paper-lantern windows per carriage + warm halo
+          for (let wIdx = 0; wIdx < 4; wIdx++) {
+            const wx = carX + 5 + wIdx * 7;
+            const wy = railY - 16;
+            // Warm window halo
+            for (let dy = -3; dy <= 8; dy++) {
+              for (let dx = -2; dx <= 7; dx++) {
+                if (dith(wx + dx, wy + dy, 0.35 * (0.4 + 0.6 * nightAmt))) {
+                  R(g, wx + dx, wy + dy, 1, 1, '#ff9d3b');
+                }
+              }
+            }
+            R(g, wx, wy, 5, 6, '#ffa834');
+            R(g, wx + 1, wy + 1, 3, 4, '#ffe89e');
+            R(g, wx + 1, wy + 1, 3, 2, '#fff8d6'); // Paper lantern top glow
+            // Tiny passenger silhouette in some windows
+            if ((cIdx + wIdx) % 2 === 0) {
+              R(g, wx + 2, wy + 3, 2, 3, '#362117');
+              R(g, wx + 2, wy + 2, 1, 1, '#362117');
+            }
+          }
+          // Carriage bogies & wheels
+          disc(g, carX + 8, railY - 2, 2, '#2d2018');
+          disc(g, carX + 14, railY - 2, 2, '#2d2018');
+          disc(g, carX + 24, railY - 2, 2, '#2d2018');
+          disc(g, carX + 30, railY - 2, 2, '#2d2018');
+          // Tail lantern on last car
+          if (cIdx === 2) {
+            R(g, carX, railY - 12, 2, 3, '#ff4d38');
+            R(g, carX - 1, railY - 11, 1, 1, '#ff9e80');
+          }
+        }
+
+        // 7. Foreground Bamboo Stalks & Embankment Ledge (y = 258..320)
+        drawBambooLayer(
+          g,
+          bambooFg,
+          3.8,
+          1.55,
+          t,
+          rgbStr(theme.fgB),
+          rgbStr(lerpRGB(theme.fgB, theme.midB, 0.5)),
+          rgbStr(theme.fgB)
+        );
+
+        // Foreground mossy stone & track ledge at bottom (y = 264..320)
+        for (let y = 262; y < H; y++) {
+          const ledgeH = 266 + Math.round(Math.sin(y * 0.2) * 2);
+          for (let x = 0; x < W; x++) {
+            const topCurve = 264 + Math.round(Math.sin(x * 0.045) * 5);
+            if (y >= topCurve) {
+              const d = (y - topCurve) / 56;
+              const col = d < 0.14
+                ? rgbStr(lerpRGB(theme.midB, [90, 150, 110], 0.35))
+                : d < 0.4
+                ? rgbStr(theme.farB)
+                : rgbStr(theme.fgB);
+              R(g, x, y, 1, 1, col);
+            }
+          }
+        }
+        // Old foreground spur track rails along the bottom ledge (y = 278)
+        R(g, 0, 279, W, 2, '#3b281c');
+        for (let sx = 2; sx < W; sx += 7) {
+          R(g, sx, 280, 4, 2, '#241812');
+        }
+        R(g, 0, 278, W, 1, '#7a8e8c');
+
+        // 8. Fox Watching From the Foreground Tracks (x = 56, y = 264..279)
+        const fx = 56, fy = 265;
+        // Fluffy swaying fox tail with white tip
+        const tailSway = Math.round(Math.sin(t * 2.4) * 2);
+        R(g, fx - 9, fy + 8 + tailSway, 7, 4, '#d96226');
+        R(g, fx - 11, fy + 7 + tailSway, 3, 3, '#fff3dc');
+        // Seated fox body & chest
+        R(g, fx - 3, fy + 6, 7, 8, '#d96226');
+        R(g, fx - 2, fy + 6, 5, 7, '#f07c38');
+        R(g, fx + 1, fy + 7, 3, 5, '#fff3dc'); // White chest fur
+        R(g, fx - 2, fy + 12, 2, 3, '#261712'); // Dark paws
+        R(g, fx + 2, fy + 12, 2, 3, '#261712');
+        // Fox head turned slightly toward the bridge + twitching ears
+        const earTwitch = Math.sin(t * 3.7) > 0.88 ? 1 : 0;
+        R(g, fx - 2, fy + 1, 6, 5, '#f07c38');
+        R(g, fx + 3, fy + 3, 2, 2, '#fff3dc'); // Snout
+        R(g, fx + 4, fy + 3, 1, 1, '#1a1210'); // Nose
+        R(g, fx - 2, fy - 2 + earTwitch, 2, 3, '#d96226'); // Left ear
+        R(g, fx + 2, fy - 2, 2, 3, '#d96226'); // Right ear
+        R(g, fx - 2, fy - 2 + earTwitch, 1, 1, '#261712');
+        R(g, fx + 2, fy - 2, 1, 1, '#261712');
+        // Blinking amber eye reflecting the train lanterns
+        if (Math.floor(t * 0.9) % 6 !== 0) {
+          R(g, fx + 1, fy + 2, 2, 1, '#ffe484');
+        }
+
+        // 9. Glowing Fireflies & Floating Luminous Spores
+        const glowBoost = 0.25 + 0.75 * Math.max(nightAmt, duskAmt * 0.85);
+        for (let i = 0; i < fireflies.length; i++) {
+          const ff = fireflies[i];
+          const px = Math.round(((ff.x + t * ff.vx + Math.sin(t * 1.4 + ff.phase) * 5) % W + W) % W);
+          const py = Math.round(((ff.y + t * ff.vy) % H + H) % H);
+          const pulse = 0.5 + 0.5 * Math.sin(t * 3.2 + ff.phase);
+          if (pulse * glowBoost > 0.22) {
+            const coreCol = ff.warm ? '#fff3a8' : '#b8ffea';
+            const haloCol = ff.warm ? '#f59e2d' : '#3cd4ad';
+            // Soft dithered firefly halo
+            for (let dy = -3; dy <= 3; dy++) {
+              for (let dx = -3; dx <= 3; dx++) {
+                const d2 = dx * dx + dy * dy;
+                if (d2 <= 9 && dith(px + dx, py + dy, (1 - Math.sqrt(d2) / 3.2) * pulse * glowBoost * 0.7)) {
+                  R(g, px + dx, py + dy, 1, 1, haloCol);
+                }
+              }
+            }
+            R(g, px, py, 1, 1, coreCol);
+          }
+        }
+
+        // 10. Rain Mist Rolling Through at the End of the Loop
+        if (mistAmt > 0.02) {
+          // Drifting horizontal mist bands across the bamboo & trestle bridge
+          const mistBands = [68, 118, 168, 214, 254];
+          for (let b = 0; b < mistBands.length; b++) {
+            const by = mistBands[b];
+            const driftX = Math.sin(t * 0.8 + b * 1.5) * 24;
+            for (let y = by - 14; y <= by + 14; y++) {
+              const bandFade = 1 - Math.abs(y - by) / 15;
+              const alpha = mistAmt * bandFade * 0.42;
+              for (let x = 0; x < W; x++) {
+                const wave = 0.5 + 0.5 * Math.sin((x + driftX) * 0.06 + y * 0.1);
+                if (dith(x, y, alpha * wave)) {
+                  R(g, x, y, 1, 1, nightAmt > 0.4 ? '#6bc4b8' : '#d8f4ea');
+                }
+              }
+            }
+          }
+          // Fine slanting rain streaks in the mist
+          for (let r = 0; r < rainDrops.length; r++) {
+            const rd = rainDrops[r];
+            const rx = Math.round(((rd.x - t * 18) % W + W) % W);
+            const ry = Math.round(((rd.y + t * rd.sp) % H + H) % H);
+            if (dith(rx, ry, mistAmt * 0.75)) {
+              line(g, rx, ry, rx - 1, ry + rd.len, '#a8e6dc', 1);
+            }
+          }
+        }
+
+        bg.drawImage(cv, 0, 0);
+        requestAnimationFrame(frame);
+      }
+
+      requestAnimationFrame(frame);
+    })();
+  </script>
+</body>
+</html>

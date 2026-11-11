@@ -114,7 +114,7 @@ Everything runs fully offline — there's no Kanri backend to breach, because th
       <img src="assets/feature-aesthetic.svg" width="55" alt="A quieter aesthetic icon" /><br>
       <strong>A quieter aesthetic</strong><br>
       A matte <code>#121212</code> dark palette, Panchang display type paired with Google Sans Flex, and frosted-glass surfaces via Haze.<br><br>
-      <code>Light, Dark, AMOLED & Glass Themes</code> <code>Panchang Typography</code> <code>Haze Glassmorphism</code>
+      <code>Light, Dark, AMOLED & Glass Themes (22 Animated Shaders)</code> <code>Panchang Typography</code> <code>Haze Glassmorphism</code>
     </td>
     <td width="50%" valign="top">
       <img src="assets/feature-haptics.svg" width="55" alt="Haptics icon" /><br>
