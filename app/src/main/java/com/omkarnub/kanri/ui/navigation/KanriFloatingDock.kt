@@ -345,17 +345,9 @@ private fun DockTabItem(
         label = "tabDotScale"
     )
 
-    val targetAlpha = if (isSelected) 1.0f else 0.50f
-    val baseColor = if (tokens != null) {
-        if (tokens.tintLightness > 0.25f) {
-            val l = ((tokens.tintLightness - 0.25f) / 0.75f).coerceIn(0f, 1f)
-            lerpColor(tokens.textPrimary, Color(0xFF121212), l)
-        } else {
-            tokens.textPrimary
-        }
-    } else {
-        dockTheme.activeContentColor
-    }
+    val isLightDock = tokens == null && dockTheme.activeContentColor != DarkOffWhite
+    val targetAlpha = if (isSelected) 1.0f else if (isLightDock) 0.60f else 0.75f
+    val baseColor = if (isLightDock) dockTheme.activeContentColor else Color.White
 
     val contentColor by animateColorAsState(
         targetValue = baseColor.copy(alpha = targetAlpha),
@@ -629,13 +621,8 @@ private fun DockAddButton(
         modifier = buttonModifier,
         contentAlignment = Alignment.Center
     ) {
-        val addIconColor = if (tokens != null) {
-            if (tokens.tintLightness > 0.25f) {
-                val l = ((tokens.tintLightness - 0.25f) / 0.75f).coerceIn(0f, 1f)
-                lerpColor(tokens.accent, Color(0xFF121212), l)
-            } else {
-                tokens.accent
-            }
+        val addIconColor = if (tokens != null || dockTheme.activeContentColor == DarkOffWhite) {
+            Color.White
         } else {
             dockTheme.addButtonIconColor
         }

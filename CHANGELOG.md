@@ -5,6 +5,13 @@ All notable changes to Kanri will be documented in this file.
 The format is based on [Keep a Changelog](https://keepachangelog.com/en/1.0.0/),
 and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0.html).
 
+## [1.18.14] - 2026-11-12
+
+### Fixed
+- **Floating Dock Icon & Label Contrast (`KanriFloatingDock`)**:
+  - Restored crisp `Color.White` foreground color for the floating navigation dock SVG icons, tab labels, active dot indicator, and `+` button across Glass, Dark, and AMOLED themes by removing the light-tint `Color(0xFF121212)` darkening interpolation and raising inactive tab opacity from `0.50f` to `0.75f` (preserving dark foreground contrast in Light theme).
+- Bumped version to `1.18.14` (Build 65).
+
 ## [1.18.13] - 2026-11-11
 
 ### Fixed (Phase 6 Configuration-Change & Stress Verification Pass)

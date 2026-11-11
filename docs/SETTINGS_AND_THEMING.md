@@ -168,4 +168,5 @@ Kanri combines Google's Jetpack Splash Screen library (`androidx.core:core-splas
 - **Notes (`v1.18.11`)**: Stabilized `biometric` and `security-crypto` dependencies, consolidated dependencies into `gradle/libs.versions.toml`, enabled Gradle build caching, fixed `InstantPopupService` API 34 foreground-service gating and all Kotlin compiler warnings (`0` warnings), and wired `LocalClipboard` and shortcut usage tracking.
 - **Notes (`v1.18.12`)**: Added `network_security_config.xml` (`usesCleartextTraffic="false"`), excluded Keystore-backed cloud backup prefs and crash logs from cloud backup and device transfer, hardened WebView file/URL sandboxing, gated `QuickEntryActivity` behind biometric/PIN lock when enabled, and wrapped external/settings `startActivity` intents against `ActivityNotFoundException`.
 - **Notes (`v1.18.13`)**: Guarded post-onboarding SMS/battery optimization prompts in `MainActivity` (`savedInstanceState == null`) and marked onboarding-completed flags in `OnboardingScreen.finishOnboarding()` so configuration changes and skipped onboarding steps never hijack screen focus.
-- **Version**: Kanri `1.18.13` (Build 64).
+- **Notes (`v1.18.14`)**: Restored crisp white dock SVG icons, labels, indicator dot, and `+` button across Glass, Dark, and AMOLED themes (`KanriFloatingDock`).
+- **Version**: Kanri `1.18.14` (Build 65).
