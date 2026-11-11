@@ -5,6 +5,20 @@ All notable changes to Kanri will be documented in this file.
 The format is based on [Keep a Changelog](https://keepachangelog.com/en/1.0.0/),
 and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0.html).
 
+## [1.14.3] - 2026-11-11
+
+### Fixed & Changed
+- **Default App Theme to Glass Mode**:
+  - Configured `ThemeMode.GLASS` as the default theme in `ThemePreferences.kt` on new installs and resets.
+- **Full Ring Visibility in Dark & AMOLED Modes**:
+  - Fixed background track visibility in `RingVisualizer` (`ExpenseVisualizer.kt`) so that the complete 360-degree circle is clearly visible in Dark and AMOLED mode rather than blending into black.
+  - Added subtle boundary hairlines for clean edge definition and updated `AnimatedMonochromeRingChart.kt` background track to match.
+- **Frosted Translucent Floating Dock in Light and Dark Modes**:
+  - Increased dock surface opacity to authentic frosted glass levels (`0.76f - 0.82f`) in `KanriGlass.kt` for Light, Dark, and AMOLED modes.
+  - Connected `Modifier.hazeSource` to `MainNavigationScreen.kt` tabs container so underlying content is sampled and blurred in real time.
+  - Added backing translucent background in `KanriFloatingDock.kt` so the dock has frosted substance and is never see-through.
+- Bumped version to `1.14.3` (Build 45).
+
 ## [1.14.2] - 2026-11-11
 
 ### Refined & Polished

@@ -171,9 +171,9 @@ fun AnimatedMonochromeRingChart(
                 center = Offset(centerX, centerY)
             )
 
-            // 3. Subtle background track ring
+            // 3. Subtle background track ring (clearly visible in Dark and Light mode)
             drawCircle(
-                color = (if (isDark) Color.White else Color.Black).copy(alpha = 0.05f),
+                color = (if (isDark) Color.White else Color.Black).copy(alpha = if (isDark) 0.16f else 0.08f),
                 radius = ringRadius,
                 center = Offset(centerX, centerY),
                 style = Stroke(width = strokeWidthPx)

@@ -221,6 +221,7 @@ fun KanriFloatingDock(
                     ambientColor = dockTheme.shadowColor.copy(alpha = dockTheme.shadowColor.alpha * 0.6f)
                 )
                 .clip(RoundedCornerShape(32.dp))
+                .background(dockTheme.fallbackBackgroundColor)
                 .then(
                     if (hazeState != null) {
                         Modifier.hazeEffect(
@@ -544,6 +545,7 @@ private fun DockAddButton(
                 ambientColor = dockTheme.shadowColor.copy(alpha = dockTheme.shadowColor.alpha * 0.6f)
             )
             .clip(CircleShape)
+            .background(dockTheme.fallbackBackgroundColor)
             .then(
                 if (hazeState != null) {
                     Modifier.hazeEffect(

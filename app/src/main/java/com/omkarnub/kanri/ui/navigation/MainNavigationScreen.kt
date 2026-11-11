@@ -265,7 +265,9 @@ fun MainNavigationScreen(
             when (destination) {
                 MainNavDestination.Tabs -> {
                     Box(
-                        modifier = Modifier.fillMaxSize()
+                        modifier = Modifier
+                            .fillMaxSize()
+                            .hazeSource(state = effectiveHazeState)
                     ) {
                         // Screen Content (scrolls underneath the translucent frosted glass dock)
                         // Directional tab slide transition with fluid momentum

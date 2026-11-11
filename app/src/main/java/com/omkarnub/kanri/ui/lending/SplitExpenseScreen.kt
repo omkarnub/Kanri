@@ -1,4 +1,4 @@
-﻿package com.omkarnub.kanri.ui.lending
+package com.omkarnub.kanri.ui.lending
 
 import android.content.Context
 import android.os.Build

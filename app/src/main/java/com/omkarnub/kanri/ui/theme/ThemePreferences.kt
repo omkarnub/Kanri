@@ -89,13 +89,13 @@ class ThemePreferences(private val context: Context) {
     }
 
     private fun loadThemeMode(): ThemeMode {
-        val savedName = prefs.getString(KEY_THEME_MODE, ThemeMode.DARK.name) ?: ThemeMode.DARK.name
+        val savedName = prefs.getString(KEY_THEME_MODE, ThemeMode.GLASS.name) ?: ThemeMode.GLASS.name
         return when (savedName) {
             "GLASS_DARK", "GLASS_LIGHT", "GLASS" -> ThemeMode.GLASS
             else -> try {
                 ThemeMode.valueOf(savedName)
             } catch (e: Exception) {
-                ThemeMode.DARK
+                ThemeMode.GLASS
             }
         }
     }
@@ -179,7 +179,7 @@ class ThemePreferences(private val context: Context) {
     }
 
     fun reset() {
-        themeMode = ThemeMode.DARK
+        themeMode = ThemeMode.GLASS
         appIconStyle = AppIconStyle.DARK
         glassBackground = com.omkarnub.kanri.ui.common.GlassBackgroundType.AURORA
         isDynamicColor = false

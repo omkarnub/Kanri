@@ -609,69 +609,69 @@ fun getKanriGlassTheme(
         }
 
         ThemeMode.DARK, ThemeMode.SYSTEM -> KanriGlassTheme(
-            glassBorder = BorderStroke(0.8.dp, Color(0x28FFFFFF)),
+            glassBorder = BorderStroke(0.8.dp, Color(0x38FFFFFF)),
             activeContentColor = DarkOffWhite,
-            inactiveContentColor = Color(0x66FFFFFF),
+            inactiveContentColor = Color(0x99FFFFFF),
             addButtonIconColor = DarkOffWhite,
             shadowColor = Color.Black.copy(alpha = 0.40f),
             shadowElevation = 14.dp,
             hazeStyle = HazeStyle(
-                backgroundColor = Color(0xFF141414).copy(alpha = 0.22f),
-                tint = HazeTint(Color.White.copy(alpha = 0.08f)),
-                blurRadius = 24.dp,
-                noiseFactor = 0.04f
+                backgroundColor = Color(0xFF141414).copy(alpha = 0.76f),
+                tint = HazeTint(Color.White.copy(alpha = 0.10f)),
+                blurRadius = 26.dp,
+                noiseFactor = 0.02f
             ),
             popupHazeStyle = HazeStyle(
-                backgroundColor = Color(0xFF141414).copy(alpha = 0.65f),
+                backgroundColor = Color(0xFF141414).copy(alpha = 0.88f),
                 tint = HazeTint(Color(0xFF0A0A0A).copy(alpha = 0.50f)),
                 blurRadius = 36.dp,
-                noiseFactor = 0.07f
+                noiseFactor = 0.04f
             ),
-            fallbackBackgroundColor = Color(0xFF1A1A1A).copy(alpha = 0.40f)
+            fallbackBackgroundColor = Color(0xFF161616).copy(alpha = 0.80f)
         )
 
         ThemeMode.AMOLED -> KanriGlassTheme(
-            glassBorder = BorderStroke(0.8.dp, Color(0x30FFFFFF)),
+            glassBorder = BorderStroke(0.8.dp, Color(0x40FFFFFF)),
             activeContentColor = DarkOffWhite,
-            inactiveContentColor = Color(0x66FFFFFF),
+            inactiveContentColor = Color(0x99FFFFFF),
             addButtonIconColor = DarkOffWhite,
             shadowColor = Color.Black.copy(alpha = 0.55f),
             shadowElevation = 14.dp,
             hazeStyle = HazeStyle(
-                backgroundColor = Color(0xFF000000).copy(alpha = 0.22f),
+                backgroundColor = Color(0xFF000000).copy(alpha = 0.80f),
                 tint = HazeTint(Color.White.copy(alpha = 0.08f)),
-                blurRadius = 24.dp,
-                noiseFactor = 0.04f
-            ),
-            popupHazeStyle = HazeStyle(
-                backgroundColor = Color(0xFF000000).copy(alpha = 0.70f),
-                tint = HazeTint(Color(0xFF000000).copy(alpha = 0.60f)),
-                blurRadius = 36.dp,
-                noiseFactor = 0.07f
-            ),
-            fallbackBackgroundColor = Color(0xFF0E0E0E).copy(alpha = 0.40f)
-        )
-
-        ThemeMode.LIGHT -> KanriGlassTheme(
-            glassBorder = BorderStroke(0.8.dp, Color(0xFFE2DEC9).copy(alpha = 0.65f)),
-            activeContentColor = Color(0xFF000000),
-            inactiveContentColor = Color(0x60000000),
-            addButtonIconColor = Color(0xFF000000),
-            shadowColor = Color.Black.copy(alpha = 0.04f),
-            shadowElevation = 8.dp,
-            hazeStyle = HazeStyle(
-                backgroundColor = Color.White.copy(alpha = 0.28f),
-                tint = HazeTint(Color.White.copy(alpha = 0.10f)),
-                blurRadius = 24.dp,
+                blurRadius = 26.dp,
                 noiseFactor = 0.02f
             ),
             popupHazeStyle = HazeStyle(
-                backgroundColor = Color.White.copy(alpha = 0.92f),
-                tint = HazeTint(Color.White.copy(alpha = 0.75f)),
+                backgroundColor = Color(0xFF000000).copy(alpha = 0.90f),
+                tint = HazeTint(Color(0xFF000000).copy(alpha = 0.60f)),
                 blurRadius = 36.dp,
                 noiseFactor = 0.04f
             ),
-            fallbackBackgroundColor = Color.White.copy(alpha = 0.35f)
+            fallbackBackgroundColor = Color(0xFF000000).copy(alpha = 0.85f)
+        )
+
+        ThemeMode.LIGHT -> KanriGlassTheme(
+            glassBorder = BorderStroke(0.8.dp, Color(0xFF161616).copy(alpha = 0.12f)),
+            activeContentColor = Color(0xFF000000),
+            inactiveContentColor = Color(0x80000000),
+            addButtonIconColor = Color(0xFF000000),
+            shadowColor = Color.Black.copy(alpha = 0.06f),
+            shadowElevation = 8.dp,
+            hazeStyle = HazeStyle(
+                backgroundColor = Color(0xFFFAF9F5).copy(alpha = 0.78f),
+                tint = HazeTint(Color.White.copy(alpha = 0.20f)),
+                blurRadius = 26.dp,
+                noiseFactor = 0.02f
+            ),
+            popupHazeStyle = HazeStyle(
+                backgroundColor = Color(0xFFFAF9F5).copy(alpha = 0.92f),
+                tint = HazeTint(Color.White.copy(alpha = 0.50f)),
+                blurRadius = 36.dp,
+                noiseFactor = 0.02f
+            ),
+            fallbackBackgroundColor = Color(0xFFFAF9F5).copy(alpha = 0.82f)
         )
     }
 }

@@ -630,14 +630,28 @@ private fun RingVisualizer(
             contentAlignment = Alignment.Center
         ) {
             val tokens = LocalKanriGlass.current
-            val trackColor = tokens?.track ?: MaterialTheme.colorScheme.surfaceVariant.copy(alpha = 0.6f)
+            val isDark = tokens?.isDark ?: (MaterialTheme.colorScheme.surface.luminance() < 0.5f)
+            val trackColor = if (tokens != null) {
+                tokens.track
+            } else if (isDark) {
+                Color.White.copy(alpha = 0.16f)
+            } else {
+                Color(0xFF161616).copy(alpha = 0.09f)
+            }
+            val hairlineColor = if (tokens != null) {
+                tokens.borderStart.copy(alpha = 0.20f)
+            } else if (isDark) {
+                Color.White.copy(alpha = 0.10f)
+            } else {
+                Color(0xFF161616).copy(alpha = 0.07f)
+            }
 
             Canvas(modifier = Modifier.size(305.dp)) {
                 val strokeWidth = 30.dp.toPx()
                 val arcSize = size.width - strokeWidth
                 val topLeftOffset = Offset(strokeWidth / 2f, strokeWidth / 2f)
 
-                // Background Track
+                // 1. Background Track (clearly visible full 360-degree ring in Dark and Light mode)
                 drawArc(
                     color = trackColor,
                     startAngle = 0f,
@@ -646,6 +660,27 @@ private fun RingVisualizer(
                     topLeft = topLeftOffset,
                     size = Size(arcSize, arcSize),
                     style = Stroke(width = strokeWidth)
+                )
+
+                // 2. Subtle outer & inner boundary hairlines for clean edge definition
+                drawArc(
+                    color = hairlineColor,
+                    startAngle = 0f,
+                    sweepAngle = 360f,
+                    useCenter = false,
+                    topLeft = Offset(0.5f.dp.toPx(), 0.5f.dp.toPx()),
+                    size = Size(size.width - 1.dp.toPx(), size.height - 1.dp.toPx()),
+                    style = Stroke(width = 1.dp.toPx())
+                )
+                val innerOffset = strokeWidth
+                drawArc(
+                    color = hairlineColor,
+                    startAngle = 0f,
+                    sweepAngle = 360f,
+                    useCenter = false,
+                    topLeft = Offset(innerOffset, innerOffset),
+                    size = Size(size.width - 2f * innerOffset, size.height - 2f * innerOffset),
+                    style = Stroke(width = 1.dp.toPx())
                 )
 
                 // Progress Arc (only drawn when there is active spending)
