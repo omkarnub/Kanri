@@ -331,7 +331,10 @@ fun OnboardingScreen(
         coroutineScope.launch {
             isStepCardVisible = false
             delay(240L)
-            OnboardingPreferences.getInstance(context).hasCompletedOnboarding = true
+            val prefs = OnboardingPreferences.getInstance(context)
+            prefs.hasPromptedPostOnboardingSms = true
+            BatteryOptimizationHelper.setPromptedOnce(context, true)
+            prefs.hasCompletedOnboarding = true
             cloudBackupPrefs.backupMode = BackupMode.OFFLINE
             CloudBackupWorker.cancel(context)
             onComplete()

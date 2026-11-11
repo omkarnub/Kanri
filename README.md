@@ -169,7 +169,7 @@ Kanri is available directly on **Orion Store** for automated background updates 
 - **Direct GitHub APK:** Grab the latest signed APK from the [Releases page](https://github.com/omkarnub/Kanri/releases/latest).
 
 - **Package:** `com.omkarnub.kanri`
-- **Size:** ~11.7 MB (`arm64-v8a` split) / ~26.8 MB (universal APK, R8 minified & shrunk)
+- **Size:** ~11.8 MB (`arm64-v8a` split) / ~27.0 MB (universal APK, R8 minified & shrunk) / ~21.3 MB (release AAB)
 - **Requires:** Android 8.0 (API 26) or later
 
 > [!NOTE]

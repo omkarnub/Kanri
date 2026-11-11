@@ -84,19 +84,18 @@ open class MainActivity : FragmentActivity() {
         }
 
         val onboardingPrefs = com.omkarnub.kanri.ui.onboarding.OnboardingPreferences.getInstance(applicationContext)
-        if (onboardingPrefs.hasCompletedOnboarding &&
-            !onboardingPrefs.hasPromptedPostOnboardingSms &&
-            !com.omkarnub.kanri.util.SmsPermissionHelper.hasSmsPermissions(this)
-        ) {
-            onboardingPrefs.hasPromptedPostOnboardingSms = true
-            smsPermissionLauncher.launch(
-                arrayOf(
-                    android.Manifest.permission.RECEIVE_SMS,
-                    android.Manifest.permission.READ_SMS
+        if (savedInstanceState == null && onboardingPrefs.hasCompletedOnboarding) {
+            if (!onboardingPrefs.hasPromptedPostOnboardingSms &&
+                !com.omkarnub.kanri.util.SmsPermissionHelper.hasSmsPermissions(this)
+            ) {
+                onboardingPrefs.hasPromptedPostOnboardingSms = true
+                smsPermissionLauncher.launch(
+                    arrayOf(
+                        android.Manifest.permission.RECEIVE_SMS,
+                        android.Manifest.permission.READ_SMS
+                    )
                 )
-            )
-        }
-        if (onboardingPrefs.hasCompletedOnboarding) {
+            }
             com.omkarnub.kanri.util.BatteryOptimizationHelper.promptOnceIfAppropriate(this)
         }
 

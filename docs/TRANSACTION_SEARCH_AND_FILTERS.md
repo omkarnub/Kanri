@@ -1,6 +1,6 @@
 # Transaction Details, Search & Filters Documentation
 
-Current Version: **1.18.12** (Build 63)
+Current Version: **1.18.13** (Build 64)
 
 ## 1. Overview
 This document covers the UI/UX architecture, data flow, and styling implementations for:

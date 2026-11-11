@@ -5,6 +5,14 @@ All notable changes to Kanri will be documented in this file.
 The format is based on [Keep a Changelog](https://keepachangelog.com/en/1.0.0/),
 and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0.html).
 
+## [1.18.13] - 2026-11-11
+
+### Fixed (Phase 6 Configuration-Change & Stress Verification Pass)
+- **Post-Onboarding & Configuration-Change Prompt Restraint**:
+  - Updated `OnboardingScreen.finishOnboarding()` to record `hasPromptedPostOnboardingSms = true` and `BatteryOptimizationHelper.setPromptedOnce(context, true)` upon onboarding completion so users who intentionally skip optional permissions during onboarding are not re-prompted immediately upon entering the home ledger.
+  - Restricted legacy upgrader post-onboarding SMS/battery prompts in `MainActivity.onCreate` to `savedInstanceState == null` so device rotation, font scaling (`200%`), dark/light switches, and RTL configuration changes never launch external system settings over the active screen.
+- Bumped version to `1.18.13` (Build 64).
+
 ## [1.18.12] - 2026-11-11
 
 ### Security & Pre-Publish Hardening (Phase 5 Audit)
