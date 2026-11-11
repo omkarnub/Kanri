@@ -82,18 +82,22 @@ import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.draw.clip
 import androidx.compose.ui.draw.shadow
+import androidx.compose.ui.geometry.Offset
 import androidx.compose.ui.graphics.Brush
 import androidx.compose.ui.graphics.Color
+import androidx.compose.ui.graphics.Shadow
 import androidx.compose.ui.graphics.graphicsLayer
 import androidx.compose.ui.graphics.vector.ImageVector
 import androidx.compose.ui.platform.LocalContext
 import androidx.compose.ui.res.stringResource
 import androidx.compose.ui.semantics.Role
+import androidx.compose.ui.text.TextStyle
 import androidx.compose.ui.text.font.FontWeight
 import androidx.compose.ui.text.style.TextAlign
 import androidx.compose.ui.unit.dp
 import androidx.compose.ui.unit.sp
 import androidx.compose.ui.viewinterop.AndroidView
+import androidx.compose.ui.window.Dialog
 import androidx.core.app.NotificationManagerCompat
 import androidx.lifecycle.Lifecycle
 import androidx.lifecycle.LifecycleEventObserver
@@ -231,6 +235,73 @@ fun OnboardingScreen(
         ActivityResultContracts.RequestPermission()
     ) {
         hasNotificationPermission = NotificationManagerCompat.from(context).areNotificationsEnabled()
+    }
+
+    var pendingSkipConfig by remember { mutableStateOf<PermissionStepConfig?>(null) }
+
+    val permissionConfigs = remember {
+        mapOf(
+            2 to PermissionStepConfig(
+                step = 2,
+                icon = Icons.Default.Sms,
+                title = "Bank SMS Detection",
+                description = "Intercepts bank debit & credit alerts 100% offline. The only reliable source for sent payments (UPI, ATM, cards).",
+                grantLabel = "Enable SMS Detection",
+                grantedLabel = "SMS Detection Active",
+                skipDialogTitle = "SMS Detection is Essential",
+                skipDialogRationale = "Kanri operates 100% offline without connecting to your bank servers. Bank SMS is the only way Kanri can detect debit transactions, ATM withdrawals, and card spends. Without this, you will have to enter every single expense manually."
+            ),
+            3 to PermissionStepConfig(
+                step = 3,
+                icon = Icons.Default.AccountBalanceWallet,
+                title = "Payment Apps Listener",
+                description = "Catches incoming money notifications and scratch cards from Google Pay, PhonePe, Paytm, and CRED.",
+                grantLabel = "Grant Access",
+                grantedLabel = "Access Granted",
+                skipDialogTitle = "Incoming UPI Tracking",
+                skipDialogRationale = "Banks rarely send SMS alerts for peer-to-peer transfers or cashback rewards received via UPI. Notification access allows Kanri to capture money received on Google Pay, PhonePe, Paytm, and CRED in real-time."
+            ),
+            4 to PermissionStepConfig(
+                step = 4,
+                icon = Icons.Default.Bolt,
+                title = "Instant Overlay",
+                description = "Display a lightweight popup right after you pay, so you can review and categorize payments the moment they happen.",
+                grantLabel = "Enable Overlay",
+                grantedLabel = "Overlay Enabled",
+                skipDialogTitle = "Instant Categorization",
+                skipDialogRationale = "The instant overlay pops up for 2 seconds right after any payment so you can tag food, fuel, or bills with a single tap. Without it, transactions accumulate uncategorized until you open the app."
+            ),
+            5 to PermissionStepConfig(
+                step = 5,
+                icon = Icons.Default.PowerSettingsNew,
+                title = "Background Endurance",
+                description = "Keep Kanri running unrestricted in the background so Android never puts your expense trackers to sleep.",
+                grantLabel = "Allow Background Run",
+                grantedLabel = "Background Run Active",
+                skipDialogTitle = "Prevent Background Termination",
+                skipDialogRationale = "Android aggressively terminates apps in the background to save battery. Disabling optimization guarantees that Kanri stays alive to capture SMS alerts even when your phone has been asleep for hours."
+            ),
+            6 to PermissionStepConfig(
+                step = 6,
+                icon = Icons.Default.Notifications,
+                title = "System Alerts",
+                description = "Receive mindful spend nudges, daily summaries, and backup status notifications right on your phone.",
+                grantLabel = "Enable Notifications",
+                grantedLabel = "Notifications Active",
+                skipDialogTitle = "Mindful Budget Alerts",
+                skipDialogRationale = "Notifications keep you mindful with daily spending summaries, budget threshold alerts, and offline backup reminders. Without them, you won't receive timely budget nudges."
+            ),
+            7 to PermissionStepConfig(
+                step = 7,
+                icon = Icons.Default.Fingerprint,
+                title = "Biometric Security",
+                description = "Require Fingerprint, Face Unlock, or Device Lock every time you open your financial scroll.",
+                grantLabel = "Enable App Lock",
+                grantedLabel = "App Lock Enabled",
+                skipDialogTitle = "Protect Financial Privacy",
+                skipDialogRationale = "Your transaction history and spending habits are sensitive personal data. App Lock prevents anyone with physical access to your unlocked phone from viewing your financial sanctuary."
+            )
+        )
     }
 
     // Lifecycle observer to re-check permissions on resume
@@ -510,104 +581,65 @@ fun OnboardingScreen(
                                     onContinue = { advanceToStep(2) }
                                 )
 
-                                2 -> PermissionCardView(
-                                    icon = Icons.Default.Sms,
-                                    title = "Bank SMS Detection",
-                                    description = "Intercepts bank debit & credit alerts 100% offline. The only reliable source for sent payments (UPI, ATM, cards).",
-                                    isGranted = hasSmsPermission,
-                                    grantLabel = "Enable SMS Detection",
-                                    grantedLabel = "SMS Detection Active",
-                                    onGrant = {
-                                        smsLauncher.launch(
-                                            arrayOf(
-                                                Manifest.permission.RECEIVE_SMS,
-                                                Manifest.permission.READ_SMS
-                                            )
-                                        )
-                                    },
-                                    onNext = { advanceToStep(3) },
-                                    onSkip = { advanceToStep(3) }
-                                )
-
-                                3 -> PermissionCardView(
-                                    icon = Icons.Default.AccountBalanceWallet,
-                                    title = "Payment Apps Listener",
-                                    description = "Catches incoming money notifications and scratch cards from Google Pay, PhonePe, Paytm, and CRED.",
-                                    isGranted = hasNotificationAccess,
-                                    grantLabel = "Grant Access",
-                                    grantedLabel = "Access Granted",
-                                    onGrant = {
-                                        NotificationAccessHelper.openNotificationAccessSettings(context)
-                                    },
-                                    onNext = { advanceToStep(4) },
-                                    onSkip = { advanceToStep(4) }
-                                )
-
-                                4 -> PermissionCardView(
-                                    icon = Icons.Default.Bolt,
-                                    title = "Instant Overlay",
-                                    description = "Display a lightweight popup right after you pay, so you can review and categorize payments the moment they happen.",
-                                    isGranted = hasOverlayPermission,
-                                    grantLabel = "Enable Overlay",
-                                    grantedLabel = "Overlay Enabled",
-                                    onGrant = {
-                                        OverlayPermissionHelper.requestOverlayPermission(context)
-                                    },
-                                    onNext = { advanceToStep(5) },
-                                    onSkip = { advanceToStep(5) }
-                                )
-
-                                5 -> PermissionCardView(
-                                    icon = Icons.Default.PowerSettingsNew,
-                                    title = "Background Endurance",
-                                    description = "Keep Kanri running unrestricted in the background so Android never puts your expense trackers to sleep.",
-                                    isGranted = hasBatteryExemption,
-                                    grantLabel = "Allow Background Run",
-                                    grantedLabel = "Background Run Active",
-                                    onGrant = {
-                                        BatteryOptimizationHelper.requestIgnoreBatteryOptimizations(context)
-                                    },
-                                    onNext = { advanceToStep(6) },
-                                    onSkip = { advanceToStep(6) }
-                                )
-
-                                6 -> PermissionCardView(
-                                    icon = Icons.Default.Notifications,
-                                    title = "System Alerts",
-                                    description = "Receive mindful spend nudges, daily summaries, and backup status notifications right on your phone.",
-                                    isGranted = hasNotificationPermission,
-                                    grantLabel = "Enable Notifications",
-                                    grantedLabel = "Notifications Active",
-                                    onGrant = {
-                                        if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.TIRAMISU) {
-                                            postNotificationLauncher.launch(Manifest.permission.POST_NOTIFICATIONS)
-                                        } else {
-                                            val intent = Intent(Settings.ACTION_APP_NOTIFICATION_SETTINGS).apply {
-                                                putExtra(Settings.EXTRA_APP_PACKAGE, context.packageName)
-                                            }
-                                            context.startActivity(intent)
+                                in 2..7 -> {
+                                    val cfg = permissionConfigs[currentSlide]
+                                    if (cfg != null) {
+                                        val isGranted = when (currentSlide) {
+                                            2 -> hasSmsPermission
+                                            3 -> hasNotificationAccess
+                                            4 -> hasOverlayPermission
+                                            5 -> hasBatteryExemption
+                                            6 -> hasNotificationPermission
+                                            7 -> isLockConfigured
+                                            else -> false
                                         }
-                                    },
-                                    onNext = { advanceToStep(7) },
-                                    onSkip = { advanceToStep(7) }
-                                )
-
-                                7 -> PermissionCardView(
-                                    icon = Icons.Default.Fingerprint,
-                                    title = "Biometric Security",
-                                    description = "Require Fingerprint, Face Unlock, or Device Lock every time you open your financial scroll.",
-                                    isGranted = isLockConfigured,
-                                    grantLabel = "Enable App Lock",
-                                    grantedLabel = "App Lock Enabled",
-                                    onGrant = {
-                                        val newState = !isLockConfigured
-                                        isLockConfigured = newState
-                                        securityPrefs.isLockEnabled = newState
-                                    },
-                                    onNext = { finishOnboarding() },
-                                    onSkip = { finishOnboarding() },
-                                    isLastSlide = true
-                                )
+                                        PaintingPermissionView(
+                                            config = cfg,
+                                            isGranted = isGranted,
+                                            onGrant = {
+                                                haptics.click()
+                                                when (currentSlide) {
+                                                    2 -> smsLauncher.launch(
+                                                        arrayOf(
+                                                            Manifest.permission.RECEIVE_SMS,
+                                                            Manifest.permission.READ_SMS
+                                                        )
+                                                    )
+                                                    3 -> NotificationAccessHelper.openNotificationAccessSettings(context)
+                                                    4 -> OverlayPermissionHelper.requestOverlayPermission(context)
+                                                    5 -> BatteryOptimizationHelper.requestIgnoreBatteryOptimizations(context)
+                                                    6 -> {
+                                                        if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.TIRAMISU) {
+                                                            postNotificationLauncher.launch(Manifest.permission.POST_NOTIFICATIONS)
+                                                        } else {
+                                                            val intent = Intent(Settings.ACTION_APP_NOTIFICATION_SETTINGS).apply {
+                                                                putExtra(Settings.EXTRA_APP_PACKAGE, context.packageName)
+                                                            }
+                                                            context.startActivity(intent)
+                                                        }
+                                                    }
+                                                    7 -> {
+                                                        val newState = !isLockConfigured
+                                                        isLockConfigured = newState
+                                                        securityPrefs.isLockEnabled = newState
+                                                    }
+                                                }
+                                            },
+                                            onNext = {
+                                                if (currentSlide == 7) {
+                                                    finishOnboarding()
+                                                } else {
+                                                    advanceToStep(currentSlide + 1)
+                                                }
+                                            },
+                                            onRequestSkip = {
+                                                haptics.tick()
+                                                pendingSkipConfig = cfg
+                                            },
+                                            isLastSlide = currentSlide == 7
+                                        )
+                                    }
+                                }
                             }
                         }
 
@@ -645,6 +677,53 @@ fun OnboardingScreen(
                             }
                         }
                     }
+                }
+
+                // Educational Permission Warning Modal when user attempts to skip
+                pendingSkipConfig?.let { cfg ->
+                    PermissionSkipWarningDialog(
+                        config = cfg,
+                        onGrant = {
+                            haptics.click()
+                            when (cfg.step) {
+                                2 -> smsLauncher.launch(
+                                    arrayOf(
+                                        Manifest.permission.RECEIVE_SMS,
+                                        Manifest.permission.READ_SMS
+                                    )
+                                )
+                                3 -> NotificationAccessHelper.openNotificationAccessSettings(context)
+                                4 -> OverlayPermissionHelper.requestOverlayPermission(context)
+                                5 -> BatteryOptimizationHelper.requestIgnoreBatteryOptimizations(context)
+                                6 -> {
+                                    if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.TIRAMISU) {
+                                        postNotificationLauncher.launch(Manifest.permission.POST_NOTIFICATIONS)
+                                    } else {
+                                        val intent = Intent(Settings.ACTION_APP_NOTIFICATION_SETTINGS).apply {
+                                            putExtra(Settings.EXTRA_APP_PACKAGE, context.packageName)
+                                        }
+                                        context.startActivity(intent)
+                                    }
+                                }
+                                7 -> {
+                                    val newState = !isLockConfigured
+                                    isLockConfigured = newState
+                                    securityPrefs.isLockEnabled = newState
+                                }
+                            }
+                            pendingSkipConfig = null
+                        },
+                        onSkipAnyway = {
+                            val step = cfg.step
+                            pendingSkipConfig = null
+                            if (step == 7) {
+                                finishOnboarding()
+                            } else {
+                                advanceToStep(step + 1)
+                            }
+                        },
+                        onDismiss = { pendingSkipConfig = null }
+                    )
                 }
     }
 }
@@ -845,176 +924,339 @@ private fun ProfileSetupStepView(
     }
 }
 
+private data class PermissionStepConfig(
+    val step: Int,
+    val icon: ImageVector,
+    val title: String,
+    val description: String,
+    val grantLabel: String,
+    val grantedLabel: String,
+    val skipDialogTitle: String,
+    val skipDialogRationale: String
+)
+
 /**
- * Slides 2 to 7: Permission & Security Cards with clean, light-mode high-contrast surfaces.
+ * Slides 2 to 7: Permission & Security integrated seamlessly onto the living Shan Shui painting.
  */
 @Composable
-private fun PermissionCardView(
-    icon: ImageVector,
-    title: String,
-    description: String,
+private fun PaintingPermissionView(
+    config: PermissionStepConfig,
     isGranted: Boolean,
-    grantLabel: String,
-    grantedLabel: String,
     onGrant: () -> Unit,
     onNext: () -> Unit,
-    onSkip: () -> Unit,
+    onRequestSkip: () -> Unit,
     isLastSlide: Boolean = false
 ) {
     Box(
         modifier = Modifier
             .fillMaxSize()
-            .padding(horizontal = 20.dp),
-        contentAlignment = androidx.compose.ui.BiasAlignment(0f, -0.38f)
+            .padding(horizontal = 24.dp),
+        contentAlignment = androidx.compose.ui.BiasAlignment(0f, -0.32f)
     ) {
         Box(
             modifier = Modifier
                 .fillMaxWidth()
-                .shadow(10.dp, RoundedCornerShape(24.dp), spotColor = Color.Black.copy(alpha = 0.35f))
-                .clip(RoundedCornerShape(24.dp))
-                .background(Color(0xFF141416).copy(alpha = 0.74f))
-                .border(
-                    width = 1.dp,
-                    brush = Brush.linearGradient(
-                        listOf(
-                            Color.White.copy(alpha = 0.38f),
-                            Color.White.copy(alpha = 0.08f)
-                        )
-                    ),
-                    shape = RoundedCornerShape(24.dp)
-                )
-                .padding(horizontal = 24.dp, vertical = 30.dp)
+                .widthIn(max = 420.dp),
+            contentAlignment = Alignment.Center
         ) {
+            // Subtle radial feathered parchment veil behind floating ink typography (no box/borders)
+            Box(
+                modifier = Modifier
+                    .matchParentSize()
+                    .background(
+                        brush = Brush.radialGradient(
+                            colors = listOf(
+                                Color(0xFFEFEAE0).copy(alpha = 0.62f),
+                                Color(0xFFEFEAE0).copy(alpha = 0.32f),
+                                Color.Transparent
+                            )
+                        )
+                    )
+            )
+
             Column(
-                modifier = Modifier.fillMaxWidth(),
+                modifier = Modifier
+                    .fillMaxWidth()
+                    .padding(horizontal = 8.dp, vertical = 20.dp),
                 horizontalAlignment = Alignment.CenterHorizontally,
                 verticalArrangement = Arrangement.Center
             ) {
-                // Frosted Glass Icon Circle
+                // Translucent Floating Ink Seal Icon
                 Box(
                     modifier = Modifier
-                        .size(76.dp)
+                        .size(74.dp)
                         .clip(CircleShape)
-                        .background(if (isGranted) Color(0xFF2E7D32).copy(alpha = 0.30f) else Color.White.copy(alpha = 0.10f))
+                        .background(
+                            if (isGranted) Color(0xFF1B5E20).copy(alpha = 0.85f)
+                            else Color(0xFF141416).copy(alpha = 0.78f)
+                        )
                         .border(
                             width = 1.dp,
-                            color = if (isGranted) Color(0xFF81C784).copy(alpha = 0.60f) else Color.White.copy(alpha = 0.25f),
+                            brush = Brush.linearGradient(
+                                listOf(
+                                    Color.White.copy(alpha = 0.45f),
+                                    Color.White.copy(alpha = 0.14f)
+                                )
+                            ),
                             shape = CircleShape
                         ),
                     contentAlignment = Alignment.Center
                 ) {
                     Icon(
-                        imageVector = if (isGranted) Icons.Default.Check else icon,
+                        imageVector = if (isGranted) Icons.Default.Check else config.icon,
                         contentDescription = null,
                         tint = if (isGranted) Color(0xFF81C784) else Color.White,
                         modifier = Modifier.size(32.dp)
                     )
                 }
 
-                Spacer(modifier = Modifier.height(20.dp))
+                Spacer(modifier = Modifier.height(22.dp))
 
                 Text(
-                    text = title,
+                    text = config.title,
                     fontFamily = GoogleSansFlex,
-                    fontSize = 21.sp,
+                    fontSize = 24.sp,
                     fontWeight = FontWeight.Bold,
-                    color = Color.White,
-                    textAlign = TextAlign.Center
+                    color = Color(0xFF121418),
+                    textAlign = TextAlign.Center,
+                    letterSpacing = (-0.3).sp,
+                    style = TextStyle(
+                        shadow = Shadow(
+                            color = Color(0xFFEFEAE0).copy(alpha = 0.90f),
+                            offset = Offset.Zero,
+                            blurRadius = 12f
+                        )
+                    )
                 )
 
-                Spacer(modifier = Modifier.height(8.dp))
+                Spacer(modifier = Modifier.height(10.dp))
 
                 Text(
-                    text = description,
+                    text = config.description,
                     fontFamily = GoogleSansFlex,
-                    fontSize = 13.5.sp,
-                    lineHeight = 20.sp,
-                    color = Color.White.copy(alpha = 0.82f),
+                    fontSize = 14.5.sp,
+                    lineHeight = 22.sp,
+                    color = Color(0xFF282C34),
                     textAlign = TextAlign.Center,
-                    modifier = Modifier.fillMaxWidth(0.92f)
+                    modifier = Modifier
+                        .fillMaxWidth(0.94f)
+                        .padding(horizontal = 4.dp),
+                    style = TextStyle(
+                        shadow = Shadow(
+                            color = Color(0xFFEFEAE0).copy(alpha = 0.90f),
+                            offset = Offset.Zero,
+                            blurRadius = 10f
+                        )
+                    )
                 )
 
-                Spacer(modifier = Modifier.height(24.dp))
+                Spacer(modifier = Modifier.height(28.dp))
 
-                // Grant Glass Button
+                // Allow Permission Glass Button
                 Button(
                     onClick = { if (!isGranted) onGrant() },
                     modifier = Modifier
-                        .fillMaxWidth(0.72f)
-                        .height(48.dp),
+                        .fillMaxWidth(0.86f)
+                        .height(50.dp),
                     shape = RoundedCornerShape(50),
                     colors = ButtonDefaults.buttonColors(
-                        containerColor = if (isGranted) Color(0xFF2E7D32).copy(alpha = 0.35f) else Color.White.copy(alpha = 0.14f),
+                        containerColor = if (isGranted) Color(0xFF1B5E20).copy(alpha = 0.88f) else Color(0xFF141416).copy(alpha = 0.82f),
                         contentColor = Color.White
                     ),
                     border = BorderStroke(
                         1.dp,
-                        if (isGranted) Color(0xFF81C784).copy(alpha = 0.60f) else Color.White.copy(alpha = 0.30f)
+                        if (isGranted) Color(0xFF81C784).copy(alpha = 0.65f)
+                        else Color.White.copy(alpha = 0.35f)
                     ),
-                    elevation = ButtonDefaults.buttonElevation(0.dp, 0.dp)
+                    elevation = ButtonDefaults.buttonElevation(defaultElevation = 0.dp, pressedElevation = 0.dp)
                 ) {
                     if (isGranted) {
                         Icon(
                             imageVector = Icons.Default.Check,
                             contentDescription = null,
                             tint = Color(0xFF81C784),
-                            modifier = Modifier.size(16.dp)
+                            modifier = Modifier.size(18.dp)
                         )
-                        Spacer(modifier = Modifier.width(6.dp))
+                        Spacer(modifier = Modifier.width(8.dp))
                     }
                     Text(
-                        text = if (isGranted) grantedLabel else grantLabel,
+                        text = if (isGranted) config.grantedLabel else config.grantLabel,
                         fontFamily = GoogleSansFlex,
                         fontWeight = FontWeight.SemiBold,
-                        fontSize = 13.5.sp,
+                        fontSize = 14.sp,
                         color = Color.White
                     )
                 }
 
-                Spacer(modifier = Modifier.height(16.dp))
+                Spacer(modifier = Modifier.height(12.dp))
 
-                // Continue CTA Glass Button
+                // Continue / Finish Setup Glass Button
                 Button(
-                    onClick = onNext,
+                    onClick = {
+                        if (isGranted) {
+                            onNext()
+                        } else {
+                            onRequestSkip()
+                        }
+                    },
                     modifier = Modifier
-                        .fillMaxWidth()
+                        .fillMaxWidth(0.86f)
                         .height(50.dp),
                     shape = RoundedCornerShape(50),
                     colors = ButtonDefaults.buttonColors(
-                        containerColor = Color.White.copy(alpha = 0.22f),
+                        containerColor = if (isGranted) Color(0xFF0F0E0C).copy(alpha = 0.92f) else Color(0xFF141416).copy(alpha = 0.60f),
                         contentColor = Color.White
                     ),
                     border = BorderStroke(
                         1.dp,
                         Brush.horizontalGradient(
                             listOf(
-                                Color.White.copy(alpha = 0.50f),
-                                Color.White.copy(alpha = 0.20f)
+                                Color.White.copy(alpha = 0.45f),
+                                Color.White.copy(alpha = 0.15f)
                             )
                         )
                     ),
-                    elevation = ButtonDefaults.buttonElevation(0.dp, 0.dp)
+                    elevation = ButtonDefaults.buttonElevation(defaultElevation = 0.dp, pressedElevation = 0.dp)
                 ) {
                     Text(
                         text = if (isLastSlide) "Finish Setup" else "Continue",
                         fontFamily = GoogleSansFlex,
-                        fontWeight = FontWeight.SemiBold,
+                        fontWeight = FontWeight.Bold,
                         fontSize = 14.5.sp,
                         color = Color.White
                     )
                 }
 
-                if (!isLastSlide) {
-                    Spacer(modifier = Modifier.height(6.dp))
-                    TextButton(onClick = onSkip) {
+                if (!isLastSlide || !isGranted) {
+                    Spacer(modifier = Modifier.height(8.dp))
+                    TextButton(onClick = onRequestSkip) {
                         Text(
                             text = "Skip for now",
                             fontFamily = GoogleSansFlex,
-                            fontSize = 13.sp,
+                            fontSize = 13.5.sp,
                             fontWeight = FontWeight.Medium,
-                            color = Color.White.copy(alpha = 0.65f)
+                            color = Color(0xFF282C34),
+                            style = TextStyle(
+                                shadow = Shadow(
+                                    color = Color(0xFFEFEAE0).copy(alpha = 0.92f),
+                                    offset = Offset.Zero,
+                                    blurRadius = 10f
+                                )
+                            )
                         )
                     }
+                }
+            }
+        }
+    }
+}
+
+/**
+ * Educational modal warning when the user attempts to skip an important permission.
+ */
+@Composable
+private fun PermissionSkipWarningDialog(
+    config: PermissionStepConfig,
+    onGrant: () -> Unit,
+    onSkipAnyway: () -> Unit,
+    onDismiss: () -> Unit
+) {
+    Dialog(onDismissRequest = onDismiss) {
+        Box(
+            modifier = Modifier
+                .fillMaxWidth()
+                .shadow(16.dp, RoundedCornerShape(26.dp), spotColor = Color.Black.copy(alpha = 0.45f))
+                .clip(RoundedCornerShape(26.dp))
+                .background(Color(0xFF141416).copy(alpha = 0.95f))
+                .border(
+                    width = 1.dp,
+                    brush = Brush.linearGradient(
+                        listOf(
+                            Color.White.copy(alpha = 0.38f),
+                            Color.White.copy(alpha = 0.10f)
+                        )
+                    ),
+                    shape = RoundedCornerShape(26.dp)
+                )
+                .padding(horizontal = 24.dp, vertical = 28.dp)
+        ) {
+            Column(
+                modifier = Modifier.fillMaxWidth(),
+                horizontalAlignment = Alignment.CenterHorizontally,
+                verticalArrangement = Arrangement.Center
+            ) {
+                Box(
+                    modifier = Modifier
+                        .size(60.dp)
+                        .clip(CircleShape)
+                        .background(Color(0xFFC43B38).copy(alpha = 0.18f))
+                        .border(1.dp, Color(0xFFC43B38).copy(alpha = 0.55f), CircleShape),
+                    contentAlignment = Alignment.Center
+                ) {
+                    Icon(
+                        imageVector = config.icon,
+                        contentDescription = null,
+                        tint = Color(0xFFE57373),
+                        modifier = Modifier.size(28.dp)
+                    )
+                }
+
+                Spacer(modifier = Modifier.height(18.dp))
+
+                Text(
+                    text = config.skipDialogTitle,
+                    fontFamily = GoogleSansFlex,
+                    fontSize = 19.sp,
+                    fontWeight = FontWeight.Bold,
+                    color = Color.White,
+                    textAlign = TextAlign.Center
+                )
+
+                Spacer(modifier = Modifier.height(10.dp))
+
+                Text(
+                    text = config.skipDialogRationale,
+                    fontFamily = GoogleSansFlex,
+                    fontSize = 13.5.sp,
+                    lineHeight = 20.sp,
+                    color = Color.White.copy(alpha = 0.84f),
+                    textAlign = TextAlign.Center,
+                    modifier = Modifier.fillMaxWidth()
+                )
+
+                Spacer(modifier = Modifier.height(24.dp))
+
+                Button(
+                    onClick = onGrant,
+                    modifier = Modifier
+                        .fillMaxWidth()
+                        .height(48.dp),
+                    shape = RoundedCornerShape(50),
+                    colors = ButtonDefaults.buttonColors(
+                        containerColor = Color.White,
+                        contentColor = Color(0xFF141416)
+                    ),
+                    elevation = ButtonDefaults.buttonElevation(0.dp, 0.dp)
+                ) {
+                    Text(
+                        text = "Enable Permission",
+                        fontFamily = GoogleSansFlex,
+                        fontWeight = FontWeight.Bold,
+                        fontSize = 14.sp,
+                        color = Color(0xFF141416)
+                    )
+                }
+
+                Spacer(modifier = Modifier.height(8.dp))
+
+                TextButton(onClick = onSkipAnyway) {
+                    Text(
+                        text = "Skip Anyway",
+                        fontFamily = GoogleSansFlex,
+                        fontSize = 13.5.sp,
+                        fontWeight = FontWeight.Medium,
+                        color = Color.White.copy(alpha = 0.65f)
+                    )
                 }
             }
         }

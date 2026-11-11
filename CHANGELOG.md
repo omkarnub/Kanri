@@ -5,6 +5,24 @@ All notable changes to Kanri will be documented in this file.
 The format is based on [Keep a Changelog](https://keepachangelog.com/en/1.0.0/),
 and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0.html).
 
+## [1.18.5] - 2026-11-11
+
+### Changed & Redesigned
+- **Painting-Integrated Permission Prompts (`PaintingPermissionView`, Steps 2–7)**:
+  - Removed floating permission cards on slides 2 through 7 and integrated each permission prompt directly into the Shan Shui living scroll canvas.
+  - Added translucent circular ink seal badges (turning serene jade green with a checkmark once granted), deep sumi ink typography with delicate parchment radial glow, frosted dark glass Allow & Continue buttons, and subtle `"Skip for now"` links.
+- **Educational Permission Skip Warning Modals (`PermissionSkipWarningDialog`)**:
+  - Attempting to skip or advance past any ungranted permission (Steps 2–7) displays a contextual warning popup explaining why that specific permission is critical (SMS offline tracking, UPI notification listener, instant overlay, background endurance, budget alerts, and biometric security).
+  - Provides `"Enable Permission"` as the primary action and `"Skip Anyway"` as the secondary confirmation action.
+
+### Fixed & Optimized
+- **Removed Horizontal White Strokes on Mountain Washes**:
+  - Removed the rectangular `fillRect` mist strokes `[995, 1045, 1092, 1125]` in `buildScenery0_BaseWashes` and disabled `renderLiveMistVeils` in `shan_shui_onboarding.html` which were creating sharp horizontal pale bars across the mountain washes behind the Kanri logo.
+- **60fps Hardware-Accelerated Canvas Rendering**:
+  - Disabled heavy CPU-bound SVG `feDisplacementMap` filters (`#xuan-capillary-bleed`, `#sumi-dry-brush`) inside Android `webview-mode`.
+  - Replaced per-frame offscreen `destination-in` scratch canvas clearing in `drawCapillaryWashReveal` with GPU-accelerated alpha compositing and upward capillary settle translation to eliminate animation stuttering.
+- Bumped version to `1.18.5` (Build 56).
+
 ## [1.18.4] - 2026-11-11
 
 ### Fixed & Cleaned

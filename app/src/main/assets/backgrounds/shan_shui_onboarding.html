@@ -185,6 +185,11 @@
       opacity: 0 !important;
       pointer-events: none !important;
     }
+    body.webview-mode #wet-scenery-canvas,
+    body.webview-mode #detail-scene-canvas {
+      filter: none !important;
+      will-change: auto !important;
+    }
 
   </style>
 </head>
@@ -1076,16 +1081,6 @@
       ], 205, 795, 5, 9, 301);
       paintWetMountainWash(mCtx, midRidge, 882, 1145, pal.midTreeDabs, pal.midHillWash, pal.paperRgb, 0.58, 305);
 
-      const [pr, pg, pb] = pal.paperRgb;
-      [995, 1045, 1092, 1125].forEach((my, idx) => {
-        const mGrad = mCtx.createLinearGradient(0, my - 26, 0, my + 26);
-        mGrad.addColorStop(0, `rgba(${pr},${pg},${pb},0)`);
-        mGrad.addColorStop(0.5, `rgba(${pr},${pg},${pb},${0.55 + idx * 0.1})`);
-        mGrad.addColorStop(1, `rgba(${pr},${pg},${pb},0)`);
-        mCtx.fillStyle = mGrad;
-        mCtx.fillRect(180, my - 26, 660, 52);
-      });
-
       const rightBank = sampleRidgeProfile([{ x: 895, y: 1125 }, { x: 965, y: 1015 }, { x: 1025, y: 965 }, { x: 1080, y: 945 }], 895, 1080, 5, 7, 360);
       paintWetMountainWash(mCtx, rightBank, 940, 1165, pal.midTreeDabs, pal.midHillWash, pal.paperRgb, 0.52, 365);
 
@@ -1284,7 +1279,7 @@
     // ============================================================================
     // PROGRESSIVE 4-PHASE SCENERY PAINTER (Paints Brushes & Blooms Live as p: 0->1)
     // ============================================================================
-    // Draws a pre-baked wet wash layer through an organic expanding capillary ink-diffusion mask
+    // Draws a pre-baked wet wash layer with GPU-accelerated alpha and vertical settle
     function drawCapillaryWashReveal(targetCtx, sourceCanvas, screenX, screenY, phaseT, originX, originY, maxRadius) {
       if (phaseT <= 0.002 || screenX <= -W * 1.15 || screenX >= W * 1.15) return;
 
@@ -1293,26 +1288,11 @@
         return;
       }
 
-      const sCtx = progressiveScratch.ctx;
-      sCtx.clearRect(0, 0, W, H);
-      sCtx.save();
-
-      // Gentle upward capillary rise as the wet wash settles into the paper
-      const settleY = (1 - phaseT) * 14;
-      sCtx.drawImage(sourceCanvas, 0, settleY);
-
-      // Multi-lobe radial capillary diffusion mask
-      sCtx.globalCompositeOperation = 'destination-in';
-      const curR = Math.max(40, phaseT * maxRadius);
-      const maskGrad = sCtx.createRadialGradient(originX, originY, curR * 0.15, originX, originY, curR);
-      maskGrad.addColorStop(0.0, `rgba(0,0,0,${ Math.min(1, phaseT * 1.35) })`);
-      maskGrad.addColorStop(0.68, `rgba(0,0,0,${ phaseT * 0.85 })`);
-      maskGrad.addColorStop(1.0, 'rgba(0,0,0,0)');
-      sCtx.fillStyle = maskGrad;
-      sCtx.fillRect(0, 0, W, H);
-      sCtx.restore();
-
-      targetCtx.drawImage(progressiveScratch.canvas, screenX, screenY);
+      targetCtx.save();
+      targetCtx.globalAlpha = Math.min(1.0, phaseT * 1.25);
+      const settleY = (1 - phaseT) * 12;
+      targetCtx.drawImage(sourceCanvas, screenX, screenY + settleY);
+      targetCtx.restore();
     }
 
     // Progressive Foreground Right Sedge Grass Bank (Phase D: 70% -> 100%)
@@ -2625,23 +2605,7 @@
     }
 
     function renderLiveMistVeils(ctx, pal, timeSec, offsetX, offsetY) {
-      const [pr, pg, pb] = pal.paperRgb;
-      ctx.save();
-      const bands = [
-        { y: 845, h: 95,  a: 0.38 },
-        { y: 1085, h: 110, a: 0.44 },
-        { y: 1215, h: 85,  a: 0.32 }
-      ];
-      bands.forEach((b, i) => {
-        const xShift = Math.sin(timeSec * 0.18 + i * 2.1) * 42 + offsetX;
-        const by = b.y + offsetY;
-        const grad = ctx.createRadialGradient(W * 0.5 + xShift, by, 20, W * 0.5 + xShift, by, W * 0.65);
-        grad.addColorStop(0, `rgba(${pr},${pg},${pb},${b.a})`);
-        grad.addColorStop(1, `rgba(${pr},${pg},${pb},0)`);
-        ctx.fillStyle = grad;
-        ctx.fillRect(0, by - b.h, W, b.h * 2);
-      });
-      ctx.restore();
+      // Intentionally bypassed to prevent artificial horizontal pale bands and ensure 60fps GPU performance
     }
 
     function renderWaterRipples(ctx, pal, dt) {

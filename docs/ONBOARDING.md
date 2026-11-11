@@ -1,9 +1,18 @@
 # Kanri Onboarding & Stepper System
 
-Current Version: **1.18.4** (Build 55)
+Current Version: **1.18.5** (Build 56)
 
 ## 1. Overview
 The Kanri onboarding experience guides new users through permissions, personal profile configuration, and security settings with transparency, privacy assurances, and immediate tactile feedback.
+
+In version 1.18.5:
+- **Cardless, Painting-Integrated Permission Prompts (`PaintingPermissionView`)**:
+  - Slides 2 through 7 remove rectangular card containers and seamlessly integrate permission prompts directly into the Shan Shui living scroll canvas using floating translucent ink seals, deep sumi typography with feathered Xuan parchment haloes, frosted glass action buttons, and `"Skip for now"` links.
+- **Educational Permission Skip Warning Modals (`PermissionSkipWarningDialog`)**:
+  - Attempting to skip or continue past an ungranted permission on Slides 2–7 presents an educational modal warning explaining why that permission is important for Kanri's core functionality, offering `"Enable Permission"` (primary) or `"Skip Anyway"`.
+- **Clean Horizon & Smooth 60fps Canvas Engine**:
+  - Removed horizontal rectangular pale mist strokes (`buildScenery0_BaseWashes` & `renderLiveMistVeils`) that intersected the mountains.
+  - Optimized WebView rendering by bypassing CPU-bound SVG displacement filters (`feDisplacementMap`) and offscreen `destination-in` scratch compositing in `webview-mode`, delivering fluid GPU-accelerated 60fps canvas animation.
 
 In version 1.18.4:
 - **Pure Black Kanri Monogram Emblem & Clean Hero**:
@@ -14,13 +23,12 @@ In version 1.18.4:
 - **Centered Top Progress Bar & Bottom-Left Back Navigation**:
   - Symmetrically centered progress bar (`STEP X OF 7` + `LinearProgressIndicator`) at the top.
   - Circular frosted glass back button anchored at the bottom-left.
-- **Elevated Slide Cards**:
-  - All cards shifted upwards (`BiasAlignment(0f, -0.38f)`), providing an open view of the water and living scroll below.
-- **Frosted Dark Glass Cards with Glass Buttons & White Typography**:
-  - `PermissionCardView`: Dark frosted glass (`#141416` @ 74% opacity) with specular linear gradient border (`Brush.linearGradient`), glass buttons, and white text (`Color.White`).
-  - `KokonutAvatarPicker`: Dark frosted glass container, white typography, glass photo picker & dice buttons, and glass CTA button with white text.
+- **Elevated Slide Layout**:
+  - Profile card (`KokonutAvatarPicker`) and painting-integrated permissions shifted cleanly upward (`BiasAlignment(0f, -0.32f)` to `-0.38f`), keeping the river and sampan boat unobstructed below.
+- **Frosted Dark Glass Cards & Buttons (`KokonutAvatarPicker`, `OnboardingPrivacySheet`, `AvatarCropDialog`)**:
+  - `KokonutAvatarPicker` (Slide 1): Dark frosted glass container, white typography, glass photo picker & dice buttons, and glass CTA button with white text.
   - `OnboardingPrivacySheet`: Dark frosted glass sheet (`#141416` @ 94% opacity) with white typography, icon pills, and glass dismiss button.
-- **1:1 Avatar Cropper (`AvatarCropDialog`)**: Interactive 1:1 avatar cropping modal with pinch-to-zoom (0.5x to 4.0x), drag-to-pan, circular guide overlay, rule-of-thirds grid, and frosted glass action buttons with white text.
+  - **1:1 Avatar Cropper (`AvatarCropDialog`)**: Interactive 1:1 avatar cropping modal with pinch-to-zoom (0.5x to 4.0x), drag-to-pan, circular guide overlay, rule-of-thirds grid, and frosted glass action buttons with white text.
 
 ---
 
@@ -42,24 +50,23 @@ The onboarding sequence consists of a Hero intro followed by 7 setup slides, wit
 
 ## 3. Panoramic Shan Shui Living Scroll (`shan_shui_onboarding.html`)
 - **Zero HUD & Controls**: All developer bars, chapter switchers, and audio controls are stripped for a pure wallpaper experience (`display: none !important`).
-- **Hardware-Accelerated 2D Canvas**: Renders ink wash mountains, pine branches, drifting mist, waterfall particles, and water reflections smoothly at 60fps.
+- **Hardware-Accelerated 2D Canvas**: Renders ink wash mountains, pine branches, waterfall particles, and water reflections smoothly at 60fps. In Android `webview-mode`, heavy CPU-bound SVG filters and scratch canvas masks are bypassed so hardware acceleration remains rock-solid.
 - **Dynamic Step Synchronization**: In `OnboardingScreen.kt`, the background `WebView` listens to step updates and page load completions via `WebViewClient`:
   ```kotlin
   webView.evaluateJavascript("window.setOnboardingStep($currentSlide);", null)
   ```
   The canvas translates with smooth cubic bezier camera easing between sceneries.
-- **Light & Dark Paper Adaptation**: Automatically responds to the active theme via `window.setPaperTheme('dark' | 'light')`.
+- **Light Xuan Paper Lock**: Locked permanently to the warm handmade Xuan light paper theme (`currentTheme = 'light'`).
 - **Touch Passthrough**: Pointer events are set to `none` on the interaction layer, allowing native Compose touches, swipes, and button taps to pass through without interference.
 
 ---
 
 ## 4. ChapterPlayer Kinetic Intro Logo (`KanriIntroLogo.kt`)
 On Slide 0 (Hero slide), the logo presents an expressive, physics-driven kinetic entrance inspired by ChapterPlayer:
-1. **Monogram Emblem Center Landing**: The official Kanri geometric mark lands large in the center with exponential ease (`scale 1.85 -> 1.50`, `CubicBezierEasing(0.16f, 1f, 0.3f, 1f)`).
+1. **Monogram Emblem Center Landing**: The pure black official Kanri geometric mark lands large in the center with exponential ease (`scale 1.85 -> 1.50`, `CubicBezierEasing(0.16f, 1f, 0.3f, 1f)`).
 2. **Settle & Extend to Left**: Translates horizontally from canvas center to lockup left (`scale 1.50 -> 1.00`, `CubicBezierEasing(0.25f, 1f, 0.35f, 1f)`).
-3. **Kinetic Typography Stagger**: The letters **K - A - N - R - I** in Panchang font rise and sharpen beside the emblem (`+16dp` offset, staggered at 65ms intervals).
-4. **Subhead & Tagline Reveal**: Follows with a smooth fade & upward slide of `"FINANCIAL SERENITY / Know where every rupee went."`
-5. **Organic Breathing**: A subtle, slow push-in (`scale 1.0 -> 1.02`) keeps the lockup alive with the flowing landscape.
+3. **Kinetic Typography Stagger**: The pure black letters **K - A - N - R - I** in Panchang font rise and sharpen beside the emblem (`+16dp` offset, staggered at 65ms intervals).
+4. **Organic Breathing**: A subtle, slow push-in (`scale 1.0 -> 1.02`) keeps the lockup alive with the flowing landscape.
 
 ---
 
