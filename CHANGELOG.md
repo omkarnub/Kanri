@@ -5,6 +5,26 @@ All notable changes to Kanri will be documented in this file.
 The format is based on [Keep a Changelog](https://keepachangelog.com/en/1.0.0/),
 and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0.html).
 
+## [1.19.1] - 2026-11-18
+
+### Fixed
+- **Expense Overview Full Ring Concentric Alignment (`ExpenseVisualizer`)**:
+  - Replaced asymmetric bounding box calculations with density-agnostic canvas centering (`diameter = min(size.width, size.height)`, `canvasCenter = center`).
+  - Anchored the 360-degree track and inner/outer boundary hairlines to concentric radii using `drawCircle`, eliminating bottom-side hairline overhang and sub-pixel misalignment across all device densities.
+- **Widget Quick Add Numpad Frosted Glass Blur (`QuickEntryActivity`)**:
+  - Wrapped `QuickEntryActivity` in `KanriBackdropHost`, providing an active `LocalHazeState` and glass backdrop when launched in Glass theme from home screen widgets (Add Expense, Add Income, Split Bill).
+  - Restored authentic 50dp frosted glass blur to `KokonutAmountPad` and entry sheets.
+- **Lend & Borrow Person Profile Entry Details (`KokonutTearButton`, `LendingPersonDetailView`)**:
+  - Added `onClick` handler and visual detail chevron to the `KokonutTearButton` ticket body, enabling users to tap any unsettled entry to open `LendingTransactionDetailDialog` (with full notes, due date, category, wallet, repayment history, and edit/delete actions).
+  - Preserved the signature pull/drag tear stub physics for settling entries.
+
+### Added
+- **Native AGSL Live Shader Backgrounds for Utmost Smoothness (`AgslShaderLibrary`, `AgslShaderRenderer`, `GlassBackgroundView`)**:
+  - Introduced native AGSL (Android Graphics Shading Language) runtime shaders on Android 13+ (API 33+) for live themes (Cloudscape, Gemini Aurora, Prism Swirl, Grain Gradient, Ink Ridges, Hero Geometric), executing directly in Compose's Skia RenderNode pipeline at 120 FPS with 0ms Chromium/WebView IPC overhead.
+  - Added automatic 30 FPS frame throttling to remaining HTML/Canvas backgrounds and clamped `dpr` to keep the GPU cool and UI silky smooth.
+  - Optimized `aurora.html` by replacing heavy 80px CSS box-blur stalls with lightweight 24px soft radial gradients.
+- Bumped version to `1.19.1` (Build 68).
+
 ## [1.19.0] - 2026-11-12
 
 ### Added

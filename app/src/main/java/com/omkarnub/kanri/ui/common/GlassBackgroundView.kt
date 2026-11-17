@@ -1,6 +1,7 @@
 package com.omkarnub.kanri.ui.common
 
 import android.annotation.SuppressLint
+import android.os.Build
 import android.view.MotionEvent
 import android.view.View
 import android.view.ViewGroup
@@ -24,6 +25,8 @@ import androidx.compose.ui.viewinterop.AndroidView
 import androidx.lifecycle.Lifecycle
 import androidx.lifecycle.LifecycleEventObserver
 import androidx.lifecycle.compose.LocalLifecycleOwner
+import com.omkarnub.kanri.ui.common.agsl.AgslShaderBackground
+import com.omkarnub.kanri.ui.common.agsl.AgslShaderLibrary
 import com.omkarnub.kanri.ui.theme.GlassCapabilities
 
 enum class GlassBackgroundType(val id: String, val displayName: String, val fileName: String) {
@@ -79,6 +82,16 @@ fun GlassShaderBackground(
         return
     }
 
+    // Tier 1: On Android 13+ (API 33+), render supported shaders natively in AGSL
+    // completely eliminating WebView, Chromium IPC, and interop latency.
+    if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.TIRAMISU && AgslShaderLibrary.hasAgslShader(backgroundType)) {
+        AgslShaderBackground(
+            backgroundType = backgroundType,
+            modifier = modifier
+        )
+        return
+    }
+
     val lifecycleOwner = LocalLifecycleOwner.current
     var webViewInstance by remember { mutableStateOf<WebView?>(null) }
 
@@ -107,6 +120,10 @@ fun GlassShaderBackground(
                     ViewGroup.LayoutParams.MATCH_PARENT,
                     ViewGroup.LayoutParams.MATCH_PARENT
                 )
+                if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.O) {
+                    setRendererPriorityPolicy(WebView.RENDERER_PRIORITY_BOUND, false)
+                }
+                overScrollMode = View.OVER_SCROLL_NEVER
                 settings.apply {
                     javaScriptEnabled = true
                     domStorageEnabled = false
@@ -128,6 +145,32 @@ fun GlassShaderBackground(
                     ): Boolean {
                         val url = request?.url?.toString().orEmpty()
                         return !url.startsWith("file:///android_asset/")
+                    }
+
+                    override fun onPageFinished(view: WebView?, url: String?) {
+                        super.onPageFinished(view, url)
+                        // Inject 30 FPS RAF cap to keep GPU cool and UI silky smooth
+                        view?.evaluateJavascript(
+                            """
+                            (function() {
+                                if (window.__rafThrottled) return;
+                                window.__rafThrottled = true;
+                                const origRAF = window.requestAnimationFrame;
+                                let lastT = 0;
+                                const interval = 1000 / 30;
+                                window.requestAnimationFrame = function(cb) {
+                                    return origRAF(function(time) {
+                                        if (time - lastT < interval) {
+                                            return origRAF(cb);
+                                        }
+                                        lastT = time;
+                                        cb(time);
+                                    });
+                                };
+                            })();
+                            """.trimIndent(),
+                            null
+                        )
                     }
                 }
                 setBackgroundColor(android.graphics.Color.TRANSPARENT)

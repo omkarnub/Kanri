@@ -16,7 +16,8 @@ The settings architecture adheres to:
    - **Themes Sub-Window** (`ThemeSettingsScreen`):
      - Visual phone preview cards for `System`, `Light`, `Dark`, `AMOLED`, and `Glass`.
      - When `Glass` is selected:
-       - **Live Shader Backgrounds**: Minimalist, single-column vertical list view of 22 animated WebGL, Three.js, and Canvas 2D backgrounds:
+       - **Native AGSL Pipeline (Android 13+, API 33+)**: Procedural shader themes (`Cloudscape`, `Gemini Aurora`, `Prism Swirl`, `Grain Gradient`, `Ink Ridges`, `Hero Geometric`) run as native `android.graphics.RuntimeShader` effects directly inside Compose's Skia RenderNode pipeline. This completely bypasses WebView, eliminating Chromium process overhead, IPC synchronization, and frame drops, delivering pure 120 FPS motion with seamless Haze backdrop blur.
+       - **Live Shader Backgrounds**: Minimalist, single-column vertical list view of 22 animated WebGL, Three.js, Canvas 2D, and AGSL backgrounds (with automatic 30 FPS frame throttling on WebView paths to keep GPU throughput efficient):
          - `Gemini Aurora`: Dual-cycle neural aurora morphing between lime, turquoise, violet, coral, and pink.
          - `Grain Gradient`: Film-grade atmospheric organic grain.
          - `Hero Geometric`: Precision isometric low-poly geometry.
@@ -171,4 +172,5 @@ Kanri combines Google's Jetpack Splash Screen library (`androidx.core:core-splas
 - **Notes (`v1.18.13`)**: Guarded post-onboarding SMS/battery optimization prompts in `MainActivity` (`savedInstanceState == null`) and marked onboarding-completed flags in `OnboardingScreen.finishOnboarding()` so configuration changes and skipped onboarding steps never hijack screen focus.
 - **Notes (`v1.18.14`)**: Restored crisp white dock SVG icons, labels, indicator dot, and `+` button across Glass, Dark, and AMOLED themes (`KanriFloatingDock`).
 - **Notes (`v1.19.0`)**: Added **Buy Me a Coffee** donation sheet (`BuyMeCoffeeSheet`, `QrCodeHelper`, `SupportDonationConfig`, `qr_binance_pay.webp`) under **About & Support** with UPI dynamic QR (`Any`, `₹50`, `₹100`, `₹250` + `upi://pay` launcher), Binance Pay QR, and USDT (`BEP20` / `Base`) QR + `FileProvider` share.
-- **Version**: Kanri `1.19.0` (Build 67).
+- **Notes (`v1.19.1`)**: Fixed Expense Overview full ring concentric hairline alignment (`ExpenseVisualizer`), added frosted glass blur backdrop to widget quick entry sheets (`QuickEntryActivity`), enabled full entry details view via tap on Lend & Borrow ticket body (`KokonutTearButton`), and introduced native AGSL `RuntimeShader` backgrounds on Android 13+ (API 33+) with 30 FPS throttling for web backgrounds (`AgslShaderLibrary`, `AgslShaderRenderer`, `GlassBackgroundView`).
+- **Version**: Kanri `1.19.1` (Build 68).

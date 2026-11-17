@@ -1,4 +1,4 @@
-﻿package com.omkarnub.kanri.ui.lending
+package com.omkarnub.kanri.ui.lending
 
 import android.content.Intent
 import androidx.activity.compose.BackHandler

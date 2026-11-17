@@ -1,4 +1,4 @@
-﻿package com.omkarnub.kanri.data.reset
+package com.omkarnub.kanri.data.reset
 
 import android.content.Context
 import androidx.room.withTransaction

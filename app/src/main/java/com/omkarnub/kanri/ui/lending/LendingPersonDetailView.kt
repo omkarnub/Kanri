@@ -349,15 +349,19 @@ fun LendingPersonDetailView(
                         val currentLocale = androidx.compose.ui.platform.LocalConfiguration.current.locales[0]
                         val dateStr = SimpleDateFormat("dd MMM yyyy", currentLocale).format(Date(record.date))
                         val dueStr = if (record.dueDate != null) " • Due: ${SimpleDateFormat("dd MMM", currentLocale).format(Date(record.dueDate))}" else ""
-                        val sub = "${CurrencyUtils.formatCurrency(entryWithRepayments.outstanding)} • $dateStr$dueStr"
+                        val noteStr = if (!record.notes.isNullOrBlank()) " • ${record.notes}" else ""
+                        val sub = "${CurrencyUtils.formatCurrency(entryWithRepayments.outstanding)} • $dateStr$dueStr$noteStr"
 
                         KokonutTearButton(
-                            title = record.personName,
+                            title = if (!record.notes.isNullOrBlank()) "${record.personName} (${record.notes})" else record.personName,
                             subtitle = sub,
                             confirmedTitle = "Settled",
                             confirmedSubtitle = "Marked as settled",
                             tone = if (isLent) TearTone.DEFAULT else TearTone.MUTED,
                             isSettled = false,
+                            onClick = {
+                                onTransactionClick(entryWithRepayments)
+                            },
                             onConfirm = {
                                 onSettleEntry?.invoke(entryWithRepayments)
                             },

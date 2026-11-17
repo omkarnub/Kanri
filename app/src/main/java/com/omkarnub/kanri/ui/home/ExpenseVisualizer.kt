@@ -647,40 +647,35 @@ private fun RingVisualizer(
             }
 
             Canvas(modifier = Modifier.size(305.dp)) {
+                val diameter = kotlin.math.min(size.width, size.height)
+                val canvasCenter = center
                 val strokeWidth = 30.dp.toPx()
-                val arcSize = size.width - strokeWidth
-                val topLeftOffset = Offset(strokeWidth / 2f, strokeWidth / 2f)
+                val trackRadius = (diameter - strokeWidth) / 2f
+                val hairlineStroke = 1.dp.toPx()
 
                 // 1. Background Track (clearly visible full 360-degree ring in Dark and Light mode)
-                drawArc(
+                drawCircle(
                     color = trackColor,
-                    startAngle = 0f,
-                    sweepAngle = 360f,
-                    useCenter = false,
-                    topLeft = topLeftOffset,
-                    size = Size(arcSize, arcSize),
+                    radius = trackRadius,
+                    center = canvasCenter,
                     style = Stroke(width = strokeWidth)
                 )
 
-                // 2. Subtle outer & inner boundary hairlines for clean edge definition
-                drawArc(
+                // 2. Subtle outer & inner boundary hairlines for clean edge definition (perfectly concentric)
+                val outerHairlineRadius = diameter / 2f - hairlineStroke / 2f
+                drawCircle(
                     color = hairlineColor,
-                    startAngle = 0f,
-                    sweepAngle = 360f,
-                    useCenter = false,
-                    topLeft = Offset(0.5f.dp.toPx(), 0.5f.dp.toPx()),
-                    size = Size(size.width - 1.dp.toPx(), size.height - 1.dp.toPx()),
-                    style = Stroke(width = 1.dp.toPx())
+                    radius = outerHairlineRadius,
+                    center = canvasCenter,
+                    style = Stroke(width = hairlineStroke)
                 )
-                val innerOffset = strokeWidth
-                drawArc(
+
+                val innerHairlineRadius = diameter / 2f - strokeWidth + hairlineStroke / 2f
+                drawCircle(
                     color = hairlineColor,
-                    startAngle = 0f,
-                    sweepAngle = 360f,
-                    useCenter = false,
-                    topLeft = Offset(innerOffset, innerOffset),
-                    size = Size(size.width - 2f * innerOffset, size.height - 2f * innerOffset),
-                    style = Stroke(width = 1.dp.toPx())
+                    radius = innerHairlineRadius,
+                    center = canvasCenter,
+                    style = Stroke(width = hairlineStroke)
                 )
 
                 // Progress Arc (only drawn when there is active spending)
@@ -691,12 +686,17 @@ private fun RingVisualizer(
                     } else {
                         alertColor
                     }
+                    val arcSize = diameter - strokeWidth
+                    val arcTopLeft = Offset(
+                        canvasCenter.x - trackRadius,
+                        canvasCenter.y - trackRadius
+                    )
                     drawArc(
                         color = arcColor,
                         startAngle = -90f,
                         sweepAngle = sweep,
                         useCenter = false,
-                        topLeft = topLeftOffset,
+                        topLeft = arcTopLeft,
                         size = Size(arcSize, arcSize),
                         style = Stroke(width = strokeWidth, cap = StrokeCap.Round)
                     )

@@ -23,8 +23,8 @@ android {
         applicationId = "com.omkarnub.kanri"
         minSdk = 26
         targetSdk = 37
-        versionCode = 67
-        versionName = "1.19.0"
+        versionCode = 68
+        versionName = "1.19.1"
 
         testInstrumentationRunner = "androidx.test.runner.AndroidJUnitRunner"
         androidResources {
@@ -47,7 +47,7 @@ android {
         create("release") {
             val storeFilePath = localProperties.getProperty("RELEASE_STORE_FILE")
             if (storeFilePath != null) {
-                val resolvedStore = file(storeFilePath)
+                val resolvedStore = rootProject.file(storeFilePath)
                 if (resolvedStore.exists()) {
                     storeFile = resolvedStore
                     storePassword = localProperties.getProperty("RELEASE_STORE_PASSWORD")
@@ -62,6 +62,10 @@ android {
         debug {
             isDebuggable = true
             isMinifyEnabled = false
+            val releaseConfig = signingConfigs.getByName("release")
+            if (releaseConfig.storeFile != null && releaseConfig.storeFile!!.exists()) {
+                signingConfig = releaseConfig
+            }
         }
         release {
             isDebuggable = false

@@ -11,6 +11,8 @@ import androidx.compose.animation.togetherWith
 import androidx.compose.foundation.Canvas
 import androidx.compose.foundation.background
 import androidx.compose.foundation.border
+import androidx.compose.foundation.clickable
+import androidx.compose.material.icons.automirrored.filled.KeyboardArrowRight
 import androidx.compose.foundation.gestures.awaitEachGesture
 import androidx.compose.foundation.gestures.awaitFirstDown
 import androidx.compose.foundation.gestures.detectDragGestures
@@ -176,6 +178,7 @@ fun KokonutTearButton(
     confirmedSubtitle: String = "Marked as settled",
     tone: TearTone = TearTone.DEFAULT,
     isSettled: Boolean = false,
+    onClick: (() -> Unit)? = null,
     onConfirm: () -> Unit,
     modifier: Modifier = Modifier
 ) {
@@ -343,12 +346,30 @@ fun KokonutTearButton(
         val tipPx = ((angle / TEAR_ANGLE).coerceIn(0f, 1f)) * heightPx
 
         // 1. Ticket Body (left side with rounded-l-16dp)
-        Box(
-            modifier = Modifier
+        val bodyModifier = if (onClick != null && !isDone) {
+            Modifier
                 .width(with(density) { bodyWidthPx.toDp() })
                 .height(68.dp)
                 .clip(RoundedCornerShape(topStart = 16.dp, bottomStart = 16.dp))
                 .background(paperColor)
+                .clickable(
+                    role = Role.Button,
+                    onClickLabel = "View transaction details",
+                    onClick = {
+                        haptics.tick()
+                        onClick()
+                    }
+                )
+        } else {
+            Modifier
+                .width(with(density) { bodyWidthPx.toDp() })
+                .height(68.dp)
+                .clip(RoundedCornerShape(topStart = 16.dp, bottomStart = 16.dp))
+                .background(paperColor)
+        }
+
+        Box(
+            modifier = bodyModifier
         ) {
             Canvas(modifier = Modifier.fillMaxSize()) {
                 // Top-right and bottom-right notch cutouts
@@ -435,6 +456,16 @@ fun KokonutTearButton(
                             )
                         }
                     }
+                }
+
+                // Tappable detail chevron indicator when onClick is configured
+                if (onClick != null && !isDone) {
+                    Icon(
+                        imageVector = Icons.AutoMirrored.Filled.KeyboardArrowRight,
+                        contentDescription = "View Details",
+                        tint = subColor.copy(alpha = 0.65f),
+                        modifier = Modifier.size(16.dp)
+                    )
                 }
             }
         }

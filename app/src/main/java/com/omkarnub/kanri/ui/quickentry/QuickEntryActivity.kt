@@ -64,41 +64,43 @@ class QuickEntryActivity : ComponentActivity() {
                 }
                 val peopleList by peopleListFlow.collectAsState(initial = emptyList())
 
-                Box(
-                    modifier = Modifier
-                        .fillMaxSize()
-                        .background(Color.Transparent)
-                ) {
-                    if (isSplit) {
-                        SplitExpenseEntryDialog(
-                            onDismiss = { finish() },
-                            onSaveLenderSplit = { friendNames, perPersonShare, eventDesc ->
-                                saveSplitAsLender(friendNames, perPersonShare, eventDesc)
-                            },
-                            onSaveBorrowerSplit = { payerName, userShare, eventDesc ->
-                                saveSplitAsBorrower(payerName, userShare, eventDesc)
-                            },
-                            existingPeople = peopleList
-                        )
-                    } else {
-                        AddTransactionDialog(
-                            initialType = initialType,
-                            categories = categories,
-                            onDismiss = { finish() },
-                            onConfirm = { amount, type, counterparty, sourceType, categoryId, wallet, timestamp ->
-                                saveTransaction(amount, type, counterparty, sourceType, categoryId, wallet, timestamp)
-                            },
-                            onOpenLendBorrow = { _, _, _, _ ->
-                                val openIntent = com.omkarnub.kanri.ui.theme.AppIconManager.createLauncherIntent(this@QuickEntryActivity).apply {
-                                    this.action = KanriWidgetActions.ACTION_OPEN_LENDING
-                                    this.flags = Intent.FLAG_ACTIVITY_NEW_TASK or Intent.FLAG_ACTIVITY_CLEAR_TOP or Intent.FLAG_ACTIVITY_SINGLE_TOP
+                com.omkarnub.kanri.ui.common.KanriBackdropHost {
+                    Box(
+                        modifier = Modifier
+                            .fillMaxSize()
+                            .background(Color.Transparent)
+                    ) {
+                        if (isSplit) {
+                            SplitExpenseEntryDialog(
+                                onDismiss = { finish() },
+                                onSaveLenderSplit = { friendNames, perPersonShare, eventDesc ->
+                                    saveSplitAsLender(friendNames, perPersonShare, eventDesc)
+                                },
+                                onSaveBorrowerSplit = { payerName, userShare, eventDesc ->
+                                    saveSplitAsBorrower(payerName, userShare, eventDesc)
+                                },
+                                existingPeople = peopleList
+                            )
+                        } else {
+                            AddTransactionDialog(
+                                initialType = initialType,
+                                categories = categories,
+                                onDismiss = { finish() },
+                                onConfirm = { amount, type, counterparty, sourceType, categoryId, wallet, timestamp ->
+                                    saveTransaction(amount, type, counterparty, sourceType, categoryId, wallet, timestamp)
+                                },
+                                onOpenLendBorrow = { _, _, _, _ ->
+                                    val openIntent = com.omkarnub.kanri.ui.theme.AppIconManager.createLauncherIntent(this@QuickEntryActivity).apply {
+                                        this.action = KanriWidgetActions.ACTION_OPEN_LENDING
+                                        this.flags = Intent.FLAG_ACTIVITY_NEW_TASK or Intent.FLAG_ACTIVITY_CLEAR_TOP or Intent.FLAG_ACTIVITY_SINGLE_TOP
+                                    }
+                                    try {
+                                        startActivity(openIntent)
+                                    } catch (_: Exception) {}
+                                    finish()
                                 }
-                                try {
-                                    startActivity(openIntent)
-                                } catch (_: Exception) {}
-                                finish()
-                            }
-                        )
+                            )
+                        }
                     }
                 }
             }

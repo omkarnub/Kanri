@@ -1,4 +1,4 @@
-﻿package com.omkarnub.kanri.ui.lending
+package com.omkarnub.kanri.ui.lending
 
 import androidx.compose.runtime.Immutable
 import com.omkarnub.kanri.data.db.LendingWithRepayments

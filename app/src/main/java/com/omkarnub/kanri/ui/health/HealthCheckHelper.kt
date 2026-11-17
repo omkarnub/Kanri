@@ -1,4 +1,4 @@
-﻿package com.omkarnub.kanri.ui.health
+package com.omkarnub.kanri.ui.health
 
 import android.content.ActivityNotFoundException
 import android.content.Context
