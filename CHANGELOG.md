@@ -5,6 +5,17 @@ All notable changes to Kanri will be documented in this file.
 The format is based on [Keep a Changelog](https://keepachangelog.com/en/1.0.0/),
 and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0.html).
 
+## [1.19.4] - 2026-11-18
+
+### Fixed
+- **Native AGSL Sumi-e Mist Implementation & Crash Fix (`AgslShaderLibrary.kt`, `GlassBackgroundView.kt`)**:
+  - Implemented `SUMI_E_MIST_AGSL` in `AgslShaderLibrary.kt` with Japanese monochrome ink mountains, washi paper texture, vermilion sun, flowing mist ribbons, and foreground pine branch. Runs 100% natively in AGSL on Android 13+ (API 33+) inside Compose's Skia RenderNode pipeline, completely bypassing WebView and eliminating the Chromium render-process OOM crash when selecting Sumi-e Mist.
+  - Added `onRenderProcessGone` handler in `GlassBackgroundView.kt` returning `true` to ensure WebView crashes never bring down the host application.
+- **Restored Frosted Glass Blur Across All App Components (`KanriGlass.kt`)**:
+  - Fixed a critical regression in `kanriGlass` (`GlassLevel.Blur`) where the modifier checked explicit parameter `hazeState != null` instead of ambient fallback `currentHaze != null` (`currentHaze = hazeState ?: LocalHazeState.current`).
+  - Restored authentic frosted glass blur to all cards across Home, Lending, Insights, Goals, and Settings screens while retaining 50% `HazeInputScale.Fixed(0.5f)` downsampling for butter-smooth 120 FPS performance.
+- Bumped version to `1.19.4` (Build 71).
+
 ## [1.19.3] - 2026-11-18
 
 ### Fixed

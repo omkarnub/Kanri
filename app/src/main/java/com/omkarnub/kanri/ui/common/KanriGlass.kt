@@ -231,9 +231,9 @@ fun Modifier.kanriGlass(
                     else -> Color.White.copy(alpha = 0.10f)
                 }
 
-                if (isBlurCapable && hazeState != null && tokens.blurRadius > 0.dp) {
+                if (isBlurCapable && currentHaze != null && tokens.blurRadius > 0.dp) {
                     baseModifier.hazeEffect(
-                        state = hazeState,
+                        state = currentHaze,
                         style = HazeStyle(
                             backgroundColor = frostBg,
                             tint = HazeTint(frostTint),
