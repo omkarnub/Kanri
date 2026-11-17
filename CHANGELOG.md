@@ -5,6 +5,20 @@ All notable changes to Kanri will be documented in this file.
 The format is based on [Keep a Changelog](https://keepachangelog.com/en/1.0.0/),
 and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0.html).
 
+## [1.19.2] - 2026-11-18
+
+### Fixed
+- **Quick Entry Floating Dialog Restored (`QuickEntryActivity`, `res/values-v31/themes.xml`)**:
+  - Removed `KanriBackdropHost` full-screen background overlay from `QuickEntryActivity`, restoring the floating dialog over the home screen/wallpaper as intended.
+  - Added `android:windowBlurBehindEnabled="true"` and `windowBlurBehindRadius="35dp"` to `values-v31/themes.xml` with dynamic `FLAG_BLUR_BEHIND` window configuration, providing native hardware-accelerated frosted glass blur behind the floating numpad popup on Android 12+ (including Android 14) without hijacking screen focus.
+- **Silky Smooth 120 FPS List Scrolling and Menu Switching (`KanriGlass`, `AgslShaderRenderer`, `AgslShaderLibrary`, `KanriMotion`)**:
+  - **AGSL Shader 30 FPS Pacing**: Replaced per-VSYNC infinite transition in `AgslShaderRenderer` with a steady 30 FPS coroutine clock, preventing continuous 120 FPS GPU pipeline saturation and leaving full hardware headroom for 120 FPS UI gestures.
+  - **Optimized Shader Math**: Simplified `AURORA_AGSL` from 20 noise evaluations down to 9 per pixel, and reduced cloud octaves, cutting pixel shader time by over 50%.
+  - **Haze In-Content Blur Optimization**: Scoped expensive dynamic GPU Gaussian blur (`hazeEffect`) strictly to floating overlays (`GlassLevel.Dock`, `GlassLevel.Strong`, `GlassLevel.EntrySheet`, `KanriModalBottomSheet`), while regular list cards render lightweight frosted glass materials with zero blur recalculations per scroll frame.
+  - **Snappy Tab Switching Motion**: Removed full-tree `scaleIn` layer rasterization from `KanriMotion.tabTransition`, adopting snappy 190ms horizontal gliding transitions.
+  - **Prevented Re-running Cold Launch Animations on Tab Switches**: Guarded staggered entrance animations in `HomeScreen`, `LendingScreen`, and `MonthViewScreen` with `rememberSaveable`, ensuring tabs switch instantaneously without re-animating internal alphas or launching dozens of coroutines.
+- Bumped version to `1.19.2` (Build 69).
+
 ## [1.19.1] - 2026-11-18
 
 ### Fixed

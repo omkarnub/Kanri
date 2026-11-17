@@ -192,23 +192,20 @@ fun MonthViewScreen(
         else -> YearMonth.of(monthState.selectedYear, monthState.selectedMonth)
     }
 
-    // Single-entry stagger animation gate for the visit
-    var hasPlayedEntranceAnim by remember { mutableStateOf(false) }
-    val entranceAlpha = remember { Animatable(0f) }
-    val entranceTranslationY = remember { Animatable(24f) }
+    // Single-entry stagger animation gate for the visit (persists across tab switches)
+    var hasPlayedEntranceAnim by androidx.compose.runtime.saveable.rememberSaveable { mutableStateOf(false) }
+    val entranceAlpha = remember { Animatable(if (hasPlayedEntranceAnim) 1f else 0f) }
+    val entranceTranslationY = remember { Animatable(if (hasPlayedEntranceAnim) 0f else 24f) }
 
     LaunchedEffect(Unit) {
         if (!hasPlayedEntranceAnim) {
-            launch {
-                entranceAlpha.animateTo(1f, tween(440, easing = FastOutSlowInEasing))
-            }
-            launch {
-                entranceTranslationY.animateTo(0f, tween(440, easing = FastOutSlowInEasing))
-            }
             hasPlayedEntranceAnim = true
-        } else {
-            entranceAlpha.snapTo(1f)
-            entranceTranslationY.snapTo(0f)
+            launch {
+                entranceAlpha.animateTo(1f, tween(300, easing = FastOutSlowInEasing))
+            }
+            launch {
+                entranceTranslationY.animateTo(0f, tween(300, easing = FastOutSlowInEasing))
+            }
         }
     }
 

@@ -104,13 +104,17 @@ fun LendingScreen(
     var showSplitSheet by remember { mutableStateOf(false) }
     val splitSheetState = rememberModalBottomSheetState(skipPartiallyExpanded = true)
 
-    // Entrance animation animatables (played once on tab entrance)
-    val headerAlpha = remember { Animatable(0f) }
-    val heroAlpha = remember { Animatable(0f) }
-    val controlAlpha = remember { Animatable(0f) }
-    val listAlpha = remember { Animatable(0f) }
+    // Entrance animation animatables (played once on initial entrance, skipped on tab switches)
+    val hasPlayedLendingEntrance = androidx.compose.runtime.saveable.rememberSaveable { mutableStateOf(false) }
+    val initialAlpha = if (hasPlayedLendingEntrance.value) 1f else 0f
+    val headerAlpha = remember { Animatable(initialAlpha) }
+    val heroAlpha = remember { Animatable(initialAlpha) }
+    val controlAlpha = remember { Animatable(initialAlpha) }
+    val listAlpha = remember { Animatable(initialAlpha) }
 
     LaunchedEffect(Unit) {
+        if (hasPlayedLendingEntrance.value) return@LaunchedEffect
+        hasPlayedLendingEntrance.value = true
         launch {
             headerAlpha.animateTo(
                 targetValue = 1f,

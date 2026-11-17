@@ -70,7 +70,7 @@ object AgslShaderLibrary {
         float fbm(vec2 p) {
             float sum = 0.0;
             float amp = 0.5;
-            for (int i = 0; i < 4; i++) {
+            for (int i = 0; i < 2; i++) {
                 sum += amp * vnoise(p);
                 p = R * p * 2.03 + 19.19;
                 amp *= 0.5;
@@ -81,7 +81,7 @@ object AgslShaderLibrary {
         float billow(vec2 p) {
             float sum = 0.0;
             float amp = 0.5;
-            for (int i = 0; i < 4; i++) {
+            for (int i = 0; i < 2; i++) {
                 sum += amp * (1.0 - abs(2.0 * vnoise(p) - 1.0));
                 p = R * p * 2.11 + 13.37;
                 amp *= 0.5;
@@ -157,7 +157,7 @@ object AgslShaderLibrary {
             float v = 0.0;
             float a = 0.5;
             mat2 rot = mat2(0.8, -0.6, 0.6, 0.8);
-            for (int i = 0; i < 4; i++) {
+            for (int i = 0; i < 3; i++) {
                 v += a * noise(p);
                 p = rot * p * 2.0 + vec2(1.7, 9.2);
                 a *= 0.5;
@@ -173,9 +173,7 @@ object AgslShaderLibrary {
             vec2 p = uv * vec2(2.5, 3.5);
             
             vec2 q = vec2(fbm(p + vec2(0.0, t * 0.4)), fbm(p + vec2(5.2, 1.3 - t * 0.3)));
-            vec2 r = vec2(fbm(p + 4.0 * q + vec2(1.7, 9.2 + t * 0.2)), fbm(p + 4.0 * q + vec2(8.3, 2.8 - t * 0.25)));
-            
-            float f = fbm(p + 3.5 * r);
+            float f = fbm(p + 2.5 * q + vec2(t * 0.15, -t * 0.10));
             
             float wave1 = sin(uv.x * 4.0 + t * 1.5 + f * 3.0) * 0.5 + 0.5;
             float wave2 = cos(uv.x * 3.0 - t * 1.1 + f * 2.5) * 0.5 + 0.5;
@@ -190,7 +188,7 @@ object AgslShaderLibrary {
             
             vec3 auroraCol = mix(emerald, cyan, wave1);
             auroraCol = mix(auroraCol, violet, ribbon2 * 0.7);
-            auroraCol = mix(auroraCol, coral, clamp(r.x * 0.5, 0.0, 1.0));
+            auroraCol = mix(auroraCol, coral, clamp(q.x * 0.5, 0.0, 1.0));
             
             vec3 finalCol = bg + auroraCol * (ribbon * 1.4 + ribbon2 * 0.9);
             return half4(clamp(finalCol, 0.0, 1.0), 1.0);

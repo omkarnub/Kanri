@@ -165,20 +165,17 @@ object KanriMotion {
         val exitOffset = if (isForward) -1 else 1
 
         val enter = slideInHorizontally(
-            initialOffsetX = { fullWidth -> (fullWidth * 0.28f * enterOffset).toInt() },
-            animationSpec = tween(durationMillis = 260, easing = EaseOut)
+            initialOffsetX = { fullWidth -> (fullWidth * 0.15f * enterOffset).toInt() },
+            animationSpec = tween(durationMillis = 190, easing = EaseOut)
         ) + fadeIn(
-            animationSpec = tween(durationMillis = 220, easing = EaseOut)
-        ) + scaleIn(
-            initialScale = 0.98f,
-            animationSpec = tween(durationMillis = 260, easing = EaseOut)
+            animationSpec = tween(durationMillis = 170, easing = EaseOut)
         )
 
         val exit = slideOutHorizontally(
-            targetOffsetX = { fullWidth -> (fullWidth * 0.18f * exitOffset).toInt() },
-            animationSpec = tween(durationMillis = 220, easing = EaseOut)
+            targetOffsetX = { fullWidth -> (fullWidth * 0.10f * exitOffset).toInt() },
+            animationSpec = tween(durationMillis = 160, easing = EaseOut)
         ) + fadeOut(
-            animationSpec = tween(durationMillis = 180, easing = EaseOut)
+            animationSpec = tween(durationMillis = 140, easing = EaseOut)
         )
 
         return enter.togetherWith(exit)

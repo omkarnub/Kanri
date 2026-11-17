@@ -45,9 +45,15 @@ class QuickEntryActivity : ComponentActivity() {
         super.onCreate(savedInstanceState)
         enableEdgeToEdge()
         window.setBackgroundDrawable(android.graphics.drawable.ColorDrawable(android.graphics.Color.TRANSPARENT))
-        applyWindowBlur(window, 120)
+        if (android.os.Build.VERSION.SDK_INT >= android.os.Build.VERSION_CODES.S) {
+            window.addFlags(WindowManager.LayoutParams.FLAG_BLUR_BEHIND)
+            val params = window.attributes
+            params.flags = params.flags or WindowManager.LayoutParams.FLAG_BLUR_BEHIND
+            params.blurBehindRadius = (45 * resources.displayMetrics.density).toInt().coerceIn(30, 200)
+            window.attributes = params
+        }
         window.addFlags(WindowManager.LayoutParams.FLAG_DIM_BEHIND)
-        window.setDimAmount(0.35f)
+        window.setDimAmount(0.28f)
 
         val action = intent?.action ?: KanriWidgetActions.ACTION_ADD_EXPENSE
         val isIncome = action == KanriWidgetActions.ACTION_ADD_INCOME
@@ -64,43 +70,41 @@ class QuickEntryActivity : ComponentActivity() {
                 }
                 val peopleList by peopleListFlow.collectAsState(initial = emptyList())
 
-                com.omkarnub.kanri.ui.common.KanriBackdropHost {
-                    Box(
-                        modifier = Modifier
-                            .fillMaxSize()
-                            .background(Color.Transparent)
-                    ) {
-                        if (isSplit) {
-                            SplitExpenseEntryDialog(
-                                onDismiss = { finish() },
-                                onSaveLenderSplit = { friendNames, perPersonShare, eventDesc ->
-                                    saveSplitAsLender(friendNames, perPersonShare, eventDesc)
-                                },
-                                onSaveBorrowerSplit = { payerName, userShare, eventDesc ->
-                                    saveSplitAsBorrower(payerName, userShare, eventDesc)
-                                },
-                                existingPeople = peopleList
-                            )
-                        } else {
-                            AddTransactionDialog(
-                                initialType = initialType,
-                                categories = categories,
-                                onDismiss = { finish() },
-                                onConfirm = { amount, type, counterparty, sourceType, categoryId, wallet, timestamp ->
-                                    saveTransaction(amount, type, counterparty, sourceType, categoryId, wallet, timestamp)
-                                },
-                                onOpenLendBorrow = { _, _, _, _ ->
-                                    val openIntent = com.omkarnub.kanri.ui.theme.AppIconManager.createLauncherIntent(this@QuickEntryActivity).apply {
-                                        this.action = KanriWidgetActions.ACTION_OPEN_LENDING
-                                        this.flags = Intent.FLAG_ACTIVITY_NEW_TASK or Intent.FLAG_ACTIVITY_CLEAR_TOP or Intent.FLAG_ACTIVITY_SINGLE_TOP
-                                    }
-                                    try {
-                                        startActivity(openIntent)
-                                    } catch (_: Exception) {}
-                                    finish()
+                Box(
+                    modifier = Modifier
+                        .fillMaxSize()
+                        .background(Color.Transparent)
+                ) {
+                    if (isSplit) {
+                        SplitExpenseEntryDialog(
+                            onDismiss = { finish() },
+                            onSaveLenderSplit = { friendNames, perPersonShare, eventDesc ->
+                                saveSplitAsLender(friendNames, perPersonShare, eventDesc)
+                            },
+                            onSaveBorrowerSplit = { payerName, userShare, eventDesc ->
+                                saveSplitAsBorrower(payerName, userShare, eventDesc)
+                            },
+                            existingPeople = peopleList
+                        )
+                    } else {
+                        AddTransactionDialog(
+                            initialType = initialType,
+                            categories = categories,
+                            onDismiss = { finish() },
+                            onConfirm = { amount, type, counterparty, sourceType, categoryId, wallet, timestamp ->
+                                saveTransaction(amount, type, counterparty, sourceType, categoryId, wallet, timestamp)
+                            },
+                            onOpenLendBorrow = { _, _, _, _ ->
+                                val openIntent = com.omkarnub.kanri.ui.theme.AppIconManager.createLauncherIntent(this@QuickEntryActivity).apply {
+                                    this.action = KanriWidgetActions.ACTION_OPEN_LENDING
+                                    this.flags = Intent.FLAG_ACTIVITY_NEW_TASK or Intent.FLAG_ACTIVITY_CLEAR_TOP or Intent.FLAG_ACTIVITY_SINGLE_TOP
                                 }
-                            )
-                        }
+                                try {
+                                    startActivity(openIntent)
+                                } catch (_: Exception) {}
+                                finish()
+                            }
+                        )
                     }
                 }
             }

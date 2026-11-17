@@ -211,19 +211,23 @@ fun HomeScreen(
         )
     }
 
-    // App launch entrance animations: staggered fluid fade-in and slide-up
-    val headerEntrance = remember { Animatable(0f) }
-    val greetingFade = remember { Animatable(0f) }
-    val dateFade = remember { Animatable(0f) }
-    val needsReviewEntrance = remember { Animatable(0f) }
-    val visualizerEntrance = remember { Animatable(0f) }
-    val walletEntrance = remember { Animatable(0f) }
-    val transactionsEntrance = remember { Animatable(0f) }
-    val safeSpendEntrance = remember { Animatable(0f) }
-    val streakEntrance = remember { Animatable(0f) }
-    val footerEntrance = remember { Animatable(0f) }
+    // App launch entrance animations: staggered fluid fade-in and slide-up (runs only on cold launch, skipped on tab switches)
+    val hasPlayedEntrance = androidx.compose.runtime.saveable.rememberSaveable { mutableStateOf(false) }
+    val initialEntrance = if (hasPlayedEntrance.value) 1f else 0f
+    val headerEntrance = remember { Animatable(initialEntrance) }
+    val greetingFade = remember { Animatable(initialEntrance) }
+    val dateFade = remember { Animatable(initialEntrance) }
+    val needsReviewEntrance = remember { Animatable(initialEntrance) }
+    val visualizerEntrance = remember { Animatable(initialEntrance) }
+    val walletEntrance = remember { Animatable(initialEntrance) }
+    val transactionsEntrance = remember { Animatable(initialEntrance) }
+    val safeSpendEntrance = remember { Animatable(initialEntrance) }
+    val streakEntrance = remember { Animatable(initialEntrance) }
+    val footerEntrance = remember { Animatable(initialEntrance) }
 
     LaunchedEffect(Unit) {
+        if (hasPlayedEntrance.value) return@LaunchedEffect
+        hasPlayedEntrance.value = true
         // 1. Header (Logo & Profile) - subtle slide down + fade
         launch {
             headerEntrance.animateTo(

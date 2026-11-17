@@ -228,14 +228,14 @@ fun Modifier.kanriGlass(
                     else -> Color.White.copy(alpha = 0.10f)
                 }
 
-                if (isBlurCapable && currentHaze != null && tokens.blurRadius > 0.dp) {
+                if (isBlurCapable && hazeState != null && tokens.blurRadius > 0.dp) {
                     baseModifier.hazeEffect(
-                        state = currentHaze,
+                        state = hazeState,
                         style = HazeStyle(
                             backgroundColor = frostBg,
                             tint = HazeTint(frostTint),
-                            blurRadius = tokens.blurRadius,
-                            noiseFactor = (0.010f + 0.025f * (tokens.blurRadius.value / 50f)).coerceIn(0.005f, 0.040f)
+                            blurRadius = tokens.blurRadius.coerceAtMost(28.dp),
+                            noiseFactor = 0f
                         )
                     )
                 } else if (isBlurCapable) {
@@ -301,8 +301,8 @@ fun Modifier.kanriGlass(
                         style = HazeStyle(
                             backgroundColor = Color.Transparent,
                             tint = HazeTint(dockTint),
-                            blurRadius = tokens.blurRadius * 0.75f,
-                            noiseFactor = 0.015f
+                            blurRadius = (tokens.blurRadius * 0.75f).coerceAtMost(24.dp),
+                            noiseFactor = 0f
                         )
                     )
                 } else {
@@ -337,8 +337,8 @@ fun Modifier.kanriGlass(
                         style = HazeStyle(
                             backgroundColor = strongBg,
                             tint = HazeTint(strongTint),
-                            blurRadius = tokens.blurRadius * 1.35f,
-                            noiseFactor = 0.035f
+                            blurRadius = (tokens.blurRadius * 1.1f).coerceAtMost(28.dp),
+                            noiseFactor = 0f
                         )
                     )
                 } else {
@@ -348,8 +348,8 @@ fun Modifier.kanriGlass(
                 }
             }
             GlassLevel.EntrySheet -> {
-                // Fixed 50dp blur and translucent frosted tint for Amount Pad, Transaction Details, and Summary Drawer
-                val fixedBlur = 50.dp
+                // Fixed blur and translucent frosted tint for Amount Pad, Transaction Details, and Summary Drawer
+                val fixedBlur = 32.dp
                 val fixedTint = Color.Black.copy(alpha = 0.08f)
                 val baseBg = if (tokens.isDark) Color(0xFF141414).copy(alpha = 0.52f) else Color(0xFFFAF9F5).copy(alpha = 0.58f)
 
@@ -360,7 +360,7 @@ fun Modifier.kanriGlass(
                             backgroundColor = Color.Transparent,
                             tint = HazeTint(fixedTint),
                             blurRadius = fixedBlur,
-                            noiseFactor = 0.02f
+                            noiseFactor = 0f
                         )
                     )
                     .background(baseBg)
