@@ -5,6 +5,23 @@ All notable changes to Kanri will be documented in this file.
 The format is based on [Keep a Changelog](https://keepachangelog.com/en/1.0.0/),
 and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0.html).
 
+## [1.19.5] - 2026-11-18
+
+### Added
+- **Authentic Brand Intro Splash Animation (`KanriSplashScreen.kt`, `KanriIntroLogo.kt`)**:
+  - Replaced legacy text reveal with the authentic brand intro choreography from the first-time setup get-started page (`KanriIntroLogo`). The Kanri emblem lands in the center, glides smoothly to the left lockup, and kinetic Panchang KANRI letters emerge staggered beside it.
+  - Enhanced `KanriIntroLogo` with customizable `customInkColor` and `scaleFactor` (scaled at 1.25x on splash) with theme-adaptive ink contrast and tap-to-skip acceleration once the app is loaded.
+
+### Fixed
+- **Widget Quick Entry Frosted Glass Blur (`QuickEntryActivity.kt`)**:
+  - Wired an isolated `quickHazeState` with an ambient 40% `GlassBackdrop` inside `Modifier.hazeSource(quickHazeState)` in `QuickEntryActivity`.
+  - Provided `LocalHazeState provides quickHazeState` to `AddTransactionDialog` and `SplitExpenseEntryDialog`, restoring true frosted glass blur and specular lighting to the widget numpad sheet in Glass theme while keeping launcher wallpaper visible.
+- **Touch-Pause Zero-Stutter Shader Cadence (`MainActivity.kt`, `AgslShaderRenderer.kt`)**:
+  - Implemented `MainActivity.isUserInteracting` state driven by `dispatchTouchEvent` (set to `true` on touch/drag, resetting 350ms after finger release).
+  - Paused AGSL shader time advancement during active touches and flings, completely preventing background redraws from dirtying `hazeSource` during gestures. This removes all background-triggered GPU blur recomputations while scrolling, locking mid-range devices (such as Infinix Note 30 with Mali-G57 MC2) to a silky smooth 120 FPS.
+  - Adjusted ambient stationary shader cadence to 20 FPS (50ms) for calm, organic motion with minimal GPU power consumption.
+- Bumped version to `1.19.5` (Build 72).
+
 ## [1.19.4] - 2026-11-18
 
 ### Fixed

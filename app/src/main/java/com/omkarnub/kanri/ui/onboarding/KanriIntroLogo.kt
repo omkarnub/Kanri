@@ -95,7 +95,9 @@ fun KanriIntroLogo(
     startAnimation: Boolean,
     isExiting: Boolean,
     onIntroReadyForButton: () -> Unit = {},
-    modifier: Modifier = Modifier
+    modifier: Modifier = Modifier,
+    customInkColor: Color? = null,
+    scaleFactor: Float = 1.0f
 ) {
     val markPath = remember {
         try {
@@ -141,7 +143,7 @@ fun KanriIntroLogo(
     val lt = ltAnim.value
     val exitP = exitAnim.value
 
-    val inkColor = Color(0xFF000000) // Pure black for both emblem mark and Panchang text logo
+    val inkColor = customInkColor ?: if (isLight) Color(0xFF000000) else Color(0xFFFDFAEE)
     val cinnabar = Color(0xFFC43B38) // Cinnabar Red from living scroll aesthetics
 
     // Exit transforms (ChapterPlayer formula: alpha = 1 - eInOut(out), dy = -eInOut(out) * 14)
@@ -157,13 +159,13 @@ fun KanriIntroLogo(
         Box(
             modifier = Modifier
                 .fillMaxWidth()
-                .height(86.dp),
+                .height((86 * scaleFactor).dp),
             contentAlignment = Alignment.Center
         ) {
             Canvas(
                 modifier = Modifier
                     .fillMaxWidth()
-                    .height(86.dp)
+                    .height((86 * scaleFactor).dp)
             ) {
                 if (lt <= 0.001f || exitAlpha <= 0.001f) return@Canvas
 
@@ -175,12 +177,12 @@ fun KanriIntroLogo(
                 val push = 1f + 0.03f * eInOut(seg(lt, 0f, 5f))
 
                 // Lockup dimensions: Emblem + Panchang Wordmark
-                val desiredMarkH = 44.dp.toPx()
+                val desiredMarkH = 44.dp.toPx() * scaleFactor
                 val desiredMarkW = (MARK_WIDTH / MARK_HEIGHT) * desiredMarkH // ~59dp
 
-                val desiredWordH = 28.dp.toPx()
+                val desiredWordH = 28.dp.toPx() * scaleFactor
                 val desiredWordW = (SVG_TOTAL_WIDTH / SVG_TOTAL_HEIGHT) * desiredWordH // ~189dp
-                val gap = 16.dp.toPx()
+                val gap = 16.dp.toPx() * scaleFactor
                 val totalLockupW = desiredMarkW + gap + desiredWordW
 
                 // ChapterPlayer Mark Landing & Settle (lt: 0.0s to 1.70s)

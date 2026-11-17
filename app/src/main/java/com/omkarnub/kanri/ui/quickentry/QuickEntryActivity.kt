@@ -11,23 +11,30 @@ import androidx.room.withTransaction
 import androidx.compose.foundation.background
 import androidx.compose.foundation.layout.Box
 import androidx.compose.foundation.layout.fillMaxSize
+import androidx.compose.runtime.CompositionLocalProvider
 import androidx.compose.runtime.collectAsState
 import androidx.compose.runtime.getValue
 import androidx.compose.runtime.remember
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.graphics.Color
+import androidx.compose.ui.graphics.graphicsLayer
 import androidx.lifecycle.lifecycleScope
 import com.omkarnub.kanri.data.db.KanriDatabase
 import com.omkarnub.kanri.data.db.LendingEntity
 import com.omkarnub.kanri.data.db.TransactionEntity
 import com.omkarnub.kanri.data.wallet.WalletPreferences
 import com.omkarnub.kanri.data.wallet.WalletResolver
+import com.omkarnub.kanri.ui.common.GlassBackdrop
+import com.omkarnub.kanri.ui.common.LocalHazeState
 import com.omkarnub.kanri.ui.common.applyWindowBlur
 import com.omkarnub.kanri.ui.home.AddTransactionDialog
 import com.omkarnub.kanri.ui.lending.SplitExpenseEntryDialog
 import com.omkarnub.kanri.ui.theme.KanriTheme
+import com.omkarnub.kanri.ui.theme.LocalKanriGlass
 import com.omkarnub.kanri.widget.KanriWidgetActions
 import com.omkarnub.kanri.widget.KanriWidgetsUpdater
+import dev.chrisbanes.haze.HazeState
+import dev.chrisbanes.haze.hazeSource
 import kotlinx.coroutines.Dispatchers
 import kotlinx.coroutines.flow.map
 import kotlinx.coroutines.launch
@@ -69,42 +76,66 @@ class QuickEntryActivity : ComponentActivity() {
                     db.lendingDao().getAllRecords().map { list -> list.map { it.personName }.distinct() }
                 }
                 val peopleList by peopleListFlow.collectAsState(initial = emptyList())
+                val glassTokens = LocalKanriGlass.current
+                val quickHazeState = remember { HazeState() }
 
                 Box(
                     modifier = Modifier
                         .fillMaxSize()
                         .background(Color.Transparent)
                 ) {
-                    if (isSplit) {
-                        SplitExpenseEntryDialog(
-                            onDismiss = { finish() },
-                            onSaveLenderSplit = { friendNames, perPersonShare, eventDesc ->
-                                saveSplitAsLender(friendNames, perPersonShare, eventDesc)
-                            },
-                            onSaveBorrowerSplit = { payerName, userShare, eventDesc ->
-                                saveSplitAsBorrower(payerName, userShare, eventDesc)
-                            },
-                            existingPeople = peopleList
-                        )
-                    } else {
-                        AddTransactionDialog(
-                            initialType = initialType,
-                            categories = categories,
-                            onDismiss = { finish() },
-                            onConfirm = { amount, type, counterparty, sourceType, categoryId, wallet, timestamp ->
-                                saveTransaction(amount, type, counterparty, sourceType, categoryId, wallet, timestamp)
-                            },
-                            onOpenLendBorrow = { _, _, _, _ ->
-                                val openIntent = com.omkarnub.kanri.ui.theme.AppIconManager.createLauncherIntent(this@QuickEntryActivity).apply {
-                                    this.action = KanriWidgetActions.ACTION_OPEN_LENDING
-                                    this.flags = Intent.FLAG_ACTIVITY_NEW_TASK or Intent.FLAG_ACTIVITY_CLEAR_TOP or Intent.FLAG_ACTIVITY_SINGLE_TOP
-                                }
-                                try {
-                                    startActivity(openIntent)
-                                } catch (_: Exception) {}
-                                finish()
-                            }
-                        )
+                    if (glassTokens != null) {
+                        // Ambient glass backdrop layer at subtle opacity so wallpaper shines through,
+                        // while providing Haze a rich colorful source to blur into frosted glass
+                        Box(
+                            modifier = Modifier
+                                .fillMaxSize()
+                                .hazeSource(quickHazeState)
+                        ) {
+                            GlassBackdrop(
+                                modifier = Modifier
+                                    .fillMaxSize()
+                                    .graphicsLayer { alpha = 0.40f }
+                            )
+                        }
+                    }
+
+                    CompositionLocalProvider(
+                        LocalHazeState provides (if (glassTokens != null) quickHazeState else null)
+                    ) {
+                        if (isSplit) {
+                            SplitExpenseEntryDialog(
+                                onDismiss = { finish() },
+                                onSaveLenderSplit = { friendNames, perPersonShare, eventDesc ->
+                                    saveSplitAsLender(friendNames, perPersonShare, eventDesc)
+                                },
+                                onSaveBorrowerSplit = { payerName, userShare, eventDesc ->
+                                    saveSplitAsBorrower(payerName, userShare, eventDesc)
+                                },
+                                existingPeople = peopleList,
+                                hazeState = if (glassTokens != null) quickHazeState else null
+                            )
+                        } else {
+                            AddTransactionDialog(
+                                initialType = initialType,
+                                categories = categories,
+                                onDismiss = { finish() },
+                                onConfirm = { amount, type, counterparty, sourceType, categoryId, wallet, timestamp ->
+                                    saveTransaction(amount, type, counterparty, sourceType, categoryId, wallet, timestamp)
+                                },
+                                onOpenLendBorrow = { _, _, _, _ ->
+                                    val openIntent = com.omkarnub.kanri.ui.theme.AppIconManager.createLauncherIntent(this@QuickEntryActivity).apply {
+                                        this.action = KanriWidgetActions.ACTION_OPEN_LENDING
+                                        this.flags = Intent.FLAG_ACTIVITY_NEW_TASK or Intent.FLAG_ACTIVITY_CLEAR_TOP or Intent.FLAG_ACTIVITY_SINGLE_TOP
+                                    }
+                                    try {
+                                        startActivity(openIntent)
+                                    } catch (_: Exception) {}
+                                    finish()
+                                },
+                                hazeState = if (glassTokens != null) quickHazeState else null
+                            )
+                        }
                     }
                 }
             }

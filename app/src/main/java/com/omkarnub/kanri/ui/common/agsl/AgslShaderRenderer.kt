@@ -47,16 +47,20 @@ fun AgslShaderBackground(
         }
     } ?: return
 
-    // Steady 30 FPS timer: eliminates per-VSYNC recomposition and GPU pipeline contention
+    // Silky smooth 20 FPS ambient timer: pauses time progression during active user touches
+    // and flings. This completely eliminates background invalidation during scrolls and tab switches,
+    // preventing Haze re-blur thrashing during gestures for locked 120 FPS scrolling!
     var timeVal by remember { mutableFloatStateOf(0f) }
     LaunchedEffect(backgroundType) {
         var lastTime = SystemClock.uptimeMillis()
         while (isActive) {
-            delay(33L) // 30 FPS cadence
+            delay(50L) // 20 FPS ambient cadence
             val now = SystemClock.uptimeMillis()
             val dt = ((now - lastTime) / 1000f).coerceIn(0f, 0.1f)
             lastTime = now
-            timeVal += dt
+            if (!com.omkarnub.kanri.MainActivity.isUserInteracting.value) {
+                timeVal += dt
+            }
         }
     }
 

@@ -1,6 +1,9 @@
 package com.omkarnub.kanri
 
 import android.os.Bundle
+import android.os.Handler
+import android.os.Looper
+import android.view.MotionEvent
 import android.view.animation.PathInterpolator
 import androidx.activity.compose.setContent
 import androidx.activity.enableEdgeToEdge
@@ -35,6 +38,35 @@ import com.omkarnub.kanri.ui.theme.ThemeMode
 import com.omkarnub.kanri.ui.theme.ThemePreferences
 
 open class MainActivity : FragmentActivity() {
+
+    companion object {
+        val isUserInteracting = mutableStateOf(false)
+    }
+
+    private var resetInteractionRunnable: Runnable? = null
+    private val interactionHandler = Handler(Looper.getMainLooper())
+
+    override fun dispatchTouchEvent(ev: MotionEvent?): Boolean {
+        when (ev?.actionMasked) {
+            MotionEvent.ACTION_DOWN,
+            MotionEvent.ACTION_MOVE -> {
+                resetInteractionRunnable?.let { interactionHandler.removeCallbacks(it) }
+                if (!isUserInteracting.value) {
+                    isUserInteracting.value = true
+                }
+            }
+            MotionEvent.ACTION_UP,
+            MotionEvent.ACTION_CANCEL -> {
+                resetInteractionRunnable?.let { interactionHandler.removeCallbacks(it) }
+                val runnable = Runnable {
+                    isUserInteracting.value = false
+                }
+                resetInteractionRunnable = runnable
+                interactionHandler.postDelayed(runnable, 350L)
+            }
+        }
+        return super.dispatchTouchEvent(ev)
+    }
 
     @Volatile
     private var isAppReady = false

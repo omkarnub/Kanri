@@ -1,9 +1,12 @@
 # Kanri Pixel DotTiles Widget System
 
-Current Version: **1.19.4** (Build 71)
+Current Version: **1.19.5** (Build 72)
 
 ## 1. Overview
 Kanri's widget subsystem is unified around a single, cohesive visual language: **Pixel DotTiles** (Nothing-inspired dot-matrix & tactile cards). Designed with precision, restraint, and obsessive detail, the system delivers 12 specialized home screen widgets rendered by a pure Canvas engine shared 1:1 between Android `RemoteViews` bitmaps and Jetpack Compose in-app previews, with full multi-currency support (`CurrencyUtils` / `CurrencyPreferences` synchronization), custom budget cycle awareness (`BudgetPreferences.budgetCycleStartDay`), and thread-safe `ThreadLocal` `Paint` rendering.
+
+In version 1.19.5:
+- **Widget Quick Entry Frosted Glass Blur (`QuickEntryActivity.kt`)**: Quick entry numpad sheets launched from widget actions in Glass theme now feature authentic frosted glass blur and specular lighting over an ambient 40% `GlassBackdrop` inside an isolated `quickHazeState`.
 
 ---
 

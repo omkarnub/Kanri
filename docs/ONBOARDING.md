@@ -1,9 +1,13 @@
 # Kanri Onboarding & Stepper System
 
-Current Version: **1.19.4** (Build 71)
+Current Version: **1.19.5** (Build 72)
 
 ## 1. Overview
 The Kanri onboarding experience guides new users through permissions, personal profile configuration, and security settings with transparency, privacy assurances, and immediate tactile feedback.
+
+In version 1.19.5:
+- **Splash Screen Brand Intro Integration (`KanriSplashScreen.kt`, `KanriIntroLogo.kt`)**:
+  - The iconic Scene 0 `KanriIntroLogo` choreography (landing emblem, smooth settle to the left, kinetic Panchang letters rising up) is now unified as the application splash screen reveal. Enhanced with `customInkColor` and `scaleFactor = 1.25f`.
 
 In version 1.18.7:
 - **Centered Lower-River Painting Integration (`PaintingPermissionView`)**:
