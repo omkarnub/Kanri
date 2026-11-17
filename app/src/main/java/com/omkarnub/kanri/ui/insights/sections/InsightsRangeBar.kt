@@ -69,7 +69,7 @@ fun InsightsRangeBar(
     onModeSelected: (InsightsMode) -> Unit,
     modifier: Modifier = Modifier,
     earliestTxMillis: Long? = null,
-    hazeState: HazeState? = LocalHazeState.current
+    hazeState: HazeState? = null
 ) {
     var showCustomDatePicker by remember { mutableStateOf(false) }
     val haptics = rememberKanriHaptics()
@@ -78,7 +78,7 @@ fun InsightsRangeBar(
     KanriGlassCard(
         modifier = modifier.fillMaxWidth(),
         level = GlassLevel.Blur,
-        hazeState = hazeState ?: LocalHazeState.current,
+        hazeState = hazeState,
         shape = RoundedCornerShape(20.dp)
     ) {
         Column(

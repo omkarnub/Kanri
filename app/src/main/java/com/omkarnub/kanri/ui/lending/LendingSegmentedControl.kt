@@ -42,7 +42,6 @@ fun LendingSegmentedControl(
     KanriGlassCard(
         modifier = modifier.fillMaxWidth(),
         level = GlassLevel.Blur,
-        hazeState = LocalHazeState.current,
         shape = RoundedCornerShape(14.dp)
     ) {
         Row(

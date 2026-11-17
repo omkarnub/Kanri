@@ -43,7 +43,6 @@ fun LendingSplitGroupCard(
         modifier = modifier.fillMaxWidth(),
         shape = RoundedCornerShape(20.dp),
         level = GlassLevel.Blur,
-        hazeState = LocalHazeState.current,
         onClick = onClick
     ) {
         LendingSplitGroupContent()

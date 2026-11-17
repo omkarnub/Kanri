@@ -1,3 +1,5 @@
+@file:OptIn(dev.chrisbanes.haze.ExperimentalHazeApi::class)
+
 package com.omkarnub.kanri.ui.navigation
 
 import androidx.compose.animation.AnimatedContent
@@ -67,6 +69,7 @@ import com.omkarnub.kanri.ui.theme.LocalKanriGlass
 import com.omkarnub.kanri.ui.theme.KanriMotion
 import com.omkarnub.kanri.ui.theme.lerpColor
 import androidx.compose.ui.graphics.Brush
+import dev.chrisbanes.haze.HazeInputScale
 import dev.chrisbanes.haze.HazeState
 import dev.chrisbanes.haze.HazeStyle
 import dev.chrisbanes.haze.HazeTint
@@ -166,7 +169,7 @@ fun KanriFloatingDock(
                     backgroundColor = dockBg,
                     tint = HazeTint(dockTint),
                     blurRadius = tokens.blurRadius,
-                    noiseFactor = 0.02f
+                    noiseFactor = 0f
                 )
             }
             Modifier
@@ -190,7 +193,9 @@ fun KanriFloatingDock(
                         Modifier.hazeEffect(
                             state = hazeState,
                             style = glassHazeStyle
-                        )
+                        ) {
+                            inputScale = HazeInputScale.Fixed(0.5f)
+                        }
                     } else {
                         Modifier.background(dockBg)
                     }
@@ -515,7 +520,7 @@ private fun DockAddButton(
                 backgroundColor = dockBg,
                 tint = HazeTint(dockTint),
                 blurRadius = tokens.blurRadius,
-                noiseFactor = 0.02f
+                noiseFactor = 0f
             )
         }
         modifier
@@ -532,7 +537,9 @@ private fun DockAddButton(
                     Modifier.hazeEffect(
                         state = hazeState,
                         style = glassHazeStyle
-                    )
+                    ) {
+                        inputScale = HazeInputScale.Fixed(0.5f)
+                    }
                 } else {
                     Modifier.background(dockBg)
                 }

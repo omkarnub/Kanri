@@ -180,7 +180,6 @@ fun LendingScreen(
                                 },
                                 shape = CircleShape,
                                 level = GlassLevel.Blur,
-                                hazeState = LocalHazeState.current,
                                 modifier = Modifier.padding(end = 12.dp),
                                 textColor = tokens?.textPrimary ?: MaterialTheme.colorScheme.onSurface,
                                 icon = {
@@ -421,7 +420,6 @@ fun LendingScreen(
                                         },
                                         shape = androidx.compose.foundation.shape.RoundedCornerShape(14.dp),
                                         level = GlassLevel.Blur,
-                                        hazeState = LocalHazeState.current,
                                         modifier = Modifier.padding(top = 8.dp),
                                         icon = {
                                             Icon(

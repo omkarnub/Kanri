@@ -1,3 +1,5 @@
+@file:OptIn(dev.chrisbanes.haze.ExperimentalHazeApi::class)
+
 package com.omkarnub.kanri.ui.common
 
 import androidx.compose.animation.core.Animatable
@@ -95,6 +97,7 @@ import com.omkarnub.kanri.ui.theme.ThemeMode
 import com.omkarnub.kanri.ui.theme.ThemePreferences
 import com.omkarnub.kanri.ui.theme.lerpColor
 import com.omkarnub.kanri.util.rememberKanriHaptics
+import dev.chrisbanes.haze.HazeInputScale
 import dev.chrisbanes.haze.HazeState
 import dev.chrisbanes.haze.HazeStyle
 import dev.chrisbanes.haze.HazeTint
@@ -237,7 +240,9 @@ fun Modifier.kanriGlass(
                             blurRadius = tokens.blurRadius.coerceAtMost(28.dp),
                             noiseFactor = 0f
                         )
-                    )
+                    ) {
+                        inputScale = HazeInputScale.Fixed(0.5f)
+                    }
                 } else if (isBlurCapable) {
                     baseModifier
                         .background(frostBg)
@@ -304,7 +309,9 @@ fun Modifier.kanriGlass(
                             blurRadius = (tokens.blurRadius * 0.75f).coerceAtMost(24.dp),
                             noiseFactor = 0f
                         )
-                    )
+                    ) {
+                        inputScale = HazeInputScale.Fixed(0.5f)
+                    }
                 } else {
                     baseModifier
                 }
@@ -340,7 +347,9 @@ fun Modifier.kanriGlass(
                             blurRadius = (tokens.blurRadius * 1.1f).coerceAtMost(28.dp),
                             noiseFactor = 0f
                         )
-                    )
+                    ) {
+                        inputScale = HazeInputScale.Fixed(0.5f)
+                    }
                 } else {
                     baseModifier
                         .background(strongBg)
@@ -362,7 +371,9 @@ fun Modifier.kanriGlass(
                             blurRadius = fixedBlur,
                             noiseFactor = 0f
                         )
-                    )
+                    ) {
+                        inputScale = HazeInputScale.Fixed(0.5f)
+                    }
                     .background(baseBg)
                     .background(fixedTint)
                 } else {
@@ -716,7 +727,9 @@ fun Modifier.frostedGlass(
             Modifier.hazeEffect(
                 state = hazeState,
                 style = glassTheme.hazeStyle
-            )
+            ) {
+                inputScale = HazeInputScale.Fixed(0.5f)
+            }
         } else {
             Modifier
         }

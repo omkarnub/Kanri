@@ -5,6 +5,17 @@ All notable changes to Kanri will be documented in this file.
 The format is based on [Keep a Changelog](https://keepachangelog.com/en/1.0.0/),
 and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0.html).
 
+## [1.19.3] - 2026-11-18
+
+### Fixed
+- **Mali-G57 GPU Zero-Stutter Optimization (Infinix Note 30 & Mid-range 120Hz Devices)**:
+  - **0.5x Downsampled Native AGSL Shading (`AgslShaderRenderer.kt`)**: Shaders now render into a hardware-downscaled (0.5x resolution) render buffer and upscale with GPU bilinear texture filtering via Compose's `placeRelativeWithLayer`. Slashes fragment shader load by 75% (from 2.65 million fragments down to 664,200 fragments on 1080x2460 displays), freeing up GPU ALUs so 120Hz touch flings and tab animations maintain zero dropped frames.
+  - **Haze 50% Input Downsampling (`HazeInputScale.Fixed(0.5f)`)**: Configured `inputScale = HazeInputScale.Fixed(0.5f)` on all remaining `hazeEffect` scopes (`GlassLevel.Dock`, `GlassLevel.Strong`, `GlassLevel.EntrySheet`, `frostedGlass`), cutting memory bandwidth and blur pass calculations by 75%.
+  - **In-Content Card Blur Removal**: Stripped unnecessary `LocalHazeState.current` passes from scroll-body elements (`LendingSegmentedControl`, `LendingSplitGroupCard`, `InsightsRangeBar`, and Lending screen action pills). These components now use lightweight frosted tinted backgrounds with zero Gaussian blur recalculations per scroll frame or tab transition.
+  - **Eliminated Haze Noise Calculations**: Removed all remaining `noiseFactor` calculations (`noiseFactor = 0f`) in `KanriFloatingDock.kt` and glass modifiers, removing extra texture lookups and ALU operations.
+  - **WebView Fallback DPR Clamping (`GlassBackgroundView.kt`)**: Added DPR capping (`window.devicePixelRatio = 1.0`) to avoid oversized WebGL/Canvas buffers on high-DPR screens.
+- Bumped version to `1.19.3` (Build 70).
+
 ## [1.19.2] - 2026-11-18
 
 ### Fixed

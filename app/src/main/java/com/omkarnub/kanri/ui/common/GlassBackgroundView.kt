@@ -149,12 +149,17 @@ fun GlassShaderBackground(
 
                     override fun onPageFinished(view: WebView?, url: String?) {
                         super.onPageFinished(view, url)
-                        // Inject 30 FPS RAF cap to keep GPU cool and UI silky smooth
+                        // Inject 30 FPS RAF cap and clamp devicePixelRatio to 1.0 to keep GPU fill rate cool and UI silky smooth
                         view?.evaluateJavascript(
                             """
                             (function() {
                                 if (window.__rafThrottled) return;
                                 window.__rafThrottled = true;
+                                try {
+                                    if (window.devicePixelRatio > 1.0) {
+                                        window.devicePixelRatio = 1.0;
+                                    }
+                                } catch(e) {}
                                 const origRAF = window.requestAnimationFrame;
                                 let lastT = 0;
                                 const interval = 1000 / 30;
