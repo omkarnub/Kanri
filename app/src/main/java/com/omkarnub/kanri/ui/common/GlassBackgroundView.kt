@@ -1,7 +1,12 @@
 package com.omkarnub.kanri.ui.common
 
 import android.annotation.SuppressLint
+import android.content.BroadcastReceiver
+import android.content.Context
+import android.content.Intent
+import android.content.IntentFilter
 import android.os.Build
+import android.os.PowerManager
 import android.view.MotionEvent
 import android.view.View
 import android.view.ViewGroup
@@ -9,11 +14,14 @@ import android.webkit.WebResourceRequest
 import android.webkit.WebSettings
 import android.webkit.WebView
 import android.webkit.WebViewClient
+import androidx.compose.animation.core.animateFloatAsState
+import androidx.compose.animation.core.tween
 import androidx.compose.foundation.background
 import androidx.compose.foundation.layout.Box
 import androidx.compose.foundation.layout.fillMaxSize
 import androidx.compose.runtime.Composable
 import androidx.compose.runtime.DisposableEffect
+import androidx.compose.runtime.collectAsState
 import androidx.compose.runtime.getValue
 import androidx.compose.runtime.mutableStateOf
 import androidx.compose.runtime.remember
@@ -21,11 +29,15 @@ import androidx.compose.runtime.setValue
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.graphics.Brush
 import androidx.compose.ui.graphics.Color
+import androidx.compose.ui.graphics.graphicsLayer
+import androidx.compose.ui.platform.LocalContext
 import androidx.compose.ui.viewinterop.AndroidView
 import androidx.lifecycle.Lifecycle
 import androidx.lifecycle.LifecycleEventObserver
 import androidx.lifecycle.compose.LocalLifecycleOwner
 import com.omkarnub.kanri.ui.theme.GlassCapabilities
+import com.omkarnub.kanri.ui.theme.KanriMotion
+import com.omkarnub.kanri.ui.theme.ThemePreferences
 
 enum class GlassBackgroundType(val id: String, val displayName: String, val fileName: String) {
     AURORA("aurora", "Gemini Aurora", "aurora.html"),
@@ -64,21 +76,46 @@ fun GlassShaderBackground(
     backgroundType: GlassBackgroundType,
     modifier: Modifier = Modifier
 ) {
-    val isMotion = GlassCapabilities.isMotionEnabled()
+    val context = LocalContext.current
+    val themePrefs = remember { ThemePreferences.getInstance(context) }
+    val isAnimationEnabled by themePrefs.animateBackgroundFlow.collectAsState()
+    val isMotionCapable = GlassCapabilities.isMotionEnabled()
 
-    if (!isMotion) {
-        // Fallback for prefers-reduced-motion
-        Box(
-            modifier = modifier
-                .fillMaxSize()
-                .background(
-                    Brush.verticalGradient(
-                        listOf(Color(0xFF0F172A), Color(0xFF020617))
-                    )
-                )
-        )
-        return
+    val powerManager = remember(context) { context.getSystemService(Context.POWER_SERVICE) as? PowerManager }
+    var isPowerSaveMode by remember { mutableStateOf(powerManager?.isPowerSaveMode == true) }
+    var isScreenOff by remember { mutableStateOf(false) }
+
+    DisposableEffect(context) {
+        val receiver = object : BroadcastReceiver() {
+            override fun onReceive(ctx: Context?, intent: Intent?) {
+                when (intent?.action) {
+                    PowerManager.ACTION_POWER_SAVE_MODE_CHANGED -> {
+                        isPowerSaveMode = powerManager?.isPowerSaveMode == true
+                    }
+                    Intent.ACTION_SCREEN_OFF -> {
+                        isScreenOff = true
+                    }
+                    Intent.ACTION_SCREEN_ON -> {
+                        isScreenOff = false
+                    }
+                }
+            }
+        }
+        val filter = IntentFilter().apply {
+            addAction(PowerManager.ACTION_POWER_SAVE_MODE_CHANGED)
+            addAction(Intent.ACTION_SCREEN_OFF)
+            addAction(Intent.ACTION_SCREEN_ON)
+        }
+        context.registerReceiver(receiver, filter)
+        onDispose {
+            try {
+                context.unregisterReceiver(receiver)
+            } catch (_: Exception) {}
+        }
     }
+
+    val isUserInteracting by com.omkarnub.kanri.MainActivity.isUserInteracting
+    val shouldAnimate = isAnimationEnabled && isMotionCapable && !isPowerSaveMode && !isScreenOff && !isUserInteracting
 
     val lifecycleOwner = LocalLifecycleOwner.current
     var webViewInstance by remember { mutableStateOf<WebView?>(null) }
@@ -99,6 +136,12 @@ fun GlassShaderBackground(
             webViewInstance = null
         }
     }
+
+    val crossfadeAlpha by animateFloatAsState(
+        targetValue = if (isAnimationEnabled) 1f else 0.94f,
+        animationSpec = tween(durationMillis = 240, easing = KanriMotion.EaseOut),
+        label = "bg_crossfade"
+    )
 
     AndroidView(
         factory = { ctx ->
@@ -145,20 +188,37 @@ fun GlassShaderBackground(
 
                     override fun onPageFinished(view: WebView?, url: String?) {
                         super.onPageFinished(view, url)
-                        // Inject 30 FPS RAF cap and gesture pause to keep GPU cool and UI silky smooth
+                        // Inject 30 FPS RAF cap and zero-wakeup pause mechanism
                         view?.evaluateJavascript(
                             """
                             (function() {
                                 if (window.__rafThrottled) return;
                                 window.__rafThrottled = true;
                                 window.__kanriPause = false;
+                                let pendingCbs = [];
                                 const origRAF = window.requestAnimationFrame;
                                 let lastT = 0;
                                 const interval = 1000 / 30;
+
+                                window.__kanriSetPause = function(pause) {
+                                    const wasPaused = window.__kanriPause;
+                                    window.__kanriPause = !!pause;
+                                    if (wasPaused && !pause && pendingCbs.length > 0) {
+                                        const list = pendingCbs.slice();
+                                        pendingCbs = [];
+                                        list.forEach(function(cb) { origRAF(cb); });
+                                    }
+                                };
+
                                 window.requestAnimationFrame = function(cb) {
+                                    if (window.__kanriPause) {
+                                        pendingCbs.push(cb);
+                                        return 0;
+                                    }
                                     return origRAF(function(time) {
                                         if (window.__kanriPause) {
-                                            return origRAF(cb);
+                                            pendingCbs.push(cb);
+                                            return;
                                         }
                                         if (time - lastT < interval) {
                                             return origRAF(cb);
@@ -171,6 +231,8 @@ fun GlassShaderBackground(
                             """.trimIndent(),
                             null
                         )
+                        val pause = !shouldAnimate
+                        view?.evaluateJavascript("window.__kanriSetPause?.($pause);", null)
                     }
                 }
                 setBackgroundColor(android.graphics.Color.TRANSPARENT)
@@ -194,13 +256,17 @@ fun GlassShaderBackground(
             if (webView.url != targetUrl) {
                 webView.loadUrl(targetUrl)
             }
-            val isInteracting = com.omkarnub.kanri.MainActivity.isUserInteracting.value
-            webView.evaluateJavascript("window.__kanriPause = $isInteracting;", null)
+            val pause = !shouldAnimate
+            webView.evaluateJavascript("window.__kanriSetPause?.($pause);", null)
         },
         onRelease = { webView ->
             webView.stopLoading()
             webView.destroy()
         },
-        modifier = modifier.fillMaxSize()
+        modifier = modifier
+            .fillMaxSize()
+            .graphicsLayer {
+                alpha = crossfadeAlpha
+            }
     )
 }

@@ -42,6 +42,9 @@ class ThemePreferences(context: Context) {
     private val _glassCustomizationFlow = MutableStateFlow(loadGlassCustomization())
     val glassCustomizationFlow: StateFlow<GlassCustomization> = _glassCustomizationFlow.asStateFlow()
 
+    private val _animateBackgroundFlow = MutableStateFlow(loadAnimateBackground())
+    val animateBackgroundFlow: StateFlow<Boolean> = _animateBackgroundFlow.asStateFlow()
+
     companion object {
         private const val PREFS_NAME = "kanri_theme_prefs"
         private const val KEY_THEME_MODE = "key_theme_mode"
@@ -49,6 +52,7 @@ class ThemePreferences(context: Context) {
         private const val KEY_DYNAMIC_COLOR = "key_dynamic_color"
         private const val KEY_REDUCE_TRANSPARENCY = "key_reduce_transparency"
         private const val KEY_GLASS_BACKGROUND = "key_glass_background"
+        private const val KEY_ANIMATE_BACKGROUND = "key_animate_background"
 
         private const val KEY_GLASS_BLUR = "key_glass_blur"
         private const val KEY_GLASS_OPACITY = "key_glass_opacity"
@@ -121,6 +125,21 @@ class ThemePreferences(context: Context) {
         return AppIconManager.getCurrentIconStyle(appContext)
     }
 
+    private fun loadAnimateBackground(): Boolean {
+        if (!prefs.contains(KEY_ANIMATE_BACKGROUND)) {
+            val systemMotionAllowed = try {
+                val scale = android.provider.Settings.Global.getFloat(
+                    appContext.contentResolver,
+                    android.provider.Settings.Global.ANIMATOR_DURATION_SCALE,
+                    1f
+                )
+                scale > 0f
+            } catch (_: Exception) { true }
+            return systemMotionAllowed
+        }
+        return prefs.getBoolean(KEY_ANIMATE_BACKGROUND, true)
+    }
+
     var themeMode: ThemeMode
         get() = loadThemeMode()
         set(value) {
@@ -156,6 +175,13 @@ class ThemePreferences(context: Context) {
             _reduceTransparencyFlow.value = value
         }
 
+    var isBackgroundAnimationEnabled: Boolean
+        get() = loadAnimateBackground()
+        set(value) {
+            prefs.edit().putBoolean(KEY_ANIMATE_BACKGROUND, value).apply()
+            _animateBackgroundFlow.value = value
+        }
+
     var glassCustomization: GlassCustomization
         get() = loadGlassCustomization()
         set(value) {
@@ -186,6 +212,7 @@ class ThemePreferences(context: Context) {
         glassBackground = com.omkarnub.kanri.ui.common.GlassBackgroundType.SUMI_E_MIST
         isDynamicColor = false
         isReduceTransparency = false
+        isBackgroundAnimationEnabled = true
         resetGlassCustomization()
     }
 }

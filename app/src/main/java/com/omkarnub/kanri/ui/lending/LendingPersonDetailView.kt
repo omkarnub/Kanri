@@ -342,36 +342,37 @@ fun LendingPersonDetailView(
                     }
                 }
 
-                items(allEntries, key = { it.lending.id }) { entryWithRepayments ->
+                items(allEntries, key = { it.lending.id }, contentType = { "lending_entry" }) { entryWithRepayments ->
                     val record = entryWithRepayments.lending
-                    if (!record.isSettled) {
-                        val isLent = record.type.equals("LENT", ignoreCase = true)
-                        val currentLocale = androidx.compose.ui.platform.LocalConfiguration.current.locales[0]
-                        val dateStr = SimpleDateFormat("dd MMM yyyy", currentLocale).format(Date(record.date))
-                        val dueStr = if (record.dueDate != null) " • Due: ${SimpleDateFormat("dd MMM", currentLocale).format(Date(record.dueDate))}" else ""
-                        val noteStr = if (!record.notes.isNullOrBlank()) " • ${record.notes}" else ""
-                        val sub = "${CurrencyUtils.formatCurrency(entryWithRepayments.outstanding)} • $dateStr$dueStr$noteStr"
+                    Box(modifier = Modifier.animateItem()) {
+                        if (!record.isSettled) {
+                            val isLent = record.type.equals("LENT", ignoreCase = true)
+                            val dateStr = LendingDateFormatters.formatMedium(record.date)
+                            val dueStr = if (record.dueDate != null) " • Due: ${LendingDateFormatters.formatShort(record.dueDate)}" else ""
+                            val noteStr = if (!record.notes.isNullOrBlank()) " • ${record.notes}" else ""
+                            val sub = "${CurrencyUtils.formatCurrency(entryWithRepayments.outstanding)} • $dateStr$dueStr$noteStr"
 
-                        KokonutTearButton(
-                            title = if (!record.notes.isNullOrBlank()) "${record.personName} (${record.notes})" else record.personName,
-                            subtitle = sub,
-                            confirmedTitle = "Settled",
-                            confirmedSubtitle = "Marked as settled",
-                            tone = if (isLent) TearTone.DEFAULT else TearTone.MUTED,
-                            isSettled = false,
-                            onClick = {
-                                onTransactionClick(entryWithRepayments)
-                            },
-                            onConfirm = {
-                                onSettleEntry?.invoke(entryWithRepayments)
-                            },
-                            modifier = Modifier.fillMaxWidth()
-                        )
-                    } else {
-                        GPayTransactionItem(
-                            entryWithRepayments = entryWithRepayments,
-                            onClick = { onTransactionClick(entryWithRepayments) }
-                        )
+                            KokonutTearButton(
+                                title = if (!record.notes.isNullOrBlank()) "${record.personName} (${record.notes})" else record.personName,
+                                subtitle = sub,
+                                confirmedTitle = "Settled",
+                                confirmedSubtitle = "Marked as settled",
+                                tone = if (isLent) TearTone.DEFAULT else TearTone.MUTED,
+                                isSettled = false,
+                                onClick = {
+                                    onTransactionClick(entryWithRepayments)
+                                },
+                                onConfirm = {
+                                    onSettleEntry?.invoke(entryWithRepayments)
+                                },
+                                modifier = Modifier.fillMaxWidth()
+                            )
+                        } else {
+                            GPayTransactionItem(
+                                entryWithRepayments = entryWithRepayments,
+                                onClick = { onTransactionClick(entryWithRepayments) }
+                            )
+                        }
                     }
                 }
 

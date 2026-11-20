@@ -31,6 +31,7 @@ import androidx.compose.foundation.shape.RoundedCornerShape
 import androidx.compose.material.icons.Icons
 import androidx.compose.material.icons.automirrored.filled.ArrowBack
 import androidx.compose.material.icons.automirrored.filled.KeyboardArrowRight
+import androidx.compose.material.icons.filled.AutoAwesome
 import androidx.compose.material.icons.filled.Check
 import androidx.compose.material.icons.filled.Tune
 import androidx.compose.material3.Button
@@ -82,6 +83,7 @@ fun ThemeSettingsScreen(
 
     val currentThemeMode by themePrefs.themeModeFlow.collectAsState()
     val activeShader by themePrefs.glassBackgroundFlow.collectAsState()
+    val isBackgroundAnimationEnabled by themePrefs.animateBackgroundFlow.collectAsState()
 
     BackHandler {
         onBack()
@@ -224,6 +226,15 @@ fun ThemeSettingsScreen(
                                 color = MaterialTheme.colorScheme.onSurfaceVariant
                             )
                         }
+
+                        // Animate background toggle
+                        SettingsSwitchRow(
+                            title = "Animate background",
+                            subtitle = "Saves battery and keeps the app smooth on slower devices.",
+                            icon = Icons.Default.AutoAwesome,
+                            checked = isBackgroundAnimationEnabled,
+                            onCheckedChange = { themePrefs.isBackgroundAnimationEnabled = it }
+                        )
 
                         // Shader backgrounds list view (single column, no previews, Apply button beside each)
                         Column(verticalArrangement = Arrangement.spacedBy(10.dp)) {

@@ -27,6 +27,7 @@
 - [Overview](#overview)
 - [Screenshots](#screenshots)
 - [Features](#features)
+- [Documentation & Deep Dive](docs/APP_DOCUMENTATION.md)
 - [Architecture](#architecture)
 - [Tech Stack](#tech-stack)
 - [Installation](#installation)
@@ -139,6 +140,9 @@ flowchart LR
     D --> H[Savings milestones]
     D --> I[Client-side encrypted backups]
 ```
+
+> [!NOTE]
+> For an exhaustive, in-depth technical manual covering every subsystem, data model, background worker, deduplication algorithm, and package map, see the [Master Application Documentation & System Architecture Manual](docs/APP_DOCUMENTATION.md).
 
 ## Tech Stack :hammer_and_wrench:
 

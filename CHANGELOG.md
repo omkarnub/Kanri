@@ -5,6 +5,29 @@ All notable changes to Kanri will be documented in this file.
 The format is based on [Keep a Changelog](https://keepachangelog.com/en/1.0.0/),
 and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0.html).
 
+## [1.19.8] - 2026-11-21
+
+### Added
+- **Comprehensive Master System Architecture & Application Documentation (`docs/APP_DOCUMENTATION.md`)**:
+  - Authored an exhaustive master technical and product manual covering what Kanri is, product philosophy, threat models, and complete architectural mechanics.
+  - Documented end-to-end data flows with Clean Architecture (UI → ViewModel → Repository → Encrypted Local Storage) and Mermaid pipeline diagrams.
+  - Detailed dual-engine transaction ingestion: Priority 999 `SmsReceiver`, regex patterns for 15+ Indian banks (`BankSmsPatterns.kt`), `KanriNotificationListenerService` scoping, `NotificationListenerWatchdogWorker` self-healing auto-rebind, and `NotificationDeduplicationHelper` 5-minute sliding-window bi-directional enrichment.
+  - Documented financial core features: `TransactionEntity` schema, dual-wallet ledger (`CASH` vs. `ONLINE`), ATM withdrawal modes (`AtmWithdrawalMode`), category management with display ordering, and multi-currency formatting (`CurrencyUtils`).
+  - Documented peer-to-peer Lend & Borrow ledger, partial repayments history (`LendingRepaymentEntity`), one-tap WhatsApp payment reminder generation, pre-filled `upi://pay` deep links, and multi-person bill splitting.
+  - Documented custom budget cycle start days (`budgetCycleStartDay`), safe-to-spend daily calculations, savings goals pacing algorithms, and quick stepper contributions.
+  - Documented 18+ analytical visualizers, the 4-pillar 0–100 Financial Health Score engine (`FinancialHealthCalculator`), and Smart Merchant Rules with the interactive rule simulator.
+  - Documented the 12 Pixel DotTiles canvas widgets, `PixelFont`/`Ndot57` dot-matrix typography, `MidnightWidgetResetWorker`, Quick Settings tile (`QuickAddTileService`), and `QuickEntryActivity` floating frosted numpad.
+  - Documented theming and the Liquid Glass engine: 5 system themes, 22 animated backdrops, AGSL GPU half-precision optimizations, strict theme decoupling, touch-pause zero-stutter gesture freezing, 4-variant launcher app icon switching (`AppIconManager`), and calibrated LRA/ERM haptics.
+  - Documented security, privacy, and data sovereignty: zero telemetry threat model, BiometricPrompt with screen-off auto-lock, SQLCipher AES-256 with Android Keystore hardware keys, PBKDF2 local backup encryption (`KANRI_ENC_v1`), and restricted Google Drive sync (`drive.file` scope).
+  - Provided a complete package directory map, file responsibility index, and developer build/testing operations guide.
+  - Linked documentation in `README.md`.
+- **Fluid Motion, 120Hz Refresh Rate & Background Power Optimization (`MainActivity.kt`, `GlassBackgroundView.kt`, `KanriMotion.kt`, `ThemeSettingsScreen.kt`, `ThemePreferences.kt`)**:
+  - **High Refresh Rate Request (`MainActivity.kt`)**: Automatically queries `Display.supportedModes` to request the device's peak display refresh rate (e.g. 90Hz / 120Hz on devices like Infinix Note 30).
+  - **Animate Background Toggle & Battery Saver (`ThemeSettingsScreen.kt`, `GlassBackgroundView.kt`, `ThemePreferences.kt`)**: Introduced user-facing toggle to pause background canvas/shader loops for battery preservation, with automatic detection and suspension during Android Power Saver mode or when screen is turned off.
+  - **Spring-Driven Screen & Tab Transitions (`KanriMotion.kt`)**: Transitioned horizontal screen push/pop and tab navigation to interruptible physics-based springs (`SlideSpring`), aligned with Apple HIG and fluid interface guidelines.
+  - **Zero-Layout Scale Press Feedback (`KanriMotion.kt`, `HomeScreen.kt`)**: Migrated tactile press scaling to `graphicsLayer { scaleX = scale; scaleY = scale }`, eliminating Compose layout passes during press animations.
+- Bumped version to `1.19.8` (Build 75).
+
 ## [1.19.7] - 2026-11-21
 
 ### Fixed

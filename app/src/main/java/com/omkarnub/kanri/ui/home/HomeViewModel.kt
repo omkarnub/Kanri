@@ -227,7 +227,9 @@ class HomeViewModel(application: Application) : AndroidViewModel(application) {
         lendingDao.getTotalBorrowedPending(),
         walletRepository.observeBalances(),
         budgetPrefs.budgetCycleStartDayFlow,
-        currencyPrefs.currencyFlow
+        currencyPrefs.currencyFlow,
+        lendingDao.getAllRecordsWithRepayments(),
+        savingsGoalDao.getActiveGoals()
     ) { args: Array<Any?> ->
         val txList = args[0] as List<TransactionWithCategory>
         val catList = args[1] as List<CategoryEntity>
@@ -242,6 +244,8 @@ class HomeViewModel(application: Application) : AndroidViewModel(application) {
         val balances = args[10] as? com.omkarnub.kanri.data.wallet.WalletBalances ?: com.omkarnub.kanri.data.wallet.WalletBalances()
         val cycleStartDay = args[11] as Int
         val activeCurrency = args[12] as com.omkarnub.kanri.util.AppCurrency
+        val allLending = (args[13] as? List<com.omkarnub.kanri.data.db.LendingWithRepayments>) ?: emptyList()
+        val rawGoals = (args[14] as? List<com.omkarnub.kanri.data.db.SavingsGoalEntity>) ?: emptyList()
 
         val startOfToday = getStartOfTodayMillis()
         val startOfCycle = BudgetCalculator.getStartOfCycleMillis(cycleStartDay)
@@ -307,39 +311,34 @@ class HomeViewModel(application: Application) : AndroidViewModel(application) {
         val totalLiquid = bankAccounts.mapNotNull { it.balance }.sum()
 
         // Lending due items for widget (overdue + due within 3 days)
-        val lendingDueItems = try {
-            val allLending = db.lendingDao().getAllRecordsWithRepaymentsSync()
-            val threeDaysLater = startOfToday + 3 * 86_400_000L
-            allLending
-                .filter { !it.lending.isSettled && it.lending.dueDate != null }
-                .filter { it.lending.dueDate!! < threeDaysLater }
-                .sortedBy { it.lending.dueDate }
-                .map { entry ->
-                    LendingDueItem(
-                        personName = entry.lending.personName,
-                        amount = entry.outstanding,
-                        isLent = entry.lending.type.equals("LENT", ignoreCase = true),
-                        dueDate = entry.lending.dueDate,
-                        isOverdue = entry.lending.dueDate!! < startOfToday
-                    )
-                }
-        } catch (_: Exception) { emptyList() }
-
-        // Active savings goals for widget
-        val activeGoals = try {
-            savingsGoalDao.getActiveGoalsSync().map { goal ->
-                val percent = if (goal.targetAmount > 0) {
-                    ((goal.currentAmount / goal.targetAmount) * 100).toFloat().coerceIn(0f, 100f)
-                } else 0f
-                GoalWidgetItem(
-                    title = goal.title,
-                    progressPercent = percent,
-                    currentAmount = goal.currentAmount,
-                    targetAmount = goal.targetAmount,
-                    emoji = goal.emoji
+        val threeDaysLater = startOfToday + 3 * 86_400_000L
+        val lendingDueItems = allLending
+            .filter { !it.lending.isSettled && it.lending.dueDate != null }
+            .filter { it.lending.dueDate!! < threeDaysLater }
+            .sortedBy { it.lending.dueDate }
+            .map { entry ->
+                LendingDueItem(
+                    personName = entry.lending.personName,
+                    amount = entry.outstanding,
+                    isLent = entry.lending.type.equals("LENT", ignoreCase = true),
+                    dueDate = entry.lending.dueDate,
+                    isOverdue = entry.lending.dueDate!! < startOfToday
                 )
             }
-        } catch (_: Exception) { emptyList() }
+
+        // Active savings goals for widget
+        val activeGoals = rawGoals.map { goal ->
+            val percent = if (goal.targetAmount > 0) {
+                ((goal.currentAmount / goal.targetAmount) * 100).toFloat().coerceIn(0f, 100f)
+            } else 0f
+            GoalWidgetItem(
+                title = goal.title,
+                progressPercent = percent,
+                currentAmount = goal.currentAmount,
+                targetAmount = goal.targetAmount,
+                emoji = goal.emoji
+            )
+        }
 
         HomeUiState(
             transactions = txList,

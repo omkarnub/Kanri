@@ -495,10 +495,10 @@ fun HomeScreen(
                                 MaterialTheme.colorScheme.outlineVariant,
                                 CircleShape
                             )
-                            .clickable {
-                                haptics.click()
-                                onOpenProfile()
-                            },
+                            .kanriPressFeedback(
+                                pressedScale = 0.90f,
+                                onClick = onOpenProfile
+                            ),
                         contentAlignment = Alignment.Center
                     ) {
                         com.omkarnub.kanri.ui.common.kokonut.KanriUserAvatar(

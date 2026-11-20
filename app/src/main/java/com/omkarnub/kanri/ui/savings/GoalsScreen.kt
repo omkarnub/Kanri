@@ -518,7 +518,7 @@ fun GoalsScreen(
                     verticalArrangement = Arrangement.spacedBy(10.dp),
                     contentPadding = PaddingValues(bottom = 120.dp)
                 ) {
-                    items(sortedGoals, key = { it.id }) { goal ->
+                    items(sortedGoals, key = { it.id }, contentType = { "goal_item" }) { goal ->
                         val percent = SavingsGoalCalculator.calculateProgressPercentage(goal.currentAmount, goal.targetAmount)
                         val remaining = SavingsGoalCalculator.calculateRemainingAmount(goal.currentAmount, goal.targetAmount)
                         val isFinished = goal.isCompleted || (goal.targetAmount > 0 && goal.currentAmount >= goal.targetAmount)
@@ -526,7 +526,9 @@ fun GoalsScreen(
                         val monthlyPace = remember(goal) { SavingsGoalCalculator.calculateRequiredMonthlySavings(goal.currentAmount, goal.targetAmount, goal.targetDate) }
 
                         KanriGlassCard(
-                            modifier = Modifier.fillMaxWidth(),
+                            modifier = Modifier
+                                .fillMaxWidth()
+                                .animateItem(),
                             level = GlassLevel.Blur,
                             shape = RoundedCornerShape(18.dp),
                             onClick = {

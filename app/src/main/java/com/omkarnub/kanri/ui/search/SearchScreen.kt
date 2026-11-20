@@ -296,40 +296,43 @@ fun SearchScreen(
                 ) {
                     items(
                         items = uiState.filteredTransactions,
-                        key = { it.transaction.id }
+                        key = { it.transaction.id },
+                        contentType = { "transaction_item" }
                     ) { item ->
-                        if (tokens != null) {
-                            KanriGlassCard(
-                                modifier = Modifier.fillMaxWidth(),
-                                level = GlassLevel.Flat,
-                                shape = RoundedCornerShape(16.dp)
-                            ) {
-                                Box(modifier = Modifier.padding(horizontal = 10.dp, vertical = 2.dp)) {
-                                    TransactionItemCard(
-                                        item = item,
-                                        onClick = {
-                                            haptics.click()
-                                            if (onTransactionClick != null) {
-                                                onTransactionClick(item)
-                                            } else {
-                                                selectedTransactionForCategory = item
+                        Box(modifier = Modifier.animateItem()) {
+                            if (tokens != null) {
+                                KanriGlassCard(
+                                    modifier = Modifier.fillMaxWidth(),
+                                    level = GlassLevel.Flat,
+                                    shape = RoundedCornerShape(16.dp)
+                                ) {
+                                    Box(modifier = Modifier.padding(horizontal = 10.dp, vertical = 2.dp)) {
+                                        TransactionItemCard(
+                                            item = item,
+                                            onClick = {
+                                                haptics.click()
+                                                if (onTransactionClick != null) {
+                                                    onTransactionClick(item)
+                                                } else {
+                                                    selectedTransactionForCategory = item
+                                                }
                                             }
-                                        }
-                                    )
-                                }
-                            }
-                        } else {
-                            TransactionItemCard(
-                                item = item,
-                                onClick = {
-                                    haptics.click()
-                                    if (onTransactionClick != null) {
-                                        onTransactionClick(item)
-                                    } else {
-                                        selectedTransactionForCategory = item
+                                        )
                                     }
                                 }
-                            )
+                            } else {
+                                TransactionItemCard(
+                                    item = item,
+                                    onClick = {
+                                        haptics.click()
+                                        if (onTransactionClick != null) {
+                                            onTransactionClick(item)
+                                        } else {
+                                            selectedTransactionForCategory = item
+                                        }
+                                    }
+                                )
+                            }
                         }
                     }
                 }

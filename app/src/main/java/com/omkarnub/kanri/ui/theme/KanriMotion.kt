@@ -25,7 +25,7 @@ import androidx.compose.runtime.getValue
 import androidx.compose.runtime.remember
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.composed
-import androidx.compose.ui.draw.scale
+import androidx.compose.ui.graphics.graphicsLayer
 import androidx.compose.ui.unit.IntOffset
 import com.omkarnub.kanri.util.rememberKanriHaptics
 
@@ -80,6 +80,12 @@ object KanriMotion {
         stiffness = Spring.StiffnessMediumLow
     )
 
+    /** Horizontal slide spring for interruptible screen push/pop and tab transitions */
+    val SlideSpring = spring<IntOffset>(
+        dampingRatio = 0.86f,
+        stiffness = Spring.StiffnessMediumLow
+    )
+
     // MARK: - Durations
     const val DurationFast = 160
     const val DurationNormal = 240
@@ -88,47 +94,47 @@ object KanriMotion {
     // MARK: - Screen Push & Pop Transitions
     /**
      * Apple HIG-style horizontal screen push:
-     * Incoming screen slides in from right edge (+100%) with fluid deceleration.
+     * Incoming screen slides in from right edge (+100%) with fluid physical momentum.
      * Exiting screen glides subtly to the left (-25%) with progressive fade.
      */
     fun screenPushEnter(): EnterTransition {
         return slideInHorizontally(
             initialOffsetX = { fullWidth -> fullWidth },
-            animationSpec = tween(durationMillis = DurationMedium, easing = EaseOut)
+            animationSpec = SlideSpring
         ) + fadeIn(
-            animationSpec = tween(durationMillis = DurationNormal, easing = EaseOut)
+            animationSpec = tween(durationMillis = 200, easing = EaseOut)
         )
     }
 
     fun screenPushExit(): ExitTransition {
         return slideOutHorizontally(
             targetOffsetX = { fullWidth -> -fullWidth / 4 },
-            animationSpec = tween(durationMillis = DurationMedium, easing = EaseOut)
+            animationSpec = SlideSpring
         ) + fadeOut(
-            animationSpec = tween(durationMillis = DurationFast, easing = EaseOut)
+            animationSpec = tween(durationMillis = 160, easing = EaseOut)
         )
     }
 
     /**
      * Screen pop (backward) transition:
      * Current screen slides back out to the right (+100%).
-     * Previous screen returns from the left (-25%) to center.
+     * Previous screen returns from the left (-25%) to center with physical spring deceleration.
      */
     fun screenPopEnter(): EnterTransition {
         return slideInHorizontally(
             initialOffsetX = { fullWidth -> -fullWidth / 4 },
-            animationSpec = tween(durationMillis = DurationMedium, easing = EaseOut)
+            animationSpec = SlideSpring
         ) + fadeIn(
-            animationSpec = tween(durationMillis = DurationNormal, easing = EaseOut)
+            animationSpec = tween(durationMillis = 200, easing = EaseOut)
         )
     }
 
     fun screenPopExit(): ExitTransition {
         return slideOutHorizontally(
             targetOffsetX = { fullWidth -> fullWidth },
-            animationSpec = tween(durationMillis = DurationMedium, easing = EaseOut)
+            animationSpec = SlideSpring
         ) + fadeOut(
-            animationSpec = tween(durationMillis = DurationFast, easing = EaseOut)
+            animationSpec = tween(durationMillis = 160, easing = EaseOut)
         )
     }
 
@@ -157,23 +163,23 @@ object KanriMotion {
     // MARK: - Directional Tab Switch Transition
     /**
      * Spatially consistent tab transition:
-     * When switching to a tab to the right, content glides in from the right (+28%).
-     * When switching to a tab to the left, content glides in from the left (-28%).
+     * When switching to a tab to the right, content glides in from the right (+18%) with spring momentum.
+     * When switching to a tab to the left, content glides in from the left (-18%) with spring momentum.
      */
     fun tabTransition(isForward: Boolean): ContentTransform {
         val enterOffset = if (isForward) 1 else -1
         val exitOffset = if (isForward) -1 else 1
 
         val enter = slideInHorizontally(
-            initialOffsetX = { fullWidth -> (fullWidth * 0.15f * enterOffset).toInt() },
-            animationSpec = tween(durationMillis = 190, easing = EaseOut)
+            initialOffsetX = { fullWidth -> (fullWidth * 0.18f * enterOffset).toInt() },
+            animationSpec = SlideSpring
         ) + fadeIn(
-            animationSpec = tween(durationMillis = 170, easing = EaseOut)
+            animationSpec = tween(durationMillis = 180, easing = EaseOut)
         )
 
         val exit = slideOutHorizontally(
-            targetOffsetX = { fullWidth -> (fullWidth * 0.10f * exitOffset).toInt() },
-            animationSpec = tween(durationMillis = 160, easing = EaseOut)
+            targetOffsetX = { fullWidth -> (fullWidth * 0.12f * exitOffset).toInt() },
+            animationSpec = SlideSpring
         ) + fadeOut(
             animationSpec = tween(durationMillis = 140, easing = EaseOut)
         )
@@ -185,6 +191,7 @@ object KanriMotion {
 /**
  * Universal tactile press feedback modifier.
  * Reacts instantly on pointer-down with spring deceleration (scale 0.96f) and tactile haptic tick.
+ * Rendered purely in graphicsLayer to skip composition and layout passes completely.
  */
 fun Modifier.kanriPressFeedback(
     pressedScale: Float = 0.96f,
@@ -203,7 +210,10 @@ fun Modifier.kanriPressFeedback(
     )
 
     this
-        .scale(scale)
+        .graphicsLayer {
+            scaleX = scale
+            scaleY = scale
+        }
         .then(
             if (onClick != null && enabled) {
                 Modifier.clickable(

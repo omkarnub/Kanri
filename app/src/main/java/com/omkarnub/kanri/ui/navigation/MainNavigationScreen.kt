@@ -89,6 +89,15 @@ fun MainNavigationScreen(
     var viewingTransactionId by rememberSaveable { mutableStateOf<Long?>(null) }
     var isInsightsSubScreenOpen by remember { mutableStateOf(false) }
 
+    // Double-tap & state-race debounce guard
+    var lastNavTime by remember { androidx.compose.runtime.mutableLongStateOf(0L) }
+    fun canNavigate(): Boolean {
+        val now = android.os.SystemClock.uptimeMillis()
+        if (now - lastNavTime < 320L) return false
+        lastNavTime = now
+        return true
+    }
+
     val homeViewModel: HomeViewModel = viewModel()
     val lendingViewModel: LendingViewModel = viewModel()
     val lendingHubViewModel: LendingHubViewModel = viewModel()
@@ -280,12 +289,12 @@ fun MainNavigationScreen(
                         ) { targetTab ->
                             when (targetTab) {
                                 KanriTab.HOME -> HomeScreen(
-                                    onOpenProfile = { showProfileScreen = true },
-                                    onOpenSettings = { showSettingsScreen = true },
-                                    onNavigateToHistory = { showHistoryScreen = true },
+                                    onOpenProfile = { if (canNavigate()) showProfileScreen = true },
+                                    onOpenSettings = { if (canNavigate()) showSettingsScreen = true },
+                                    onNavigateToHistory = { if (canNavigate()) showHistoryScreen = true },
                                     onNavigateToLending = { selectedTab = KanriTab.LEND_BORROW },
                                     onNavigateToInsights = { selectedTab = KanriTab.INSIGHTS },
-                                    onTransactionClick = { item -> viewingTransactionId = item.transaction.id },
+                                    onTransactionClick = { item -> if (canNavigate()) viewingTransactionId = item.transaction.id },
                                     openWalletSheet = openWalletSheetFromWidget,
                                     onWalletSheetOpened = { openWalletSheetFromWidget = false },
                                     onOpenLendBorrowTransaction = { bridgeTransaction = it },
