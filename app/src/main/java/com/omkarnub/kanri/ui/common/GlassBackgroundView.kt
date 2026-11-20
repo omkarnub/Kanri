@@ -157,17 +157,21 @@ fun GlassShaderBackground(
 
                     override fun onPageFinished(view: WebView?, url: String?) {
                         super.onPageFinished(view, url)
-                        // Inject 30 FPS RAF cap to keep GPU cool and UI silky smooth
+                        // Inject 30 FPS RAF cap and gesture pause to keep GPU cool and UI silky smooth
                         view?.evaluateJavascript(
                             """
                             (function() {
                                 if (window.__rafThrottled) return;
                                 window.__rafThrottled = true;
+                                window.__kanriPause = false;
                                 const origRAF = window.requestAnimationFrame;
                                 let lastT = 0;
                                 const interval = 1000 / 30;
                                 window.requestAnimationFrame = function(cb) {
                                     return origRAF(function(time) {
+                                        if (window.__kanriPause) {
+                                            return origRAF(cb);
+                                        }
                                         if (time - lastT < interval) {
                                             return origRAF(cb);
                                         }
@@ -202,6 +206,8 @@ fun GlassShaderBackground(
             if (webView.url != targetUrl) {
                 webView.loadUrl(targetUrl)
             }
+            val isInteracting = com.omkarnub.kanri.MainActivity.isUserInteracting.value
+            webView.evaluateJavascript("window.__kanriPause = $isInteracting;", null)
         },
         onRelease = { webView ->
             webView.stopLoading()

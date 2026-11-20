@@ -149,14 +149,19 @@ fun Modifier.kanriGlass(
         }
     }
 
-    val scale by animateFloatAsState(
-        targetValue = if (onClick != null && isPressed) 0.97f else 1f,
-        animationSpec = spring(
-            dampingRatio = 0.82f,
-            stiffness = Spring.StiffnessMedium
-        ),
-        label = "glass_press_scale"
-    )
+    val scale = if (onClick != null) {
+        val interactionSource = remember { MutableInteractionSource() }
+        val isPressed by interactionSource.collectIsPressedAsState()
+        val animScale by animateFloatAsState(
+            targetValue = if (isPressed) 0.97f else 1f,
+            animationSpec = spring(
+                dampingRatio = 0.82f,
+                stiffness = Spring.StiffnessMedium
+            ),
+            label = "glass_press_scale"
+        )
+        animScale
+    } else 1f
 
     if (tokens != null) {
         val borderBrush = remember(tokens.borderStart, tokens.borderEnd) {
@@ -231,9 +236,9 @@ fun Modifier.kanriGlass(
                     else -> Color.White.copy(alpha = 0.10f)
                 }
 
-                if (isBlurCapable && currentHaze != null && tokens.blurRadius > 0.dp) {
+                if (isBlurCapable && hazeState != null && tokens.blurRadius > 0.dp) {
                     baseModifier.hazeEffect(
-                        state = currentHaze,
+                        state = hazeState,
                         style = HazeStyle(
                             backgroundColor = frostBg,
                             tint = HazeTint(frostTint),

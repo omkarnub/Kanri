@@ -62,7 +62,7 @@ open class MainActivity : FragmentActivity() {
                     isUserInteracting.value = false
                 }
                 resetInteractionRunnable = runnable
-                interactionHandler.postDelayed(runnable, 350L)
+                interactionHandler.postDelayed(runnable, 850L)
             }
         }
         return super.dispatchTouchEvent(ev)

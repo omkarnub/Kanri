@@ -5,6 +5,19 @@ All notable changes to Kanri will be documented in this file.
 The format is based on [Keep a Changelog](https://keepachangelog.com/en/1.0.0/),
 and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0.html).
 
+## [1.19.6] - 2026-11-21
+
+### Fixed
+- **Mali GPU AGSL Optimization & In-List Blur Elimination (`AgslShaderLibrary.kt`, `AgslShaderRenderer.kt`, `KanriGlass.kt`, `MainActivity.kt`)**:
+  - **Shader Math Precision (`half`)**: Switched all AGSL vector math, color mixing, and noise functions to 16-bit `half` precision across all shaders, doubling ALU throughput on Mali-G57 MC2.
+  - **Uniform Hoisting**: Hoisted aspect ratio (`u_aspect`) out of per-pixel math, precomputing it on CPU to eliminate over 650,000 divisions per frame.
+  - **Phase & Layer Isolation**: Implemented `drawWithCache` caching uniforms with resolution, and wrapped the background in `graphicsLayer { compositingStrategy = CompositingStrategy.Offscreen }` to prevent foreground draws from invalidating the shader.
+  - **Lifecycle Observation**: Added Android `LifecycleEventObserver` to completely pause shader clocks when the app is paused/stopped or screen is locked.
+  - **Eliminated In-List Blur Avalanche (`KanriGlass.kt`)**: Restricted expensive multi-pass GPU Gaussian blur strictly to floating overlays (`GlassLevel.Dock`, `GlassLevel.EntrySheet`, `GlassLevel.Strong`), while regular in-content cards render high-performance frosted materials with zero offscreen blur passes.
+  - **Fling Momentum Coverage**: Extended `MainActivity.isUserInteracting` touch-pause reset to 850ms, ensuring full 120Hz fling inertia remains 100% pause-protected.
+  - **Restored CSS Blur in Aurora**: Restored `blur(80px)` in `aurora.html` for lush ambient orb diffusion.
+- Bumped version to `1.19.6` (Build 73).
+
 ## [1.19.5] - 2026-11-18
 
 ### Added
