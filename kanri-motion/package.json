@@ -1,0 +1,17 @@
+{
+  "name": "kanri-motion",
+  "version": "1.0.0",
+  "description": "This directory contains the complete source code, mathematical motion system, procedural audio synthesizer, parallel Playwright renderer, and encoding pipeline for the 16.000-second seamless-loop motion graphics video for **Kanri** (Android offline-first personal finance ledger).",
+  "main": "index.js",
+  "scripts": {
+    "test": "echo \"Error: no test specified\" && exit 1"
+  },
+  "keywords": [],
+  "author": "",
+  "license": "ISC",
+  "type": "commonjs",
+  "dependencies": {
+    "@mojs/core": "^1.3.0",
+    "gsap": "^3.15.1"
+  }
+}

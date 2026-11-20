@@ -83,3 +83,4 @@ The entire project is self-contained in `kanri-motion/`, strictly preserving all
 - **Total Subframes Rendered**: 3,840 subframes at 1440×1440.
 - **Total Final Render Time**: 196.6 seconds (~3.2 minutes).
 - **Master Encoding**: FFmpeg `libx264` slow preset, CRF 14, `aq-mode=3` with error-diffusion dithering for gradient banding prevention.
+

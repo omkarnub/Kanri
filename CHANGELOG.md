@@ -20,6 +20,11 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 ## [1.19.9] - 2026-11-21
 
 ### Added
+- **16:9 High-Energy Motion Graphics Showcase Reel (`kanri-motion/showcase.html`, `kanri_showcase_1920_60.mp4`)**:
+  - Integrated `@mojs/core` and `gsap` motion libraries for geometric particle bursts, shockwave rings, and 3D canvas perspective topology.
+  - Implemented 7 beat-synced scenes at 128 BPM featuring persistent HUD viewfinder frame, spark open, Panchang Bold "KANRI" brand slam, kinetic value triplets (Dual-Engine, SQLCipher AES-256, Zero Cloud), 3D isometric DotTiles matrix, Apple-grade frosted liquid-glass product micro-moments (HDFC SMS auto-capture, bill split elasticity, savings goal stepper, analytics chart), and metric proof odometer.
+  - Built full-circle emblem identity: begins at the authentic Kanri 4-fold geometric emblem and Panchang Bold wordmark, and resolves seamlessly back to the identical emblem state at frame 900 ($t=15.000\text{ s}$) with 100% byte-identical pixel loop continuity.
+  - Exported complete 1080p delivery suite in `kanri-motion/deliverables/`: `kanri_showcase_1920_60.mp4` (Master 1080p60 H.264), `kanri_showcase_1080_60.mp4` (Square Cut), `kanri_showcase_silent.mp4` (Silent Web Hero), `kanri_showcase.webm` (VP9), `kanri_showcase.gif` (Palette-optimized preview), `showcase_poster.png`, and `showcase_contact_sheet.png`.
 - **16-Second Seamless-Loop Motion Graphics & Deliverable Suite (`kanri-motion/`)**:
   - Engineered a mathematical closed-form spring motion graphics engine ($k=280, d=26, m=1$) with continuous-velocity retargeting, 2.072% overshoot, and zero-residual periodic wrapping across $t \in [0, 16.000\text{ s}]$.
   - Implemented 32-beat narrative sequence with pure `seek(t)` state functions in `index.html` (1440×1440 60fps), featuring dual-spring liquid slider stretch, bill splitting arithmetic (₹1,950 / 4 = ₹487.50), savings goal progression, SQLCipher vault lock with 1px micro-haptic settle, and vertical reel number micro-flips.

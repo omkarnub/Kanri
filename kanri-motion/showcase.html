@@ -1,0 +1,614 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8">
+  <title>Kanri — High-Energy Showcase Reel</title>
+  <style>
+    @font-face {
+      font-family: 'Panchang';
+      src: url('assets/fonts/panchang_bold.otf') format('opentype');
+      font-weight: 700;
+      font-style: normal;
+    }
+    @font-face {
+      font-family: 'Google Sans';
+      src: url('assets/fonts/google_sans_regular.ttf') format('truetype');
+      font-weight: 400;
+      font-style: normal;
+    }
+    @font-face {
+      font-family: 'Google Sans';
+      src: url('assets/fonts/google_sans_medium.ttf') format('truetype');
+      font-weight: 500;
+      font-style: normal;
+    }
+    @font-face {
+      font-family: 'Google Sans';
+      src: url('assets/fonts/google_sans_semibold.ttf') format('truetype');
+      font-weight: 600;
+      font-style: normal;
+    }
+    @font-face {
+      font-family: 'Google Sans';
+      src: url('assets/fonts/google_sans_bold.ttf') format('truetype');
+      font-weight: 700;
+      font-style: normal;
+    }
+
+    :root {
+      --canvas: #FAF9F5;
+      --dark: #0B0B10;
+      --surface: #121212;
+      --surface-glass: rgba(18, 18, 18, 0.75);
+      --border: rgba(255, 255, 255, 0.12);
+      --text: #F2F2F2;
+      --text-muted: #A6A6A6;
+      --income: #30A46C;
+      --accent: #30A46C;
+      --expense: #E5484D;
+      --blue: #2F47FF;
+    }
+
+    * {
+      box-sizing: border-box;
+      margin: 0;
+      padding: 0;
+      -webkit-font-smoothing: antialiased;
+      -moz-osx-font-smoothing: grayscale;
+      text-rendering: geometricPrecision;
+      transition: none !important;
+      animation: none !important;
+    }
+
+    html, body {
+      width: 1920px;
+      height: 1080px;
+      overflow: hidden;
+      background: var(--dark);
+      font-family: 'Google Sans', -apple-system, BlinkMacSystemFont, sans-serif;
+      position: relative;
+      user-select: none;
+    }
+
+    /* Fixed-width digit cell */
+    .digit-cell {
+      display: inline-block;
+      width: 0.62em;
+      text-align: center;
+      position: relative;
+    }
+
+    /* Stage canvas */
+    #stage-canvas {
+      position: absolute;
+      top: 0;
+      left: 0;
+      width: 1920px;
+      height: 1080px;
+      z-index: 1;
+    }
+
+    /* Scene Container */
+    #scenes-container {
+      position: absolute;
+      top: 0;
+      left: 0;
+      width: 1920px;
+      height: 1080px;
+      z-index: 10;
+      pointer-events: none;
+    }
+
+    .scene {
+      position: absolute;
+      top: 0;
+      left: 0;
+      width: 1920px;
+      height: 1080px;
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      opacity: 0;
+      pointer-events: none;
+    }
+
+    /* HUD Frame Overlay */
+    #hud-overlay {
+      position: absolute;
+      top: 0;
+      left: 0;
+      width: 1920px;
+      height: 1080px;
+      z-index: 100;
+      pointer-events: none;
+      font-family: 'Google Sans', monospace;
+      font-size: 13px;
+      color: rgba(255, 255, 255, 0.55);
+      letter-spacing: 0.08em;
+    }
+
+    .hud-bracket {
+      position: absolute;
+      width: 24px;
+      height: 24px;
+      border: 1.5px solid rgba(255, 255, 255, 0.4);
+    }
+    .hud-tl { top: 40px; left: 48px; border-right: none; border-bottom: none; }
+    .hud-tr { top: 40px; right: 48px; border-left: none; border-bottom: none; }
+    .hud-bl { bottom: 40px; left: 48px; border-right: none; border-top: none; }
+    .hud-br { bottom: 40px; right: 48px; border-left: none; border-top: none; }
+
+    .hud-tag {
+      position: absolute;
+      text-transform: uppercase;
+      font-weight: 500;
+    }
+    #hud-top-left { top: 44px; left: 88px; }
+    #hud-top-right { top: 44px; right: 88px; }
+    #hud-bottom-left { bottom: 44px; left: 88px; }
+    #hud-bottom-right { bottom: 44px; right: 88px; display: flex; align-items: center; gap: 8px; }
+
+    #rec-dot {
+      width: 8px;
+      height: 8px;
+      border-radius: 50%;
+      background: #E5484D;
+      display: inline-block;
+    }
+
+    /* Vignette & Grain Overlay */
+    #vignette {
+      position: absolute;
+      top: 0;
+      left: 0;
+      width: 1920px;
+      height: 1080px;
+      background: radial-gradient(circle at 50% 50%, transparent 65%, rgba(0, 0, 0, 0.45) 100%);
+      pointer-events: none;
+      z-index: 90;
+    }
+  </style>
+  <script src="node_modules/@mojs/core/dist/mo.umd.js"></script>
+  <script src="node_modules/gsap/dist/gsap.min.js"></script>
+</head>
+<body>
+  <div id="vignette"></div>
+  <canvas id="stage-canvas" width="1920" height="1080"></canvas>
+
+  <!-- Persistent HUD Viewfinder Frame -->
+  <div id="hud-overlay">
+    <div class="hud-bracket hud-tl"></div>
+    <div class="hud-bracket hud-tr"></div>
+    <div class="hud-bracket hud-bl"></div>
+    <div class="hud-bracket hud-br"></div>
+    <div class="hud-tag" id="hud-top-left">KANRI // SHOWCASE 2026</div>
+    <div class="hud-tag" id="hud-top-right">SCENE 01 / 07</div>
+    <div class="hud-tag" id="hud-bottom-left">[ SYSTEM ARCHITECTURE ]</div>
+    <div class="hud-tag" id="hud-bottom-right">
+      <span id="rec-dot"></span>
+      <span id="hud-timecode">TC 00:00:00:00</span>
+    </div>
+  </div>
+
+  <!-- Scenes -->
+  <div id="scenes-container">
+
+    <!-- Scene 1: Emblem Spark & Laser Expansion (0.00 - 1.88s) -->
+    <div id="scene-1" class="scene">
+      <div id="s1-emblem-wrap" style="display:flex; flex-direction:column; align-items:center; transform:scale(1);">
+        <svg id="s1-crest" viewBox="0 0 2048 2048" width="160" height="160" fill="#30A46C">
+          <path d="M914,407L1134,407L1134,933L1024,823L914,933Z M914,1641L914,1115L1024,1225L1134,1115L1134,1641Z M197,617L499,617L894,1024L499,1431L197,1431L592,1024Z M1851,617L1549,617L1154,1024L1549,1431L1851,1431L1456,1024Z"/>
+        </svg>
+        <div id="s1-name" style="font-family:'Panchang', sans-serif; font-size:42px; font-weight:700; color:#F2F2F2; letter-spacing:0.16em; margin-top:20px;">KANRI</div>
+        <div id="s1-sub" style="font-size:14px; color:#A6A6A6; letter-spacing:0.24em; margin-top:8px;">OFFLINE-FIRST FINANCIAL LEDGER</div>
+      </div>
+      <!-- Laser Beam Line -->
+      <div id="s1-laser" style="position:absolute; top:50%; left:0; width:1920px; height:2px; background:#30A46C; transform:scaleX(0); box-shadow:0 0 20px #30A46C;"></div>
+    </div>
+
+    <!-- Scene 2: Brand Slam (1.88 - 3.75s) -->
+    <div id="scene-2" class="scene" style="background:#30A46C; color:#0B0B10; flex-direction:column;">
+      <div id="s2-kicker" style="font-family:'Google Sans', monospace; font-size:20px; font-weight:700; letter-spacing:0.2em; text-transform:uppercase; margin-bottom:12px;">INTRODUCING — 2026</div>
+      <div id="s2-letters" style="font-family:'Panchang', sans-serif; font-size:180px; font-weight:700; line-height:0.9; letter-spacing:0.04em; display:flex;">
+        <span class="slam-letter" id="sl-k">K</span>
+        <span class="slam-letter" id="sl-a">A</span>
+        <span class="slam-letter" id="sl-n">N</span>
+        <span class="slam-letter" id="sl-r">R</span>
+        <span class="slam-letter" id="sl-i">I</span>
+      </div>
+      <div id="s2-tagline" style="font-size:32px; font-style:italic; font-weight:500; margin-top:24px; color:#121212;">Personal Finance, 100% On-Device</div>
+      <!-- Expanding Dot -->
+      <div id="s2-dot" style="position:absolute; width:16px; height:16px; border-radius:50%; background:#0B0B10; transform:scale(0);"></div>
+    </div>
+
+    <!-- Scene 3: Kinetic Triplet (3.75 - 6.56s) -->
+    <div id="scene-3" class="scene">
+      <!-- Triplet A: Dual Engine (Cream background) -->
+      <div id="s3-triplet-a" style="position:absolute; width:100%; height:100%; background:#FAF9F5; display:flex; flex-direction:column; align-items:center; justify-content:center; color:#121212;">
+        <div style="font-family:'Panchang', sans-serif; font-size:100px; font-weight:700; letter-spacing:0.04em;">DUAL-ENGINE</div>
+        <div style="font-size:26px; font-weight:600; color:#555; margin-top:16px;">Bank SMS Parsing + Notification Listener • 5-min Dedupe</div>
+        <div style="margin-top:32px; display:flex; gap:16px;">
+          <div style="background:#121212; color:#F2F2F2; padding:12px 28px; border-radius:30px; font-size:16px; font-weight:600;">Priority 999 Ingestion</div>
+          <div style="background:#30A46C; color:#F2F2F2; padding:12px 28px; border-radius:30px; font-size:16px; font-weight:600;">15+ Bank Regex Patterns</div>
+        </div>
+      </div>
+      <!-- Triplet B: SQLCipher Vault (Deep obsidian with echo pattern) -->
+      <div id="s3-triplet-b" style="position:absolute; width:100%; height:100%; background:#0B0B10; display:flex; flex-direction:column; align-items:center; justify-content:center; color:#F2F2F2; opacity:0;">
+        <div id="s3-echo-pattern" style="position:absolute; font-family:'Panchang', sans-serif; font-size:120px; font-weight:700; color:rgba(255,255,255,0.03); line-height:1; white-space:nowrap; text-align:center;">
+          SQLCIPHER AES-256<br>SQLCIPHER AES-256<br>SQLCIPHER AES-256
+        </div>
+        <div style="font-family:'Panchang', sans-serif; font-size:84px; font-weight:700; color:#30A46C; z-index:2;">SQLCIPHER AES-256</div>
+        <div style="font-size:26px; font-weight:500; color:#A6A6A6; margin-top:16px; z-index:2;">Encrypted Database Sealed by Android Keystore</div>
+        <div style="margin-top:32px; z-index:2;">
+          <svg width="48" height="48" viewBox="0 0 24 24" fill="none" stroke="#30A46C" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
+            <rect x="3" y="11" width="18" height="11" rx="2" ry="2"></rect>
+            <path id="s3-shackle" d="M7 11V7a5 5 0 0 1 10 0v4"></path>
+          </svg>
+        </div>
+      </div>
+      <!-- Triplet C: Zero Cloud (Electric Blue) -->
+      <div id="s3-triplet-c" style="position:absolute; width:100%; height:100%; background:#2F47FF; display:flex; flex-direction:column; align-items:center; justify-content:center; color:#F2F2F2; opacity:0;">
+        <div style="font-family:'Panchang', sans-serif; font-size:110px; font-weight:700;">ZERO CLOUD</div>
+        <div style="font-size:28px; font-weight:600; letter-spacing:0.12em; margin-top:16px;">NO ANALYTICS • NO ADS • NO TRACKING</div>
+        <div style="margin-top:32px; font-family:monospace; font-size:18px; border:1.5px solid #F2F2F2; padding:8px 24px; border-radius:8px;">100% PRIVATE HARDWARE AIRGAP</div>
+      </div>
+    </div>
+
+    <!-- Scene 4: Signature 3D Visual (6.56 - 8.44s) -->
+    <div id="scene-4" class="scene" style="background:#0B0B10;">
+      <div style="position:absolute; top:120px; left:120px; z-index:20;">
+        <div style="font-family:'Panchang', sans-serif; font-size:48px; font-weight:700; color:#F2F2F2;">PIXEL DOTTILES</div>
+        <div style="font-size:18px; color:#A6A6A6; margin-top:8px;">3D Dynamic Matrix & Financial Health Topology</div>
+      </div>
+    </div>
+
+    <!-- Scene 5: Product Micro-Moments (8.44 - 11.25s) -->
+    <div id="scene-5" class="scene" style="perspective:1600px;">
+      <!-- Frosted Liquid Glass Main Stage Card -->
+      <div id="s5-glass-card" style="width:1040px; height:560px; background:rgba(18, 18, 18, 0.82); border:1px solid rgba(255,255,255,0.14); border-radius:36px; box-shadow:0 36px 80px -20px rgba(0,0,0,0.7); backdrop-filter:blur(32px); padding:44px 54px; display:flex; flex-direction:column; justify-content:space-between; transform-style:preserve-3d;">
+        <!-- Card Top: HDFC Bank SMS Toast -->
+        <div style="display:flex; justify-content:space-between; align-items:center;">
+          <div style="display:flex; align-items:center; gap:16px;">
+            <div style="width:12px; height:12px; border-radius:50%; background:#E5484D;"></div>
+            <span style="font-size:24px; font-weight:600; color:#F2F2F2;">HDFC Bank • <span style="color:#E5484D;">−</span>₹1,950 Debited</span>
+          </div>
+          <div style="background:rgba(48,164,108,0.15); border:1px solid #30A46C; color:#30A46C; border-radius:20px; padding:8px 20px; font-size:15px; font-weight:600;">
+            Auto-captured
+          </div>
+        </div>
+
+        <!-- Card Middle: Bill Splitting & Savings Stepper -->
+        <div style="display:flex; justify-content:space-between; gap:40px; margin:24px 0;">
+          <!-- Left: Split Module -->
+          <div style="flex:1; background:#1A1A1A; border:1px solid rgba(255,255,255,0.08); border-radius:24px; padding:28px;">
+            <div style="display:flex; justify-content:space-between; align-items:center;">
+              <span style="font-size:18px; font-weight:600; color:#A6A6A6;">Split ₹1,950</span>
+              <span id="s5-split-calc" style="font-size:20px; font-weight:700; color:#30A46C;">4 people • ₹487.50 each</span>
+            </div>
+            <!-- Slider Track -->
+            <div style="position:relative; width:100%; height:12px; background:#2A2A2A; border-radius:6px; margin-top:28px;">
+              <div id="s5-slider-fill" style="position:absolute; width:75%; height:100%; background:#30A46C; border-radius:6px;"></div>
+              <div id="s5-slider-thumb" style="position:absolute; left:75%; top:-8px; width:28px; height:28px; border-radius:50%; background:#F2F2F2; box-shadow:0 4px 14px rgba(0,0,0,0.5); transform:translateX(-50%);"></div>
+            </div>
+          </div>
+          <!-- Right: Savings Goal -->
+          <div style="flex:1; background:#1A1A1A; border:1px solid rgba(255,255,255,0.08); border-radius:24px; padding:28px;">
+            <div style="display:flex; justify-content:space-between; align-items:center;">
+              <span style="font-size:18px; font-weight:600; color:#A6A6A6;">MacBook Fund</span>
+              <span style="background:#30A46C; color:#F2F2F2; padding:4px 14px; border-radius:14px; font-size:13px; font-weight:700;">+₹5,000</span>
+            </div>
+            <div id="s5-goal-num" style="font-size:32px; font-weight:700; color:#F2F2F2; margin-top:12px;">₹50,000 <span style="font-size:20px; color:#A6A6A6;">/ ₹60,000</span></div>
+            <div style="position:relative; width:100%; height:10px; background:#2A2A2A; border-radius:5px; margin-top:16px;">
+              <div id="s5-goal-bar" style="width:83.33%; height:100%; background:#30A46C; border-radius:5px;"></div>
+            </div>
+          </div>
+        </div>
+
+        <!-- Card Bottom: 7-bar chart -->
+        <div style="display:flex; justify-content:space-between; align-items:flex-end; height:120px; padding-top:12px; border-top:1px solid rgba(255,255,255,0.08);">
+          <div style="display:flex; gap:36px; align-items:flex-end; width:100%;">
+            <div style="display:flex; flex-direction:column; align-items:center; gap:6px;"><div style="width:32px; height:45px; background:#2A2A2A; border-radius:4px;"></div><span style="font-size:12px; color:#A6A6A6;">Mon</span></div>
+            <div style="display:flex; flex-direction:column; align-items:center; gap:6px;"><div style="width:32px; height:28px; background:#2A2A2A; border-radius:4px;"></div><span style="font-size:12px; color:#A6A6A6;">Tue</span></div>
+            <div style="display:flex; flex-direction:column; align-items:center; gap:6px;"><div style="width:32px; height:60px; background:#2A2A2A; border-radius:4px;"></div><span style="font-size:12px; color:#A6A6A6;">Wed</span></div>
+            <div style="display:flex; flex-direction:column; align-items:center; gap:6px;"><div style="width:32px; height:35px; background:#2A2A2A; border-radius:4px;"></div><span style="font-size:12px; color:#A6A6A6;">Thu</span></div>
+            <div style="display:flex; flex-direction:column; align-items:center; gap:6px;"><div style="width:32px; height:85px; background:#2A2A2A; border-radius:4px;"></div><span style="font-size:12px; color:#A6A6A6;">Fri</span></div>
+            <div style="display:flex; flex-direction:column; align-items:center; gap:6px;"><div id="s5-sat-bar" style="width:32px; height:110px; background:#30A46C; border-radius:4px; box-shadow:0 0 16px rgba(48,164,108,0.4);"></div><span style="font-size:12px; color:#30A46C; font-weight:700;">Sat</span></div>
+            <div style="display:flex; flex-direction:column; align-items:center; gap:6px;"><div style="width:32px; height:65px; background:#2A2A2A; border-radius:4px;"></div><span style="font-size:12px; color:#A6A6A6;">Sun</span></div>
+          </div>
+          <div style="background:#1A1A1A; border:1px solid #30A46C; border-radius:12px; padding:6px 14px; font-size:13px; font-weight:600; color:#F2F2F2; white-space:nowrap;">Sat: ₹1,950</div>
+        </div>
+      </div>
+    </div>
+
+    <!-- Scene 6: Proof & Metric Slam (11.25 - 13.12s) -->
+    <div id="scene-6" class="scene" style="background:#0B0B10; flex-direction:column;">
+      <div style="font-family:'Google Sans', monospace; font-size:18px; color:#A6A6A6; letter-spacing:0.2em; text-transform:uppercase;">TOTAL TRACKED BALANCE</div>
+      <div id="s6-hero-counter" style="font-family:'Google Sans', sans-serif; font-size:130px; font-weight:700; color:#F2F2F2; line-height:1; margin:20px 0; display:flex; align-items:baseline;">
+        <span style="font-size:90px; margin-right:8px; color:#30A46C;">₹</span>
+        <span id="s6-counter-val">84,320</span>
+      </div>
+      <div style="font-size:32px; font-weight:600; color:#30A46C; margin-bottom:40px;">+₹12,400 this month</div>
+      <div style="display:flex; gap:20px;">
+        <div style="background:rgba(255,255,255,0.06); border:1px solid rgba(255,255,255,0.12); border-radius:24px; padding:12px 32px; font-size:16px; font-weight:600; color:#F2F2F2;">100% OFFLINE</div>
+        <div style="background:rgba(255,255,255,0.06); border:1px solid rgba(255,255,255,0.12); border-radius:24px; padding:12px 32px; font-size:16px; font-weight:600; color:#F2F2F2;">ZERO ANALYTICS</div>
+        <div style="background:rgba(255,255,255,0.06); border:1px solid rgba(255,255,255,0.12); border-radius:24px; padding:12px 32px; font-size:16px; font-weight:600; color:#F2F2F2;">LOCAL SQLCIPHER</div>
+      </div>
+    </div>
+
+    <!-- Scene 7: Emblem Outro & Seamless Loop (13.12 - 15.00s) -->
+    <div id="scene-7" class="scene" style="background:#0B0B10; flex-direction:column;">
+      <svg id="s7-crest" viewBox="0 0 2048 2048" width="160" height="160" fill="#30A46C">
+        <path d="M914,407L1134,407L1134,933L1024,823L914,933Z M914,1641L914,1115L1024,1225L1134,1115L1134,1641Z M197,617L499,617L894,1024L499,1431L197,1431L592,1024Z M1851,617L1549,617L1154,1024L1549,1431L1851,1431L1456,1024Z"/>
+      </svg>
+      <div style="font-family:'Panchang', sans-serif; font-size:48px; font-weight:700; color:#F2F2F2; letter-spacing:0.16em; margin-top:24px;">KANRI</div>
+      <div style="font-size:24px; font-style:italic; font-weight:500; color:#A6A6A6; margin-top:8px;">Private. Offline. Yours.</div>
+      <div id="s7-url" style="font-family:'Google Sans', monospace; font-size:16px; color:#30A46C; letter-spacing:0.2em; margin-top:36px; padding:8px 24px; border:1px solid rgba(48,164,108,0.3); border-radius:20px;">GITHUB.COM/OMKARNUB/KANRI</div>
+    </div>
+
+  </div>
+
+  <script>
+    window.VIDEO = { w: 1920, h: 1080, duration: 15.000, fps: 60 };
+
+    // --- Mathematical Damped Spring ---
+    const K = 280.0;
+    const D = 26.0;
+    const WD = Math.sqrt(K - Math.pow(D / 2.0, 2)); // 10.5357
+    function S(t) {
+      if (t <= 0) return 0.0;
+      return 1.0 - Math.exp(-13.0 * t) * (Math.cos(WD * t) + (13.0 / WD) * Math.sin(WD * t));
+    }
+    const clamp = (x, a = 0, b = 1) => Math.min(b, Math.max(a, x));
+    const lerp = (a, b, k) => a + (b - a) * k;
+    const seg = (t, a, b) => clamp((t - a) / (b - a));
+
+    // 3D Isometric DotTiles Canvas Engine
+    const canvas = document.getElementById('stage-canvas');
+    const ctx = canvas.getContext('2d');
+
+    function render3DMatrix(tNorm) {
+      ctx.clearRect(0, 0, 1920, 1080);
+
+      // Only render 3D matrix prominently during Scene 4 and subtle in backgrounds
+      const isS4 = (tNorm >= 6.50 && tNorm < 8.50);
+      const alphaBase = isS4 ? 0.85 : 0.06;
+
+      ctx.save();
+      ctx.translate(960, 540);
+
+      // 3D Isometric projection angle
+      const rotX = isS4 ? (0.6 + 0.15 * Math.sin(tNorm * 1.5)) : 0.65;
+      const rotZ = isS4 ? (-0.4 + 0.2 * Math.cos(tNorm * 1.2)) : -0.45;
+
+      const gridSize = 9;
+      const spacing = isS4 ? 80 : 70;
+
+      for (let ix = -gridSize; ix <= gridSize; ix++) {
+        for (let iy = -gridSize; iy <= gridSize; iy++) {
+          const dist = Math.sqrt(ix * ix + iy * iy);
+          // Wave ripple from center
+          const wave = Math.sin(dist * 0.8 - tNorm * 5.0);
+          const elev = isS4 ? (wave * 35.0) : (wave * 8.0);
+
+          // Isometric project
+          const x0 = (ix - iy) * spacing * Math.cos(rotZ);
+          const y0 = (ix + iy) * spacing * Math.sin(rotX) - elev;
+
+          // Color calculation
+          const isAccent = (dist < 4.0 && wave > 0.4);
+          ctx.fillStyle = isAccent ? `rgba(48, 164, 108, ${alphaBase * 0.9})` : `rgba(255, 255, 255, ${alphaBase * 0.4})`;
+
+          // Draw tile
+          ctx.beginPath();
+          ctx.arc(x0, y0, isAccent ? 4.5 : 2.5, 0, Math.PI * 2);
+          ctx.fill();
+        }
+      }
+      ctx.restore();
+    }
+
+    // Pure seek(t) function
+    window.seek = function(t) {
+      const tNorm = ((t % 15.000) + 15.000) % 15.000;
+
+      // 1. Timecode HUD update
+      const frames = Math.floor((tNorm % 1.0) * 60);
+      const secs = Math.floor(tNorm % 60);
+      const mins = Math.floor(tNorm / 60);
+      document.getElementById('hud-timecode').innerText =
+        `TC 00:${String(mins).padStart(2,'0')}:${String(secs).padStart(2,'0')}:${String(frames).padStart(2,'0')}`;
+
+      // Rec dot blink
+      document.getElementById('rec-dot').style.opacity = (Math.floor(tNorm * 3) % 2 === 0) ? 1 : 0.3;
+
+      // Render 3D Background Matrix
+      render3DMatrix(tNorm);
+
+      // Hide all scenes by default
+      const scenes = document.querySelectorAll('.scene');
+      scenes.forEach(s => { s.style.opacity = 0; });
+
+      // --- SCENE 1: Emblem Spark & Laser Expansion (0.00 - 1.88s) ---
+      const s1 = document.getElementById('scene-1');
+      if (tNorm < 1.88) {
+        s1.style.opacity = 1;
+        document.getElementById('hud-top-right').innerText = "SCENE 01 / 07";
+        document.getElementById('hud-bottom-left').innerText = "[ SYSTEM EMBLEM ]";
+
+        const wrap = document.getElementById('s1-emblem-wrap');
+        const laser = document.getElementById('s1-laser');
+
+        if (tNorm < 1.41) {
+          const p = S(tNorm);
+          wrap.style.transform = `scale(${0.9 + 0.15 * p})`;
+          wrap.style.opacity = Math.min(1, tNorm * 3);
+          laser.style.transform = 'scaleX(0)';
+          laser.style.height = '2px';
+        } else if (tNorm < 1.75) {
+          // Stretch into laser beam
+          const pLaser = S(tNorm - 1.41);
+          wrap.style.opacity = Math.max(0, 1 - (tNorm - 1.41) * 6);
+          laser.style.transform = `scaleX(${pLaser})`;
+          laser.style.height = '3px';
+        } else {
+          // Expand vertically into flood
+          const pFlood = S(tNorm - 1.75);
+          laser.style.height = `${1080 * pFlood}px`;
+          laser.style.top = `${540 - 540 * pFlood}px`;
+        }
+      }
+
+      // --- SCENE 2: Brand Slam (1.88 - 3.75s) ---
+      const s2 = document.getElementById('scene-2');
+      if (tNorm >= 1.88 && tNorm < 3.75) {
+        s2.style.opacity = 1;
+        document.getElementById('hud-top-right').innerText = "SCENE 02 / 07";
+        document.getElementById('hud-bottom-left').innerText = "[ BRAND SLAM ]";
+
+        // Letters reveal on 1/16 beats
+        const letters = ['sl-k', 'sl-a', 'sl-n', 'sl-r', 'sl-i'];
+        letters.forEach((id, idx) => {
+          const lEl = document.getElementById(id);
+          const tLetter = 1.88 + idx * 0.08;
+          if (tNorm >= tLetter) {
+            const p = S(tNorm - tLetter);
+            lEl.style.transform = `translateY(${(1 - p) * -60}px) scale(${0.8 + 0.2 * p})`;
+            lEl.style.opacity = Math.min(1, p * 2);
+          } else {
+            lEl.style.opacity = 0;
+          }
+        });
+
+        // Expanding dot transition at 3.29s
+        const dot = document.getElementById('s2-dot');
+        if (tNorm >= 3.29) {
+          const pDot = Math.pow((tNorm - 3.29) / (3.75 - 3.29), 2.5);
+          dot.style.transform = `scale(${pDot * 250})`;
+        } else {
+          dot.style.transform = 'scale(0)';
+        }
+      }
+
+      // --- SCENE 3: Kinetic Triplet (3.75 - 6.56s) ---
+      const s3 = document.getElementById('scene-3');
+      if (tNorm >= 3.75 && tNorm < 6.56) {
+        s3.style.opacity = 1;
+        document.getElementById('hud-top-right').innerText = "SCENE 03 / 07";
+        document.getElementById('hud-bottom-left').innerText = "[ CORE VALUE TRIPLETS ]";
+
+        const trA = document.getElementById('s3-triplet-a');
+        const trB = document.getElementById('s3-triplet-b');
+        const trC = document.getElementById('s3-triplet-c');
+
+        if (tNorm < 4.68) {
+          // Triplet A: Dual Engine (Cream)
+          trA.style.opacity = 1;
+          trB.style.opacity = 0;
+          trC.style.opacity = 0;
+          const pA = S(tNorm - 3.75);
+          trA.style.transform = `scale(${0.95 + 0.05 * pA})`;
+        } else if (tNorm < 5.62) {
+          // Triplet B: SQLCipher Vault (Obsidian)
+          trA.style.opacity = 0;
+          trB.style.opacity = 1;
+          trC.style.opacity = 0;
+          const pB = S(tNorm - 4.68);
+          trB.style.transform = `scale(${0.95 + 0.05 * pB})`;
+          // Shackle drop
+          const shackle = document.getElementById('s3-shackle');
+          shackle.setAttribute('transform', `translate(0, ${Math.min(4, pB * 4)})`);
+        } else {
+          // Triplet C: Zero Cloud (Blue)
+          trA.style.opacity = 0;
+          trB.style.opacity = 0;
+          trC.style.opacity = 1;
+          const pC = S(tNorm - 5.62);
+          trC.style.transform = `scale(${0.95 + 0.05 * pC})`;
+        }
+      }
+
+      // --- SCENE 4: Signature 3D Visual (6.56 - 8.44s) ---
+      const s4 = document.getElementById('scene-4');
+      if (tNorm >= 6.56 && tNorm < 8.44) {
+        s4.style.opacity = 1;
+        document.getElementById('hud-top-right').innerText = "SCENE 04 / 07";
+        document.getElementById('hud-bottom-left').innerText = "[ TOPOLOGY ENGINE ]";
+      }
+
+      // --- SCENE 5: Product Micro-Moments (8.44 - 11.25s) ---
+      const s5 = document.getElementById('scene-5');
+      if (tNorm >= 8.44 && tNorm < 11.25) {
+        s5.style.opacity = 1;
+        document.getElementById('hud-top-right').innerText = "SCENE 05 / 07";
+        document.getElementById('hud-bottom-left').innerText = "[ FROSTED LIQUID UI ]";
+
+        const card = document.getElementById('s5-glass-card');
+        const pCard = S(tNorm - 8.44);
+        // 3D perspective tilt
+        const rotY = (1.0 - pCard) * 15.0;
+        card.style.transform = `rotateY(${rotY}deg) scale(${0.94 + 0.06 * pCard})`;
+
+        // Bill split dynamic drag
+        const sliderFill = document.getElementById('s5-slider-fill');
+        const sliderThumb = document.getElementById('s5-slider-thumb');
+        const splitCalc = document.getElementById('s5-split-calc');
+
+        if (tNorm >= 9.38 && tNorm < 10.31) {
+          const pDrag = S(tNorm - 9.38);
+          const thumbPct = 50 + 25 * pDrag; // drag to 4 people
+          sliderFill.style.width = `${thumbPct}%`;
+          sliderThumb.style.left = `${thumbPct}%`;
+          splitCalc.innerText = "4 people • ₹487.50 each";
+        }
+
+        // Savings goal progress
+        const goalBar = document.getElementById('s5-goal-bar');
+        const goalNum = document.getElementById('s5-goal-num');
+        if (tNorm >= 10.31) {
+          const pGoal = S(tNorm - 10.31);
+          goalBar.style.width = `${75 + 8.33 * pGoal}%`;
+          goalNum.innerHTML = `₹50,000 <span style="font-size:20px; color:#A6A6A6;">/ ₹60,000</span>`;
+        }
+      }
+
+      // --- SCENE 6: Proof & Kinetic Counter (11.25 - 13.12s) ---
+      const s6 = document.getElementById('scene-6');
+      if (tNorm >= 11.25 && tNorm < 13.12) {
+        s6.style.opacity = 1;
+        document.getElementById('hud-top-right').innerText = "SCENE 06 / 07";
+        document.getElementById('hud-bottom-left').innerText = "[ METRIC PROOF ]";
+
+        const pCount = S(tNorm - 11.25);
+        const countVal = Math.round(lerp(12000, 84320, pCount));
+        document.getElementById('s6-counter-val').innerText = countVal.toLocaleString();
+        document.getElementById('s6-hero-counter').style.transform = `scale(${0.92 + 0.08 * pCount})`;
+      }
+
+      // --- SCENE 7: Emblem Outro & Seamless Loop (13.12 - 15.00s) ---
+      const s7 = document.getElementById('scene-7');
+      if (tNorm >= 13.12 || tNorm === 0) {
+        s7.style.opacity = 1;
+        document.getElementById('hud-top-right').innerText = "SCENE 07 / 07";
+        document.getElementById('hud-bottom-left').innerText = "[ KANRI EMBLEM ]";
+
+        const crest = document.getElementById('s7-crest');
+        if (tNorm >= 13.12) {
+          const pOutro = S(tNorm - 13.12);
+          crest.style.transform = `scale(${0.85 + 0.15 * pOutro})`;
+        } else {
+          crest.style.transform = 'scale(1)';
+        }
+      }
+    };
+
+    // Ready initialization
+    async function init() {
+      await document.fonts.ready;
+      window.seek(0);
+      window.__ready = true;
+      console.log("Kanri High-Energy Showcase stage ready.");
+    }
+    window.addEventListener('DOMContentLoaded', init);
+  </script>
+</body>
+</html>

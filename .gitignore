@@ -33,6 +33,8 @@ kanri-motion/ref_frames/
 scratch/
 kanri-motion/out/
 kanri-motion/.venv/
+kanri-motion/node_modules/
+kanri-motion/ref_frames/
 __pycache__/
 *.pyc
 
