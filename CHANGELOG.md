@@ -5,6 +5,18 @@ All notable changes to Kanri will be documented in this file.
 The format is based on [Keep a Changelog](https://keepachangelog.com/en/1.0.0/),
 and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0.html).
 
+## [1.19.9] - 2026-11-21
+
+### Added
+- **16-Second Seamless-Loop Motion Graphics & Deliverable Suite (`kanri-motion/`)**:
+  - Engineered a mathematical closed-form spring motion graphics engine ($k=280, d=26, m=1$) with continuous-velocity retargeting, 2.072% overshoot, and zero-residual periodic wrapping across $t \in [0, 16.000\text{ s}]$.
+  - Implemented 32-beat narrative sequence with pure `seek(t)` state functions in `index.html` (1440×1440 60fps), featuring dual-spring liquid slider stretch, bill splitting arithmetic (₹1,950 / 4 = ₹487.50), savings goal progression, SQLCipher vault lock with 1px micro-haptic settle, and vertical reel number micro-flips.
+  - Synthesized procedural 120 BPM A minor lo-fi tech groove and aligned audio SFX (`tools/audio.py`, `tools/analyze_audio.py`) at 48 kHz 24-bit with sidechain ducking, -14.53 LUFS integrated loudness, and -1.11 dBTP true peak limit.
+  - Built parallel chunk renderer (`tools/render.py`) across 8 Playwright workers with 4× `tmix` subframe motion blur (3,840 subframes) producing lossless FFV1 intermediate chunks.
+  - Exported complete deliverable suite to `kanri-motion/deliverables/`: `kanri_loop_1440_60.mp4` (Master H.264), `kanri_loop_1080_60.mp4` (Social H.264), `kanri_loop_silent_1440.mp4` (Silent Web), `kanri_loop.webm` (VP9), `kanri_preview_640.gif` (Palette-optimized GIF), `poster.png` (Saturday hover frame), `contact_sheet_settled.png`, `contact_sheet_mid.png`, and `source.zip`.
+  - Validated all 12 automated QA gates (`tools/verify.py`): ffprobe stream compliance, byte-level pixel loop identity, audio seam continuity, camera focus fraction (0.695–0.707), 0 overlapping content layers, authentic Panchang/Google Sans typography, 0.00 ms audio transient alignment, and stroke-width 2 icons.
+- Bumped version to `1.19.9` (Build 76).
+
 ## [1.19.8] - 2026-11-21
 
 ### Added

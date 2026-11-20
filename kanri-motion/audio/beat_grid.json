@@ -1,0 +1,375 @@
+{
+  "bpm": 120,
+  "sample_rate": 48000,
+  "duration_samples": 768000,
+  "duration_seconds": 16.0,
+  "downbeats": [
+    0.0,
+    0.5,
+    1.0,
+    1.5,
+    2.0,
+    2.5,
+    3.0,
+    3.5,
+    4.0,
+    4.5,
+    5.0,
+    5.5,
+    6.0,
+    6.5,
+    7.0,
+    7.5,
+    8.0,
+    8.5,
+    9.0,
+    9.5,
+    10.0,
+    10.5,
+    11.0,
+    11.5,
+    12.0,
+    12.5,
+    14.0,
+    14.5,
+    15.0,
+    15.5
+  ],
+  "sfx_transients": [
+    {
+      "t_event": 0.5,
+      "placed_peak_t": 0.5,
+      "type": "CLK_UP"
+    },
+    {
+      "t_event": 0.5,
+      "placed_peak_t": 0.5,
+      "type": "THOCK"
+    },
+    {
+      "t_event": 0.9,
+      "placed_peak_t": 0.9,
+      "type": "CLK_DN"
+    },
+    {
+      "t_event": 1.0,
+      "placed_peak_t": 1.0,
+      "type": "CLK_UP"
+    },
+    {
+      "t_event": 1.0,
+      "placed_peak_t": 1.0,
+      "type": "TICK"
+    },
+    {
+      "t_event": 1.04,
+      "placed_peak_t": 1.04,
+      "type": "TICK"
+    },
+    {
+      "t_event": 1.08,
+      "placed_peak_t": 1.08,
+      "type": "TICK"
+    },
+    {
+      "t_event": 1.12,
+      "placed_peak_t": 1.12,
+      "type": "TICK"
+    },
+    {
+      "t_event": 1.16,
+      "placed_peak_t": 1.16,
+      "type": "TICK"
+    },
+    {
+      "t_event": 1.5,
+      "placed_peak_t": 1.5,
+      "type": "THOCK"
+    },
+    {
+      "t_event": 2.0,
+      "placed_peak_t": 2.0,
+      "type": "CLK_UP"
+    },
+    {
+      "t_event": 2.0,
+      "placed_peak_t": 2.0,
+      "type": "THOCK"
+    },
+    {
+      "t_event": 2.5,
+      "placed_peak_t": 2.5,
+      "type": "CHIME"
+    },
+    {
+      "t_event": 3.0,
+      "placed_peak_t": 3.0,
+      "type": "THOCK"
+    },
+    {
+      "t_event": 3.0,
+      "placed_peak_t": 3.0,
+      "type": "TOAST"
+    },
+    {
+      "t_event": 3.5,
+      "placed_peak_t": 3.5,
+      "type": "TICK"
+    },
+    {
+      "t_event": 3.5,
+      "placed_peak_t": 3.5,
+      "type": "SWEEP"
+    },
+    {
+      "t_event": 4.0,
+      "placed_peak_t": 4.0,
+      "type": "CLK_UP"
+    },
+    {
+      "t_event": 4.0,
+      "placed_peak_t": 4.0,
+      "type": "THOCK"
+    },
+    {
+      "t_event": 4.9,
+      "placed_peak_t": 4.9,
+      "type": "CLK_DN"
+    },
+    {
+      "t_event": 5.0,
+      "placed_peak_t": 5.0,
+      "type": "TICK"
+    },
+    {
+      "t_event": 5.1,
+      "placed_peak_t": 5.1,
+      "type": "TICK"
+    },
+    {
+      "t_event": 5.2,
+      "placed_peak_t": 5.2,
+      "type": "TICK"
+    },
+    {
+      "t_event": 5.3,
+      "placed_peak_t": 5.3,
+      "type": "TICK"
+    },
+    {
+      "t_event": 5.5,
+      "placed_peak_t": 5.5,
+      "type": "CLK_UP"
+    },
+    {
+      "t_event": 5.5,
+      "placed_peak_t": 5.5,
+      "type": "SNAP"
+    },
+    {
+      "t_event": 6.0,
+      "placed_peak_t": 6.0,
+      "type": "THOCK"
+    },
+    {
+      "t_event": 6.5,
+      "placed_peak_t": 6.5,
+      "type": "CLK_UP"
+    },
+    {
+      "t_event": 6.5,
+      "placed_peak_t": 6.5,
+      "type": "SNAP"
+    },
+    {
+      "t_event": 7.0,
+      "placed_peak_t": 7.0,
+      "type": "THOCK"
+    },
+    {
+      "t_event": 7.5,
+      "placed_peak_t": 7.5,
+      "type": "CLK_UP"
+    },
+    {
+      "t_event": 7.5,
+      "placed_peak_t": 7.5,
+      "type": "TICK"
+    },
+    {
+      "t_event": 7.54,
+      "placed_peak_t": 7.54,
+      "type": "TICK"
+    },
+    {
+      "t_event": 7.58,
+      "placed_peak_t": 7.58,
+      "type": "TICK"
+    },
+    {
+      "t_event": 8.0,
+      "placed_peak_t": 8.0,
+      "type": "THOCK"
+    },
+    {
+      "t_event": 8.0,
+      "placed_peak_t": 8.0,
+      "type": "SWEEP"
+    },
+    {
+      "t_event": 8.5,
+      "placed_peak_t": 8.5,
+      "type": "TICK"
+    },
+    {
+      "t_event": 8.55,
+      "placed_peak_t": 8.55,
+      "type": "TICK"
+    },
+    {
+      "t_event": 8.6,
+      "placed_peak_t": 8.6,
+      "type": "TICK"
+    },
+    {
+      "t_event": 8.65,
+      "placed_peak_t": 8.65,
+      "type": "TICK"
+    },
+    {
+      "t_event": 8.7,
+      "placed_peak_t": 8.7,
+      "type": "TICK"
+    },
+    {
+      "t_event": 8.75,
+      "placed_peak_t": 8.75,
+      "type": "TICK"
+    },
+    {
+      "t_event": 8.8,
+      "placed_peak_t": 8.8,
+      "type": "TICK"
+    },
+    {
+      "t_event": 9.0,
+      "placed_peak_t": 9.0,
+      "type": "TOAST"
+    },
+    {
+      "t_event": 9.5,
+      "placed_peak_t": 9.5,
+      "type": "WHOOSH_SOFT"
+    },
+    {
+      "t_event": 10.0,
+      "placed_peak_t": 10.0,
+      "type": "THOCK"
+    },
+    {
+      "t_event": 10.5,
+      "placed_peak_t": 10.5,
+      "type": "KEY"
+    },
+    {
+      "t_event": 10.583,
+      "placed_peak_t": 10.583,
+      "type": "KEY"
+    },
+    {
+      "t_event": 10.666,
+      "placed_peak_t": 10.666,
+      "type": "KEY"
+    },
+    {
+      "t_event": 10.749,
+      "placed_peak_t": 10.749,
+      "type": "KEY"
+    },
+    {
+      "t_event": 10.832,
+      "placed_peak_t": 10.832,
+      "type": "KEY"
+    },
+    {
+      "t_event": 10.915,
+      "placed_peak_t": 10.915,
+      "type": "KEY"
+    },
+    {
+      "t_event": 11.0,
+      "placed_peak_t": 11.0,
+      "type": "CLK_UP"
+    },
+    {
+      "t_event": 11.0,
+      "placed_peak_t": 11.0,
+      "type": "THOCK"
+    },
+    {
+      "t_event": 11.5,
+      "placed_peak_t": 11.5,
+      "type": "LOCK"
+    },
+    {
+      "t_event": 12.0,
+      "placed_peak_t": 12.0,
+      "type": "TOAST"
+    },
+    {
+      "t_event": 12.0,
+      "placed_peak_t": 12.0,
+      "type": "SWEEP"
+    },
+    {
+      "t_event": 12.5,
+      "placed_peak_t": 12.5,
+      "type": "THOCK"
+    },
+    {
+      "t_event": 13.0,
+      "placed_peak_t": 13.0,
+      "type": "TICK"
+    },
+    {
+      "t_event": 13.04,
+      "placed_peak_t": 13.04,
+      "type": "TICK"
+    },
+    {
+      "t_event": 13.08,
+      "placed_peak_t": 13.08,
+      "type": "TICK"
+    },
+    {
+      "t_event": 13.12,
+      "placed_peak_t": 13.12,
+      "type": "TICK"
+    },
+    {
+      "t_event": 13.5,
+      "placed_peak_t": 13.5,
+      "type": "SWEEP"
+    },
+    {
+      "t_event": 14.0,
+      "placed_peak_t": 14.0,
+      "type": "CLK_UP"
+    },
+    {
+      "t_event": 14.0,
+      "placed_peak_t": 14.0,
+      "type": "THOCK"
+    },
+    {
+      "t_event": 14.5,
+      "placed_peak_t": 14.5,
+      "type": "SNAP"
+    },
+    {
+      "t_event": 15.0,
+      "placed_peak_t": 15.0,
+      "type": "TICK"
+    }
+  ]
+}

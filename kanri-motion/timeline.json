@@ -1,0 +1,1713 @@
+{
+  "meta": {
+    "bpm": 120,
+    "bars": 8,
+    "beats": 32,
+    "duration_seconds": 16.0,
+    "seconds_per_beat": 0.5,
+    "spring": {
+      "k": 280.0,
+      "d": 26.0,
+      "m": 1.0,
+      "wd": 10.535653752852738,
+      "t85": 0.1567,
+      "overshoot": 0.02072
+    },
+    "cursor_p0": [
+      300.0,
+      230.0
+    ],
+    "stage_size": [
+      1440,
+      1440
+    ]
+  },
+  "beats": [
+    {
+      "beat": 1,
+      "t": 0.0,
+      "state": "add_pill",
+      "shape": {
+        "w": 220,
+        "h": 56,
+        "r": 28,
+        "x": 0,
+        "y": 0,
+        "color": "#121212"
+      },
+      "cam": {
+        "s": 4.58,
+        "x": 0,
+        "y": 0,
+        "lag_t": 0.0
+      },
+      "cursor": {
+        "target": "pill_center",
+        "screen_pos": [
+          0,
+          0
+        ],
+        "press": 0.0,
+        "press_t": 0.4
+      },
+      "sfx": [
+        {
+          "t": 0.0,
+          "type": "KICK"
+        }
+      ]
+    },
+    {
+      "beat": 2,
+      "t": 0.5,
+      "state": "amount_entry",
+      "shape": {
+        "w": 440,
+        "h": 200,
+        "r": 36,
+        "x": 0,
+        "y": 0,
+        "color": "#121212"
+      },
+      "cam": {
+        "s": 2.29,
+        "x": 0,
+        "y": 0,
+        "lag_t": 0.56
+      },
+      "cursor": {
+        "target": "chip_500",
+        "screen_pos": [
+          0,
+          0
+        ],
+        "press": 0.0
+      },
+      "sfx": [
+        {
+          "t": 0.5,
+          "type": "CLK_UP"
+        },
+        {
+          "t": 0.5,
+          "type": "THOCK"
+        }
+      ]
+    },
+    {
+      "beat": 3,
+      "t": 1.0,
+      "state": "amount_stepped",
+      "shape": {
+        "w": 440,
+        "h": 200,
+        "r": 36,
+        "x": 0,
+        "y": 0,
+        "color": "#121212"
+      },
+      "cam": {
+        "s": 2.29,
+        "x": 0,
+        "y": 0,
+        "lag_t": 1.06
+      },
+      "cursor": {
+        "target": "chip_500",
+        "press": 0.0,
+        "press_t": 0.9,
+        "release_t": 1.0
+      },
+      "sfx": [
+        {
+          "t": 0.9,
+          "type": "CLK_DN"
+        },
+        {
+          "t": 1.0,
+          "type": "CLK_UP"
+        },
+        {
+          "t": 1.0,
+          "type": "TICK"
+        },
+        {
+          "t": 1.04,
+          "type": "TICK"
+        },
+        {
+          "t": 1.08,
+          "type": "TICK"
+        },
+        {
+          "t": 1.12,
+          "type": "TICK"
+        },
+        {
+          "t": 1.16,
+          "type": "TICK"
+        }
+      ]
+    },
+    {
+      "beat": 4,
+      "t": 1.5,
+      "state": "amount_footer",
+      "shape": {
+        "w": 440,
+        "h": 288,
+        "r": 40,
+        "x": 0,
+        "y": 0,
+        "color": "#121212"
+      },
+      "cam": {
+        "s": 2.29,
+        "x": 0,
+        "y": 0,
+        "lag_t": 1.56
+      },
+      "cursor": {
+        "target": "save_btn",
+        "press": 0.0,
+        "press_t": 1.9,
+        "release_t": 2.0
+      },
+      "sfx": [
+        {
+          "t": 1.5,
+          "type": "THOCK"
+        }
+      ]
+    },
+    {
+      "beat": 5,
+      "t": 2.0,
+      "state": "circle_spinner",
+      "shape": {
+        "w": 128,
+        "h": 128,
+        "r": 64,
+        "x": 0,
+        "y": 0,
+        "color": "#121212"
+      },
+      "cam": {
+        "s": 7.9,
+        "x": 0,
+        "y": 0,
+        "lag_t": 2.06
+      },
+      "cursor": {
+        "target": "drift_aside",
+        "press": 0.0
+      },
+      "sfx": [
+        {
+          "t": 2.0,
+          "type": "CLK_UP"
+        },
+        {
+          "t": 2.0,
+          "type": "THOCK"
+        }
+      ]
+    },
+    {
+      "beat": 6,
+      "t": 2.5,
+      "state": "circle_check",
+      "shape": {
+        "w": 128,
+        "h": 128,
+        "r": 64,
+        "x": 0,
+        "y": 0,
+        "color": "#30A46C"
+      },
+      "cam": {
+        "s": 7.9,
+        "x": 0,
+        "y": 0,
+        "lag_t": 2.56
+      },
+      "cursor": {
+        "target": "drift_aside",
+        "press": 0.0
+      },
+      "sfx": [
+        {
+          "t": 2.5,
+          "type": "CHIME"
+        }
+      ]
+    },
+    {
+      "beat": 7,
+      "t": 3.0,
+      "state": "capsule_debit",
+      "shape": {
+        "w": 400,
+        "h": 72,
+        "r": 36,
+        "x": 0,
+        "y": 0,
+        "color": "#121212"
+      },
+      "cam": {
+        "s": 2.52,
+        "x": 0,
+        "y": 0,
+        "lag_t": 3.06
+      },
+      "cursor": {
+        "target": "capsule_bottom_right",
+        "press": 0.0
+      },
+      "sfx": [
+        {
+          "t": 3.0,
+          "type": "THOCK"
+        },
+        {
+          "t": 3.0,
+          "type": "TOAST"
+        }
+      ]
+    },
+    {
+      "beat": 8,
+      "t": 3.5,
+      "state": "capsule_expanded",
+      "shape": {
+        "w": 560,
+        "h": 120,
+        "r": 40,
+        "x": 0,
+        "y": 0,
+        "color": "#121212"
+      },
+      "cam": {
+        "s": 1.8,
+        "x": 0,
+        "y": 0,
+        "lag_t": 3.56
+      },
+      "cursor": {
+        "target": "split_chip",
+        "press": 0.0,
+        "press_t": 3.9,
+        "release_t": 4.0
+      },
+      "sfx": [
+        {
+          "t": 3.5,
+          "type": "TICK"
+        },
+        {
+          "t": 3.5,
+          "type": "SWEEP"
+        }
+      ]
+    },
+    {
+      "beat": 9,
+      "t": 4.0,
+      "state": "split_card",
+      "shape": {
+        "w": 480,
+        "h": 264,
+        "r": 40,
+        "x": 0,
+        "y": 0,
+        "color": "#121212"
+      },
+      "cam": {
+        "s": 2.1,
+        "x": 0,
+        "y": 0,
+        "lag_t": 4.06
+      },
+      "cursor": {
+        "target": "slider_thumb",
+        "press": 0.0
+      },
+      "sfx": [
+        {
+          "t": 4.0,
+          "type": "CLK_UP"
+        },
+        {
+          "t": 4.0,
+          "type": "THOCK"
+        }
+      ]
+    },
+    {
+      "beat": 10,
+      "t": 4.5,
+      "state": "split_slider_grab",
+      "shape": {
+        "w": 480,
+        "h": 264,
+        "r": 40,
+        "x": 0,
+        "y": 0,
+        "color": "#121212"
+      },
+      "cam": {
+        "s": 2.1,
+        "x": 0,
+        "y": 0,
+        "lag_t": 4.56
+      },
+      "cursor": {
+        "target": "slider_thumb",
+        "press": 0.0,
+        "press_t": 4.9
+      },
+      "sfx": [
+        {
+          "t": 4.9,
+          "type": "CLK_DN"
+        }
+      ]
+    },
+    {
+      "beat": 11,
+      "t": 5.0,
+      "state": "split_slider_drag",
+      "shape": {
+        "w": 480,
+        "h": 264,
+        "r": 40,
+        "x": 0,
+        "y": 0,
+        "color": "#121212"
+      },
+      "cam": {
+        "s": 2.1,
+        "x": 0,
+        "y": 0,
+        "lag_t": 5.06
+      },
+      "cursor": {
+        "target": "slider_drag_right",
+        "press": 1.0
+      },
+      "sfx": [
+        {
+          "t": 5.0,
+          "type": "TICK"
+        },
+        {
+          "t": 5.1,
+          "type": "TICK"
+        },
+        {
+          "t": 5.2,
+          "type": "TICK"
+        },
+        {
+          "t": 5.3,
+          "type": "TICK"
+        }
+      ]
+    },
+    {
+      "beat": 12,
+      "t": 5.5,
+      "state": "split_slider_release",
+      "shape": {
+        "w": 480,
+        "h": 264,
+        "r": 40,
+        "x": 0,
+        "y": 0,
+        "color": "#121212"
+      },
+      "cam": {
+        "s": 2.1,
+        "x": 0,
+        "y": 0,
+        "lag_t": 5.56
+      },
+      "cursor": {
+        "target": "slider_thumb_notch3",
+        "press": 0.0,
+        "release_t": 5.5
+      },
+      "sfx": [
+        {
+          "t": 5.5,
+          "type": "CLK_UP"
+        },
+        {
+          "t": 5.5,
+          "type": "SNAP"
+        }
+      ]
+    },
+    {
+      "beat": 13,
+      "t": 6.0,
+      "state": "segmented_owe",
+      "shape": {
+        "w": 340,
+        "h": 72,
+        "r": 36,
+        "x": 0,
+        "y": 0,
+        "color": "#121212"
+      },
+      "cam": {
+        "s": 2.96,
+        "x": 0,
+        "y": 0,
+        "lag_t": 6.06
+      },
+      "cursor": {
+        "target": "owed_tab",
+        "press": 0.0,
+        "press_t": 6.4,
+        "release_t": 6.5
+      },
+      "sfx": [
+        {
+          "t": 6.0,
+          "type": "THOCK"
+        }
+      ]
+    },
+    {
+      "beat": 14,
+      "t": 6.5,
+      "state": "segmented_owed",
+      "shape": {
+        "w": 340,
+        "h": 72,
+        "r": 36,
+        "x": 0,
+        "y": 0,
+        "color": "#121212"
+      },
+      "cam": {
+        "s": 2.96,
+        "x": 0,
+        "y": 0,
+        "lag_t": 6.56
+      },
+      "cursor": {
+        "target": "owed_tab",
+        "press": 0.0
+      },
+      "sfx": [
+        {
+          "t": 6.5,
+          "type": "CLK_UP"
+        },
+        {
+          "t": 6.5,
+          "type": "SNAP"
+        }
+      ]
+    },
+    {
+      "beat": 15,
+      "t": 7.0,
+      "state": "goal_card",
+      "shape": {
+        "w": 460,
+        "h": 248,
+        "r": 40,
+        "x": 0,
+        "y": 0,
+        "color": "#121212"
+      },
+      "cam": {
+        "s": 2.19,
+        "x": 0,
+        "y": 0,
+        "lag_t": 7.06
+      },
+      "cursor": {
+        "target": "goal_chip_5000",
+        "press": 0.0,
+        "press_t": 7.4,
+        "release_t": 7.5
+      },
+      "sfx": [
+        {
+          "t": 7.0,
+          "type": "THOCK"
+        }
+      ]
+    },
+    {
+      "beat": 16,
+      "t": 7.5,
+      "state": "goal_filled",
+      "shape": {
+        "w": 460,
+        "h": 248,
+        "r": 40,
+        "x": 0,
+        "y": 0,
+        "color": "#121212"
+      },
+      "cam": {
+        "s": 2.19,
+        "x": 0,
+        "y": 0,
+        "lag_t": 7.56
+      },
+      "cursor": {
+        "target": "goal_chip_5000",
+        "press": 0.0
+      },
+      "sfx": [
+        {
+          "t": 7.5,
+          "type": "CLK_UP"
+        },
+        {
+          "t": 7.5,
+          "type": "TICK"
+        },
+        {
+          "t": 7.54,
+          "type": "TICK"
+        },
+        {
+          "t": 7.58,
+          "type": "TICK"
+        }
+      ]
+    },
+    {
+      "beat": 17,
+      "t": 8.0,
+      "state": "insights_card",
+      "shape": {
+        "w": 560,
+        "h": 400,
+        "r": 44,
+        "x": 0,
+        "y": 0,
+        "color": "#121212"
+      },
+      "cam": {
+        "s": 1.8,
+        "x": 0,
+        "y": 0,
+        "lag_t": 8.06
+      },
+      "cursor": {
+        "target": "bar_sat",
+        "press": 0.0
+      },
+      "sfx": [
+        {
+          "t": 8.0,
+          "type": "THOCK"
+        },
+        {
+          "t": 8.0,
+          "type": "SWEEP"
+        }
+      ]
+    },
+    {
+      "beat": 18,
+      "t": 8.5,
+      "state": "insights_sprout",
+      "shape": {
+        "w": 560,
+        "h": 400,
+        "r": 44,
+        "x": 0,
+        "y": 0,
+        "color": "#121212"
+      },
+      "cam": {
+        "s": 1.8,
+        "x": 0,
+        "y": 0,
+        "lag_t": 8.56
+      },
+      "cursor": {
+        "target": "bar_sat",
+        "press": 0.0
+      },
+      "sfx": [
+        {
+          "t": 8.5,
+          "type": "TICK"
+        },
+        {
+          "t": 8.55,
+          "type": "TICK"
+        },
+        {
+          "t": 8.6,
+          "type": "TICK"
+        },
+        {
+          "t": 8.65,
+          "type": "TICK"
+        },
+        {
+          "t": 8.7,
+          "type": "TICK"
+        },
+        {
+          "t": 8.75,
+          "type": "TICK"
+        },
+        {
+          "t": 8.8,
+          "type": "TICK"
+        }
+      ]
+    },
+    {
+      "beat": 19,
+      "t": 9.0,
+      "state": "insights_tooltip",
+      "shape": {
+        "w": 560,
+        "h": 400,
+        "r": 44,
+        "x": 0,
+        "y": 0,
+        "color": "#121212"
+      },
+      "cam": {
+        "s": 1.8,
+        "x": 0,
+        "y": 0,
+        "lag_t": 9.06
+      },
+      "cursor": {
+        "target": "bar_sat",
+        "press": 0.0
+      },
+      "sfx": [
+        {
+          "t": 9.0,
+          "type": "TOAST"
+        }
+      ]
+    },
+    {
+      "beat": 20,
+      "t": 9.5,
+      "state": "insights_condense",
+      "shape": {
+        "w": 520,
+        "h": 360,
+        "r": 40,
+        "x": 0,
+        "y": 0,
+        "color": "#121212"
+      },
+      "cam": {
+        "s": 1.94,
+        "x": 0,
+        "y": 0,
+        "lag_t": 9.56
+      },
+      "cursor": {
+        "target": "lift_off",
+        "press": 0.0
+      },
+      "sfx": [
+        {
+          "t": 9.5,
+          "type": "WHOOSH_SOFT"
+        }
+      ]
+    },
+    {
+      "beat": 21,
+      "t": 10.0,
+      "state": "search_pill",
+      "shape": {
+        "w": 440,
+        "h": 72,
+        "r": 36,
+        "x": 0,
+        "y": 0,
+        "color": "#121212"
+      },
+      "cam": {
+        "s": 2.29,
+        "x": 0,
+        "y": 0,
+        "lag_t": 10.06
+      },
+      "cursor": {
+        "target": "search_field",
+        "press": 0.0
+      },
+      "sfx": [
+        {
+          "t": 10.0,
+          "type": "THOCK"
+        }
+      ]
+    },
+    {
+      "beat": 22,
+      "t": 10.5,
+      "state": "search_results",
+      "shape": {
+        "w": 440,
+        "h": 144,
+        "r": 32,
+        "x": 0,
+        "y": 0,
+        "color": "#121212"
+      },
+      "cam": {
+        "s": 2.29,
+        "x": 0,
+        "y": 0,
+        "lag_t": 10.56
+      },
+      "cursor": {
+        "target": "keycap_return",
+        "press": 0.0,
+        "press_t": 10.9,
+        "release_t": 11.0
+      },
+      "sfx": [
+        {
+          "t": 10.5,
+          "type": "KEY"
+        },
+        {
+          "t": 10.583,
+          "type": "KEY"
+        },
+        {
+          "t": 10.666,
+          "type": "KEY"
+        },
+        {
+          "t": 10.749,
+          "type": "KEY"
+        },
+        {
+          "t": 10.832,
+          "type": "KEY"
+        },
+        {
+          "t": 10.915,
+          "type": "KEY"
+        }
+      ]
+    },
+    {
+      "beat": 23,
+      "t": 11.0,
+      "state": "vault_badge",
+      "shape": {
+        "w": 380,
+        "h": 80,
+        "r": 40,
+        "x": 0,
+        "y": 0,
+        "color": "#121212"
+      },
+      "cam": {
+        "s": 2.65,
+        "x": 0,
+        "y": 0,
+        "lag_t": 11.06
+      },
+      "cursor": {
+        "target": "badge_drift",
+        "press": 0.0
+      },
+      "sfx": [
+        {
+          "t": 11.0,
+          "type": "CLK_UP"
+        },
+        {
+          "t": 11.0,
+          "type": "THOCK"
+        }
+      ]
+    },
+    {
+      "beat": 24,
+      "t": 11.5,
+      "state": "vault_lock_close",
+      "shape": {
+        "w": 380,
+        "h": 80,
+        "r": 40,
+        "x": 0,
+        "y": 0,
+        "color": "#121212"
+      },
+      "cam": {
+        "s": 2.65,
+        "x": 0,
+        "y": 0,
+        "lag_t": 11.56
+      },
+      "cursor": {
+        "target": "badge_drift",
+        "press": 0.0
+      },
+      "sfx": [
+        {
+          "t": 11.5,
+          "type": "LOCK"
+        }
+      ]
+    },
+    {
+      "beat": 25,
+      "t": 12.0,
+      "state": "keystore_toast",
+      "shape": {
+        "w": 480,
+        "h": 64,
+        "r": 32,
+        "x": 0,
+        "y": 320,
+        "color": "#121212"
+      },
+      "cam": {
+        "s": 2.1,
+        "x": 0,
+        "y": 320,
+        "lag_t": 12.06
+      },
+      "cursor": {
+        "target": "toast_drift",
+        "press": 0.0
+      },
+      "sfx": [
+        {
+          "t": 12.0,
+          "type": "TOAST"
+        },
+        {
+          "t": 12.0,
+          "type": "SWEEP"
+        }
+      ]
+    },
+    {
+      "beat": 26,
+      "t": 12.5,
+      "state": "balance_badge",
+      "shape": {
+        "w": 300,
+        "h": 88,
+        "r": 44,
+        "x": 0,
+        "y": 0,
+        "color": "#121212"
+      },
+      "cam": {
+        "s": 3.36,
+        "x": 0,
+        "y": 0,
+        "lag_t": 12.56
+      },
+      "cursor": {
+        "target": "balance_drift",
+        "press": 0.0
+      },
+      "sfx": [
+        {
+          "t": 12.5,
+          "type": "THOCK"
+        }
+      ]
+    },
+    {
+      "beat": 27,
+      "t": 13.0,
+      "state": "balance_flip",
+      "shape": {
+        "w": 420,
+        "h": 88,
+        "r": 44,
+        "x": 0,
+        "y": 0,
+        "color": "#121212"
+      },
+      "cam": {
+        "s": 2.4,
+        "x": 0,
+        "y": 0,
+        "lag_t": 13.06
+      },
+      "cursor": {
+        "target": "balance_center",
+        "press": 0.0
+      },
+      "sfx": [
+        {
+          "t": 13.0,
+          "type": "TICK"
+        },
+        {
+          "t": 13.04,
+          "type": "TICK"
+        },
+        {
+          "t": 13.08,
+          "type": "TICK"
+        },
+        {
+          "t": 13.12,
+          "type": "TICK"
+        }
+      ]
+    },
+    {
+      "beat": 28,
+      "t": 13.5,
+      "state": "balance_hold",
+      "shape": {
+        "w": 420,
+        "h": 88,
+        "r": 44,
+        "x": 0,
+        "y": 0,
+        "color": "#121212"
+      },
+      "cam": {
+        "s": 2.4,
+        "x": 0,
+        "y": 0,
+        "lag_t": 13.56
+      },
+      "cursor": {
+        "target": "balance_center",
+        "press": 0.0,
+        "press_t": 13.9,
+        "release_t": 14.0
+      },
+      "sfx": [
+        {
+          "t": 13.5,
+          "type": "SWEEP"
+        }
+      ]
+    },
+    {
+      "beat": 29,
+      "t": 14.0,
+      "state": "neutral_capsule",
+      "shape": {
+        "w": 300,
+        "h": 64,
+        "r": 32,
+        "x": 0,
+        "y": 0,
+        "color": "#121212"
+      },
+      "cam": {
+        "s": 3.36,
+        "x": 0,
+        "y": 0,
+        "lag_t": 14.06
+      },
+      "cursor": {
+        "target": "p0",
+        "press": 0.0
+      },
+      "sfx": [
+        {
+          "t": 14.0,
+          "type": "CLK_UP"
+        },
+        {
+          "t": 14.0,
+          "type": "THOCK"
+        }
+      ]
+    },
+    {
+      "beat": 30,
+      "t": 14.5,
+      "state": "initial_capsule",
+      "shape": {
+        "w": 220,
+        "h": 56,
+        "r": 28,
+        "x": 0,
+        "y": 0,
+        "color": "#121212"
+      },
+      "cam": {
+        "s": 4.58,
+        "x": 0,
+        "y": 0,
+        "lag_t": 14.56
+      },
+      "cursor": {
+        "target": "p0",
+        "press": 0.0
+      },
+      "sfx": [
+        {
+          "t": 14.5,
+          "type": "SNAP"
+        }
+      ]
+    },
+    {
+      "beat": 31,
+      "t": 15.0,
+      "state": "reveal_add",
+      "shape": {
+        "w": 220,
+        "h": 56,
+        "r": 28,
+        "x": 0,
+        "y": 0,
+        "color": "#121212"
+      },
+      "cam": {
+        "s": 4.58,
+        "x": 0,
+        "y": 0,
+        "lag_t": 15.0
+      },
+      "cursor": {
+        "target": "p0",
+        "press": 0.0
+      },
+      "sfx": [
+        {
+          "t": 15.0,
+          "type": "TICK"
+        }
+      ]
+    },
+    {
+      "beat": 32,
+      "t": 15.5,
+      "state": "settled_start",
+      "shape": {
+        "w": 220,
+        "h": 56,
+        "r": 28,
+        "x": 0,
+        "y": 0,
+        "color": "#121212"
+      },
+      "cam": {
+        "s": 4.58,
+        "x": 0,
+        "y": 0,
+        "lag_t": 15.5
+      },
+      "cursor": {
+        "target": "p0",
+        "press": 0.0
+      },
+      "sfx": []
+    }
+  ],
+  "channels": {
+    "shape_w": {
+      "base": 220.0,
+      "events": [
+        {
+          "t": 0.5,
+          "target": 440.0
+        },
+        {
+          "t": 2.0,
+          "target": 128.0
+        },
+        {
+          "t": 3.0,
+          "target": 400.0
+        },
+        {
+          "t": 3.5,
+          "target": 560.0
+        },
+        {
+          "t": 4.0,
+          "target": 480.0
+        },
+        {
+          "t": 6.0,
+          "target": 340.0
+        },
+        {
+          "t": 7.0,
+          "target": 460.0
+        },
+        {
+          "t": 8.0,
+          "target": 560.0
+        },
+        {
+          "t": 9.5,
+          "target": 520.0
+        },
+        {
+          "t": 10.0,
+          "target": 440.0
+        },
+        {
+          "t": 11.0,
+          "target": 380.0
+        },
+        {
+          "t": 12.0,
+          "target": 480.0
+        },
+        {
+          "t": 12.5,
+          "target": 300.0
+        },
+        {
+          "t": 13.0,
+          "target": 420.0
+        },
+        {
+          "t": 14.0,
+          "target": 300.0
+        },
+        {
+          "t": 14.5,
+          "target": 220.0
+        }
+      ]
+    },
+    "shape_h": {
+      "base": 56.0,
+      "events": [
+        {
+          "t": 0.5,
+          "target": 200.0
+        },
+        {
+          "t": 1.5,
+          "target": 288.0
+        },
+        {
+          "t": 2.0,
+          "target": 128.0
+        },
+        {
+          "t": 3.0,
+          "target": 72.0
+        },
+        {
+          "t": 3.5,
+          "target": 120.0
+        },
+        {
+          "t": 4.0,
+          "target": 264.0
+        },
+        {
+          "t": 6.0,
+          "target": 72.0
+        },
+        {
+          "t": 7.0,
+          "target": 248.0
+        },
+        {
+          "t": 8.0,
+          "target": 400.0
+        },
+        {
+          "t": 9.5,
+          "target": 360.0
+        },
+        {
+          "t": 10.0,
+          "target": 72.0
+        },
+        {
+          "t": 10.5,
+          "target": 144.0
+        },
+        {
+          "t": 11.0,
+          "target": 80.0
+        },
+        {
+          "t": 12.0,
+          "target": 64.0
+        },
+        {
+          "t": 12.5,
+          "target": 88.0
+        },
+        {
+          "t": 14.0,
+          "target": 64.0
+        },
+        {
+          "t": 14.5,
+          "target": 56.0
+        }
+      ]
+    },
+    "shape_r": {
+      "base": 28.0,
+      "events": [
+        {
+          "t": 0.5,
+          "target": 36.0
+        },
+        {
+          "t": 1.5,
+          "target": 40.0
+        },
+        {
+          "t": 2.0,
+          "target": 64.0
+        },
+        {
+          "t": 3.0,
+          "target": 36.0
+        },
+        {
+          "t": 3.5,
+          "target": 40.0
+        },
+        {
+          "t": 6.0,
+          "target": 36.0
+        },
+        {
+          "t": 7.0,
+          "target": 40.0
+        },
+        {
+          "t": 8.0,
+          "target": 44.0
+        },
+        {
+          "t": 9.5,
+          "target": 40.0
+        },
+        {
+          "t": 10.0,
+          "target": 36.0
+        },
+        {
+          "t": 10.5,
+          "target": 32.0
+        },
+        {
+          "t": 11.0,
+          "target": 40.0
+        },
+        {
+          "t": 12.0,
+          "target": 32.0
+        },
+        {
+          "t": 12.5,
+          "target": 44.0
+        },
+        {
+          "t": 14.0,
+          "target": 32.0
+        },
+        {
+          "t": 14.5,
+          "target": 28.0
+        }
+      ]
+    },
+    "shape_x": {
+      "base": 0.0,
+      "events": []
+    },
+    "shape_y": {
+      "base": 0.0,
+      "events": [
+        {
+          "t": 12.0,
+          "target": 320.0
+        },
+        {
+          "t": 12.5,
+          "target": 0.0
+        }
+      ]
+    },
+    "cam_log_scale": {
+      "base": 1.5216989981260935,
+      "events": [
+        {
+          "t": 0.56,
+          "target": 0.8285518175661483
+        },
+        {
+          "t": 2.06,
+          "target": 2.066862759472976
+        },
+        {
+          "t": 3.06,
+          "target": 0.9242589015233319
+        },
+        {
+          "t": 3.56,
+          "target": 0.5877866649021191
+        },
+        {
+          "t": 4.06,
+          "target": 0.7419373447293773
+        },
+        {
+          "t": 6.06,
+          "target": 1.085189268335969
+        },
+        {
+          "t": 7.06,
+          "target": 0.7839015438284094
+        },
+        {
+          "t": 8.06,
+          "target": 0.5877866649021191
+        },
+        {
+          "t": 9.56,
+          "target": 0.6626879730752367
+        },
+        {
+          "t": 10.06,
+          "target": 0.8285518175661483
+        },
+        {
+          "t": 11.06,
+          "target": 0.9745596399981308
+        },
+        {
+          "t": 12.06,
+          "target": 0.7419373447293773
+        },
+        {
+          "t": 12.56,
+          "target": 1.2119409739751128
+        },
+        {
+          "t": 13.06,
+          "target": 0.8754687373538999
+        },
+        {
+          "t": 14.06,
+          "target": 1.2119409739751128
+        },
+        {
+          "t": 14.56,
+          "target": 1.5216989981260935
+        }
+      ]
+    },
+    "cam_x": {
+      "base": 0.0,
+      "events": []
+    },
+    "cam_y": {
+      "base": 0.0,
+      "events": [
+        {
+          "t": 12.06,
+          "target": 320.0
+        },
+        {
+          "t": 12.56,
+          "target": 0.0
+        }
+      ]
+    }
+  },
+  "sfx_cues": [
+    {
+      "t": 0.0,
+      "type": "KICK"
+    },
+    {
+      "t": 0.5,
+      "type": "CLK_UP"
+    },
+    {
+      "t": 0.5,
+      "type": "THOCK"
+    },
+    {
+      "t": 0.9,
+      "type": "CLK_DN"
+    },
+    {
+      "t": 1.0,
+      "type": "CLK_UP"
+    },
+    {
+      "t": 1.0,
+      "type": "TICK"
+    },
+    {
+      "t": 1.04,
+      "type": "TICK"
+    },
+    {
+      "t": 1.08,
+      "type": "TICK"
+    },
+    {
+      "t": 1.12,
+      "type": "TICK"
+    },
+    {
+      "t": 1.16,
+      "type": "TICK"
+    },
+    {
+      "t": 1.5,
+      "type": "THOCK"
+    },
+    {
+      "t": 2.0,
+      "type": "CLK_UP"
+    },
+    {
+      "t": 2.0,
+      "type": "THOCK"
+    },
+    {
+      "t": 2.5,
+      "type": "CHIME"
+    },
+    {
+      "t": 3.0,
+      "type": "THOCK"
+    },
+    {
+      "t": 3.0,
+      "type": "TOAST"
+    },
+    {
+      "t": 3.5,
+      "type": "TICK"
+    },
+    {
+      "t": 3.5,
+      "type": "SWEEP"
+    },
+    {
+      "t": 4.0,
+      "type": "CLK_UP"
+    },
+    {
+      "t": 4.0,
+      "type": "THOCK"
+    },
+    {
+      "t": 4.9,
+      "type": "CLK_DN"
+    },
+    {
+      "t": 5.0,
+      "type": "TICK"
+    },
+    {
+      "t": 5.1,
+      "type": "TICK"
+    },
+    {
+      "t": 5.2,
+      "type": "TICK"
+    },
+    {
+      "t": 5.3,
+      "type": "TICK"
+    },
+    {
+      "t": 5.5,
+      "type": "CLK_UP"
+    },
+    {
+      "t": 5.5,
+      "type": "SNAP"
+    },
+    {
+      "t": 6.0,
+      "type": "THOCK"
+    },
+    {
+      "t": 6.5,
+      "type": "CLK_UP"
+    },
+    {
+      "t": 6.5,
+      "type": "SNAP"
+    },
+    {
+      "t": 7.0,
+      "type": "THOCK"
+    },
+    {
+      "t": 7.5,
+      "type": "CLK_UP"
+    },
+    {
+      "t": 7.5,
+      "type": "TICK"
+    },
+    {
+      "t": 7.54,
+      "type": "TICK"
+    },
+    {
+      "t": 7.58,
+      "type": "TICK"
+    },
+    {
+      "t": 8.0,
+      "type": "THOCK"
+    },
+    {
+      "t": 8.0,
+      "type": "SWEEP"
+    },
+    {
+      "t": 8.5,
+      "type": "TICK"
+    },
+    {
+      "t": 8.55,
+      "type": "TICK"
+    },
+    {
+      "t": 8.6,
+      "type": "TICK"
+    },
+    {
+      "t": 8.65,
+      "type": "TICK"
+    },
+    {
+      "t": 8.7,
+      "type": "TICK"
+    },
+    {
+      "t": 8.75,
+      "type": "TICK"
+    },
+    {
+      "t": 8.8,
+      "type": "TICK"
+    },
+    {
+      "t": 9.0,
+      "type": "TOAST"
+    },
+    {
+      "t": 9.5,
+      "type": "WHOOSH_SOFT"
+    },
+    {
+      "t": 10.0,
+      "type": "THOCK"
+    },
+    {
+      "t": 10.5,
+      "type": "KEY"
+    },
+    {
+      "t": 10.583,
+      "type": "KEY"
+    },
+    {
+      "t": 10.666,
+      "type": "KEY"
+    },
+    {
+      "t": 10.749,
+      "type": "KEY"
+    },
+    {
+      "t": 10.832,
+      "type": "KEY"
+    },
+    {
+      "t": 10.915,
+      "type": "KEY"
+    },
+    {
+      "t": 11.0,
+      "type": "CLK_UP"
+    },
+    {
+      "t": 11.0,
+      "type": "THOCK"
+    },
+    {
+      "t": 11.5,
+      "type": "LOCK"
+    },
+    {
+      "t": 12.0,
+      "type": "TOAST"
+    },
+    {
+      "t": 12.0,
+      "type": "SWEEP"
+    },
+    {
+      "t": 12.5,
+      "type": "THOCK"
+    },
+    {
+      "t": 13.0,
+      "type": "TICK"
+    },
+    {
+      "t": 13.04,
+      "type": "TICK"
+    },
+    {
+      "t": 13.08,
+      "type": "TICK"
+    },
+    {
+      "t": 13.12,
+      "type": "TICK"
+    },
+    {
+      "t": 13.5,
+      "type": "SWEEP"
+    },
+    {
+      "t": 14.0,
+      "type": "CLK_UP"
+    },
+    {
+      "t": 14.0,
+      "type": "THOCK"
+    },
+    {
+      "t": 14.5,
+      "type": "SNAP"
+    },
+    {
+      "t": 15.0,
+      "type": "TICK"
+    }
+  ]
+}

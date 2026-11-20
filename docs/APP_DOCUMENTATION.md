@@ -1,6 +1,6 @@
 # Kanri — Comprehensive Application Documentation & System Architecture Manual
 
-**Current Version:** 1.19.8 (Build 75)  
+**Current Version:** 1.19.9 (Build 76)  
 **Package Name:** `com.omkarnub.kanri`  
 **License:** GNU General Public License v3.0 ([GPL-3.0](https://www.gnu.org/licenses/gpl-3.0.en.html))  
 **Target Platform:** Android 8.0+ (API Level 26 through API Level 37)  

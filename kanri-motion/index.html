@@ -1,0 +1,1110 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8">
+  <title>Kanri — 16s Motion Loop</title>
+  <style>
+    @font-face {
+      font-family: 'Panchang';
+      src: url('assets/fonts/panchang_bold.otf') format('opentype');
+      font-weight: 700;
+      font-style: normal;
+    }
+    @font-face {
+      font-family: 'Google Sans';
+      src: url('assets/fonts/google_sans_regular.ttf') format('truetype');
+      font-weight: 400;
+      font-style: normal;
+    }
+    @font-face {
+      font-family: 'Google Sans';
+      src: url('assets/fonts/google_sans_medium.ttf') format('truetype');
+      font-weight: 500;
+      font-style: normal;
+    }
+    @font-face {
+      font-family: 'Google Sans';
+      src: url('assets/fonts/google_sans_semibold.ttf') format('truetype');
+      font-weight: 600;
+      font-style: normal;
+    }
+    @font-face {
+      font-family: 'Google Sans';
+      src: url('assets/fonts/google_sans_bold.ttf') format('truetype');
+      font-weight: 700;
+      font-style: normal;
+    }
+
+    :root {
+      --canvas: #FAF9F5;
+      --surface: #121212;
+      --surface-elevated: #1A1A1A;
+      --border: #2A2A2A;
+      --text: #F2F2F2;
+      --text-muted: #A6A6A6;
+      --income: #30A46C;
+      --accent: #30A46C;
+      --expense: #E5484D;
+    }
+
+    * {
+      box-sizing: border-box;
+      margin: 0;
+      padding: 0;
+      -webkit-font-smoothing: antialiased;
+      -moz-osx-font-smoothing: grayscale;
+      text-rendering: geometricPrecision;
+      transition: none !important;
+      animation: none !important;
+    }
+
+    html, body {
+      width: 1440px;
+      height: 1440px;
+      overflow: hidden;
+      background: var(--canvas);
+      font-family: 'Google Sans', -apple-system, BlinkMacSystemFont, sans-serif;
+      position: relative;
+      user-select: none;
+    }
+
+    /* Fixed-width digit cells */
+    .digit-cell {
+      display: inline-block;
+      width: 0.62em;
+      text-align: center;
+      position: relative;
+    }
+
+    /* Dot grid canvas background */
+    #bg-grid {
+      position: absolute;
+      top: 0;
+      left: 0;
+      width: 1440px;
+      height: 1440px;
+      pointer-events: none;
+      z-index: 0;
+    }
+
+    /* World container */
+    #world {
+      position: absolute;
+      top: 0;
+      left: 0;
+      width: 1440px;
+      height: 1440px;
+      transform-origin: 0 0;
+      z-index: 10;
+      pointer-events: none;
+    }
+
+    /* The one morphing shape */
+    #shape {
+      position: absolute;
+      top: 0;
+      left: 0;
+      background: var(--surface);
+      border: 1px solid var(--border);
+      box-shadow: 0 28px 56px -16px rgba(18, 18, 18, 0.28);
+      overflow: hidden;
+      color: var(--text);
+      display: flex;
+      align-items: center;
+      justify-content: center;
+    }
+
+    /* Tooltip overlay in world space */
+    #world-tooltip {
+      position: absolute;
+      top: 0;
+      left: 0;
+      background: #1A1A1A;
+      border: 1px solid #2A2A2A;
+      color: var(--text);
+      padding: 8px 14px;
+      border-radius: 12px;
+      font-size: 14px;
+      font-weight: 600;
+      box-shadow: 0 12px 24px -6px rgba(0,0,0,0.4);
+      pointer-events: none;
+      opacity: 0;
+      z-index: 30;
+      white-space: nowrap;
+    }
+
+    /* Screen-space overlay */
+    #screen-overlay {
+      position: absolute;
+      top: 0;
+      left: 0;
+      width: 1440px;
+      height: 1440px;
+      pointer-events: none;
+      z-index: 100;
+    }
+
+    /* Brand Logotype */
+    #brand-logo {
+      position: absolute;
+      bottom: 56px;
+      left: 50%;
+      transform: translateX(-50%);
+      font-family: 'Panchang', sans-serif;
+      font-size: 22px;
+      font-weight: 700;
+      letter-spacing: 0.12em;
+      color: rgba(18, 18, 18, 0.85);
+      text-transform: uppercase;
+    }
+
+    /* Cursor */
+    #cursor {
+      position: absolute;
+      width: 44px;
+      height: 44px;
+      pointer-events: none;
+      transform-origin: 4px 4px;
+    }
+
+    /* State layers inside #shape */
+    .state-layer {
+      position: absolute;
+      top: 0;
+      left: 0;
+      width: 100%;
+      height: 100%;
+      display: flex;
+      opacity: 0;
+      pointer-events: none;
+    }
+
+    /* SVGs */
+    .icon {
+      stroke-width: 2;
+      stroke-linecap: round;
+      stroke-linejoin: round;
+      fill: none;
+    }
+  </style>
+</head>
+<body>
+  <canvas id="bg-grid" width="1440" height="1440"></canvas>
+
+  <div id="world">
+    <div id="shape"></div>
+    <div id="world-tooltip">Sat: ₹1,950</div>
+  </div>
+
+  <div id="screen-overlay">
+    <div id="brand-logo">KANRI</div>
+    <div id="cursor">
+      <svg width="44" height="44" viewBox="0 0 24 24" fill="none">
+        <path d="M4 4L11 20L14 13L21 10L4 4Z" fill="#F2F2F2" stroke="#121212" stroke-width="2" stroke-linejoin="round"/>
+      </svg>
+    </div>
+  </div>
+
+  <script>
+    // --- Spring Mathematics & Closed-form Unit Step ---
+    const K = 280.0;
+    const D = 26.0;
+    const M = 1.0;
+    const WD = Math.sqrt(K - Math.pow(D / 2.0, 2)); // sqrt(111) = 10.53565375...
+
+    function S(t) {
+      if (t <= 0) return 0.0;
+      return 1.0 - Math.exp(-13.0 * t) * (Math.cos(WD * t) + (13.0 / WD) * Math.sin(WD * t));
+    }
+
+    function S_vel(t) {
+      if (t <= 0) return 0.0;
+      return (K / WD) * Math.exp(-13.0 * t) * Math.sin(WD * t);
+    }
+
+    // Solve t85 numerically
+    let t85 = 0.1567;
+    for (let t = 0; t <= 0.5; t += 0.0005) {
+      if (S(t) >= 0.85) { t85 = t; break; }
+    }
+
+    // --- State & Channels System ---
+    let timelineData = null;
+    let tokens = null;
+    const SHOW_LOGO = true;
+
+    // Evaluates a continuous-velocity channel with periodic wrapping
+    function evalChannel(ch, tNorm) {
+      let val = ch.base;
+      const events = ch.events;
+      if (!events || events.length === 0) return val;
+
+      let prevTarget = ch.base;
+      for (let i = 0; i < events.length; i++) {
+        const ev = events[i];
+        const delta = ev.target - prevTarget;
+        // Current cycle contribution
+        val += delta * S(tNorm - ev.t);
+        // Previous cycle contribution (for wrapping tails)
+        val += delta * S(tNorm - (ev.t - 16.0));
+        prevTarget = ev.target;
+      }
+      return val;
+    }
+
+    // --- OKLab Color Interpolation ---
+    function hexToRgb(hex) {
+      const bigint = parseInt(hex.replace('#', ''), 16);
+      return [(bigint >> 16) & 255, (bigint >> 8) & 255, bigint & 255];
+    }
+
+    function rgbToHex(r, g, b) {
+      const clamp = v => Math.max(0, Math.min(255, Math.round(v)));
+      return "#" + ((1 << 24) + (clamp(r) << 16) + (clamp(g) << 8) + clamp(b)).toString(16).slice(1);
+    }
+
+    // Simplified OKLab blend
+    function blendHexOklab(hex1, hex2, factor) {
+      const f = Math.max(0, Math.min(1, factor));
+      const [r1, g1, b1] = hexToRgb(hex1);
+      const [r2, g2, b2] = hexToRgb(hex2);
+      // Perceptually weighted blend
+      const r = Math.sqrt((1 - f) * r1 * r1 + f * r2 * r2);
+      const g = Math.sqrt((1 - f) * g1 * g1 + f * g2 * g2);
+      const b = Math.sqrt((1 - f) * b1 * b1 + f * b2 * b2);
+      return rgbToHex(r, g, b);
+    }
+
+    // Canvas Dot Matrix Background with Parallax
+    const bgCanvas = document.getElementById('bg-grid');
+    const bgCtx = bgCanvas.getContext('2d');
+    function drawDotGrid(camX, camY, camScale) {
+      bgCtx.clearRect(0, 0, 1440, 1440);
+      bgCtx.fillStyle = 'rgba(18, 18, 18, 0.07)';
+      const pitch = 48;
+      const depthFactor = Math.pow(camScale, 0.6);
+      const offsetX = (720 - camX * depthFactor) % pitch;
+      const offsetY = (720 - camY * depthFactor) % pitch;
+
+      for (let x = offsetX - pitch; x < 1440 + pitch; x += pitch) {
+        for (let y = offsetY - pitch; y < 1440 + pitch; y += pitch) {
+          bgCtx.beginPath();
+          bgCtx.arc(x, y, 1.5, 0, Math.PI * 2);
+          bgCtx.fill();
+        }
+      }
+    }
+
+    // Cursor Trajectory Generation
+    function getCursorTarget(tNorm) {
+      // P0 relative to center (720, 720): (1020, 950)
+      const p0 = [1020, 950];
+      // Anchors per beat
+      if (tNorm < 0.20) return p0;
+      if (tNorm < 0.50) return [720, 720]; // pill center
+      if (tNorm < 1.00) return [720 - 70, 720 + 36]; // +₹500 chip
+      if (tNorm < 1.50) return [720 - 70, 720 + 36]; // hover on chip
+      if (tNorm < 2.00) return [720 + 130, 720 + 96]; // Save button
+      if (tNorm < 3.00) return [720 + 180, 720 - 100]; // drift aside
+      if (tNorm < 3.50) return [720 + 140, 720 + 18]; // lower right of debit capsule
+      if (tNorm < 4.00) return [720 + 190, 720 + 18]; // Split chip
+      if (tNorm < 5.00) return [720 - 30, 720 + 44]; // slider thumb notch 3
+      if (tNorm < 5.50) return [720 + 90, 720 + 44]; // drag right to notch 4.4
+      if (tNorm < 6.00) return [720 - 30, 720 + 44]; // recoiled to notch 3
+      if (tNorm < 6.50) return [720 + 80, 720]; // Owed tab
+      if (tNorm < 7.00) return [720 + 80, 720]; // settled on Owed
+      if (tNorm < 7.50) return [720 + 130, 720 + 64]; // +₹5,000 chip
+      if (tNorm < 8.00) return [720 + 130, 720 + 64];
+      if (tNorm < 9.50) return [720 + 120, 720 + 30]; // Saturday bar
+      if (tNorm < 10.00) return [720 + 180, 720 - 80]; // lift off
+      if (tNorm < 10.50) return [720 - 50, 720]; // Search field
+      if (tNorm < 11.00) return [720 + 175, 720]; // ⏎ keycap
+      if (tNorm < 12.00) return [720 + 140, 720]; // Badge drift
+      if (tNorm < 12.50) return [720 + 120, 720 + 320]; // Toast drift
+      if (tNorm < 13.50) return [720, 720]; // Balance drift
+      if (tNorm < 14.00) return [720, 720]; // Balance sweep
+      if (tNorm < 14.50) return [720 + 150, 720 + 120]; // Release, drift toward P0
+      if (tNorm < 15.40) return [p0[0] - 20, p0[1] - 10];
+      return p0;
+    }
+
+    // Build DOM contents for all states inside #shape
+    function buildShapeDOM() {
+      const shape = document.getElementById('shape');
+      shape.innerHTML = `
+        <!-- State 1 & 31: Add Transaction Pill -->
+        <div id="layer-add" class="state-layer" style="align-items:center; justify-content:center; gap:10px;">
+          <svg class="icon" width="20" height="20" viewBox="0 0 24 24" stroke="#F2F2F2">
+            <line x1="12" y1="5" x2="12" y2="19"></line><line x1="5" y1="12" x2="19" y2="12"></line>
+          </svg>
+          <span style="font-size:15px; font-weight:600; color:#F2F2F2; white-space:nowrap;">+ Add Transaction</span>
+        </div>
+
+        <!-- State 2-4: Amount Entry -->
+        <div id="layer-amount" class="state-layer" style="flex-direction:column; padding:28px 32px; width:100%; height:100%; justify-content:space-between;">
+          <div>
+            <div style="font-size:13px; font-weight:500; color:#A6A6A6; margin-bottom:8px;">Amount</div>
+            <div id="amount-hero" style="font-size:56px; font-weight:600; color:#F2F2F2; display:flex; align-items:baseline; line-height:1;">
+              <span style="font-size:44px; margin-right:4px;">₹</span>
+              <span class="digit-cell" id="d-1000">1</span>
+              <span class="digit-cell" id="d-100">4</span>
+              <span class="digit-cell" id="d-10">5</span>
+              <span class="digit-cell" id="d-1">0</span>
+            </div>
+          </div>
+          <div style="display:flex; justify-content:space-between; align-items:center;">
+            <div style="display:flex; gap:12px;">
+              <div id="chip-500" style="background:#1A1A1A; border:1px solid #2A2A2A; border-radius:20px; padding:8px 16px; font-size:14px; font-weight:600; color:#F2F2F2;">+₹500</div>
+              <div id="chip-1000" style="background:#1A1A1A; border:1px solid #2A2A2A; border-radius:20px; padding:8px 16px; font-size:14px; font-weight:600; color:#F2F2F2;">+₹1,000</div>
+            </div>
+          </div>
+          <div id="amount-footer" style="display:flex; justify-content:space-between; align-items:center; margin-top:12px; opacity:0;">
+            <div style="display:flex; align-items:center; gap:8px; background:#1A1A1A; border:1px solid #2A2A2A; border-radius:20px; padding:8px 16px;">
+              <svg class="icon" width="16" height="16" viewBox="0 0 24 24" stroke="#F2F2F2">
+                <path d="M18 2v20"></path><path d="M21 15V2a5 5 0 0 0-5 5v6c0 1.1.9 2 2 2h3Zm0 0v7"></path><path d="M18 15a3 3 0 0 1-3-3V2"></path><path d="M6 2v7a3 3 0 0 0 6 0V2"></path><path d="M9 2v20"></path>
+              </svg>
+              <span style="font-size:14px; font-weight:500; color:#F2F2F2;">Food & Dining</span>
+            </div>
+            <div id="save-btn" style="background:#30A46C; border-radius:20px; padding:10px 24px; font-size:15px; font-weight:600; color:#F2F2F2;">Save</div>
+          </div>
+        </div>
+
+        <!-- State 5: Circle Spinner -->
+        <div id="layer-spinner" class="state-layer" style="align-items:center; justify-content:center;">
+          <svg width="64" height="64" viewBox="0 0 64 64">
+            <circle cx="32" cy="32" r="28" stroke="#1A1A1A" stroke-width="3" fill="none"/>
+            <path id="spinner-arc" d="M32 4 A28 28 0 0 1 60 32" stroke="#30A46C" stroke-width="3" stroke-linecap="round" fill="none"/>
+          </svg>
+        </div>
+
+        <!-- State 6: Circle Checkmark -->
+        <div id="layer-check" class="state-layer" style="align-items:center; justify-content:center;">
+          <svg width="64" height="64" viewBox="0 0 64 64">
+            <path id="check-path" d="M18 34 L28 44 L46 22" stroke="#F2F2F2" stroke-width="3" stroke-linecap="round" stroke-linejoin="round" fill="none" stroke-dasharray="60" stroke-dashoffset="0"/>
+          </svg>
+        </div>
+
+        <!-- State 7-8: Debit Capsule & Expanded Dual-Engine -->
+        <div id="layer-debit" class="state-layer" style="flex-direction:column; padding:18px 28px; width:100%; height:100%; justify-content:center;">
+          <div style="display:flex; align-items:center; justify-content:space-between; width:100%;">
+            <div style="display:flex; align-items:center; gap:12px;">
+              <div style="width:8px; height:8px; border-radius:50%; background:#E5484D;"></div>
+              <span style="font-size:16px; font-weight:600; color:#F2F2F2;">HDFC Bank • <span style="color:#E5484D;">−</span>₹1,950 Debited</span>
+            </div>
+            <div id="split-chip-btn" style="background:#1A1A1A; border:1px solid #2A2A2A; border-radius:16px; padding:6px 16px; font-size:13px; font-weight:600; color:#F2F2F2; opacity:0;">Split</div>
+          </div>
+          <div id="debit-subline" style="display:flex; align-items:center; gap:8px; margin-top:12px; font-size:13px; color:#A6A6A6; opacity:0;">
+            <svg class="icon" width="14" height="14" viewBox="0 0 24 24" stroke="#A6A6A6">
+              <line x1="1" y1="1" x2="23" y2="23"></line><path d="M16.72 11.06A10.94 10.94 0 0 1 19 12.55"></path><path d="M5 12.55a10.94 10.94 0 0 1 5.17-2.39"></path><path d="M10.71 5.05A16 16 0 0 1 22.58 9"></path><path d="M1.42 9a15.91 15.91 0 0 1 4.7-2.88"></path><path d="M8.53 16.11a6 6 0 0 1 6.95 0"></path><line x1="12" y1="20" x2="12.01" y2="20"></line>
+            </svg>
+            <span>Auto-captured via Dual-Engine • 100% Offline</span>
+          </div>
+        </div>
+
+        <!-- State 9-12: Bill Split Card -->
+        <div id="layer-split" class="state-layer" style="flex-direction:column; padding:28px 36px; width:100%; height:100%; justify-content:space-between;">
+          <div style="display:flex; justify-content:space-between; align-items:center;">
+            <span style="font-size:20px; font-weight:600; color:#F2F2F2;">Split ₹1,950</span>
+            <div id="avatars-row" style="display:flex; align-items:center;">
+              <div style="width:32px; height:32px; border-radius:50%; background:#2A2A2A; border:2px solid #121212; display:flex; align-items:center; justify-content:center; font-size:12px; font-weight:600;">You</div>
+              <div style="width:32px; height:32px; border-radius:50%; background:#3A3A3A; border:2px solid #121212; margin-left:-8px; display:flex; align-items:center; justify-content:center; font-size:12px;">A</div>
+              <div style="width:32px; height:32px; border-radius:50%; background:#4A4A4A; border:2px solid #121212; margin-left:-8px; display:flex; align-items:center; justify-content:center; font-size:12px;">R</div>
+              <div id="avatar-4" style="width:32px; height:32px; border-radius:50%; background:#30A46C; border:2px solid #121212; margin-left:-8px; display:flex; align-items:center; justify-content:center; font-size:12px; opacity:0;">S</div>
+            </div>
+          </div>
+          <div style="text-align:center;">
+            <div id="split-text" style="font-size:24px; font-weight:600; color:#F2F2F2;">3 people · ₹650 each</div>
+          </div>
+          <div style="position:relative; width:100%; height:44px; display:flex; align-items:center;">
+            <div style="position:absolute; width:100%; height:6px; background:#1A1A1A; border-radius:3px;"></div>
+            <div id="slider-active-track" style="position:absolute; left:0; width:100px; height:6px; background:#30A46C; border-radius:3px;"></div>
+            <!-- Notches 2..6 -->
+            <div style="position:absolute; width:100%; display:flex; justify-content:space-between; padding:0 8px;">
+              <div style="width:4px; height:4px; border-radius:50%; background:#A6A6A6;"></div>
+              <div style="width:4px; height:4px; border-radius:50%; background:#A6A6A6;"></div>
+              <div style="width:4px; height:4px; border-radius:50%; background:#A6A6A6;"></div>
+              <div style="width:4px; height:4px; border-radius:50%; background:#A6A6A6;"></div>
+              <div style="width:4px; height:4px; border-radius:50%; background:#A6A6A6;"></div>
+            </div>
+            <div id="slider-thumb" style="position:absolute; left:90px; width:28px; height:28px; border-radius:50%; background:#F2F2F2; box-shadow:0 4px 12px rgba(0,0,0,0.5); transform:translateX(-50%);"></div>
+          </div>
+        </div>
+
+        <!-- State 13-14: Segmented Pill (Owe | Owed) -->
+        <div id="layer-segmented" class="state-layer" style="align-items:center; justify-content:center; padding:6px;">
+          <div style="position:relative; width:100%; height:100%; display:flex; align-items:center; background:#1A1A1A; border-radius:32px;">
+            <div id="seg-knob" style="position:absolute; left:6px; width:158px; height:48px; border-radius:24px; background:#F2F2F2;"></div>
+            <div id="seg-owe" style="flex:1; text-align:center; font-size:16px; font-weight:600; color:#121212; z-index:2;">Owe</div>
+            <div id="seg-owed" style="flex:1; text-align:center; font-size:16px; font-weight:500; color:#A6A6A6; z-index:2;">Owed</div>
+          </div>
+        </div>
+
+        <!-- State 15-16: Savings Goal Card -->
+        <div id="layer-goal" class="state-layer" style="flex-direction:column; padding:28px 36px; width:100%; height:100%; justify-content:space-between;">
+          <div style="display:flex; justify-content:space-between; align-items:center;">
+            <span style="font-size:16px; font-weight:500; color:#A6A6A6;">MacBook Fund</span>
+            <div id="chip-5000" style="background:#1A1A1A; border:1px solid #2A2A2A; border-radius:20px; padding:6px 16px; font-size:14px; font-weight:600; color:#30A46C;">+₹5,000</div>
+          </div>
+          <div id="goal-amount" style="font-size:36px; font-weight:600; color:#F2F2F2;">₹45,000 <span style="font-size:24px; color:#A6A6A6;">/ ₹60,000</span></div>
+          <div>
+            <div style="display:flex; justify-content:space-between; font-size:13px; color:#A6A6A6; margin-bottom:8px;">
+              <span id="goal-pct">75%</span>
+              <span>₹15,000 left</span>
+            </div>
+            <div style="position:relative; width:100%; height:12px; background:#1A1A1A; border-radius:6px; overflow:hidden;">
+              <div id="goal-bar-fill" style="width:75%; height:100%; background:#30A46C; border-radius:6px;"></div>
+            </div>
+          </div>
+        </div>
+
+        <!-- State 17-20: Kanri Insights Bar Chart -->
+        <div id="layer-insights" class="state-layer" style="flex-direction:column; padding:28px 36px; width:100%; height:100%; justify-content:space-between;">
+          <div style="display:flex; justify-content:space-between; align-items:baseline;">
+            <span style="font-size:20px; font-weight:600; color:#F2F2F2;">Kanri Insights</span>
+            <span style="font-size:14px; font-weight:500; color:#A6A6A6;">This week</span>
+          </div>
+          <div style="display:flex; align-items:flex-end; justify-content:space-between; height:200px; padding-bottom:12px; border-bottom:1px solid #2A2A2A;">
+            <!-- 7 Bars Mon..Sun -->
+            <div style="display:flex; flex-direction:column; align-items:center; gap:8px;">
+              <div id="bar-mon" style="width:36px; height:0px; background:#2A2A2A; border-radius:6px 6px 0 0;"></div>
+              <span style="font-size:12px; color:#A6A6A6;">Mon</span>
+            </div>
+            <div style="display:flex; flex-direction:column; align-items:center; gap:8px;">
+              <div id="bar-tue" style="width:36px; height:0px; background:#2A2A2A; border-radius:6px 6px 0 0;"></div>
+              <span style="font-size:12px; color:#A6A6A6;">Tue</span>
+            </div>
+            <div style="display:flex; flex-direction:column; align-items:center; gap:8px;">
+              <div id="bar-wed" style="width:36px; height:0px; background:#2A2A2A; border-radius:6px 6px 0 0;"></div>
+              <span style="font-size:12px; color:#A6A6A6;">Wed</span>
+            </div>
+            <div style="display:flex; flex-direction:column; align-items:center; gap:8px;">
+              <div id="bar-thu" style="width:36px; height:0px; background:#2A2A2A; border-radius:6px 6px 0 0;"></div>
+              <span style="font-size:12px; color:#A6A6A6;">Thu</span>
+            </div>
+            <div style="display:flex; flex-direction:column; align-items:center; gap:8px;">
+              <div id="bar-fri" style="width:36px; height:0px; background:#2A2A2A; border-radius:6px 6px 0 0;"></div>
+              <span style="font-size:12px; color:#A6A6A6;">Fri</span>
+            </div>
+            <div style="display:flex; flex-direction:column; align-items:center; gap:8px;">
+              <div id="bar-sat" style="width:36px; height:0px; background:#2A2A2A; border-radius:6px 6px 0 0;"></div>
+              <span style="font-size:12px; color:#A6A6A6;">Sat</span>
+            </div>
+            <div style="display:flex; flex-direction:column; align-items:center; gap:8px;">
+              <div id="bar-sun" style="width:36px; height:0px; background:#2A2A2A; border-radius:6px 6px 0 0;"></div>
+              <span style="font-size:12px; color:#A6A6A6;">Sun</span>
+            </div>
+          </div>
+        </div>
+
+        <!-- State 21-22: Filter & Search List -->
+        <div id="layer-search" class="state-layer" style="flex-direction:column; padding:16px 24px; width:100%; height:100%;">
+          <div style="display:flex; align-items:center; justify-content:space-between; width:100%;">
+            <div style="display:flex; align-items:center; gap:10px;">
+              <svg class="icon" width="18" height="18" viewBox="0 0 24 24" stroke="#A6A6A6">
+                <path d="M18 3a3 3 0 0 0-3 3v12a3 3 0 0 0 3 3 3 3 0 0 0 3-3 3 3 0 0 0-3-3H6a3 3 0 0 0-3 3 3 3 0 0 0 3 3 3 3 0 0 0 3-3V6a3 3 0 0 0-3-3 3 3 0 0 0-3 3 3 3 0 0 0 3 3h12a3 3 0 0 0 3-3 3 3 0 0 0-3-3z"></path>
+              </svg>
+              <span style="font-size:15px; color:#A6A6A6;">Filter:</span>
+              <span id="search-query" style="font-size:15px; font-weight:600; color:#F2F2F2;"></span>
+              <span id="search-caret" style="display:inline-block; width:2px; height:16px; background:#30A46C; margin-left:2px;"></span>
+            </div>
+            <div id="keycap-return" style="background:#1A1A1A; border:1px solid #2A2A2A; border-radius:8px; padding:4px 8px; font-size:12px; color:#A6A6A6;">⏎</div>
+          </div>
+          <!-- Rows -->
+          <div id="search-rows" style="margin-top:16px; display:flex; flex-direction:column; gap:8px;">
+            <div id="row-swiggy" style="display:flex; justify-content:space-between; align-items:center; height:36px; overflow:hidden;">
+              <span style="font-size:14px; color:#F2F2F2;">Swiggy</span>
+              <span style="font-size:14px; font-weight:600; color:#E5484D;">−₹1,950</span>
+            </div>
+            <div id="row-spotify" style="display:flex; justify-content:space-between; align-items:center; height:36px; overflow:hidden;">
+              <span style="font-size:14px; color:#F2F2F2;">Spotify</span>
+              <span style="font-size:14px; font-weight:600; color:#E5484D;">−₹119</span>
+            </div>
+            <div id="row-uber" style="display:flex; justify-content:space-between; align-items:center; height:36px; overflow:hidden;">
+              <span style="font-size:14px; color:#F2F2F2;">Uber</span>
+              <span style="font-size:14px; font-weight:600; color:#E5484D;">−₹186</span>
+            </div>
+            <div id="row-amazon" style="display:flex; justify-content:space-between; align-items:center; height:36px; overflow:hidden;">
+              <span style="font-size:14px; color:#F2F2F2;">Amazon</span>
+              <span style="font-size:14px; font-weight:600; color:#E5484D;">−₹1,299</span>
+            </div>
+          </div>
+        </div>
+
+        <!-- State 23-24: SQLCipher Vault Badge -->
+        <div id="layer-vault" class="state-layer" style="align-items:center; padding:0 24px; gap:16px;">
+          <svg width="32" height="32" viewBox="0 0 24 24" fill="none" stroke="#30A46C" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
+            <rect x="3" y="11" width="18" height="11" rx="2" ry="2"></rect>
+            <path id="lock-shackle" d="M7 11V7a5 5 0 0 1 10 0v4"></path>
+          </svg>
+          <div style="display:flex; flex-direction:column;">
+            <span style="font-size:16px; font-weight:600; color:#F2F2F2;">SQLCipher AES-256</span>
+            <span style="font-size:13px; font-weight:500; color:#A6A6A6;">100% Offline Vault</span>
+          </div>
+        </div>
+
+        <!-- State 25: Keystore Toast -->
+        <div id="layer-toast" class="state-layer" style="align-items:center; justify-content:center; gap:10px;">
+          <svg class="icon" width="18" height="18" viewBox="0 0 24 24" stroke="#30A46C">
+            <polyline points="20 6 9 17 4 12"></polyline>
+          </svg>
+          <span style="font-size:14px; font-weight:600; color:#F2F2F2;">Saved to Local Keystore • No Cloud</span>
+        </div>
+
+        <!-- State 26-28: Balance Badge & Micro-Flip -->
+        <div id="layer-balance" class="state-layer" style="align-items:center; justify-content:center;">
+          <div id="balance-num" style="font-size:36px; font-weight:600; color:#F2F2F2; display:flex; align-items:baseline;">
+            <span style="font-size:28px; margin-right:4px;">₹</span>
+            <span>84,320</span>
+          </div>
+          <div id="balance-flipped" style="font-size:24px; font-weight:600; color:#30A46C; display:none;">
+            +₹12,400 this month
+          </div>
+        </div>
+      `;
+    }
+
+    // Pure seek(t) function
+    window.seek = function(t) {
+      if (!timelineData) return;
+      const tNorm = ((t % 16.0) + 16.0) % 16.0;
+
+      // 1. Evaluate Continuous Channels
+      const chs = timelineData.channels;
+      const shapeW = evalChannel(chs.shape_w, tNorm);
+      const shapeH = evalChannel(chs.shape_h, tNorm);
+      const shapeR = evalChannel(chs.shape_r, tNorm);
+      const shapeX = evalChannel(chs.shape_x, tNorm);
+      const shapeY = evalChannel(chs.shape_y, tNorm);
+      const camLogScale = evalChannel(chs.cam_log_scale, tNorm);
+      const camScale = Math.exp(camLogScale);
+      const camX = evalChannel(chs.cam_x, tNorm);
+      const camY = evalChannel(chs.cam_y, tNorm);
+
+      // 2. Apply Camera 2D Matrix to #world
+      const world = document.getElementById('world');
+      // Translation so that (camX, camY) is at screen center (720, 720)
+      const tx = 720 - camX * camScale;
+      const ty = 720 - camY * camScale;
+      world.style.transform = `matrix(${camScale}, 0, 0, ${camScale}, ${tx}, ${ty})`;
+
+      // Draw background dot grid with parallax
+      drawDotGrid(camX, camY, camScale);
+
+      // 3. Shape Geometry & Contact Shadow
+      const shape = document.getElementById('shape');
+      shape.style.width = `${shapeW}px`;
+      shape.style.height = `${shapeH}px`;
+      shape.style.borderRadius = `${shapeR}px`;
+      // Center shape at (720 + shapeX, 720 + shapeY)
+      shape.style.transform = `translate(${shapeX - shapeW / 2}px, ${shapeY - shapeH / 2}px)`;
+
+      // OKLab color transition for Beat 6 (t=2.5..3.0)
+      if (tNorm >= 2.50 && tNorm < 3.00) {
+        const factor = S(tNorm - 2.50);
+        shape.style.background = blendHexOklab("#121212", "#30A46C", factor);
+      } else if (tNorm >= 3.00 && tNorm < 3.25) {
+        const factor = S(tNorm - 3.00);
+        shape.style.background = blendHexOklab("#30A46C", "#121212", factor);
+      } else {
+        shape.style.background = "var(--surface)";
+      }
+
+      // 4. Cursor Position & Press
+      const cPos = getCursorTarget(tNorm);
+      // Determine press scale
+      let pressVal = 0.0;
+      if ((tNorm >= 0.40 && tNorm <= 0.50) ||
+          (tNorm >= 0.90 && tNorm <= 1.00) ||
+          (tNorm >= 1.90 && tNorm <= 2.00) ||
+          (tNorm >= 3.90 && tNorm <= 4.00) ||
+          (tNorm >= 4.90 && tNorm <= 5.50) ||
+          (tNorm >= 6.40 && tNorm <= 6.50) ||
+          (tNorm >= 7.40 && tNorm <= 7.50) ||
+          (tNorm >= 10.90 && tNorm <= 11.00) ||
+          (tNorm >= 13.90 && tNorm <= 14.00)) {
+        pressVal = 1.0;
+      }
+      const curScale = 1.0 - 0.14 * pressVal;
+      const cursorEl = document.getElementById('cursor');
+      cursorEl.style.transform = `translate(${cPos[0]}px, ${cPos[1]}px) scale(${curScale})`;
+
+      // 5. Content Swap Choreography
+      // Hide all layers by default
+      const layers = document.querySelectorAll('.state-layer');
+      layers.forEach(l => {
+        l.style.opacity = 0;
+        l.style.filter = "none";
+        l.style.transform = "none";
+      });
+
+      // Layer 1: Add Pill (t=0.0..0.5 and t=15.0..16.0)
+      const lAdd = document.getElementById('layer-add');
+      if (tNorm < 0.50 || tNorm >= 15.00) {
+        let op = 1.0;
+        if (tNorm >= 0.45 && tNorm < 0.50) {
+          // Exit 50ms before t0=0.5
+          const extProg = (tNorm - 0.45) / 0.05;
+          op = 1.0 - extProg;
+          lAdd.style.filter = `blur(${extProg * 8}px)`;
+        } else if (tNorm >= 15.00 && tNorm < 15.30) {
+          // Reveal at t=15.0 with stagger
+          const entProg = S(tNorm - 15.00);
+          op = Math.min(1.0, entProg);
+          lAdd.style.filter = `blur(${(1.0 - op) * 8}px)`;
+          lAdd.style.transform = `translateY(${(1.0 - op) * 6}px)`;
+        }
+        lAdd.style.opacity = op;
+      }
+
+      // Layer 2: Amount Entry (t=0.5..2.0)
+      const lAmount = document.getElementById('layer-amount');
+      if (tNorm >= 0.50 && tNorm < 2.00) {
+        let op = 1.0;
+        if (tNorm < 0.50 + t85) {
+          op = 0.0;
+        } else if (tNorm < 0.50 + t85 + 0.15) {
+          const p = S(tNorm - (0.50 + t85));
+          op = Math.min(1.0, p);
+          lAmount.style.filter = `blur(${(1.0 - op) * 8}px)`;
+          lAmount.style.transform = `translateY(${(1.0 - op) * 6}px)`;
+        } else if (tNorm >= 1.95) {
+          // Exit before t=2.0
+          const ext = (tNorm - 1.95) / 0.05;
+          op = 1.0 - ext;
+          lAmount.style.filter = `blur(${ext * 8}px)`;
+        }
+        lAmount.style.opacity = op;
+
+        // Odometer roll 1,450 -> 1,950 at t=1.00
+        const d100 = document.getElementById('d-100');
+        if (tNorm >= 1.00) {
+          const rollProg = S(tNorm - 1.00);
+          // Roll from 4 to 9
+          const val = Math.min(9, Math.round(4 + 5 * rollProg));
+          d100.innerText = val.toString();
+        } else {
+          d100.innerText = "4";
+        }
+
+        // Beat 4: Footer slides in from x-24 at t=1.50
+        const ft = document.getElementById('amount-footer');
+        if (tNorm >= 1.50) {
+          const ftProg = S(tNorm - 1.50);
+          ft.style.opacity = Math.min(1.0, ftProg);
+          ft.style.transform = `translateX(${-24 * (1.0 - ftProg)}px)`;
+        } else {
+          ft.style.opacity = 0;
+        }
+      }
+
+      // Layer 3: Spinner (t=2.0..2.5)
+      const lSpinner = document.getElementById('layer-spinner');
+      if (tNorm >= 2.00 && tNorm < 2.50) {
+        lSpinner.style.opacity = 1.0;
+        // Closed-form rotation 720 deg/s * t
+        const angle = (720.0 * (tNorm - 2.00)) % 360;
+        const arc = document.getElementById('spinner-arc');
+        arc.setAttribute('transform', `rotate(${angle} 32 32)`);
+      }
+
+      // Layer 4: Checkmark (t=2.5..3.0)
+      const lCheck = document.getElementById('layer-check');
+      if (tNorm >= 2.50 && tNorm < 3.00) {
+        lCheck.style.opacity = 1.0;
+        const drawProg = S(tNorm - 2.50);
+        const checkPath = document.getElementById('check-path');
+        checkPath.style.strokeDashoffset = `${Math.max(0, 60 * (1.0 - drawProg))}`;
+      }
+
+      // Layer 5: Debit Capsule & Expanded (t=3.0..4.0)
+      const lDebit = document.getElementById('layer-debit');
+      if (tNorm >= 3.00 && tNorm < 4.00) {
+        let op = 1.0;
+        if (tNorm < 3.00 + t85) {
+          op = 0.0;
+        } else if (tNorm < 3.00 + t85 + 0.12) {
+          const p = S(tNorm - (3.00 + t85));
+          op = Math.min(1.0, p);
+          lDebit.style.filter = `blur(${(1.0 - op) * 8}px)`;
+        } else if (tNorm >= 3.95) {
+          const ext = (tNorm - 3.95) / 0.05;
+          op = 1.0 - ext;
+          lDebit.style.filter = `blur(${ext * 8}px)`;
+        }
+        lDebit.style.opacity = op;
+
+        // Expanded at Beat 8 (t=3.50): Split chip & offline subline reveal
+        const spChip = document.getElementById('split-chip-btn');
+        const debSub = document.getElementById('debit-subline');
+        if (tNorm >= 3.50) {
+          const p8 = S(tNorm - 3.50);
+          spChip.style.opacity = Math.min(1.0, p8);
+          debSub.style.opacity = Math.min(1.0, p8);
+        } else {
+          spChip.style.opacity = 0;
+          debSub.style.opacity = 0;
+        }
+      }
+
+      // Layer 6: Split Card (t=4.0..6.0)
+      const lSplit = document.getElementById('layer-split');
+      if (tNorm >= 4.00 && tNorm < 6.00) {
+        let op = 1.0;
+        if (tNorm < 4.00 + t85) {
+          op = 0.0;
+        } else if (tNorm < 4.00 + t85 + 0.15) {
+          const p = S(tNorm - (4.00 + t85));
+          op = Math.min(1.0, p);
+          lSplit.style.filter = `blur(${(1.0 - op) * 8}px)`;
+        } else if (tNorm >= 5.95) {
+          const ext = (tNorm - 5.95) / 0.05;
+          op = 1.0 - ext;
+          lSplit.style.filter = `blur(${ext * 8}px)`;
+        }
+        lSplit.style.opacity = op;
+
+        // Slider notch drag & recoil
+        const thumb = document.getElementById('slider-thumb');
+        const activeTrack = document.getElementById('slider-active-track');
+        const splitText = document.getElementById('split-text');
+        const av4 = document.getElementById('avatar-4');
+
+        if (tNorm >= 5.00 && tNorm < 5.50) {
+          // Drag right to notch 4.4
+          const dragProg = S(tNorm - 5.00);
+          const thumbX = 90 + (260 - 90) * dragProg;
+          thumb.style.left = `${thumbX}px`;
+          activeTrack.style.width = `${thumbX}px`;
+          // Odometer 650 -> 487.50
+          splitText.innerText = "4 people · ₹487.50 each";
+          av4.style.opacity = Math.min(1.0, dragProg);
+        } else if (tNorm >= 5.50) {
+          // Recoil back to notch 3 (₹650)
+          const recoilProg = S(tNorm - 5.50);
+          const thumbX = 260 - (260 - 90) * recoilProg;
+          thumb.style.left = `${thumbX}px`;
+          activeTrack.style.width = `${thumbX}px`;
+          splitText.innerText = "3 people · ₹650 each";
+          av4.style.opacity = Math.max(0, 1.0 - recoilProg);
+        } else {
+          thumb.style.left = "90px";
+          activeTrack.style.width = "90px";
+          splitText.innerText = "3 people · ₹650 each";
+          av4.style.opacity = 0;
+        }
+      }
+
+      // Layer 7: Segmented Pill (t=6.0..7.0)
+      const lSeg = document.getElementById('layer-segmented');
+      if (tNorm >= 6.00 && tNorm < 7.00) {
+        let op = 1.0;
+        if (tNorm < 6.00 + t85) {
+          op = 0.0;
+        } else if (tNorm < 6.00 + t85 + 0.12) {
+          const p = S(tNorm - (6.00 + t85));
+          op = Math.min(1.0, p);
+          lSeg.style.filter = `blur(${(1.0 - op) * 8}px)`;
+        } else if (tNorm >= 6.95) {
+          const ext = (tNorm - 6.95) / 0.05;
+          op = 1.0 - ext;
+          lSeg.style.filter = `blur(${ext * 8}px)`;
+        }
+        lSeg.style.opacity = op;
+
+        // Liquid knob stretch Owe -> Owed at Beat 14 (t=6.50)
+        const knob = document.getElementById('seg-knob');
+        const segOwed = document.getElementById('seg-owed');
+        if (tNorm >= 6.50) {
+          const lead = S(tNorm - 6.50);
+          const trail = S(tNorm - 6.55);
+          const leftPos = 6 + (170) * trail;
+          const widthVal = 158 + (lead - trail) * 35;
+          knob.style.left = `${leftPos}px`;
+          knob.style.width = `${widthVal}px`;
+          knob.style.background = blendHexOklab("#F2F2F2", "#30A46C", lead);
+          segOwed.style.fontWeight = "700";
+          segOwed.style.color = "#F2F2F2";
+        } else {
+          knob.style.left = "6px";
+          knob.style.width = "158px";
+          knob.style.background = "#F2F2F2";
+          segOwed.style.fontWeight = "500";
+          segOwed.style.color = "#A6A6A6";
+        }
+      }
+
+      // Layer 8: Goal Card (t=7.0..8.0)
+      const lGoal = document.getElementById('layer-goal');
+      if (tNorm >= 7.00 && tNorm < 8.00) {
+        let op = 1.0;
+        if (tNorm < 7.00 + t85) {
+          op = 0.0;
+        } else if (tNorm < 7.00 + t85 + 0.15) {
+          const p = S(tNorm - (7.00 + t85));
+          op = Math.min(1.0, p);
+          lGoal.style.filter = `blur(${(1.0 - op) * 8}px)`;
+        } else if (tNorm >= 7.95) {
+          const ext = (tNorm - 7.95) / 0.05;
+          op = 1.0 - ext;
+          lGoal.style.filter = `blur(${ext * 8}px)`;
+        }
+        lGoal.style.opacity = op;
+
+        const gAmt = document.getElementById('goal-amount');
+        const gPct = document.getElementById('goal-pct');
+        const gFill = document.getElementById('goal-bar-fill');
+        if (tNorm >= 7.50) {
+          const fillProg = S(tNorm - 7.50);
+          const currentPct = 75.0 + (83.33 - 75.0) * fillProg;
+          gFill.style.width = `${currentPct}%`;
+          gPct.innerText = `${currentPct.toFixed(1)}%`;
+          gAmt.innerHTML = `₹50,000 <span style="font-size:24px; color:#A6A6A6;">/ ₹60,000</span>`;
+        } else {
+          gFill.style.width = "75%";
+          gPct.innerText = "75%";
+          gAmt.innerHTML = `₹45,000 <span style="font-size:24px; color:#A6A6A6;">/ ₹60,000</span>`;
+        }
+      }
+
+      // Layer 9: Kanri Insights Bar Chart (t=8.0..10.0)
+      const lIns = document.getElementById('layer-insights');
+      const tooltip = document.getElementById('world-tooltip');
+      if (tNorm >= 8.00 && tNorm < 10.00) {
+        let op = 1.0;
+        if (tNorm < 8.00 + t85) {
+          op = 0.0;
+        } else if (tNorm < 8.00 + t85 + 0.15) {
+          const p = S(tNorm - (8.00 + t85));
+          op = Math.min(1.0, p);
+          lIns.style.filter = `blur(${(1.0 - op) * 8}px)`;
+        } else if (tNorm >= 9.95) {
+          const ext = (tNorm - 9.95) / 0.05;
+          op = 1.0 - ext;
+          lIns.style.filter = `blur(${ext * 8}px)`;
+        }
+        lIns.style.opacity = op;
+
+        // Bars sprout at Beat 18 (t=8.50) with 50ms stagger
+        const barHeights = [
+          { id: "bar-mon", h: 62 },
+          { id: "bar-tue", h: 34 },
+          { id: "bar-wed", h: 78 },
+          { id: "bar-thu", h: 45 },
+          { id: "bar-fri", h: 112 },
+          { id: "bar-sat", h: 195 },
+          { id: "bar-sun", h: 88 }
+        ];
+
+        barHeights.forEach((b, i) => {
+          const bEl = document.getElementById(b.id);
+          const startT = 8.50 + i * 0.050;
+          if (tNorm >= startT) {
+            const sprout = S(tNorm - startT);
+            bEl.style.height = `${b.h * sprout}px`;
+          } else {
+            bEl.style.height = "0px";
+          }
+        });
+
+        // Hover Sat bar at Beat 19 (t=9.00)
+        const satBar = document.getElementById('bar-sat');
+        if (tNorm >= 9.00 && tNorm < 9.50) {
+          satBar.style.background = "#30A46C";
+          // Tooltip pops
+          const tProg = S(tNorm - 9.00);
+          tooltip.style.opacity = Math.min(1.0, tProg);
+          tooltip.style.transform = `translate(${shapeX + 110}px, ${shapeY - 110}px) scale(${0.8 + 0.2 * tProg})`;
+        } else if (tNorm >= 9.50) {
+          // Tooltip tucks in
+          const tuckProg = Math.max(0, 1.0 - (tNorm - 9.50) / 0.15);
+          tooltip.style.opacity = tuckProg;
+          tooltip.style.transform = `translate(${shapeX + 110}px, ${shapeY - 110}px) scale(${0.8 + 0.2 * tuckProg})`;
+          satBar.style.background = "#2A2A2A";
+        } else {
+          satBar.style.background = "#2A2A2A";
+          tooltip.style.opacity = 0;
+        }
+      } else {
+        tooltip.style.opacity = 0;
+      }
+
+      // Layer 10: Search Pill & Rows (t=10.0..11.0)
+      const lSearch = document.getElementById('layer-search');
+      if (tNorm >= 10.00 && tNorm < 11.00) {
+        let op = 1.0;
+        if (tNorm < 10.00 + t85) {
+          op = 0.0;
+        } else if (tNorm < 10.00 + t85 + 0.12) {
+          const p = S(tNorm - (10.00 + t85));
+          op = Math.min(1.0, p);
+          lSearch.style.filter = `blur(${(1.0 - op) * 8}px)`;
+        } else if (tNorm >= 10.95) {
+          const ext = (tNorm - 10.95) / 0.05;
+          op = 1.0 - ext;
+          lSearch.style.filter = `blur(${ext * 8}px)`;
+        }
+        lSearch.style.opacity = op;
+
+        // Typing "Swiggy" at 83ms/char at t=10.50
+        const queryEl = document.getElementById('search-query');
+        const textTarget = "Swiggy";
+        let numChars = 0;
+        if (tNorm >= 10.50) {
+          numChars = Math.min(textTarget.length, Math.floor((tNorm - 10.50) / 0.083));
+        }
+        queryEl.innerText = textTarget.slice(0, numChars);
+
+        // Deterministic caret blink at 2Hz
+        const caret = document.getElementById('search-caret');
+        caret.style.opacity = (Math.floor(tNorm * 4) % 2 === 0) ? 1 : 0;
+
+        // Row collapse
+        const rUber = document.getElementById('row-uber');
+        const rAmazon = document.getElementById('row-amazon');
+        const rSpotify = document.getElementById('row-spotify');
+
+        if (numChars >= 1) { // "S" drops Uber, Amazon
+          rUber.style.height = "0px";
+          rUber.style.opacity = 0;
+          rAmazon.style.height = "0px";
+          rAmazon.style.opacity = 0;
+        } else {
+          rUber.style.height = "36px";
+          rUber.style.opacity = 1;
+          rAmazon.style.height = "36px";
+          rAmazon.style.opacity = 1;
+        }
+
+        if (numChars >= 2) { // "Sw" drops Spotify
+          rSpotify.style.height = "0px";
+          rSpotify.style.opacity = 0;
+        } else {
+          rSpotify.style.height = "36px";
+          rSpotify.style.opacity = (numChars < 1) ? 1 : 0.8;
+        }
+      }
+
+      // Layer 11: SQLCipher Vault Badge (t=11.0..12.0)
+      const lVault = document.getElementById('layer-vault');
+      if (tNorm >= 11.00 && tNorm < 12.00) {
+        let op = 1.0;
+        if (tNorm < 11.00 + t85) {
+          op = 0.0;
+        } else if (tNorm < 11.00 + t85 + 0.12) {
+          const p = S(tNorm - (11.00 + t85));
+          op = Math.min(1.0, p);
+          lVault.style.filter = `blur(${(1.0 - op) * 8}px)`;
+        } else if (tNorm >= 11.95) {
+          const ext = (tNorm - 11.95) / 0.05;
+          op = 1.0 - ext;
+          lVault.style.filter = `blur(${ext * 8}px)`;
+        }
+        lVault.style.opacity = op;
+
+        // Lock shackle drop & micro-haptic settle at Beat 24 (t=11.50)
+        const shackle = document.getElementById('lock-shackle');
+        if (tNorm >= 11.50) {
+          const lockProg = S(tNorm - 11.50);
+          shackle.setAttribute('transform', `translate(0, ${4 * lockProg})`);
+          // 1px micro-haptic settle
+          const tSettle = tNorm - 11.50;
+          const shake = Math.exp(-tSettle / 0.04) * Math.sin(2 * Math.PI * 38 * tSettle);
+          lVault.style.transform = `translateX(${shake}px)`;
+        } else {
+          shackle.setAttribute('transform', 'translate(0, 0)');
+          lVault.style.transform = 'none';
+        }
+      }
+
+      // Layer 12: Keystore Toast (t=12.0..12.5)
+      const lToast = document.getElementById('layer-toast');
+      if (tNorm >= 12.00 && tNorm < 12.50) {
+        let op = 1.0;
+        if (tNorm < 12.00 + t85) {
+          op = 0.0;
+        } else if (tNorm < 12.00 + t85 + 0.12) {
+          const p = S(tNorm - (12.00 + t85));
+          op = Math.min(1.0, p);
+          lToast.style.filter = `blur(${(1.0 - op) * 8}px)`;
+        } else if (tNorm >= 12.45) {
+          const ext = (tNorm - 12.45) / 0.05;
+          op = 1.0 - ext;
+          lToast.style.filter = `blur(${ext * 8}px)`;
+        }
+        lToast.style.opacity = op;
+      }
+
+      // Layer 13: Balance Badge & Flip (t=12.5..14.0)
+      const lBal = document.getElementById('layer-balance');
+      if (tNorm >= 12.50 && tNorm < 14.00) {
+        let op = 1.0;
+        if (tNorm < 12.50 + t85) {
+          op = 0.0;
+        } else if (tNorm < 12.50 + t85 + 0.12) {
+          const p = S(tNorm - (12.50 + t85));
+          op = Math.min(1.0, p);
+          lBal.style.filter = `blur(${(1.0 - op) * 8}px)`;
+        } else if (tNorm >= 13.95) {
+          const ext = (tNorm - 13.95) / 0.05;
+          op = 1.0 - ext;
+          lBal.style.filter = `blur(${ext * 8}px)`;
+        }
+        lBal.style.opacity = op;
+
+        const balNum = document.getElementById('balance-num');
+        const balFlip = document.getElementById('balance-flipped');
+        if (tNorm >= 13.00) {
+          balNum.style.display = "none";
+          balFlip.style.display = "block";
+        } else {
+          balNum.style.display = "flex";
+          balFlip.style.display = "none";
+        }
+      }
+    };
+
+    // QA Inspection Function
+    window.qa = function() {
+      const shape = document.getElementById('shape');
+      const sRect = shape.getBoundingClientRect();
+      const maxDim = Math.max(sRect.width, sRect.height);
+      const focusFraction = maxDim / 1440.0;
+
+      // Count visible content layers
+      let visibleLayers = 0;
+      document.querySelectorAll('.state-layer').forEach(l => {
+        if (parseFloat(window.getComputedStyle(l).opacity) > 0.01) {
+          visibleLayers++;
+        }
+      });
+
+      return {
+        shapeScreen: { width: sRect.width, height: sRect.height, x: sRect.x, y: sRect.y },
+        focusFraction: focusFraction,
+        visibleLayers: visibleLayers
+      };
+    };
+
+    // Initialization
+    async function init() {
+      buildShapeDOM();
+      // Fetch timeline.json
+      const tlRes = await fetch('timeline.json');
+      timelineData = await tlRes.json();
+      const tkRes = await fetch('tokens.json');
+      tokens = await tkRes.json();
+
+      // Ensure fonts ready
+      await document.fonts.ready;
+
+      // Render t=0
+      window.seek(0);
+
+      window.__ready = true;
+      console.log("Kanri stage ready.");
+    }
+
+    window.addEventListener('DOMContentLoaded', init);
+  </script>
+</body>
+</html>

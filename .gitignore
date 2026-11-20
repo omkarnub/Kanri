@@ -22,5 +22,11 @@ skills-lock.json
 *.png
 !app/src/main/res/**/*.png
 !docs/screenshots/*.png
+!kanri-motion/deliverables/*.png
 scratch/
+kanri-motion/out/
+kanri-motion/.venv/
+__pycache__/
+*.pyc
+
 
