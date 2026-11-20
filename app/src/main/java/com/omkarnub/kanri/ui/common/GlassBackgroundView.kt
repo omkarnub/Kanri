@@ -25,8 +25,6 @@ import androidx.compose.ui.viewinterop.AndroidView
 import androidx.lifecycle.Lifecycle
 import androidx.lifecycle.LifecycleEventObserver
 import androidx.lifecycle.compose.LocalLifecycleOwner
-import com.omkarnub.kanri.ui.common.agsl.AgslShaderBackground
-import com.omkarnub.kanri.ui.common.agsl.AgslShaderLibrary
 import com.omkarnub.kanri.ui.theme.GlassCapabilities
 
 enum class GlassBackgroundType(val id: String, val displayName: String, val fileName: String) {
@@ -78,16 +76,6 @@ fun GlassShaderBackground(
                         listOf(Color(0xFF0F172A), Color(0xFF020617))
                     )
                 )
-        )
-        return
-    }
-
-    // Tier 1: On Android 13+ (API 33+), render supported shaders natively in AGSL
-    // completely eliminating WebView, Chromium IPC, and interop latency.
-    if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.TIRAMISU && AgslShaderLibrary.hasAgslShader(backgroundType)) {
-        AgslShaderBackground(
-            backgroundType = backgroundType,
-            modifier = modifier
         )
         return
     }

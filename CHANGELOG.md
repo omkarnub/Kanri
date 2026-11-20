@@ -5,6 +5,16 @@ All notable changes to Kanri will be documented in this file.
 The format is based on [Keep a Changelog](https://keepachangelog.com/en/1.0.0/),
 and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0.html).
 
+## [1.19.7] - 2026-11-21
+
+### Fixed
+- **Restored Original HTML/WebGL/Canvas Backgrounds (`GlassBackgroundView.kt`, `sumi_e_mist.html`, `aurora.html`)**:
+  - Removed the AGSL intercept in `GlassBackgroundView.kt`, restoring 100% of all backgrounds to their authentic original artwork files in `app/src/main/assets/backgrounds/` (`aurora.html`, `sumi_e_mist.html`, `cloud_shader.html`, `grain_gradient.html`, `hero_geometric.html`, `ink_ridges.html`, `prism_gradient.html`, etc.).
+  - Restored `filter: blur(80px)` in `aurora.html` for lush glowing orb diffusion.
+  - Sized `sumi_e_mist.html` canvas to 540×960 (CSS-scaled to 100vw, 100vh), slashing bitmap RAM from 66 MB to 16 MB to prevent Chromium render process out-of-memory crashes while keeping 100% of the authentic Japanese watercolor ink art.
+  - Retained `window.__kanriPause` gesture freeze and 30 FPS RAF throttling in WebView during scrolling for smooth 120 FPS performance on Mali-G57 MC2.
+- Bumped version to `1.19.7` (Build 74).
+
 ## [1.19.6] - 2026-11-21
 
 ### Fixed
