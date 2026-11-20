@@ -1,0 +1,202 @@
+<!DOCTYPE html>
+<html lang="en" data-theme="dark">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>Privacy Policy | Kanri — Offline Expense Tracker</title>
+  <meta name="description" content="Official Privacy Policy for Kanri. 100% on-device data sovereignty, zero telemetry, zero analytics, zero ads, and optional client-side encrypted Google Drive backup.">
+  <link rel="canonical" href="https://omkarnub.github.io/Kanri/privacy/">
+  
+  <link rel="icon" type="image/png" href="../assets/images/kanri_app_icon_dark.png">
+  <link rel="stylesheet" href="../assets/css/typography.css">
+  <link rel="stylesheet" href="../assets/css/main.css">
+  <link rel="stylesheet" href="../assets/css/components.css">
+  <link rel="stylesheet" href="../assets/css/docs.css">
+</head>
+<body>
+  <header class="site-header">
+    <div class="container header-inner">
+      <a href="../index.html" class="brand-link">
+        <img src="../assets/images/kanri_app_icon_dark.png" alt="Kanri Logo" class="brand-icon">
+        <span class="brand-name">KANRI</span>
+        <span class="brand-kanji">管理</span>
+      </a>
+
+      <nav class="main-nav">
+        <a href="../index.html#features" class="nav-link">Features</a>
+        <a href="../index.html#widgets" class="nav-link">Widgets</a>
+        <a href="../docs/index.html" class="nav-link">Docs</a>
+        <a href="../changelog/index.html" class="nav-link">Changelog</a>
+        <a href="../faq/index.html" class="nav-link">FAQ</a>
+      </nav>
+
+      <div class="header-actions">
+        <button id="theme-toggle-btn" class="theme-toggle-btn" aria-label="Toggle theme">
+          <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+            <circle cx="12" cy="12" r="5"></circle>
+            <line x1="12" y1="1" x2="12" y2="3"></line>
+            <line x1="12" y1="21" x2="12" y2="23"></line>
+          </svg>
+        </button>
+        <a href="../index.html#download" class="btn btn-primary btn-sm">Download APK</a>
+      </div>
+    </div>
+  </header>
+
+  <main class="section">
+    <div class="container container-narrow">
+      <div class="docs-breadcrumbs">
+        <a href="../index.html">Home</a>
+        <span>/</span>
+        <span>Privacy Policy</span>
+      </div>
+
+      <h1 style="font-size:2.5rem; margin-bottom:8px;">Kanri Official Privacy Policy</h1>
+      <p style="color:var(--muted); font-size:0.875rem; margin-bottom:32px;">
+        <strong>Effective Date:</strong> September 26, 2026 &nbsp;·&nbsp; 
+        <strong>Last Updated:</strong> November 21, 2026 (v1.19.8) &nbsp;·&nbsp;
+        <strong>Application ID:</strong> <code>com.omkarnub.kanri</code>
+      </p>
+
+      <!-- Plain Language Summary Box -->
+      <div class="callout callout-note" style="border-left-width:6px; padding:28px;">
+        <h3 style="font-size:1.125rem; margin-bottom:12px; color:var(--text);">Plain-Language Privacy Summary</h3>
+        <ul style="color:var(--text-secondary); font-size:0.9375rem; line-height:1.7; margin-left:20px;">
+          <li><strong>Zero Tracking:</strong> Kanri has no tracking scripts, no Facebook SDK, no Google Analytics, and no marketing beacons.</li>
+          <li><strong>100% On-Device Ledger:</strong> All transaction records, categories, budgets, and savings goals reside in private encrypted SQLite storage on your physical device.</li>
+          <li><strong>No Server Database:</strong> The developer does not operate user accounts or remote database servers. We cannot see, sell, or monetize your transactions.</li>
+          <li><strong>Optional Encrypted Drive Sync:</strong> If you choose Cloud Backup mode, Kanri uploads an AES-GCM encrypted backup file directly to your personal Google Drive using the restricted <code>drive.file</code> scope. Zero intermediary proxy servers are involved.</li>
+          <li><strong>OTPs Are Never Stored:</strong> One-time passwords and security verification codes are automatically identified and discarded in memory.</li>
+        </ul>
+      </div>
+
+      <div class="docs-content" style="margin-top:40px;">
+        <h2>1. Architectural Philosophy: Offline-First Data Sovereignty</h2>
+        <p>
+          Kanri is engineered specifically to give users complete sovereignty over their personal financial records. Kanri does not operate proprietary database or user account servers. All transaction logs, category tags, monthly budgets, and personal savings goals are stored solely on your local device.
+        </p>
+
+        <h2>2. On-Device Data Storage</h2>
+        <p>
+          All data created during your use of Kanri resides in private application sandbox storage utilizing encrypted Room/SQLite database architectures:
+        </p>
+        <ul>
+          <li><strong>Transactions:</strong> Timestamp, amount, notes, merchant name, category classification, and payment mode (UPI, Debit/Credit Card, NetBanking, Cash).</li>
+          <li><strong>Wallet Balances:</strong> Entered by the user and calculated locally; no balance data ever leaves the device.</li>
+          <li><strong>Budgets:</strong> Monthly spending limits, category budgets, and custom budget cycle dates.</li>
+          <li><strong>User Profile:</strong> Locally customized display name, optional date of birth, and cached avatar image.</li>
+          <li><strong>Application Preferences:</strong> Theme preference, device lock settings, and custom category rules.</li>
+        </ul>
+
+        <h2>3. Device Permissions & Transparency</h2>
+        <div class="table-responsive" style="margin:24px 0;">
+          <table class="data-table">
+            <thead>
+              <tr>
+                <th>Permission</th>
+                <th>Technical Name</th>
+                <th>Purpose & Scope</th>
+                <th>Network Transmission</th>
+              </tr>
+            </thead>
+            <tbody>
+              <tr>
+                <td><strong>SMS Detection</strong></td>
+                <td><code>RECEIVE_SMS</code><br><code>READ_SMS</code></td>
+                <td>Scans incoming bank transactional SMS notifications locally on-device using regex engines to auto-log expenses without manual input.</td>
+                <td><strong>None.</strong> Processed purely in memory. Never uploaded.</td>
+              </tr>
+              <tr>
+                <td><strong>Notification Access</strong></td>
+                <td><code>BIND_NOTIFICATION_LISTENER_SERVICE</code></td>
+                <td>Captures payment app alerts (GPay, PhonePe, Paytm, CRED) for instant merchant name enrichment and credits.</td>
+                <td><strong>None.</strong> Filtered strictly to supported payment apps.</td>
+              </tr>
+              <tr>
+                <td><strong>Instant Overlay</strong></td>
+                <td><code>SYSTEM_ALERT_WINDOW</code></td>
+                <td>Displays a lightweight floating category chip right after a detected payment so you can assign categories in 1 tap.</td>
+                <td><strong>None.</strong> Purely local window manager drawing.</td>
+              </tr>
+              <tr>
+                <td><strong>App Security</strong></td>
+                <td><code>USE_BIOMETRIC</code></td>
+                <td>Protects app entry using native Android BiometricPrompt hardware security.</td>
+                <td><strong>None.</strong> Managed strictly by device Keystore/TEE.</td>
+              </tr>
+              <tr>
+                <td><strong>Reminders & Alerts</strong></td>
+                <td><code>POST_NOTIFICATIONS</code></td>
+                <td>Delivers local daily review nudges at 9 PM and approaching lending repayment alerts.</td>
+                <td><strong>None.</strong> Dispatched strictly on-device via WorkManager.</td>
+              </tr>
+              <tr>
+                <td><strong>Boot Persistence</strong></td>
+                <td><code>RECEIVE_BOOT_COMPLETED</code></td>
+                <td>Restores widget update intervals and background reminder schedulers after device restart.</td>
+                <td><strong>None.</strong> Purely local broadcast receiver.</td>
+              </tr>
+              <tr>
+                <td><strong>Drive Backup & Updates</strong></td>
+                <td><code>INTERNET</code><br><code>ACCESS_NETWORK_STATE</code></td>
+                <td>Communicates directly with Google Drive API when the user explicitly chooses Cloud Backup mode, and checks for verified GitHub updates.</td>
+                <td>Direct TLS connection to Google Drive API and GitHub API only. Zero custom server communication.</td>
+              </tr>
+            </tbody>
+          </table>
+        </div>
+
+        <h2>4. Google Drive Integration & Restricted drive.file Scope</h2>
+        <p>
+          Kanri provides an optional Cloud Backup mode utilizing your personal Google Drive account.
+        </p>
+        <h3>The Restricted drive.file Scope</h3>
+        <p>
+          Kanri strictly requests <code>https://www.googleapis.com/auth/drive.file</code>. This restricted scope guarantees:
+        </p>
+        <ul>
+          <li><strong>Isolated Access:</strong> Kanri can <strong>only</strong> read and write the specific encrypted backup file (<code>kanri_backup.enc</code>) that Kanri itself creates.</li>
+          <li><strong>Zero Access to Other Files:</strong> Kanri has <strong>no ability</strong> to view, list, read, or modify your personal files, photos, sheets, or documents stored in Google Drive.</li>
+        </ul>
+        <h3>Client-Side Encryption</h3>
+        <p>
+          Before any backup data leaves your device, it is encrypted using PBKDF2 (65,536 iterations) and AES-GCM encryption. Even when stored in Google Drive, the file cannot be deciphered without your master passphrase.
+        </p>
+
+        <h2>5. Third-Party Libraries & Telemetry</h2>
+        <ul>
+          <li><strong>No Analytics:</strong> No Google Analytics, Firebase Analytics, Mixpanel, or Segment.</li>
+          <li><strong>No Advertising:</strong> No Google AdMob or ad networks of any kind.</li>
+          <li><strong>Local Diagnostics:</strong> Crash and health logs are retained strictly in internal device cache for the user's manual review and are never automatically dispatched.</li>
+        </ul>
+
+        <h2>6. Data Deletion & Export Rights</h2>
+        <p>
+          You maintain 100% control over your data:
+        </p>
+        <ul>
+          <li><strong>Instant Data Wiping:</strong> Under <em>Settings > Danger Zone > Reset All Data</em>, you can instantly delete all local databases, cached images, and preferences.</li>
+          <li><strong>Export Formats:</strong> You can export your full data anytime in open formats: encrypted JSON backups, monthly PDF statements, or CSV spreadsheets.</li>
+        </ul>
+
+        <h2>7. Contact Information</h2>
+        <p>
+          For any inquiries or technical questions regarding this Privacy Policy:
+        </p>
+        <ul>
+          <li><strong>Repository & Issues:</strong> <a href="https://github.com/omkarnub/Kanri/issues" target="_blank" rel="noopener noreferrer">https://github.com/omkarnub/Kanri/issues</a></li>
+          <li><strong>Author:</strong> Omkar Prabhu (<a href="https://github.com/omkarnub" target="_blank" rel="noopener noreferrer">@omkarnub</a>)</li>
+        </ul>
+      </div>
+    </div>
+  </main>
+
+  <footer class="site-footer">
+    <div class="container" style="text-align:center; font-size:0.875rem; color:var(--muted);">
+      <p>© 2026 Kanri · Licensed under GNU GPL-3.0 · <a href="../index.html" style="color:var(--text);">Home</a> · <a href="../terms/index.html" style="color:var(--text);">Terms of Use</a></p>
+    </div>
+  </footer>
+
+  <script src="../assets/js/theme.js"></script>
+</body>
+</html>

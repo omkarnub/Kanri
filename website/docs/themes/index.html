@@ -1,0 +1,169 @@
+<!DOCTYPE html>
+<html lang="en" data-theme="dark">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>Themes & Liquid Glass Engine | Kanri Documentation</title>
+  <meta name="description" content="Technical guide to Kanri's 5 visual themes, 22 animated backdrops, AGSL GPU shaders, and 120Hz gesture-freeze performance.">
+  <link rel="canonical" href="https://omkarnub.github.io/Kanri/docs/themes/">
+  <link rel="icon" type="image/png" href="../../assets/images/kanri_app_icon_dark.png">
+  <link rel="stylesheet" href="../../assets/css/typography.css">
+  <link rel="stylesheet" href="../../assets/css/main.css">
+  <link rel="stylesheet" href="../../assets/css/components.css">
+  <link rel="stylesheet" href="../../assets/css/docs.css">
+</head>
+<body>
+  <header class="site-header">
+    <div class="container header-inner">
+      <a href="../../index.html" class="brand-link">
+        <img src="../../assets/images/kanri_app_icon_dark.png" alt="Kanri Logo" class="brand-icon">
+        <span class="brand-name">KANRI</span>
+        <span class="brand-kanji">管理</span>
+      </a>
+
+      <nav class="main-nav">
+        <a href="../../index.html#features" class="nav-link">Features</a>
+        <a href="../../index.html#widgets" class="nav-link">Widgets</a>
+        <a href="../index.html" class="nav-link active">Docs</a>
+        <a href="../../changelog/index.html" class="nav-link">Changelog</a>
+        <a href="../../faq/index.html" class="nav-link">FAQ</a>
+      </nav>
+
+      <div class="header-actions">
+        <button id="theme-toggle-btn" class="theme-toggle-btn" aria-label="Toggle theme">
+          <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+            <circle cx="12" cy="12" r="5"></circle>
+            <line x1="12" y1="1" x2="12" y2="3"></line>
+            <line x1="12" y1="21" x2="12" y2="23"></line>
+          </svg>
+        </button>
+        <a href="../../index.html#download" class="btn btn-primary btn-sm">Download APK</a>
+      </div>
+    </div>
+  </header>
+
+  <div class="container docs-layout">
+    <!-- Sidebar -->
+    <aside class="docs-sidebar">
+      <input type="search" id="docs-search-input" class="docs-search-input" placeholder="Search documentation..." aria-label="Search documentation">
+
+      <div class="docs-nav-group">
+        <div class="docs-nav-title">Core Systems</div>
+        <ul class="docs-nav-list">
+          <li><a href="../index.html" class="docs-nav-link">Overview</a></li>
+          <li><a href="../getting-started/index.html" class="docs-nav-link">1. Getting Started</a></li>
+          <li><a href="../capture-dedupe/index.html" class="docs-nav-link">2. Capture & Dedupe</a></li>
+          <li><a href="../wallets/index.html" class="docs-nav-link">3. Cash & Online Wallets</a></li>
+        </ul>
+      </div>
+
+      <div class="docs-nav-group">
+        <div class="docs-nav-title">Ledger & Analytics</div>
+        <ul class="docs-nav-list">
+          <li><a href="../lend-borrow/index.html" class="docs-nav-link">4. Lend, Borrow & Split</a></li>
+          <li><a href="../budgets-goals/index.html" class="docs-nav-link">5. Budgets & Goals</a></li>
+          <li><a href="../insights-health-score/index.html" class="docs-nav-link">6. Insights & Health Score</a></li>
+        </ul>
+      </div>
+
+      <div class="docs-nav-group">
+        <div class="docs-nav-title">Visuals & Security</div>
+        <ul class="docs-nav-list">
+          <li><a href="../widgets/index.html" class="docs-nav-link">7. 12 Pixel DotTiles Widgets</a></li>
+          <li><a href="index.html" class="docs-nav-link active">8. Themes & Backdrops</a></li>
+          <li><a href="../backup-restore/index.html" class="docs-nav-link">9. Backup & Restore</a></li>
+          <li><a href="../security-model/index.html" class="docs-nav-link">10. Security Architecture</a></li>
+          <li><a href="../troubleshooting/index.html" class="docs-nav-link">11. Troubleshooting & OEMs</a></li>
+        </ul>
+      </div>
+    </aside>
+
+    <!-- Main Content -->
+    <article class="docs-content">
+      <div class="docs-breadcrumbs">
+        <a href="../../index.html">Home</a>
+        <span>/</span>
+        <a href="../index.html">Docs</a>
+        <span>/</span>
+        <span>8. Themes & Backdrops</span>
+      </div>
+
+      <h1>8. Themes, Backdrops & Liquid Glass Engine</h1>
+      <p class="lead">
+        Learn how Kanri pairs visual depth with butter-smooth 120 FPS performance on mid-range Android hardware.
+      </p>
+
+      <h2 id="five-themes">1. The Five Visual Themes</h2>
+      <ul>
+        <li><strong>Light (Warm Cream <code>#FAF9F5</code>):</strong> Soft, high-readability Japanese paper aesthetic with warm borders and high-contrast ink text.</li>
+        <li><strong>Dark (Deep Ink <code>#121212</code>):</strong> Kanri's signature low-fatigue slate dark mode.</li>
+        <li><strong>AMOLED (Pure Black <code>#000000</code>):</strong> Complete sub-pixel shutdown on OLED panels, maximizing battery longevity.</li>
+        <li><strong>System:</strong> Follows Android's native day/night toggle automatically.</li>
+        <li><strong>Liquid Glass:</strong> Dynamic translucent frosted glass cards floating above authentic animated art backdrops.</li>
+      </ul>
+
+      <h2 id="liquid-glass">2. The Liquid Glass Engine (KanriGlass.kt)</h2>
+      <p>
+        In Glass mode, components render frosted blur with specular edge lighting:
+      </p>
+      <ul>
+        <li><strong>Layer Isolation:</strong> Restricts expensive GPU blur passes strictly to floating overlays (navigation docks, entry sheets) to prevent "blur avalanche" lag.</li>
+        <li><strong>50% Downsampling:</strong> Utilizes <code>HazeInputScale.Fixed(0.5f)</code> to maintain crisp optical blur while slashing GPU compute loads by 75%.</li>
+      </ul>
+
+      <h2 id="gpu-performance">3. AGSL GPU Shaders & 120 FPS Gesture Freeze</h2>
+      <p>
+        Running real-time shaders on Android devices with Mali GPUs (e.g. Mali-G57 MC2) can cause dropped frames during scrolling. Kanri applies strict optimizations:
+      </p>
+      <ol>
+        <li><strong>16-Bit Half Precision:</strong> All AGSL vector math and noise evaluations are cast to <code>half</code> precision, doubling ALU throughput.</li>
+        <li><strong>Uniform Hoisting:</strong> The aspect ratio uniform (<code>u_aspect</code>) is precomputed on the CPU, eliminating 650,000 redundant divisions per frame.</li>
+        <li><strong>Touch-Pause Gesture Freeze:</strong> Driven by <code>MainActivity.isUserInteracting</code>: shader time advancement pauses during active screen drag and fling gestures, guaranteeing 100% of GPU power is reserved for 120Hz UI scroll inertia.</li>
+        <li><strong>Battery Saver Auto-Detect:</strong> Shaders automatically pause when Android enters Battery Saver mode or the screen is turned off.</li>
+      </ol>
+
+      <h2 id="launcher-icons">4. Four Custom Launcher App Icons</h2>
+      <p>
+        Managed by <code>AppIconManager.kt</code> via Android activity aliases:
+      </p>
+      <ul>
+        <li><strong>Classic Ink:</strong> The official dark Kanri emblem.</li>
+        <li><strong>Cream Paper:</strong> Warm light-mode emblem.</li>
+        <li><strong>Cyber Monochrome:</strong> Minimalist Nothing-inspired black-and-white icon.</li>
+        <li><strong>Emerald Matrix:</strong> High-contrast green matrix emblem.</li>
+      </ul>
+
+      <div class="docs-pagination">
+        <a href="../widgets/index.html" class="docs-page-btn">
+          <span class="docs-page-label">Previous</span>
+          <span class="docs-page-title">← 7. 12 Pixel DotTiles Widgets</span>
+        </a>
+        <a href="../backup-restore/index.html" class="docs-page-btn next">
+          <span class="docs-page-label">Next Chapter</span>
+          <span class="docs-page-title">9. Backup & Restore →</span>
+        </a>
+      </div>
+    </article>
+
+    <!-- Table of Contents -->
+    <aside class="docs-toc">
+      <div class="docs-toc-title">On this page</div>
+      <ul class="docs-toc-list">
+        <li><a href="#five-themes">The Five Visual Themes</a></li>
+        <li><a href="#liquid-glass">Liquid Glass Engine</a></li>
+        <li><a href="#gpu-performance">AGSL GPU Optimizations</a></li>
+        <li><a href="#launcher-icons">Launcher App Icons</a></li>
+      </ul>
+    </aside>
+  </div>
+
+  <footer class="site-footer">
+    <div class="container" style="text-align:center; font-size:0.875rem; color:var(--muted);">
+      <p>© 2026 Kanri · Licensed under GNU GPL-3.0 · <a href="../../index.html" style="color:var(--text);">Home</a> · <a href="../../privacy/index.html" style="color:var(--text);">Privacy Policy</a></p>
+    </div>
+  </footer>
+
+  <script src="../../assets/js/theme.js"></script>
+  <script src="../../assets/js/search.js"></script>
+</body>
+</html>

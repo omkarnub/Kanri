@@ -1,0 +1,245 @@
+<!DOCTYPE html>
+<html lang="en" data-theme="dark">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>12 Pixel DotTiles Widgets | Kanri Documentation</title>
+  <meta name="description" content="Technical guide to Kanri's 12 home screen widgets: dot-matrix typography, shared Canvas engine, and battery-safe resets.">
+  <link rel="canonical" href="https://omkarnub.github.io/Kanri/docs/widgets/">
+  <link rel="icon" type="image/png" href="../../assets/images/kanri_app_icon_dark.png">
+  <link rel="stylesheet" href="../../assets/css/typography.css">
+  <link rel="stylesheet" href="../../assets/css/main.css">
+  <link rel="stylesheet" href="../../assets/css/components.css">
+  <link rel="stylesheet" href="../../assets/css/docs.css">
+</head>
+<body>
+  <header class="site-header">
+    <div class="container header-inner">
+      <a href="../../index.html" class="brand-link">
+        <img src="../../assets/images/kanri_app_icon_dark.png" alt="Kanri Logo" class="brand-icon">
+        <span class="brand-name">KANRI</span>
+        <span class="brand-kanji">管理</span>
+      </a>
+
+      <nav class="main-nav">
+        <a href="../../index.html#features" class="nav-link">Features</a>
+        <a href="../../index.html#widgets" class="nav-link">Widgets</a>
+        <a href="../index.html" class="nav-link active">Docs</a>
+        <a href="../../changelog/index.html" class="nav-link">Changelog</a>
+        <a href="../../faq/index.html" class="nav-link">FAQ</a>
+      </nav>
+
+      <div class="header-actions">
+        <button id="theme-toggle-btn" class="theme-toggle-btn" aria-label="Toggle theme">
+          <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+            <circle cx="12" cy="12" r="5"></circle>
+            <line x1="12" y1="1" x2="12" y2="3"></line>
+            <line x1="12" y1="21" x2="12" y2="23"></line>
+          </svg>
+        </button>
+        <a href="../../index.html#download" class="btn btn-primary btn-sm">Download APK</a>
+      </div>
+    </div>
+  </header>
+
+  <div class="container docs-layout">
+    <!-- Sidebar -->
+    <aside class="docs-sidebar">
+      <input type="search" id="docs-search-input" class="docs-search-input" placeholder="Search documentation..." aria-label="Search documentation">
+
+      <div class="docs-nav-group">
+        <div class="docs-nav-title">Core Systems</div>
+        <ul class="docs-nav-list">
+          <li><a href="../index.html" class="docs-nav-link">Overview</a></li>
+          <li><a href="../getting-started/index.html" class="docs-nav-link">1. Getting Started</a></li>
+          <li><a href="../capture-dedupe/index.html" class="docs-nav-link">2. Capture & Dedupe</a></li>
+          <li><a href="../wallets/index.html" class="docs-nav-link">3. Cash & Online Wallets</a></li>
+        </ul>
+      </div>
+
+      <div class="docs-nav-group">
+        <div class="docs-nav-title">Ledger & Analytics</div>
+        <ul class="docs-nav-list">
+          <li><a href="../lend-borrow/index.html" class="docs-nav-link">4. Lend, Borrow & Split</a></li>
+          <li><a href="../budgets-goals/index.html" class="docs-nav-link">5. Budgets & Goals</a></li>
+          <li><a href="../insights-health-score/index.html" class="docs-nav-link">6. Insights & Health Score</a></li>
+        </ul>
+      </div>
+
+      <div class="docs-nav-group">
+        <div class="docs-nav-title">Visuals & Security</div>
+        <ul class="docs-nav-list">
+          <li><a href="index.html" class="docs-nav-link active">7. 12 Pixel DotTiles Widgets</a></li>
+          <li><a href="../themes/index.html" class="docs-nav-link">8. Themes & Backdrops</a></li>
+          <li><a href="../backup-restore/index.html" class="docs-nav-link">9. Backup & Restore</a></li>
+          <li><a href="../security-model/index.html" class="docs-nav-link">10. Security Architecture</a></li>
+          <li><a href="../troubleshooting/index.html" class="docs-nav-link">11. Troubleshooting & OEMs</a></li>
+        </ul>
+      </div>
+    </aside>
+
+    <!-- Main Content -->
+    <article class="docs-content">
+      <div class="docs-breadcrumbs">
+        <a href="../../index.html">Home</a>
+        <span>/</span>
+        <a href="../index.html">Docs</a>
+        <span>/</span>
+        <span>7. 12 Pixel DotTiles Widgets</span>
+      </div>
+
+      <h1>7. The Pixel DotTiles Widget System</h1>
+      <p class="lead">
+        Learn how Kanri's 12 home screen widgets are rendered using a shared pure Canvas engine, custom Ndot57 dot-matrix typography, and zero-drain battery architectures.
+      </p>
+
+      <h2 id="dot-matrix-design">1. Dot-Matrix Design Language & Typography</h2>
+      <p>
+        Kanri's widget subsystem is unified around a tactile, Nothing-inspired aesthetic:
+      </p>
+      <ul>
+        <li><strong>Ndot57 Typography (<code>ndot57.otf</code>):</strong> Authentic tabular dot-matrix numerals and symbols.</li>
+        <li><strong>Zero Distortion Engine:</strong> Dynamically calculates <code>fitCenter</code> bounds to ensure dot circles and glyphs never stretch across varying launcher column widths.</li>
+        <li><strong>Strict 3-Tier Grammar:</strong> (1) Top uppercase label · (2) Hero numeral metric · (3) Bottom visual primitive.</li>
+      </ul>
+
+      <h2 id="widget-roster">2. Roster of the 12 Widgets</h2>
+      <div class="table-responsive">
+        <table class="data-table">
+          <thead>
+            <tr>
+              <th>#</th>
+              <th>Widget Name</th>
+              <th>Supported Grid</th>
+              <th>Displayed Metric</th>
+            </tr>
+          </thead>
+          <tbody>
+            <tr>
+              <td>1</td>
+              <td><strong>Today</strong></td>
+              <td>2x2, 4x2</td>
+              <td>Spent today, count, pacing bar, 4 session checkpoints (MORN, AFTN, EVE, NIGHT).</td>
+            </tr>
+            <tr>
+              <td>2</td>
+              <td><strong>Budget</strong></td>
+              <td>2x1, 2x2, 4x2</td>
+              <td>Dual progress bars: used budget percentage and remaining days pacing marker.</td>
+            </tr>
+            <tr>
+              <td>3</td>
+              <td><strong>Wallets</strong></td>
+              <td>2x2, 4x2</td>
+              <td>Net balance hero, Cash vs. Bank breakdown rows with allocation percentages.</td>
+            </tr>
+            <tr>
+              <td>4</td>
+              <td><strong>Goals</strong></td>
+              <td>2x2, 4x1</td>
+              <td>Savings milestone slider, percentage achieved, 25/50/75/100% milestone ticks.</td>
+            </tr>
+            <tr>
+              <td>5</td>
+              <td><strong>Dues</strong></td>
+              <td>2x2, 4x2</td>
+              <td>Net receivable/payable subtitle and top lend/borrow contacts with +₹ / -₹ values.</td>
+            </tr>
+            <tr>
+              <td>6</td>
+              <td><strong>Financial Sky</strong></td>
+              <td>4x2</td>
+              <td>Flagship weather well (sun/moon arc, stars, clouds), today spend, and 7-day pacing.</td>
+            </tr>
+            <tr>
+              <td>7</td>
+              <td><strong>Month Heatmap</strong></td>
+              <td>4x3, 4x2</td>
+              <td>GitHub-style 7x5 matrix with 4 intensity levels, day labels, and today ring.</td>
+            </tr>
+            <tr>
+              <td>8</td>
+              <td><strong>No-Spend Streak</strong></td>
+              <td>2x2, 4x1</td>
+              <td>Consecutive zero-spend days, all-time record, and a row of 7 pixelated flames.</td>
+            </tr>
+            <tr>
+              <td>9</td>
+              <td><strong>Safe to Spend</strong></td>
+              <td>2x2, 4x1</td>
+              <td>Daily spending allowance remaining until salary cycle ends vs today's spend.</td>
+            </tr>
+            <tr>
+              <td>10</td>
+              <td><strong>Review Inbox</strong></td>
+              <td>2x1, 2x2</td>
+              <td>Count of uncategorized SMS transactions and total pending amount.</td>
+            </tr>
+            <tr>
+              <td>11</td>
+              <td><strong>Month Delta</strong></td>
+              <td>2x2, 4x2</td>
+              <td>Spending comparison against the exact same calendar day of the prior month (▲/▼).</td>
+            </tr>
+            <tr>
+              <td>12</td>
+              <td><strong>Quick Actions</strong></td>
+              <td>4x1, 2x1</td>
+              <td>Tactile 1-tap pixel glyph buttons for Expense (-), Income (+), and Split (÷).</td>
+            </tr>
+          </tbody>
+        </table>
+      </div>
+
+      <h2 id="battery-architecture">3. Zero-Drain Battery Architecture</h2>
+      <p>
+        Home screen widgets are notorious for draining battery when implemented with endless background timers. Kanri enforces strict battery safeguards:
+      </p>
+      <ul>
+        <li><strong>No Infinite Timers:</strong> Widgets never poll or tick in loops.</li>
+        <li><strong>Rate-Limited Update Bursts:</strong> Updates occur strictly on transactional events (new SMS, resolved review, manual entry) with a hard clamp of at most 1 update per 5 seconds.</li>
+        <li><strong>Midnight Reset Worker:</strong> A single lightweight <code>WorkManager</code> job wakes up precisely at 00:00 to reset "Today" metrics and shift the calendar matrix without waking the CPU during the day.</li>
+      </ul>
+
+      <h2 id="quick-entry">4. Floating Quick Entry with Glass Blur</h2>
+      <p>
+        Tapping any action button on the <strong>Quick Actions</strong>, <strong>Today</strong>, or <strong>Safe to Spend</strong> widgets launches <code>QuickEntryActivity.kt</code>.
+      </p>
+      <p>
+        This activity runs as a lightweight floating dialog with authentic frosted glass blur (using an isolated <code>quickHazeState</code>), allowing you to enter an expense and dismiss it without ever launching the main Android activity stack.
+      </p>
+
+      <div class="docs-pagination">
+        <a href="../insights-health-score/index.html" class="docs-page-btn">
+          <span class="docs-page-label">Previous</span>
+          <span class="docs-page-title">← 6. Insights & Health Score</span>
+        </a>
+        <a href="../themes/index.html" class="docs-page-btn next">
+          <span class="docs-page-label">Next Chapter</span>
+          <span class="docs-page-title">8. Themes & Backdrops →</span>
+        </a>
+      </div>
+    </article>
+
+    <!-- Table of Contents -->
+    <aside class="docs-toc">
+      <div class="docs-toc-title">On this page</div>
+      <ul class="docs-toc-list">
+        <li><a href="#dot-matrix-design">Dot-Matrix Design</a></li>
+        <li><a href="#widget-roster">12 Widgets Roster</a></li>
+        <li><a href="#battery-architecture">Zero-Drain Battery</a></li>
+        <li><a href="#quick-entry">Floating Quick Entry</a></li>
+      </ul>
+    </aside>
+  </div>
+
+  <footer class="site-footer">
+    <div class="container" style="text-align:center; font-size:0.875rem; color:var(--muted);">
+      <p>© 2026 Kanri · Licensed under GNU GPL-3.0 · <a href="../../index.html" style="color:var(--text);">Home</a> · <a href="../../privacy/index.html" style="color:var(--text);">Privacy Policy</a></p>
+    </div>
+  </footer>
+
+  <script src="../../assets/js/theme.js"></script>
+  <script src="../../assets/js/search.js"></script>
+</body>
+</html>

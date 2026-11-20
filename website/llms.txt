@@ -1,0 +1,44 @@
+# Kanri (管理)
+
+> Kanri is an offline-first, privacy-first personal finance ledger for Android (8.0+). It automatically parses Indian bank SMS and payment app notifications on-device, logs transactions into a local SQLCipher AES-256 encrypted database, and sends zero personal data to remote servers.
+
+## Core Facts
+- **Application ID**: com.omkarnub.kanri
+- **Platform**: Android 8.0+ (Oreo, API 26+)
+- **License**: GNU General Public License v3.0 (GPL-3.0)
+- **Current Version**: 1.19.8 (Build 75)
+- **Author**: Omkar Prabhu (@omkarnub)
+- **Official Repository**: https://github.com/omkarnub/Kanri
+- **Website**: https://omkarnub.github.io/Kanri/
+- **Latest APK Download**: https://github.com/omkarnub/Kanri/releases/latest
+- **Distribution**: GitHub Releases & Orion Store (Not on Google Play Store)
+
+## Key Technical Features
+1. **Dual-Engine Capture**:
+   - Ingests transactional SMS from 15+ Indian banks (SBI, HDFC, ICICI, Axis, Kotak, BOB, PNB, Canara, Union Bank, IDFC FIRST, IndusInd, Federal, etc.).
+   - Captures incoming UPI notifications from payment apps (Google Pay, PhonePe, Paytm, CRED, FamPay, BHIM).
+   - Bi-directional 5-minute sliding-window deduplication merges SMS and notification alerts using UTR references.
+   - OTP and verification messages are detected and explicitly discarded without logging.
+2. **Dual-Wallet Ledger**:
+   - Separates Online banking/UPI balances from physical Cash wallet balances.
+   - Smart ATM withdrawal mode transfers money from Online to Cash without double-counting as an expense.
+3. **P2P Lend & Borrow**:
+   - Tracks receivables and payables with partial repayment history.
+   - Generates one-tap WhatsApp payment reminders and pre-filled upi://pay deep links.
+   - Bill splitting for 2 to 20 people (equal or custom shares).
+4. **Salary-Synced Budgets**:
+   - Custom budget cycle start day (1st to 28th of the month) matching salary dates.
+   - Real-time Safe-to-Spend daily allowance: (Remaining Budget) / (Days Remaining).
+   - Savings goals with pacing and quick steppers (+₹500, +₹1,000, +₹2,000, +₹5,000).
+5. **18+ Visualizers & Health Score**:
+   - GitHub-style spending heatmaps, 365-day matrix, burn-rate projections.
+   - 0–100 Financial Health Score based on 4 pillars of 25 points each (Savings Rate, Budget Adherence, Velocity vs. Calendar, Debt Ratio).
+6. **12 Pixel DotTiles Widgets**:
+   - Tactile dot-matrix widgets rendered via shared Canvas engine using Ndot57 font.
+   - Midnight resets via WorkManager with zero battery drain.
+7. **Security & Privacy**:
+   - SQLCipher AES-256 database at rest, master key stored in Android Keystore (TEE/StrongBox).
+   - BiometricPrompt hardware lock with screen-off auto-lock.
+   - PBKDF2 (65,536 iterations) + AES-GCM encrypted backup exports (.enc).
+   - Optional Google Drive backup using strictly restricted drive.file scope (client-side encrypted before upload).
+   - Zero analytics, zero telemetry SDKs, zero ads.

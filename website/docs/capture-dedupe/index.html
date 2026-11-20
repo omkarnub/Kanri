@@ -1,0 +1,197 @@
+<!DOCTYPE html>
+<html lang="en" data-theme="dark">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>Capture & Dedupe | Kanri Documentation</title>
+  <meta name="description" content="Technical guide to Kanri's dual-engine SMS and notification ingestion, 5-minute sliding window deduplication, and OTP filtering.">
+  <link rel="canonical" href="https://omkarnub.github.io/Kanri/docs/capture-dedupe/">
+  <link rel="icon" type="image/png" href="../../assets/images/kanri_app_icon_dark.png">
+  <link rel="stylesheet" href="../../assets/css/typography.css">
+  <link rel="stylesheet" href="../../assets/css/main.css">
+  <link rel="stylesheet" href="../../assets/css/components.css">
+  <link rel="stylesheet" href="../../assets/css/docs.css">
+</head>
+<body>
+  <header class="site-header">
+    <div class="container header-inner">
+      <a href="../../index.html" class="brand-link">
+        <img src="../../assets/images/kanri_app_icon_dark.png" alt="Kanri Logo" class="brand-icon">
+        <span class="brand-name">KANRI</span>
+        <span class="brand-kanji">管理</span>
+      </a>
+
+      <nav class="main-nav">
+        <a href="../../index.html#features" class="nav-link">Features</a>
+        <a href="../../index.html#widgets" class="nav-link">Widgets</a>
+        <a href="../index.html" class="nav-link active">Docs</a>
+        <a href="../../changelog/index.html" class="nav-link">Changelog</a>
+        <a href="../../faq/index.html" class="nav-link">FAQ</a>
+      </nav>
+
+      <div class="header-actions">
+        <button id="theme-toggle-btn" class="theme-toggle-btn" aria-label="Toggle theme">
+          <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+            <circle cx="12" cy="12" r="5"></circle>
+            <line x1="12" y1="1" x2="12" y2="3"></line>
+            <line x1="12" y1="21" x2="12" y2="23"></line>
+          </svg>
+        </button>
+        <a href="../../index.html#download" class="btn btn-primary btn-sm">Download APK</a>
+      </div>
+    </div>
+  </header>
+
+  <div class="container docs-layout">
+    <!-- Sidebar -->
+    <aside class="docs-sidebar">
+      <input type="search" id="docs-search-input" class="docs-search-input" placeholder="Search documentation..." aria-label="Search documentation">
+
+      <div class="docs-nav-group">
+        <div class="docs-nav-title">Core Systems</div>
+        <ul class="docs-nav-list">
+          <li><a href="../index.html" class="docs-nav-link">Overview</a></li>
+          <li><a href="../getting-started/index.html" class="docs-nav-link">1. Getting Started</a></li>
+          <li><a href="index.html" class="docs-nav-link active">2. Capture & Dedupe</a></li>
+          <li><a href="../wallets/index.html" class="docs-nav-link">3. Cash & Online Wallets</a></li>
+        </ul>
+      </div>
+
+      <div class="docs-nav-group">
+        <div class="docs-nav-title">Ledger & Analytics</div>
+        <ul class="docs-nav-list">
+          <li><a href="../lend-borrow/index.html" class="docs-nav-link">4. Lend, Borrow & Split</a></li>
+          <li><a href="../budgets-goals/index.html" class="docs-nav-link">5. Budgets & Goals</a></li>
+          <li><a href="../insights-health-score/index.html" class="docs-nav-link">6. Insights & Health Score</a></li>
+        </ul>
+      </div>
+
+      <div class="docs-nav-group">
+        <div class="docs-nav-title">Visuals & Security</div>
+        <ul class="docs-nav-list">
+          <li><a href="../widgets/index.html" class="docs-nav-link">7. 12 Pixel DotTiles Widgets</a></li>
+          <li><a href="../themes/index.html" class="docs-nav-link">8. Themes & Backdrops</a></li>
+          <li><a href="../backup-restore/index.html" class="docs-nav-link">9. Backup & Restore</a></li>
+          <li><a href="../security-model/index.html" class="docs-nav-link">10. Security Architecture</a></li>
+          <li><a href="../troubleshooting/index.html" class="docs-nav-link">11. Troubleshooting & OEMs</a></li>
+        </ul>
+      </div>
+    </aside>
+
+    <!-- Main Content -->
+    <article class="docs-content">
+      <div class="docs-breadcrumbs">
+        <a href="../../index.html">Home</a>
+        <span>/</span>
+        <a href="../index.html">Docs</a>
+        <span>/</span>
+        <span>2. Capture & Dedupe</span>
+      </div>
+
+      <h1>2. Dual-Engine Capture & Deduplication</h1>
+      <p class="lead">
+        An in-depth explanation of how Kanri ingests bank SMS alerts and UPI notification popups, executes 5-minute sliding-window deduplication, and discards OTP messages.
+      </p>
+
+      <h2 id="dual-engine">1. The Dual-Engine Ingestion Pipeline</h2>
+      <p>
+        In modern Indian banking and UPI ecosystems, a single digital transaction generates two distinct signals on your Android phone:
+      </p>
+      <ul>
+        <li><strong>Bank SMS (Authoritative Accounting):</strong> Contains official debit/credit confirmation, account last-4 digits, official balance, and UTR reference number.</li>
+        <li><strong>Payment App Notification (Rich Metadata):</strong> Emitted by Google Pay, PhonePe, Paytm, or CRED; contains merchant business name (e.g., "Swiggy", "Blue Tokai Coffee") and recipient VPA.</li>
+      </ul>
+      <p>
+        Kanri captures both signals concurrently in local device memory, fusing them into a single enriched record with zero data duplication.
+      </p>
+
+      <h2 id="sms-receiver">2. Priority 999 SMS Receiver</h2>
+      <p>
+        The SMS engine is registered via <code>SmsReceiver.kt</code> with priority <code>999</code>:
+      </p>
+      <pre><code>&lt;receiver android:name=".receiver.SmsReceiver"
+    android:exported="true"
+    android:permission="android.permission.BROADCAST_SMS"&gt;
+    &lt;intent-filter android:priority="999"&gt;
+        &lt;action android:name="android.provider.Telephony.SMS_RECEIVED" /&gt;
+    &lt;/intent-filter&gt;
+&lt;/receiver&gt;</code></pre>
+      <p>
+        When an SMS arrives:
+      </p>
+      <ol>
+        <li><strong>Pre-Filter:</strong> Kanri checks sender headers against <code>BankSmsPatterns.kt</code> prefixes (e.g. <code>SBIPAY</code>, <code>HDFCBK</code>, <code>ICICIB</code>, <code>AXISBK</code>). Non-banking personal chats are immediately dropped.</li>
+        <li><strong>OTP Guard:</strong> If the text contains OTP indicators (<code>OTP</code>, <code>one-time password</code>, <code>secret code</code>, <code>valid for 10 mins</code>), parsing stops immediately. The message is dropped from memory and never persisted.</li>
+        <li><strong>Regex Parsing:</strong> Extracted amount, account ending, transaction mode (UPI, Card, ATM, NetBanking), and UTR are normalized.</li>
+      </ol>
+
+      <h2 id="notification-listener">3. Notification Listener Scoping</h2>
+      <p>
+        <code>KanriNotificationListenerService.kt</code> runs strictly in the background and is scoped exclusively to authorized financial package names:
+      </p>
+      <ul>
+        <li><code>com.google.android.apps.nbu.paisa.user</code> (Google Pay)</li>
+        <li><code>com.phonepe.app</code> (PhonePe)</li>
+        <li><code>net.one97.paytm</code> (Paytm)</li>
+        <li><code>com.dreamplug.androidapp</code> (CRED)</li>
+        <li><code>com.fampay.in</code> (FamPay)</li>
+        <li><code>in.org.npci.upiapp</code> (BHIM)</li>
+      </ul>
+      <p>
+        Notifications from messaging apps (WhatsApp, Telegram, Signal) or social platforms are completely ignored at the Android binder boundary.
+      </p>
+
+      <h2 id="dedupe-engine">4. The 5-Minute Sliding-Window Deduplication Algorithm</h2>
+      <p>
+        Because SMS delivery times vary based on cellular network latency, an SMS may arrive 10 seconds before or 4 minutes after a UPI notification.
+      </p>
+      <p>
+        <code>NotificationDeduplicationHelper.kt</code> enforces a bi-directional 5-minute sliding window:
+      </p>
+      <ol>
+        <li>When a transaction arrives from either engine, Kanri queries the local Room database for matching candidates where <code>|t_incoming - t_existing| &lt; 300,000 ms (5 minutes)</code>.</li>
+        <li><strong>UTR Match:</strong> If the 12-digit UPI reference / UTR matches, records are fused immediately.</li>
+        <li><strong>Amount & Account Match:</strong> If the UTR is missing or delayed, Kanri matches identical amounts and account last-4 digits within the same time window.</li>
+        <li><strong>Metadata Enrichment:</strong> The generic SMS counterparty (e.g. <code>UPI/432618920192/PAYMENT</code>) is automatically updated with the human-readable merchant name from the notification (e.g. <code>Swiggy</code>).</li>
+      </ol>
+
+      <h2 id="floating-overlay">5. 1-Tap Floating Category Overlay</h2>
+      <p>
+        When <code>SYSTEM_ALERT_WINDOW</code> permission is granted, Kanri renders a subtle, translucent floating chip on your screen for 5 seconds immediately following an in-store payment. Tapping the chip lets you tag the category (e.g. "Dining", "Groceries", "Transport") without opening the full application.
+      </p>
+
+      <div class="docs-pagination">
+        <a href="../getting-started/index.html" class="docs-page-btn">
+          <span class="docs-page-label">Previous</span>
+          <span class="docs-page-title">← 1. Getting Started</span>
+        </a>
+        <a href="../wallets/index.html" class="docs-page-btn next">
+          <span class="docs-page-label">Next Chapter</span>
+          <span class="docs-page-title">3. Cash & Online Wallets →</span>
+        </a>
+      </div>
+    </article>
+
+    <!-- Table of Contents -->
+    <aside class="docs-toc">
+      <div class="docs-toc-title">On this page</div>
+      <ul class="docs-toc-list">
+        <li><a href="#dual-engine">Dual-Engine Pipeline</a></li>
+        <li><a href="#sms-receiver">Priority 999 SMS Receiver</a></li>
+        <li><a href="#notification-listener">Notification Listener Scoping</a></li>
+        <li><a href="#dedupe-engine">5-Minute Deduplication</a></li>
+        <li><a href="#floating-overlay">1-Tap Floating Overlay</a></li>
+      </ul>
+    </aside>
+  </div>
+
+  <footer class="site-footer">
+    <div class="container" style="text-align:center; font-size:0.875rem; color:var(--muted);">
+      <p>© 2026 Kanri · Licensed under GNU GPL-3.0 · <a href="../../index.html" style="color:var(--text);">Home</a> · <a href="../../privacy/index.html" style="color:var(--text);">Privacy Policy</a></p>
+    </div>
+  </footer>
+
+  <script src="../../assets/js/theme.js"></script>
+  <script src="../../assets/js/search.js"></script>
+</body>
+</html>

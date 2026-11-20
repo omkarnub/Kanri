@@ -5,6 +5,18 @@ All notable changes to Kanri will be documented in this file.
 The format is based on [Keep a Changelog](https://keepachangelog.com/en/1.0.0/),
 and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0.html).
 
+## [1.19.10] - 2026-11-21
+
+### Added
+- **Official Kanri Website & Documentation Hub (`website/`, `.github/workflows/deploy-pages.yml`)**:
+  - Built official, zero-dependency semantic static website for Kanri adhering strictly to the privacy promise: zero cookies, zero analytics, zero tracking SDKs, zero external CDNs, self-hosting Panchang Bold, Google Sans, and Ndot57 fonts.
+  - Implemented all 15 home sections including interactive in-browser bank SMS regex parser sandbox (fabricated presets for HDFC debit, SBI ATM withdrawal, ICICI credit, and OTP discard warning), interactive bill splitting slider (2-20 people), safe-to-spend dynamic allowance calculator, 4-pillar 0–100 Financial Health Score simulator, 12 Pixel DotTiles widgets gallery, live 5-theme switcher (Light, Dark, AMOLED, Glass with real backdrops), security architecture diagram, honest permissions table, neutral "Why Kanri" comparison, and verified SHA-256 download block.
+  - Authored dedicated pages: `/privacy`, `/terms`, `/changelog`, `/download`, `/faq`, `/security`, `/press`, and `/404`.
+  - Authored complete 11-chapter Documentation Hub (`/docs/`) with sidebar search, in-page table of contents, and pagination: Getting Started, Capture & Dedupe, Wallets, Lend & Borrow, Budgets & Goals, Insights & Health Score, Widgets, Themes, Backup & Restore, Security Model, and Troubleshooting OEM battery killers.
+  - Integrated complete SEO suite: `SoftwareApplication`, `FAQPage`, and `WebSite` JSON-LD schemas, `sitemap.xml`, `robots.txt`, `llms.txt`, Open Graph / Twitter Cards, `SEO_PLAN.md`, and comprehensive codebase verification `REPORT.md`.
+  - Added GitHub Actions workflow (`.github/workflows/deploy-pages.yml`) for automated deployment to GitHub Pages.
+- Bumped version to `1.19.10` (Build 77).
+
 ## [1.19.9] - 2026-11-21
 
 ### Added

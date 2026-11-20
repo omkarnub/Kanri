@@ -1,0 +1,1136 @@
+<!DOCTYPE html>
+<html lang="en" data-theme="dark">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>Kanri — Offline Expense Tracker for Android (UPI & Bank SMS)</title>
+  <meta name="description" content="Kanri is an offline-first personal finance ledger for Android. Parses Indian bank SMS & UPI notifications on-device with zero cloud servers, zero ads, and AES-256 encryption.">
+  <meta name="keywords" content="offline expense tracker android, UPI expense tracker no cloud, SMS expense tracker India, private budget app Android, lend and borrow tracker, open source expense tracker android">
+  <meta name="author" content="Omkar Prabhu (@omkarnub)">
+  
+  <!-- Canonical & Verification -->
+  <link rel="canonical" href="https://omkarnub.github.io/Kanri/">
+  <meta name="google-site-verification" content="DRPrIOg3RE7EbOSP2WX3x3-eEF0cA1l-8SiI9AXF26E">
+
+  <!-- Open Graph / Facebook -->
+  <meta property="og:type" content="website">
+  <meta property="og:url" content="https://omkarnub.github.io/Kanri/">
+  <meta property="og:title" content="Kanri — Offline Expense Tracker for Android (UPI & Bank SMS)">
+  <meta property="og:description" content="Reads your bank SMS, logs every rupee automatically, and sends nothing anywhere. 100% offline-first personal finance.">
+  <meta property="og:image" content="https://raw.githubusercontent.com/omkarnub/Kanri/main/website/assets/media/poster.png">
+
+  <!-- Twitter -->
+  <meta property="twitter:card" content="summary_large_image">
+  <meta property="twitter:title" content="Kanri — Offline Expense Tracker for Android (UPI & Bank SMS)">
+  <meta property="twitter:description" content="Reads your bank SMS, logs every rupee automatically, and sends nothing anywhere. Zero trackers, zero ads, open source GPL-3.0.">
+  <meta property="twitter:image" content="https://raw.githubusercontent.com/omkarnub/Kanri/main/website/assets/media/poster.png">
+
+  <!-- Favicon & Touch Icons -->
+  <link rel="icon" type="image/png" href="assets/images/kanri_app_icon_dark.png">
+  <link rel="apple-touch-icon" href="assets/images/kanri_playstore_icon_512.png">
+
+  <!-- Self-Hosted Stylesheets -->
+  <link rel="stylesheet" href="assets/css/typography.css">
+  <link rel="stylesheet" href="assets/css/main.css">
+  <link rel="stylesheet" href="assets/css/components.css">
+
+  <!-- Structured Data (JSON-LD) -->
+  <script type="application/ld+json">
+  {
+    "@context": "https://schema.org",
+    "@graph": [
+      {
+        "@type": "SoftwareApplication",
+        "name": "Kanri",
+        "alternateName": "Kanri Expense Tracker",
+        "operatingSystem": "Android 8.0+",
+        "applicationCategory": "FinanceApplication",
+        "license": "https://www.gnu.org/licenses/gpl-3.0.html",
+        "isAccessibleForFree": true,
+        "softwareVersion": "1.19.8",
+        "fileSize": "27.1 MB",
+        "author": {
+          "@type": "Person",
+          "name": "Omkar Prabhu",
+          "url": "https://github.com/omkarnub"
+        },
+        "description": "Offline-first personal finance ledger for Android. Parses Indian bank SMS and payment notifications locally on-device with zero telemetry and client-side AES-256 encryption.",
+        "downloadUrl": "https://github.com/omkarnub/Kanri/releases/latest"
+      },
+      {
+        "@type": "WebSite",
+        "name": "Kanri",
+        "url": "https://omkarnub.github.io/Kanri/"
+      },
+      {
+        "@type": "FAQPage",
+        "mainEntity": [
+          {
+            "@type": "Question",
+            "name": "Is Kanri really offline?",
+            "acceptedAnswer": {
+              "@type": "Answer",
+              "text": "Yes. Kanri's core ledger, SMS parsing engine, notification listener, budget calculators, and analytics run 100% locally on your device with no remote servers or telemetry. The only network feature is an optional client-side encrypted backup to your own personal Google Drive (scoped strictly to drive.file) and an in-app GitHub release update check."
+            }
+          },
+          {
+            "@type": "Question",
+            "name": "Does Kanri read my OTPs?",
+            "acceptedAnswer": {
+              "@type": "Answer",
+              "text": "No. Kanri's SMS engine explicitly detects and discards OTP and authentication messages in memory. OTPs are never logged, parsed, or stored in the database."
+            }
+          },
+          {
+            "@type": "Question",
+            "name": "Does Kanri work without SMS permissions?",
+            "acceptedAnswer": {
+              "@type": "Answer",
+              "text": "Yes. If you decline SMS access, Kanri operates seamlessly as a full-featured manual ledger. You can manually enter expenses, configure budgets, split bills, track lent money, and view all 18+ visualizers and widgets."
+            }
+          }
+        ]
+      }
+    ]
+  }
+  </script>
+</head>
+<body>
+
+  <!-- Site Header -->
+  <header class="site-header">
+    <div class="container header-inner">
+      <a href="index.html" class="brand-link">
+        <img src="assets/images/kanri_app_icon_dark.png" alt="Kanri Logo" class="brand-icon">
+        <span class="brand-name">KANRI</span>
+        <span class="brand-kanji">管理</span>
+      </a>
+
+      <nav class="main-nav" id="main-nav" aria-label="Main Navigation">
+        <a href="#features" class="nav-link">Features</a>
+        <a href="#widgets" class="nav-link">Widgets</a>
+        <a href="#security" class="nav-link">Privacy & Security</a>
+        <a href="docs/index.html" class="nav-link">Docs</a>
+        <a href="changelog/index.html" class="nav-link">Changelog</a>
+        <a href="#faq" class="nav-link">FAQ</a>
+      </nav>
+
+      <div class="header-actions">
+        <button id="theme-toggle-btn" class="theme-toggle-btn" aria-label="Toggle visual theme" title="Toggle theme">
+          <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
+            <circle cx="12" cy="12" r="5"></circle>
+            <line x1="12" y1="1" x2="12" y2="3"></line>
+            <line x1="12" y1="21" x2="12" y2="23"></line>
+            <line x1="4.22" y1="4.22" x2="5.64" y2="5.64"></line>
+            <line x1="18.36" y1="18.36" x2="19.78" y2="19.78"></line>
+            <line x1="1" y1="12" x2="3" y2="12"></line>
+            <line x1="21" y1="12" x2="23" y2="12"></line>
+            <line x1="4.22" y1="19.78" x2="5.64" y2="18.36"></line>
+            <line x1="18.36" y1="5.64" x2="19.78" y2="4.22"></line>
+          </svg>
+        </button>
+
+        <a href="https://github.com/omkarnub/Kanri" class="github-btn" target="_blank" rel="noopener noreferrer">
+          <svg width="18" height="18" viewBox="0 0 24 24" fill="currentColor">
+            <path d="M12 0C5.37 0 0 5.37 0 12c0 5.31 3.435 9.795 8.205 11.385.6.105.825-.255.825-.57 0-.285-.015-1.23-.015-2.235-3.015.555-3.795-.735-4.035-1.41-.135-.345-.72-1.41-1.23-1.695-.42-.225-1.02-.78-.015-.795.945-.015 1.62.87 1.845 1.23 1.08 1.815 2.805 1.305 3.495.99.105-.78.42-1.305.765-1.605-2.67-.3-5.46-1.335-5.46-5.925 0-1.305.465-2.385 1.23-3.225-.12-.3-.54-1.53.12-3.18 0 0 1.005-.315 3.3 1.23.96-.27 1.98-.405 3-.405s2.04.135 3 .405c2.295-1.56 3.3-1.23 3.3-1.23.66 1.65.24 2.88.12 3.18.765.84 1.23 1.905 1.23 3.225 0 4.605-2.805 5.625-5.475 5.925.435.375.81 1.095.81 2.22 0 1.605-.015 2.895-.015 3.3 0 .315.225.69.825.57A12.02 12.02 0 0024 12c0-6.63-5.37-12-12-12z"/>
+          </svg>
+          <span>GitHub</span>
+          <span class="star-count" id="github-star-count" style="display:none;"></span>
+        </a>
+
+        <a href="#download" class="btn btn-primary btn-sm">Download APK</a>
+
+        <button class="mobile-nav-toggle" id="mobile-nav-toggle" aria-label="Open mobile navigation">
+          <svg width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+            <line x1="3" y1="12" x2="21" y2="12"></line>
+            <line x1="3" y1="6" x2="21" y2="6"></line>
+            <line x1="3" y1="18" x2="21" y2="18"></line>
+          </svg>
+        </button>
+      </div>
+    </div>
+  </header>
+
+  <main>
+    <!-- 1. Hero Section -->
+    <section class="section hero-section">
+      <div class="container hero-grid">
+        <div class="hero-content">
+          <div class="hero-badge-pill">
+            <span class="hero-badge-dot"></span>
+            <span>Version 1.19.8 Available · Android 8.0+</span>
+          </div>
+
+          <h1 class="hero-title">Your money, on your phone. Only.</h1>
+          
+          <p class="hero-subhead">
+            Kanri reads your bank SMS, logs every rupee automatically, and sends nothing anywhere. Fully offline-first personal finance with zero trackers, zero ads, and open-source sovereignty.
+          </p>
+
+          <div class="hero-ctas">
+            <a href="#download" class="btn btn-primary btn-lg">
+              <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
+                <path d="M21 15v4a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2v-4"></path>
+                <polyline points="7 10 12 15 17 10"></polyline>
+                <line x1="12" y1="15" x2="12" y2="3"></line>
+              </svg>
+              <span>Download APK (27.1 MB)</span>
+            </a>
+
+            <a href="https://github.com/omkarnub/Kanri" class="btn btn-secondary btn-lg" target="_blank" rel="noopener noreferrer">
+              <svg width="20" height="20" viewBox="0 0 24 24" fill="currentColor">
+                <path d="M12 0C5.37 0 0 5.37 0 12c0 5.31 3.435 9.795 8.205 11.385.6.105.825-.255.825-.57 0-.285-.015-1.23-.015-2.235-3.015.555-3.795-.735-4.035-1.41-.135-.345-.72-1.41-1.23-1.695-.42-.225-1.02-.78-.015-.795.945-.015 1.62.87 1.845 1.23 1.08 1.815 2.805 1.305 3.495.99.105-.78.42-1.305.765-1.605-2.67-.3-5.46-1.335-5.46-5.925 0-1.305.465-2.385 1.23-3.225-.12-.3-.54-1.53.12-3.18 0 0 1.005-.315 3.3 1.23.96-.27 1.98-.405 3-.405s2.04.135 3 .405c2.295-1.56 3.3-1.23 3.3-1.23.66 1.65.24 2.88.12 3.18.765.84 1.23 1.905 1.23 3.225 0 4.605-2.805 5.625-5.475 5.925.435.375.81 1.095.81 2.22 0 1.605-.015 2.895-.015 3.3 0 .315.225.69.825.57A12.02 12.02 0 0024 12c0-6.63-5.37-12-12-12z"/>
+              </svg>
+              <span>View on GitHub</span>
+            </a>
+          </div>
+
+          <div class="trust-strip">
+            <span>✓ 100% On-Device</span>
+            <span>·</span>
+            <span>✓ Zero Analytics</span>
+            <span>·</span>
+            <span>✓ No Ads</span>
+            <span>·</span>
+            <span>✓ Open Source (GPL-3.0)</span>
+            <span>·</span>
+            <span>✓ AES-256 Encrypted</span>
+          </div>
+        </div>
+
+        <div class="hero-visual-wrapper">
+          <div class="hero-video-card">
+            <video autoplay loop muted playsinline poster="assets/media/poster.png" aria-label="Kanri motion graphics showcase">
+              <source src="assets/media/kanri_loop_silent_1440.mp4" type="video/mp4">
+              <source src="assets/media/kanri_loop.webm" type="video/webm">
+              <img src="assets/media/poster.png" alt="Kanri interface preview">
+            </video>
+          </div>
+        </div>
+      </div>
+    </section>
+
+    <!-- 2. How It Works (3 Steps) -->
+    <section class="section section-tight">
+      <div class="container">
+        <div class="section-header">
+          <span class="section-eyebrow">Zero Manual Friction</span>
+          <h2>How Kanri Works</h2>
+          <p>Automatic expense logging designed for real Indian payments.</p>
+        </div>
+
+        <div class="how-it-works-grid">
+          <div class="step-card">
+            <span class="step-number">01</span>
+            <h3>Pay Anywhere</h3>
+            <p>Make any payment using UPI (GPay, PhonePe, Paytm, CRED), credit/debit cards, net banking, or withdraw cash from an ATM.</p>
+          </div>
+
+          <div class="step-card">
+            <span class="step-number">02</span>
+            <h3>Instant On-Device Parse</h3>
+            <p>Kanri's local regex engine detects the transactional bank SMS and payment app notification in memory. No network connection is used.</p>
+          </div>
+
+          <div class="step-card">
+            <span class="step-number">03</span>
+            <h3>1-Tap Categorization</h3>
+            <p>A lightweight floating overlay lets you confirm the category in 1 tap right as you walk away from the billing counter, or logs automatically via merchant rules.</p>
+          </div>
+        </div>
+      </div>
+    </section>
+
+    <!-- 3. Interactive "Try the Parser" Demo -->
+    <section class="section">
+      <div class="container">
+        <div class="section-header">
+          <span class="section-eyebrow">Interactive Sandbox</span>
+          <h2>Try the SMS Parser</h2>
+          <p>Tested on 15+ Indian bank formats. Runs 100% in your browser—nothing is uploaded.</p>
+        </div>
+
+        <div class="parser-demo-box">
+          <div class="parser-header">
+            <div class="parser-presets">
+              <button class="parser-preset-btn active" data-parser-preset="hdfc">HDFC UPI Debit</button>
+              <button class="parser-preset-btn" data-parser-preset="sbi_atm">SBI ATM Cash</button>
+              <button class="parser-preset-btn" data-parser-preset="icici_credit">ICICI Salary Credit</button>
+              <button class="parser-preset-btn" data-parser-preset="otp">OTP Alert (Ignored)</button>
+            </div>
+            <span class="parser-badge-safe">🔒 Client-Side Only · No Upload</span>
+          </div>
+
+          <textarea id="parser-input" class="parser-textarea" placeholder="Paste or edit transactional SMS text here..." aria-label="Sample transactional SMS text"></textarea>
+
+          <div class="parser-output-area">
+            <div class="parser-output-title">Extracted Transaction Data:</div>
+            <div id="parser-output"></div>
+          </div>
+        </div>
+      </div>
+    </section>
+
+    <!-- 4. Deep Feature Sections -->
+    <section class="section" id="features">
+      <div class="container">
+        <!-- Feature 1: Dual-Engine & 5-Min Sliding Window -->
+        <div class="feature-row">
+          <div class="feature-text">
+            <span class="section-eyebrow">Dual-Engine Ingestion</span>
+            <h3>SMS + Notification Fusion with 5-Minute Deduplication</h3>
+            <p>
+              SMS messages provide authoritative amounts and bank balances, while UPI notifications provide rich merchant names and recipient VPA addresses.
+            </p>
+            <p>
+              Kanri's 5-minute sliding window deduplication engine correlates SMS and notification alerts using UTR references and timestamps, merging them into a single clean transaction with zero duplicate records.
+            </p>
+          </div>
+          <div class="feature-visual">
+            <div class="timeline-diagram">
+              <span class="text-mono" style="font-size:0.8125rem; color:var(--muted);">5-Minute Sliding Window Correlation:</span>
+              <div class="timeline-bar">
+                <div class="timeline-event" style="left: 20%;">
+                  <div class="timeline-event-dot"></div>
+                  <span class="timeline-event-badge">GPay Alert</span>
+                  <span class="timeline-event-label">t = 0s</span>
+                </div>
+                <div class="timeline-event" style="left: 65%;">
+                  <div class="timeline-event-dot"></div>
+                  <span class="timeline-event-badge">HDFC SMS</span>
+                  <span class="timeline-event-label">t + 42s</span>
+                </div>
+              </div>
+              <div class="badge badge-accent" style="align-self: flex-start;">
+                ✓ Auto-Merged into 1 Ledger Record (UTR Match)
+              </div>
+            </div>
+          </div>
+        </div>
+
+        <!-- Feature 2: Dual Wallets & ATM Modes -->
+        <div class="feature-row reverse">
+          <div class="feature-text">
+            <span class="section-eyebrow">Dual Wallets</span>
+            <h3>Cash vs. Online Wallets & Smart ATM Modes</h3>
+            <p>
+              Money isn't only in your bank. Kanri maintains strict dual wallets for <strong>Online (Bank / UPI / Cards)</strong> and <strong>Cash</strong>.
+            </p>
+            <p>
+              When you withdraw money from an ATM, Kanri doesn't mark it as an expense. Instead, it offers smart ATM modes to move money seamlessly from Online to Cash without distorting your actual spending metrics.
+            </p>
+          </div>
+          <div class="feature-visual">
+            <img src="assets/images/screenshots/home.png" alt="Kanri Home screen showing Cash and Online balances" class="feature-mockup-img">
+          </div>
+        </div>
+
+        <!-- Feature 3: Lend & Borrow with Bill Splitting -->
+        <div class="feature-row">
+          <div class="feature-text">
+            <span class="section-eyebrow">Peer-to-Peer Ledger</span>
+            <h3>Lend, Borrow, and Split Shared Bills</h3>
+            <p>
+              Keep track of money you owe or are owed. Log partial repayments, generate pre-filled WhatsApp reminder messages in 1 tap, and launch <code>upi://pay</code> settlement deep links.
+            </p>
+            <p>
+              Split dinner or trip bills across 2 to 20 people with custom or equal share calculations.
+            </p>
+          </div>
+          <div class="feature-visual">
+            <div class="calc-card">
+              <span class="section-eyebrow">Interactive Bill Splitter</span>
+              <div class="calc-control-group">
+                <div class="calc-label-row">
+                  <span>Bill Total</span>
+                  <span class="text-mono">₹1,950</span>
+                </div>
+                <input type="number" id="split-amount" class="parser-textarea" value="1950" style="min-height:44px; padding:8px 12px;" aria-label="Bill Total">
+              </div>
+
+              <div class="calc-control-group">
+                <div class="calc-label-row">
+                  <span>Number of People: <strong id="split-people-count">4</strong></span>
+                </div>
+                <input type="range" id="split-people" class="calc-slider" min="2" max="20" value="4" aria-label="Number of People">
+              </div>
+
+              <div class="calc-result-box">
+                <span style="font-size:0.875rem; color:var(--muted);">Each Person Pays:</span>
+                <span id="split-result" class="calc-result-val">₹487.50</span>
+              </div>
+            </div>
+          </div>
+        </div>
+
+        <!-- Feature 4: Custom Budget Cycle & Safe to Spend -->
+        <div class="feature-row reverse">
+          <div class="feature-text">
+            <span class="section-eyebrow">Dynamic Pacing</span>
+            <h3>Salary-Synced Budgets & Safe-to-Spend Daily Allowance</h3>
+            <p>
+              Real paychecks don't start on the 1st. Choose any budget cycle start day between <strong>1st and 28th</strong> to align perfectly with your salary credit date.
+            </p>
+            <p>
+              Kanri calculates your real-time <strong>Safe-to-Spend daily allowance</strong>: <code>(Remaining Budget ÷ Days Left)</code> so you know exactly how much you can spend today without running out before payday.
+            </p>
+          </div>
+          <div class="feature-visual">
+            <div class="calc-card">
+              <span class="section-eyebrow">Safe-to-Spend Calculator</span>
+              <div class="calc-control-group">
+                <div class="calc-label-row">
+                  <span>Monthly Budget:</span>
+                </div>
+                <input type="number" id="budget-total" class="parser-textarea" value="35000" style="min-height:44px; padding:8px 12px;" aria-label="Monthly Budget">
+              </div>
+
+              <div class="calc-control-group">
+                <div class="calc-label-row">
+                  <span>Spent So Far:</span>
+                </div>
+                <input type="number" id="budget-spent" class="parser-textarea" value="14000" style="min-height:44px; padding:8px 12px;" aria-label="Spent So Far">
+              </div>
+
+              <div class="calc-control-group">
+                <div class="calc-label-row">
+                  <span>Days Left in Cycle: <strong id="budget-days-val">15 days</strong></span>
+                </div>
+                <input type="range" id="budget-days" class="calc-slider" min="1" max="30" value="15" aria-label="Days Left">
+              </div>
+
+              <div class="calc-result-box">
+                <span style="font-size:0.875rem; color:var(--muted);">Daily Safe Allowance:</span>
+                <span id="safe-spend-result" class="calc-result-val">₹1,400.00 / day</span>
+              </div>
+            </div>
+          </div>
+        </div>
+
+        <!-- Feature 5: 18+ Insights & Visualizations -->
+        <div class="feature-row">
+          <div class="feature-text">
+            <span class="section-eyebrow">Visual Analytics</span>
+            <h3>18+ Analytical Visualizations</h3>
+            <p>
+              Understand your spending psychology with GitHub-style contribution heatmaps, a 365-day matrix, spending velocity vs. calendar day, burn-rate projections, month-over-month comparisons, and category recap cards.
+            </p>
+            <p>
+              All visualizations render with GPU-accelerated canvas routines and zero tracking telemetry.
+            </p>
+          </div>
+          <div class="feature-visual">
+            <img src="assets/images/screenshots/insights.png" alt="Kanri Insights screen with spending charts" class="feature-mockup-img">
+          </div>
+        </div>
+
+        <!-- Feature 6: 4-Pillar Financial Health Score -->
+        <div class="feature-row reverse">
+          <div class="feature-text">
+            <span class="section-eyebrow">Objective Evaluation</span>
+            <h3>0–100 Financial Health Score</h3>
+            <p>
+              An objective, transparent health score built on four balanced 25-point pillars:
+            </p>
+            <ul style="color:var(--muted); font-size:0.9375rem; line-height:1.7; margin-left:20px;">
+              <li><strong>Savings Rate (25 pts):</strong> ≥ 20% of income saved for full score.</li>
+              <li><strong>Budget Adherence (25 pts):</strong> Staying ≤ 90% of cycle budget.</li>
+              <li><strong>Spend Velocity (25 pts):</strong> Pacing matching or below calendar progress.</li>
+              <li><strong>Debt Ratio (25 pts):</strong> Net positive receivables over liabilities.</li>
+            </ul>
+          </div>
+          <div class="feature-visual" style="padding: 24px;">
+            <div class="health-score-container" style="padding: 20px; width:100%;">
+              <div class="health-sliders-col">
+                <div class="calc-control-group">
+                  <div class="calc-label-row">
+                    <span>Savings Rate:</span>
+                    <strong id="val-savings">25%</strong>
+                  </div>
+                  <input type="range" id="score-savings" class="calc-slider" min="0" max="50" value="25" aria-label="Savings Rate">
+                </div>
+
+                <div class="calc-control-group">
+                  <div class="calc-label-row">
+                    <span>Budget Adherence:</span>
+                    <strong id="val-adherence">85%</strong>
+                  </div>
+                  <input type="range" id="score-adherence" class="calc-slider" min="50" max="120" value="85" aria-label="Budget Adherence">
+                </div>
+
+                <div class="calc-control-group">
+                  <div class="calc-label-row">
+                    <span>Spend Velocity vs. Calendar:</span>
+                    <strong id="val-velocity">90% pace</strong>
+                  </div>
+                  <input type="range" id="score-velocity" class="calc-slider" min="50" max="140" value="90" aria-label="Spend Velocity">
+                </div>
+
+                <div class="calc-control-group">
+                  <div class="calc-label-row">
+                    <span>Debt Health:</span>
+                    <strong id="val-debt">80%</strong>
+                  </div>
+                  <input type="range" id="score-debt" class="calc-slider" min="0" max="100" value="80" aria-label="Debt Ratio">
+                </div>
+              </div>
+
+              <div class="health-result-col">
+                <div class="health-score-circle">
+                  <span id="health-score-number" class="health-score-number">95</span>
+                  <span style="font-size:0.75rem; color:var(--muted); text-transform:uppercase;">Score</span>
+                </div>
+                <div id="health-grade-text" class="health-score-grade">Grade A+ · Optimal Sovereignty</div>
+              </div>
+            </div>
+          </div>
+        </div>
+      </div>
+    </section>
+
+    <!-- 5. 12 Pixel DotTiles Widgets Gallery -->
+    <section class="section" id="widgets" style="background-color: var(--surface-subtle);">
+      <div class="container">
+        <div class="section-header">
+          <span class="section-eyebrow">Tactile Glanceability</span>
+          <h2>12 Pixel DotTiles Widgets</h2>
+          <p>
+            Crafted with authentic dot-matrix typography (Ndot57 font) and midnight battery-safe resets. Your finances, right on your Android home screen.
+          </p>
+        </div>
+
+        <div class="widgets-grid">
+          <div class="widget-tile-card">
+            <img src="assets/images/widgets/widget_preview_today.webp" alt="Today Widget preview" class="widget-preview-img" loading="lazy">
+            <div class="widget-tile-info">
+              <h4>Today</h4>
+              <span class="widget-size-tag">2x2 · 4x2</span>
+              <p>Spent today, expense count, pacing bar vs daily budget limit, and 4 checkpoint cards (MORN · AFTN · EVE · NIGHT).</p>
+            </div>
+          </div>
+
+          <div class="widget-tile-card">
+            <img src="assets/images/widgets/widget_preview_budget.webp" alt="Budget Widget preview" class="widget-preview-img" loading="lazy">
+            <div class="widget-tile-info">
+              <h4>Budget</h4>
+              <span class="widget-size-tag">2x1 · 2x2 · 4x2</span>
+              <p>Dual progress bars: used budget percentage, total scale, days remaining, and expected pacing marker.</p>
+            </div>
+          </div>
+
+          <div class="widget-tile-card">
+            <img src="assets/images/widgets/widget_preview_wallets.webp" alt="Wallets Widget preview" class="widget-preview-img" loading="lazy">
+            <div class="widget-tile-info">
+              <h4>Wallets</h4>
+              <span class="widget-size-tag">2x2 · 4x2</span>
+              <p>Net balance hero metric in large Ndot57 numerals, clean Cash and Bank breakdown rows with allocation percentages.</p>
+            </div>
+          </div>
+
+          <div class="widget-tile-card">
+            <img src="assets/images/widgets/widget_preview_goals.webp" alt="Goals Widget preview" class="widget-preview-img" loading="lazy">
+            <div class="widget-tile-info">
+              <h4>Goals</h4>
+              <span class="widget-size-tag">2x2 · 4x1</span>
+              <p>Primary savings target progress, percentage saved, and 25/50/75/100% milestone ticks.</p>
+            </div>
+          </div>
+
+          <div class="widget-tile-card">
+            <img src="assets/images/widgets/widget_preview_dues.webp" alt="Dues Widget preview" class="widget-preview-img" loading="lazy">
+            <div class="widget-tile-info">
+              <h4>Dues</h4>
+              <span class="widget-size-tag">2x2 · 4x2</span>
+              <p>Net balance subtitle and top lend/borrow contacts list with name and +₹ / -₹ amounts.</p>
+            </div>
+          </div>
+
+          <div class="widget-tile-card">
+            <img src="assets/images/widgets/widget_preview_sky.webp" alt="Sky Widget preview" class="widget-preview-img" loading="lazy">
+            <div class="widget-tile-info">
+              <h4>Financial Sky</h4>
+              <span class="widget-size-tag">4x2</span>
+              <p>Flagship financial weather: recessed dot-matrix sky well (sun/moon arc), today spend, safe to spend per day, and 7-day pacing.</p>
+            </div>
+          </div>
+
+          <div class="widget-tile-card">
+            <img src="assets/images/widgets/widget_preview_heatmap.webp" alt="Month Heatmap Widget preview" class="widget-preview-img" loading="lazy">
+            <div class="widget-tile-info">
+              <h4>Month Heatmap</h4>
+              <span class="widget-size-tag">4x3 · 4x2</span>
+              <p>GitHub-style 7-row (Mon..Sun) by 5-week contribution grid with 4 intensity levels, day labels, and today ring.</p>
+            </div>
+          </div>
+
+          <div class="widget-tile-card">
+            <img src="assets/images/widgets/widget_preview_streak.webp" alt="No-Spend Streak Widget preview" class="widget-preview-img" loading="lazy">
+            <div class="widget-tile-info">
+              <h4>No-Spend Streak</h4>
+              <span class="widget-size-tag">2x2 · 4x1</span>
+              <p>Consecutive no-spend day streak in Ndot57 numerals, all-time best streak, and a row of 7 pixelated flames.</p>
+            </div>
+          </div>
+
+          <div class="widget-tile-card">
+            <img src="assets/images/widgets/widget_preview_safe_to_spend.webp" alt="Safe to Spend Widget preview" class="widget-preview-img" loading="lazy">
+            <div class="widget-tile-info">
+              <h4>Safe to Spend</h4>
+              <span class="widget-size-tag">2x2 · 4x1</span>
+              <p>Remaining daily spending allowance until cycle end vs today's actual spend.</p>
+            </div>
+          </div>
+
+          <div class="widget-tile-card">
+            <img src="assets/images/widgets/widget_preview_review_inbox.webp" alt="Review Inbox Widget preview" class="widget-preview-img" loading="lazy">
+            <div class="widget-tile-info">
+              <h4>Review Inbox</h4>
+              <span class="widget-size-tag">2x1 · 2x2</span>
+              <p>Count of SMS-detected expenses awaiting categorization and pending amount.</p>
+            </div>
+          </div>
+
+          <div class="widget-tile-card">
+            <img src="assets/images/widgets/widget_preview_month_delta.webp" alt="Month Delta Widget preview" class="widget-preview-img" loading="lazy">
+            <div class="widget-tile-info">
+              <h4>Month Delta</h4>
+              <span class="widget-size-tag">2x2 · 4x2</span>
+              <p>Spend so far this month compared to the exact same day last month with ▲ / ▼ delta %.</p>
+            </div>
+          </div>
+
+          <div class="widget-tile-card">
+            <img src="assets/images/widgets/widget_preview_quick_actions.webp" alt="Quick Actions Widget preview" class="widget-preview-img" loading="lazy">
+            <div class="widget-tile-info">
+              <h4>Quick Actions</h4>
+              <span class="widget-size-tag">4x1 · 2x1</span>
+              <p>One-tap pixel-glyph action buttons for Expense (-), Income (+), and Split (÷).</p>
+            </div>
+          </div>
+        </div>
+      </div>
+    </section>
+
+    <!-- 6. Themes & Liquid Glass Switcher -->
+    <section class="section">
+      <div class="container">
+        <div class="section-header">
+          <span class="section-eyebrow">Aesthetic Discipline</span>
+          <h2>5 Themes & Liquid Glass Engine</h2>
+          <p>
+            Engineered with AGSL GPU half-precision optimizations, touch-pause gesture freezing, and 22 animated backdrops.
+          </p>
+        </div>
+
+        <div class="theme-switcher-container">
+          <div class="theme-pill-selector">
+            <button class="theme-choice-btn active" data-mockup-theme="dark">Dark</button>
+            <button class="theme-choice-btn" data-mockup-theme="light">Light (Cream)</button>
+            <button class="theme-choice-btn" data-mockup-theme="amoled">AMOLED</button>
+            <button class="theme-choice-btn" data-mockup-theme="glass">Glass</button>
+          </div>
+
+          <div id="glass-controls-row" style="display:none; gap:12px; align-items:center;">
+            <span style="font-size:0.8125rem; color:var(--muted);">Select Artwork Backdrop:</span>
+            <select id="glass-backdrop-select" class="parser-textarea" style="width:auto; min-height:36px; padding:6px 12px; margin:0;" aria-label="Select Backdrop">
+              <option value="assets/backdrops/sumi_e_mist.html">Sumi-e Mist (Japanese Watercolor)</option>
+              <option value="assets/backdrops/aurora.html">Aurora (Lush Glowing Orbs)</option>
+              <option value="assets/backdrops/snowy_mountain_road.html">Snowy Mountain Road</option>
+            </select>
+          </div>
+
+          <div class="phone-mockup-frame" id="phone-mockup-frame" data-mockup-skin="dark">
+            <iframe id="phone-backdrop-iframe" class="phone-backdrop-iframe" src="assets/backdrops/sumi_e_mist.html" style="display:none;" title="Kanri Backdrop Preview"></iframe>
+            <div class="phone-screen-content">
+              <div style="display:flex; justify-content:space-between; align-items:center;">
+                <span class="brand-logotype" style="font-size:0.875rem;">KANRI</span>
+                <span class="badge badge-accent" style="font-size:0.6875rem;">ONLINE</span>
+              </div>
+              <div style="background:var(--surface); border:1px solid var(--border); border-radius:14px; padding:16px;">
+                <span style="font-size:0.75rem; color:var(--muted); text-transform:uppercase;">Net Balance</span>
+                <div class="ndot-numeral" style="font-size:1.75rem; color:var(--text); margin-top:4px;">₹48,250.00</div>
+              </div>
+              <div style="background:var(--surface); border:1px solid var(--border); border-radius:14px; padding:14px; display:flex; justify-content:space-between; align-items:center;">
+                <span style="font-size:0.8125rem; color:var(--muted);">Safe to Spend</span>
+                <span style="font-size:0.9375rem; font-weight:600; color:var(--accent);">₹1,400.00 / day</span>
+              </div>
+              <div style="background:var(--surface); border:1px solid var(--border); border-radius:14px; padding:14px; display:flex; flex-direction:column; gap:8px;">
+                <span style="font-size:0.75rem; color:var(--muted); text-transform:uppercase;">Recent Activity</span>
+                <div style="display:flex; justify-content:space-between; font-size:0.8125rem;">
+                  <span>Swiggy</span>
+                  <span style="color:var(--expense-red); font-weight:600;">-₹480.00</span>
+                </div>
+                <div style="display:flex; justify-content:space-between; font-size:0.8125rem;">
+                  <span>Salary Credit</span>
+                  <span style="color:var(--accent); font-weight:600;">+₹65,000.00</span>
+                </div>
+              </div>
+            </div>
+          </div>
+        </div>
+      </div>
+    </section>
+
+    <!-- 7. Security Architecture & Threat Model -->
+    <section class="section" id="security">
+      <div class="container">
+        <div class="section-header">
+          <span class="section-eyebrow">Zero Telemetry Threat Model</span>
+          <h2>Security & Data Sovereignty</h2>
+          <p>
+            Your financial data belongs exclusively to you. Sealed with Android Keystore hardware keys.
+          </p>
+        </div>
+
+        <div class="security-diagram-card">
+          <div class="sec-flow-row">
+            <div class="sec-node">
+              <div class="sec-node-title">Bank SMS / Alert</div>
+              <div class="sec-node-sub">Received in device memory</div>
+            </div>
+            <div class="sec-arrow">→</div>
+            <div class="sec-node">
+              <div class="sec-node-title">Local Regex Parser</div>
+              <div class="sec-node-sub">Amounts & merchants extracted</div>
+            </div>
+            <div class="sec-arrow">→</div>
+            <div class="sec-node">
+              <div class="sec-node-title">5-Min Sliding Dedupe</div>
+              <div class="sec-node-sub">Merged by UTR & timestamp</div>
+            </div>
+            <div class="sec-arrow">→</div>
+            <div class="sec-node">
+              <div class="sec-node-title">SQLCipher AES-256</div>
+              <div class="sec-node-sub">Key in Android Keystore</div>
+            </div>
+          </div>
+
+          <div style="display:grid; grid-template-columns: repeat(auto-fit, minmax(240px, 1fr)); gap:20px; border-top:1px solid var(--border-subtle); padding-top:28px;">
+            <div>
+              <h4 style="font-size:1.0625rem; margin-bottom:6px;">SQLCipher AES-256</h4>
+              <p style="font-size:0.875rem; color:var(--muted);">All SQLite database files are encrypted at rest using 256-bit AES encryption. Even with root, data cannot be read without Keystore access.</p>
+            </div>
+            <div>
+              <h4 style="font-size:1.0625rem; margin-bottom:6px;">Biometric Auto-Lock</h4>
+              <p style="font-size:0.875rem; color:var(--muted);">Protected by native Android BiometricPrompt hardware security with instant screen-off auto-lock.</p>
+            </div>
+            <div>
+              <h4 style="font-size:1.0625rem; margin-bottom:6px;">Encrypted Backups</h4>
+              <p style="font-size:0.875rem; color:var(--muted);">Exported backup files (.enc) are encrypted locally using PBKDF2 with 65,536 iterations and AES-GCM before saving or syncing.</p>
+            </div>
+            <div>
+              <h4 style="font-size:1.0625rem; margin-bottom:6px;">Optional Drive Backup</h4>
+              <p style="font-size:0.875rem; color:var(--muted);">Direct TLS connection to Google Drive API scoped exclusively to <code>drive.file</code>. Kanri can never see your photos, docs, or other files.</p>
+            </div>
+          </div>
+        </div>
+      </div>
+    </section>
+
+    <!-- 8. Permissions Explained Honestly -->
+    <section class="section">
+      <div class="container">
+        <div class="section-header">
+          <span class="section-eyebrow">Full Transparency</span>
+          <h2>Permissions, Explained Honestly</h2>
+          <p>
+            Kanri requests strictly the permissions needed to parse your transactions locally. None are used to upload personal data.
+          </p>
+        </div>
+
+        <div class="table-responsive">
+          <table class="data-table">
+            <thead>
+              <tr>
+                <th>Permission</th>
+                <th>Technical Name</th>
+                <th>Why Kanri Needs It</th>
+                <th>What Kanri Never Does</th>
+              </tr>
+            </thead>
+            <tbody>
+              <tr>
+                <td><strong>SMS Capture</strong></td>
+                <td><code>RECEIVE_SMS</code><br><code>READ_SMS</code></td>
+                <td>Parses incoming bank transactional SMS in memory to automatically log spending without manual typing.</td>
+                <td>Never uploads SMS texts. Never logs OTPs or personal chats.</td>
+              </tr>
+              <tr>
+                <td><strong>Notification Access</strong></td>
+                <td><code>BIND_NOTIFICATION_LISTENER_SERVICE</code></td>
+                <td>Captures payment app alerts (GPay, PhonePe, Paytm, CRED) for instant merchant name enrichment and credits.</td>
+                <td>Never captures messages from social, messaging, or non-payment applications.</td>
+              </tr>
+              <tr>
+                <td><strong>Instant Overlay</strong></td>
+                <td><code>SYSTEM_ALERT_WINDOW</code></td>
+                <td>Displays a lightweight 1-tap category chip for 5 seconds immediately following an in-store payment.</td>
+                <td>Never captures screen contents or displays popups outside payment confirmation.</td>
+              </tr>
+              <tr>
+                <td><strong>Biometric Lock</strong></td>
+                <td><code>USE_BIOMETRIC</code></td>
+                <td>Protects app entry using fingerprint or face unlock hardware authentication.</td>
+                <td>Never handles raw biometric data (handled strictly by Android TEE).</td>
+              </tr>
+              <tr>
+                <td><strong>Reminders</strong></td>
+                <td><code>POST_NOTIFICATIONS</code></td>
+                <td>Sends local 9 PM daily review nudges and upcoming debt repayment alerts.</td>
+                <td>Never sends marketing, promotional, or remote push notifications.</td>
+              </tr>
+              <tr>
+                <td><strong>Network Access</strong></td>
+                <td><code>INTERNET</code><br><code>ACCESS_NETWORK_STATE</code></td>
+                <td>Communicates directly with Google Drive API when you enable optional Cloud Backup, and checks for verified GitHub updates.</td>
+                <td>Never sends analytics, telemetry, crash logs, or spending habits to any third-party server.</td>
+              </tr>
+            </tbody>
+          </table>
+        </div>
+
+        <div class="callout callout-note" style="margin-top:24px;">
+          <div class="callout-title">What if I deny SMS access?</div>
+          <p style="margin:0; font-size:0.9375rem; color:var(--text-secondary);">
+            Kanri works seamlessly as a 100% manual ledger. You can manually enter transactions, configure salary budgets, split bills, track lent money, and enjoy all 12 widgets and 18+ visualizers without ever granting SMS permissions.
+          </p>
+        </div>
+      </div>
+    </section>
+
+    <!-- 9. Why Kanri Comparison -->
+    <section class="section">
+      <div class="container">
+        <div class="section-header">
+          <span class="section-eyebrow">Philosophical Comparison</span>
+          <h2>Why Kanri?</h2>
+          <p>An honest, principle-first comparison of typical cloud expense trackers versus Kanri.</p>
+        </div>
+
+        <div class="table-responsive">
+          <table class="data-table">
+            <thead>
+              <tr>
+                <th>Principle</th>
+                <th>Typical Cloud Trackers</th>
+                <th>Kanri</th>
+              </tr>
+            </thead>
+            <tbody>
+              <tr>
+                <td><strong>Account Requirement</strong></td>
+                <td>Mandatory phone number, email, or Google login</td>
+                <td><strong>Zero account or registration required</strong></td>
+              </tr>
+              <tr>
+                <td><strong>Where Data Lives</strong></td>
+                <td>Company cloud database servers</td>
+                <td><strong>On-device SQLite database (AES-256 encrypted)</strong></td>
+              </tr>
+              <tr>
+                <td><strong>Advertising & Monetization</strong></td>
+                <td>Credit card offers, loan ads, cross-selling</td>
+                <td><strong>Zero ads, zero sponsors, zero cross-selling</strong></td>
+              </tr>
+              <tr>
+                <td><strong>Third-Party Analytics</strong></td>
+                <td>Firebase, Mixpanel, AppsFlyer, Facebook SDK</td>
+                <td><strong>Zero tracking or telemetry SDKs</strong></td>
+              </tr>
+              <tr>
+                <td><strong>Source Code</strong></td>
+                <td>Closed proprietary source code</td>
+                <td><strong>100% Open Source under GNU GPL-3.0</strong></td>
+              </tr>
+              <tr>
+                <td><strong>Cloud Backup</strong></td>
+                <td>Mandatory sync to vendor's servers</td>
+                <td><strong>Optional, client-side encrypted to your Google Drive</strong></td>
+              </tr>
+            </tbody>
+          </table>
+        </div>
+      </div>
+    </section>
+
+    <!-- 10. Supported Banks & Apps -->
+    <section class="section">
+      <div class="container">
+        <div class="section-header">
+          <span class="section-eyebrow">Compatibility</span>
+          <h2>Supported Banks & Payment Apps</h2>
+          <p>Custom-tuned regex patterns verified across major Indian banking formats.</p>
+        </div>
+
+        <div class="card" style="padding:32px;">
+          <h4 style="font-size:0.875rem; text-transform:uppercase; letter-spacing:0.08em; color:var(--muted); margin-bottom:12px;">Top Public & Private Sector Banks</h4>
+          <p style="font-size:0.9375rem; line-height:1.8; color:var(--text); margin-bottom:24px;">
+            State Bank of India (SBI) · HDFC Bank · ICICI Bank · Axis Bank · Kotak Mahindra Bank · Bank of Baroda (BOB) · Punjab National Bank (PNB) · IDFC FIRST Bank · Canara Bank · Union Bank of India · IndusInd Bank · Bank of India (BOI) · Indian Bank · Central Bank of India · Yes Bank · Federal Bank · RBL Bank · IDBI Bank · UCO Bank · Bank of Maharashtra · Punjab & Sind Bank · Indian Overseas Bank (IOB) · South Indian Bank · Bandhan Bank · City Union Bank · Karur Vysya Bank · Karnataka Bank · Standard Chartered · HSBC · Citi
+          </p>
+
+          <h4 style="font-size:0.875rem; text-transform:uppercase; letter-spacing:0.08em; color:var(--muted); margin-bottom:12px;">UPI & Payment Apps</h4>
+          <p style="font-size:0.9375rem; line-height:1.8; color:var(--text);">
+            Google Pay (GPay) · PhonePe · Paytm · CRED · FamPay · BHIM · Amazon Pay · Flipkart · Navi · Jupiter · Fi (Epifi)
+          </p>
+
+          <p class="trademark-notice">
+            Bank and app names are trademarks of their respective owners. Kanri is an independent open-source tool and is not affiliated with, sponsored by, or endorsed by any of them.
+          </p>
+        </div>
+      </div>
+    </section>
+
+    <!-- 11. Download Section -->
+    <section class="section" id="download">
+      <div class="container">
+        <div class="download-card">
+          <span class="section-eyebrow">Get Started</span>
+          <h2 style="font-size:2.5rem; margin-bottom:12px;">Download Kanri</h2>
+          <p style="color:var(--muted); font-size:1.0625rem;">
+            Free and open-source software. No subscription, no paywalls, no tracking.
+          </p>
+
+          <div class="download-meta-strip">
+            <span><strong>Version:</strong> 1.19.8 (Build 75)</span>
+            <span>·</span>
+            <span><strong>Size:</strong> 27.1 MB</span>
+            <span>·</span>
+            <span><strong>Requires:</strong> Android 8.0+</span>
+            <span>·</span>
+            <span><strong>License:</strong> GPL-3.0</span>
+          </div>
+
+          <div style="display:flex; justify-content:center; gap:16px; flex-wrap:wrap;">
+            <a href="https://github.com/omkarnub/Kanri/releases/download/v1.19.8/Kanri-v1.19.8-release.apk" class="btn btn-primary btn-lg">
+              <svg width="22" height="22" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
+                <path d="M21 15v4a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2v-4"></path>
+                <polyline points="7 10 12 15 17 10"></polyline>
+                <line x1="12" y1="15" x2="12" y2="3"></line>
+              </svg>
+              <span>Download Release APK</span>
+            </a>
+
+            <a href="https://rookieenough.github.io/Orion-Data/redirect.html?id=kanri" class="btn btn-secondary btn-lg" target="_blank" rel="noopener noreferrer">
+              <span>Get on Orion Store</span>
+            </a>
+          </div>
+
+          <!-- Verify Checksum -->
+          <div class="verify-box">
+            <div style="display:flex; justify-content:space-between; align-items:center;">
+              <strong style="font-size:0.875rem;">SHA-256 Checksum:</strong>
+              <button class="copy-btn" data-copy-target="sha256-hash">Copy Hash</button>
+            </div>
+            <div class="verify-code-block" id="sha256-hash">
+              34DF85A3EAD322E65BC46CB2C7AB30F2D8FBD682289CBA24740C05C3E47C7538
+            </div>
+
+            <div style="margin-top:16px; font-size:0.8125rem; color:var(--muted);">
+              Verify your download in terminal:
+              <div style="margin-top:6px; font-family:var(--font-mono); color:var(--text); background:var(--surface); padding:8px 12px; border-radius:6px; font-size:0.75rem;">
+                Windows (PowerShell): Get-FileHash Kanri-v1.19.8-release.apk -Algorithm SHA256<br>
+                macOS / Linux: shasum -a 256 Kanri-v1.19.8-release.apk
+              </div>
+            </div>
+          </div>
+
+          <!-- Sideloading & Android 13+ Note -->
+          <div style="text-align:left; margin-top:32px; background:var(--canvas); padding:20px; border-radius:var(--radius-md); border:1px solid var(--border);">
+            <h4 style="font-size:0.9375rem; margin-bottom:8px;">Installing on Android 13 and Newer</h4>
+            <p style="font-size:0.875rem; color:var(--muted); margin-bottom:12px;">
+              Because Kanri is distributed directly as an open-source APK rather than through Google Play, Android 13+ applies a security safeguard called <strong>Restricted settings</strong> to protect against malicious sideloaded apps.
+            </p>
+            <ol style="font-size:0.8125rem; color:var(--text-secondary); margin-left:20px; line-height:1.6;">
+              <li>Install the APK and open Kanri.</li>
+              <li>When prompted for Notification Listener or SMS access, Android may show <em>"Restricted setting"</em>.</li>
+              <li>Go to your phone's <strong>Settings > Apps > Kanri</strong>.</li>
+              <li>Tap the <strong>three dots (⋮)</strong> in the top-right corner.</li>
+              <li>Tap <strong>Allow restricted settings</strong> and authenticate with your fingerprint or PIN.</li>
+              <li>Return to Kanri to complete the setup.</li>
+            </ol>
+          </div>
+        </div>
+      </div>
+    </section>
+
+    <!-- 12. FAQ Section -->
+    <section class="section" id="faq">
+      <div class="container">
+        <div class="section-header">
+          <span class="section-eyebrow">Got Questions?</span>
+          <h2>Frequently Asked Questions</h2>
+          <p>Everything you need to know about Kanri's architecture, privacy, and backups.</p>
+        </div>
+
+        <div class="faq-list">
+          <details class="faq-item" open>
+            <summary class="faq-question">Is Kanri really offline?</summary>
+            <div class="faq-answer">
+              Yes. Kanri's core ledger, SMS parsing engine, notification listener, budget calculators, and analytics run 100% locally on your device with no remote servers or telemetry. The only network feature is an optional client-side encrypted backup to your own personal Google Drive (scoped strictly to <code>drive.file</code>) and an in-app GitHub release update check.
+            </div>
+          </details>
+
+          <details class="faq-item">
+            <summary class="faq-question">Does it read my OTPs?</summary>
+            <div class="faq-answer">
+              No. Kanri's SMS receiver specifically scans for and ignores OTP messages, authentication codes, and security PINs. OTPs are immediately discarded in memory and are never saved to the local database.
+            </div>
+          </details>
+
+          <details class="faq-item">
+            <summary class="faq-question">Which banks work?</summary>
+            <div class="faq-answer">
+              Kanri includes tested patterns for 15+ major Indian public and private banks: SBI, HDFC, ICICI, Axis, Kotak, BOB, PNB, Canara, Union Bank, IDFC FIRST, IndusInd, Federal, Yes Bank, and more. It also supports credit notifications from UPI apps like GPay, PhonePe, Paytm, and CRED.
+            </div>
+          </details>
+
+          <details class="faq-item">
+            <summary class="faq-question">How are cards and ATM withdrawals handled?</summary>
+            <div class="faq-answer">
+              Debit and credit card spends are parsed automatically like UPI transactions. When an ATM withdrawal SMS arrives, Kanri detects the ATM keyword and offers an ATM Transfer workflow, transferring the amount from your Online account to your Cash wallet without counting it as an expense.
+            </div>
+          </details>
+
+          <details class="faq-item">
+            <summary class="faq-question">Why does a sideloaded app need "restricted settings"?</summary>
+            <div class="faq-answer">
+              Starting in Android 13, Google blocks sideloaded apps from enabling accessibility or notification listener permissions by default to protect users against malware. Because Kanri is open-source and downloaded outside Google Play, you simply need to tap "Allow restricted settings" under phone Settings > Apps > Kanri to enable the notification engine.
+            </div>
+          </details>
+
+          <details class="faq-item">
+            <summary class="faq-question">How do I back up and move to a new phone?</summary>
+            <div class="faq-answer">
+              You can export a password-protected encrypted backup file (<code>kanri_backup.enc</code>) under Settings > Backup & Restore, or use the optional Google Drive sync. On your new phone, install Kanri, choose "Restore from Backup", enter your password, and your entire history is restored in seconds.
+            </div>
+          </details>
+
+          <details class="faq-item">
+            <summary class="faq-question">Is my data encrypted?</summary>
+            <div class="faq-answer">
+              Yes. Kanri's SQLite database is encrypted with SQLCipher AES-256 with keys securely stored in the Android Keystore. Exported backup files are encrypted with PBKDF2 (65,536 iterations) and AES-GCM encryption.
+            </div>
+          </details>
+
+          <details class="faq-item">
+            <summary class="faq-question">Does it work without SMS permission?</summary>
+            <div class="faq-answer">
+              Yes. If you decline SMS access, Kanri operates seamlessly as a full-featured manual ledger. You can manually enter expenses, configure budgets, split bills, track lent money, and view all 18+ visualizers and widgets.
+            </div>
+          </details>
+
+          <details class="faq-item">
+            <summary class="faq-question">Can I export my data?</summary>
+            <div class="faq-answer">
+              Yes. You can export your data at any time in open formats: encrypted JSON backups, CSV spreadsheets for Excel/Sheets, or monthly summary statements in PDF.
+            </div>
+          </details>
+
+          <details class="faq-item">
+            <summary class="faq-question">Is it free? Is it open source?</summary>
+            <div class="faq-answer">
+              Yes. Kanri is 100% free and open-source software licensed under the GNU General Public License v3.0 (GPL-3.0). There are no paid tiers, subscriptions, or hidden charges.
+            </div>
+          </details>
+
+          <details class="faq-item">
+            <summary class="faq-question">How do I report a bug or request a bank?</summary>
+            <div class="faq-answer">
+              You can report issues, suggest features, or submit sample SMS patterns (with sanitized personal details) directly on our <a href="https://github.com/omkarnub/Kanri/issues" target="_blank" rel="noopener noreferrer">GitHub Issues</a> tracker.
+            </div>
+          </details>
+        </div>
+      </div>
+    </section>
+
+    <!-- 13. Open Source Band -->
+    <section class="section section-tight" style="background:var(--surface);">
+      <div class="container" style="text-align:center;">
+        <span class="section-eyebrow">GNU General Public License v3.0</span>
+        <h2 style="margin-bottom:16px;">Proudly Open Source</h2>
+        <p style="max-width:680px; margin:0 auto 28px auto; color:var(--text-secondary);">
+          Kanri is licensed under GPL-3.0. You have the right to inspect every line of code, build the APK from source yourself, and verify that your financial privacy is genuinely respected.
+        </p>
+        <div style="display:flex; justify-content:center; gap:16px; flex-wrap:wrap;">
+          <a href="https://github.com/omkarnub/Kanri" class="btn btn-secondary btn-sm" target="_blank" rel="noopener noreferrer">Source Code</a>
+          <a href="https://github.com/omkarnub/Kanri/issues/new?template=bug_report.md" class="btn btn-secondary btn-sm" target="_blank" rel="noopener noreferrer">Report a Bug</a>
+          <a href="https://github.com/omkarnub/Kanri/issues/new?template=bank_request.md" class="btn btn-secondary btn-sm" target="_blank" rel="noopener noreferrer">Request a Bank Pattern</a>
+          <a href="https://github.com/omkarnub/Kanri/blob/main/CONTRIBUTING.md" class="btn btn-secondary btn-sm" target="_blank" rel="noopener noreferrer">Contribute</a>
+        </div>
+      </div>
+    </section>
+  </main>
+
+  <!-- Site Footer -->
+  <footer class="site-footer">
+    <div class="container">
+      <div class="footer-grid">
+        <div class="footer-col">
+          <div style="display:flex; align-items:center; gap:10px; margin-bottom:14px;">
+            <img src="assets/images/kanri_app_icon_dark.png" alt="Kanri logo" style="width:28px; height:28px; border-radius:6px;">
+            <span class="brand-logotype" style="font-size:1.125rem;">KANRI</span>
+            <span style="font-size:0.8125rem; color:var(--muted);">管理</span>
+          </div>
+          <p style="font-size:0.875rem; color:var(--muted); line-height:1.6; max-width:320px;">
+            Offline-first personal finance ledger for Android. Built with Kotlin, Jetpack Compose, and SQLCipher.
+          </p>
+        </div>
+
+        <div class="footer-col">
+          <h5>Product</h5>
+          <ul class="footer-links">
+            <li><a href="#features">Features</a></li>
+            <li><a href="#widgets">Widgets</a></li>
+            <li><a href="#download">Download APK</a></li>
+            <li><a href="changelog/index.html">Changelog</a></li>
+            <li><a href="press/index.html">Press Kit</a></li>
+          </ul>
+        </div>
+
+        <div class="footer-col">
+          <h5>Documentation</h5>
+          <ul class="footer-links">
+            <li><a href="docs/index.html">Docs Overview</a></li>
+            <li><a href="docs/getting-started/index.html">Getting Started</a></li>
+            <li><a href="docs/capture-dedupe/index.html">Capture & Dedupe</a></li>
+            <li><a href="docs/security-model/index.html">Security Model</a></li>
+            <li><a href="docs/troubleshooting/index.html">Troubleshooting</a></li>
+          </ul>
+        </div>
+
+        <div class="footer-col">
+          <h5>Legal & Security</h5>
+          <ul class="footer-links">
+            <li><a href="privacy/index.html">Privacy Policy</a></li>
+            <li><a href="terms/index.html">Terms of Use</a></li>
+            <li><a href="security/index.html">Security Model</a></li>
+            <li><a href="https://github.com/omkarnub/Kanri/issues" target="_blank" rel="noopener noreferrer">Contact & Issues</a></li>
+            <li><a href="https://github.com/omkarnub/Kanri" target="_blank" rel="noopener noreferrer">GitHub Repo</a></li>
+          </ul>
+        </div>
+      </div>
+
+      <div class="footer-bottom">
+        <div>
+          © 2026 Omkar Prabhu (@omkarnub). Licensed under GNU GPL-3.0.
+        </div>
+        <div>
+          Zero cookies · Zero analytics · Zero telemetry
+        </div>
+      </div>
+
+      <p class="trademark-notice">
+        Bank and app names are trademarks of their respective owners. Kanri is not affiliated with or endorsed by any of them.
+      </p>
+    </div>
+  </footer>
+
+  <!-- Self-Hosted JavaScript Engine -->
+  <script src="assets/js/config.js"></script>
+  <script src="assets/js/theme.js"></script>
+  <script src="assets/js/parser-demo.js"></script>
+  <script src="assets/js/calculators.js"></script>
+  <script src="assets/js/theme-switcher.js"></script>
+  <script src="assets/js/main.js"></script>
+</body>
+</html>
