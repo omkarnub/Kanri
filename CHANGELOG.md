@@ -15,6 +15,9 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
   - Authored complete 11-chapter Documentation Hub (`/docs/`) with sidebar search, in-page table of contents, and pagination: Getting Started, Capture & Dedupe, Wallets, Lend & Borrow, Budgets & Goals, Insights & Health Score, Widgets, Themes, Backup & Restore, Security Model, and Troubleshooting OEM battery killers.
   - Integrated complete SEO suite: `SoftwareApplication`, `FAQPage`, and `WebSite` JSON-LD schemas, `sitemap.xml`, `robots.txt`, `llms.txt`, Open Graph / Twitter Cards, `SEO_PLAN.md`, and comprehensive codebase verification `REPORT.md`.
   - Added GitHub Actions workflow (`.github/workflows/deploy-pages.yml`) for automated deployment to GitHub Pages.
+- **Web Parallax & Cinematic Motion Components (`website/src/components/ui/`)**:
+  - Saved 3D skeuomorphic GSAP/ScrollTrigger dynamic hero component (`cinematic-hero.tsx`) with dynamic mouse lighting sheen, physical card depth, and responsive iPhone hardware mockup.
+  - Added multi-layer Lenis smooth-scroll + GSAP ScrollTrigger parallax component (`component.tsx`) with layer-specific yPercent transforms and full companion stylesheet (`parallax.css`).
 - Bumped version to `1.19.10` (Build 77).
 
 ## [1.19.9] - 2026-11-21

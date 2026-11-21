@@ -40,6 +40,12 @@ website/
 ├── llms.txt                    # Factual AI search manifest
 ├── SEO_PLAN.md                 # Discoverability strategy & keyword map
 ├── REPORT.md                   # Verification audit & facts report
+├── src/                        # Modular React / GSAP UI component templates
+│   └── components/ui/
+│       ├── cinematic-hero.tsx  # 3D skeuomorphic ScrollTrigger hero with card tilt & phone mockup
+│       ├── component.tsx       # Multi-layer Lenis smooth-scroll + GSAP parallax component
+│       ├── parallax.css        # Layout & layer styles for ParallaxComponent
+│       └── index.ts            # Component exports
 └── assets/
     ├── css/                    # Main styles, typography, components, docs
     ├── js/                     # Config, theme, parser demo, calculators, search
