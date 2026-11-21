@@ -161,10 +161,13 @@
             <span>Version 1.19.8 Available · Android 8.0+</span>
           </div>
 
-          <h1 class="hero-title">Your money, on your phone. Only.</h1>
+          <h1 class="hero-title">
+            Your money, on your phone.<br>
+            <span class="hero-title-highlight">Only.</span>
+          </h1>
           
           <p class="hero-subhead">
-            Kanri reads your bank SMS, logs every rupee automatically, and sends nothing anywhere. Fully offline-first personal finance with zero trackers, zero ads, and open-source sovereignty.
+            Kanri reads your transactional bank SMS, enriches UPI merchant names, and logs every rupee automatically in memory. A 100% on-device personal finance ledger with zero trackers, zero ads, SQLCipher AES-256 encryption, and open-source sovereignty.
           </p>
 
           <div class="hero-ctas">
@@ -186,25 +189,63 @@
           </div>
 
           <div class="trust-strip">
-            <span>✓ 100% On-Device</span>
+            <span><strong class="trust-tick">✓</strong> 100% On-Device</span>
             <span>·</span>
-            <span>✓ Zero Analytics</span>
+            <span><strong class="trust-tick">✓</strong> Zero Analytics</span>
             <span>·</span>
-            <span>✓ No Ads</span>
+            <span><strong class="trust-tick">✓</strong> No Ads</span>
             <span>·</span>
-            <span>✓ Open Source (GPL-3.0)</span>
+            <span><strong class="trust-tick">✓</strong> Open Source (GPL-3.0)</span>
             <span>·</span>
-            <span>✓ AES-256 Encrypted</span>
+            <span><strong class="trust-tick">✓</strong> SQLCipher AES-256</span>
           </div>
         </div>
 
         <div class="hero-visual-wrapper">
-          <div class="hero-video-card">
-            <video autoplay loop muted playsinline poster="assets/media/poster.png" aria-label="Kanri motion graphics showcase">
-              <source src="assets/media/kanri_loop_silent_1440.mp4" type="video/mp4">
-              <source src="assets/media/kanri_loop.webm" type="video/webm">
-              <img src="assets/media/poster.png" alt="Kanri interface preview">
-            </video>
+          <div class="hero-depth-card" id="hero-depth-card">
+            <div class="hero-depth-sheen" aria-hidden="true"></div>
+
+            <!-- Floating Monochrome Badges -->
+            <div class="hero-floating-badge hero-badge-top-left">
+              <div class="hero-badge-icon">
+                <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
+                  <rect x="3" y="11" width="18" height="11" rx="2" ry="2"></rect>
+                  <path d="M7 11V7a5 5 0 0 1 10 0v4"></path>
+                </svg>
+              </div>
+              <div>
+                <div class="hero-badge-text-primary">SQLCipher AES-256</div>
+                <div class="hero-badge-text-sub">Hardware Keystore Key</div>
+              </div>
+            </div>
+
+            <div class="hero-floating-badge hero-badge-bottom-right">
+              <div class="hero-badge-icon">
+                <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
+                  <path d="M13 10V3L4 14h7v7l9-11h-7z"></path>
+                </svg>
+              </div>
+              <div>
+                <div class="hero-badge-text-primary">Dual-Engine Capture</div>
+                <div class="hero-badge-text-sub">0ms Local SMS Match</div>
+              </div>
+            </div>
+
+            <!-- Smartphone Hardware Frame -->
+            <div class="hero-phone-bezel">
+              <div class="hero-hardware-btn hero-btn-vol-up" aria-hidden="true"></div>
+              <div class="hero-hardware-btn hero-btn-vol-down" aria-hidden="true"></div>
+              <div class="hero-hardware-btn hero-btn-pwr" aria-hidden="true"></div>
+
+              <div class="hero-screen-inner">
+                <div class="hero-screen-glare" aria-hidden="true"></div>
+                <video autoplay loop muted playsinline poster="assets/media/poster.png" aria-label="Kanri motion graphics showcase">
+                  <source src="assets/media/kanri_loop_silent_1440.mp4" type="video/mp4">
+                  <source src="assets/media/kanri_loop.webm" type="video/webm">
+                  <img src="assets/media/poster.png" alt="Kanri interface preview">
+                </video>
+              </div>
+            </div>
           </div>
         </div>
       </div>
@@ -1128,6 +1169,7 @@
   <!-- Self-Hosted JavaScript Engine -->
   <script src="assets/js/config.js"></script>
   <script src="assets/js/theme.js"></script>
+  <script src="assets/js/hero.js"></script>
   <script src="assets/js/parser-demo.js"></script>
   <script src="assets/js/calculators.js"></script>
   <script src="assets/js/theme-switcher.js"></script>

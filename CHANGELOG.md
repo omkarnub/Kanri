@@ -15,9 +15,11 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
   - Authored complete 11-chapter Documentation Hub (`/docs/`) with sidebar search, in-page table of contents, and pagination: Getting Started, Capture & Dedupe, Wallets, Lend & Borrow, Budgets & Goals, Insights & Health Score, Widgets, Themes, Backup & Restore, Security Model, and Troubleshooting OEM battery killers.
   - Integrated complete SEO suite: `SoftwareApplication`, `FAQPage`, and `WebSite` JSON-LD schemas, `sitemap.xml`, `robots.txt`, `llms.txt`, Open Graph / Twitter Cards, `SEO_PLAN.md`, and comprehensive codebase verification `REPORT.md`.
   - Added GitHub Actions workflow (`.github/workflows/deploy-pages.yml`) for automated deployment to GitHub Pages.
-- **Web Parallax & Cinematic Motion Components (`website/src/components/ui/`)**:
-  - Saved 3D skeuomorphic GSAP/ScrollTrigger dynamic hero component (`cinematic-hero.tsx`) with dynamic mouse lighting sheen, physical card depth, and responsive iPhone hardware mockup.
-  - Added multi-layer Lenis smooth-scroll + GSAP ScrollTrigger parallax component (`component.tsx`) with layer-specific yPercent transforms and full companion stylesheet (`parallax.css`).
+  - **Monochrome Physical Hero Section (`website/index.html`, `website/assets/css/components.css`, `website/assets/js/hero.js`, `website/src/components/ui/cinematic-hero.tsx`)**:
+    - Completely stripped out colorful template artifacts and generic blue/purple palettes in favor of Kanri's authentic minimalist monochrome design language (#121212 / #181818 / #F2F2F2).
+    - Built physical obsidian depth card with dynamic cursor-following radial sheen and 60fps 3D perspective tilt (`assets/js/hero.js`).
+    - Added precision matte smartphone hardware bezel with tactile side buttons, camera status notch, screen glare reflection, and flanking frosted monochrome glass badges (SQLCipher AES-256 and Dual-Engine Capture).
+    - Refactored `cinematic-hero.tsx` into a pure monochrome Kanri React component featuring Safe-to-Spend daily allowance dials, HDFC SMS auto-capture card, and dual wallet counters.
 - Bumped version to `1.19.10` (Build 77).
 
 ## [1.19.9] - 2026-11-21
