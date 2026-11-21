@@ -2,7 +2,7 @@
 <html lang="en">
 <head>
   <meta charset="UTF-8">
-  <title>Kanri — High-Energy Showcase Reel</title>
+  <title>Kanri — Product Commercial & Showcase Reel</title>
   <style>
     @font-face {
       font-family: 'Panchang';
@@ -37,12 +37,13 @@
 
     :root {
       --canvas: #FAF9F5;
-      --dark: #0B0B10;
-      --surface: #121212;
-      --surface-glass: rgba(18, 18, 18, 0.75);
+      --dark: #0A0A0F;
+      --surface: #121217;
+      --surface-glass: rgba(18, 18, 24, 0.82);
       --border: rgba(255, 255, 255, 0.12);
-      --text: #F2F2F2;
-      --text-muted: #A6A6A6;
+      --border-lit: rgba(255, 255, 255, 0.22);
+      --text: #F5F5F7;
+      --text-muted: #A1A1A6;
       --income: #30A46C;
       --accent: #30A46C;
       --expense: #E5484D;
@@ -78,7 +79,7 @@
       position: relative;
     }
 
-    /* Stage canvas */
+    /* Stage Canvas for 3D Background Matrix */
     #stage-canvas {
       position: absolute;
       top: 0;
@@ -112,6 +113,55 @@
       pointer-events: none;
     }
 
+    /* Commercial Ad Header Caption Banner */
+    .caption-banner {
+      position: absolute;
+      top: 60px;
+      left: 0;
+      width: 100%;
+      display: flex;
+      flex-direction: column;
+      align-items: center;
+      text-align: center;
+      z-index: 30;
+    }
+
+    .caption-pill {
+      display: inline-flex;
+      align-items: center;
+      gap: 10px;
+      background: rgba(48, 164, 108, 0.12);
+      border: 1px solid rgba(48, 164, 108, 0.35);
+      border-radius: 20px;
+      padding: 6px 20px;
+      font-size: 13px;
+      font-weight: 700;
+      color: #30A46C;
+      letter-spacing: 0.14em;
+      text-transform: uppercase;
+      margin-bottom: 12px;
+      box-shadow: 0 4px 16px rgba(48, 164, 108, 0.15);
+    }
+
+    .caption-title {
+      font-family: 'Panchang', sans-serif;
+      font-size: 40px;
+      font-weight: 700;
+      color: #F5F5F7;
+      letter-spacing: 0.04em;
+      text-transform: uppercase;
+      line-height: 1.1;
+    }
+
+    .caption-desc {
+      font-size: 20px;
+      font-weight: 500;
+      color: #A1A1A6;
+      margin-top: 8px;
+      max-width: 960px;
+      line-height: 1.4;
+    }
+
     /* HUD Frame Overlay */
     #hud-overlay {
       position: absolute;
@@ -131,22 +181,22 @@
       position: absolute;
       width: 24px;
       height: 24px;
-      border: 1.5px solid rgba(255, 255, 255, 0.4);
+      border: 1.5px solid rgba(255, 255, 255, 0.35);
     }
-    .hud-tl { top: 40px; left: 48px; border-right: none; border-bottom: none; }
-    .hud-tr { top: 40px; right: 48px; border-left: none; border-bottom: none; }
-    .hud-bl { bottom: 40px; left: 48px; border-right: none; border-top: none; }
-    .hud-br { bottom: 40px; right: 48px; border-left: none; border-top: none; }
+    .hud-tl { top: 36px; left: 44px; border-right: none; border-bottom: none; }
+    .hud-tr { top: 36px; right: 44px; border-left: none; border-bottom: none; }
+    .hud-bl { bottom: 36px; left: 44px; border-right: none; border-top: none; }
+    .hud-br { bottom: 36px; right: 44px; border-left: none; border-top: none; }
 
     .hud-tag {
       position: absolute;
       text-transform: uppercase;
       font-weight: 500;
     }
-    #hud-top-left { top: 44px; left: 88px; }
-    #hud-top-right { top: 44px; right: 88px; }
-    #hud-bottom-left { bottom: 44px; left: 88px; }
-    #hud-bottom-right { bottom: 44px; right: 88px; display: flex; align-items: center; gap: 8px; }
+    #hud-top-left { top: 40px; left: 84px; display: flex; align-items: center; gap: 8px; }
+    #hud-top-right { top: 40px; right: 84px; }
+    #hud-bottom-left { bottom: 40px; left: 84px; }
+    #hud-bottom-right { bottom: 40px; right: 84px; display: flex; align-items: center; gap: 8px; }
 
     #rec-dot {
       width: 8px;
@@ -154,18 +204,30 @@
       border-radius: 50%;
       background: #E5484D;
       display: inline-block;
+      box-shadow: 0 0 8px #E5484D;
     }
 
-    /* Vignette & Grain Overlay */
+    /* Vignette Overlay */
     #vignette {
       position: absolute;
       top: 0;
       left: 0;
       width: 1920px;
       height: 1080px;
-      background: radial-gradient(circle at 50% 50%, transparent 65%, rgba(0, 0, 0, 0.45) 100%);
+      background: radial-gradient(circle at 50% 50%, transparent 62%, rgba(0, 0, 0, 0.6) 100%);
       pointer-events: none;
       z-index: 90;
+    }
+
+    /* Apple Liquid Glass Styling */
+    .liquid-glass-card {
+      background: rgba(18, 18, 24, 0.84);
+      border: 1px solid rgba(255, 255, 255, 0.14);
+      border-top: 1.5px solid rgba(255, 255, 255, 0.28);
+      border-radius: 36px;
+      box-shadow: 0 36px 90px -20px rgba(0, 0, 0, 0.75), inset 0 1px 0 rgba(255, 255, 255, 0.2);
+      backdrop-filter: blur(32px);
+      -webkit-backdrop-filter: blur(32px);
     }
   </style>
   <script src="node_modules/@mojs/core/dist/mo.umd.js"></script>
@@ -181,7 +243,10 @@
     <div class="hud-bracket hud-tr"></div>
     <div class="hud-bracket hud-bl"></div>
     <div class="hud-bracket hud-br"></div>
-    <div class="hud-tag" id="hud-top-left">KANRI // SHOWCASE 2026</div>
+    <div class="hud-tag" id="hud-top-left">
+      <span style="display:inline-block; width:6px; height:6px; background:#30A46C; border-radius:50%;"></span>
+      KANRI // PRODUCT AD REEL
+    </div>
     <div class="hud-tag" id="hud-top-right">SCENE 01 / 07</div>
     <div class="hud-tag" id="hud-bottom-left">[ SYSTEM ARCHITECTURE ]</div>
     <div class="hud-tag" id="hud-bottom-right">
@@ -190,10 +255,12 @@
     </div>
   </div>
 
-  <!-- Scenes -->
+  <!-- Scenes Container -->
   <div id="scenes-container">
 
-    <!-- Scene 1: Emblem Spark & Laser Expansion (0.00 - 1.88s) -->
+    <!-- ========================================== -->
+    <!-- SCENE 1: Problem Hook & Laser Ignition (0.00 - 2.11s) -->
+    <!-- ========================================== -->
     <div id="scene-1" class="scene">
       <div id="s1-emblem-wrap" style="display:flex; flex-direction:column; align-items:center; transform:scale(1);">
         <svg id="s1-crest" viewBox="0 0 2048 2048" width="160" height="160" fill="#30A46C">
@@ -202,13 +269,39 @@
         <div id="s1-name" style="font-family:'Panchang', sans-serif; font-size:42px; font-weight:700; color:#F2F2F2; letter-spacing:0.16em; margin-top:20px;">KANRI</div>
         <div id="s1-sub" style="font-size:14px; color:#A6A6A6; letter-spacing:0.24em; margin-top:8px;">OFFLINE-FIRST FINANCIAL LEDGER</div>
       </div>
+
+      <!-- Problem Hook Overlay appearing at t=0.40s -->
+      <div id="s1-hook-wrap" style="position:absolute; display:flex; flex-direction:column; align-items:center; text-align:center; opacity:0; transform:scale(0.95);">
+        <div style="display:flex; gap:16px; margin-bottom:24px;">
+          <div style="background:rgba(229,72,77,0.15); border:1px solid #E5484D; color:#E5484D; padding:8px 20px; border-radius:20px; font-size:14px; font-weight:700; letter-spacing:0.1em; text-transform:uppercase;">
+            ⚠ CLOUD TRACKERS
+          </div>
+          <div style="background:rgba(229,72,77,0.15); border:1px solid #E5484D; color:#E5484D; padding:8px 20px; border-radius:20px; font-size:14px; font-weight:700; letter-spacing:0.1em; text-transform:uppercase;">
+            ⚠ DATA HARVESTING
+          </div>
+          <div style="background:rgba(229,72,77,0.15); border:1px solid #E5484D; color:#E5484D; padding:8px 20px; border-radius:20px; font-size:14px; font-weight:700; letter-spacing:0.1em; text-transform:uppercase;">
+            ⚠ SUBSCRIPTION PAYWALLS
+          </div>
+        </div>
+        <div style="font-family:'Panchang', sans-serif; font-size:48px; font-weight:700; color:#F5F5F7; max-width:1100px; line-height:1.2;">
+          TIRED OF FINANCE APPS TRACKING YOUR SPENDINGS?
+        </div>
+        <div style="font-size:24px; color:#A1A1A6; margin-top:16px; font-weight:500;">
+          Most apps upload every rupee you spend to corporate servers.
+        </div>
+      </div>
+
       <!-- Laser Beam Line -->
-      <div id="s1-laser" style="position:absolute; top:50%; left:0; width:1920px; height:2px; background:#30A46C; transform:scaleX(0); box-shadow:0 0 20px #30A46C;"></div>
+      <div id="s1-laser" style="position:absolute; top:50%; left:0; width:1920px; height:2px; background:#30A46C; transform:scaleX(0); box-shadow:0 0 24px #30A46C;"></div>
     </div>
 
-    <!-- Scene 2: Brand Slam (1.88 - 3.75s) -->
+    <!-- ========================================== -->
+    <!-- SCENE 2: Brand Slam & Commercial Reveal (2.11 - 3.98s) -->
+    <!-- ========================================== -->
     <div id="scene-2" class="scene" style="background:#30A46C; color:#0B0B10; flex-direction:column;">
-      <div id="s2-kicker" style="font-family:'Google Sans', monospace; font-size:20px; font-weight:700; letter-spacing:0.2em; text-transform:uppercase; margin-bottom:12px;">INTRODUCING — 2026</div>
+      <div id="s2-kicker" style="font-family:'Google Sans', monospace; font-size:20px; font-weight:700; letter-spacing:0.24em; text-transform:uppercase; margin-bottom:12px; color:#121212;">
+        INTRODUCING — THE SOLUTION
+      </div>
       <div id="s2-letters" style="font-family:'Panchang', sans-serif; font-size:180px; font-weight:700; line-height:0.9; letter-spacing:0.04em; display:flex;">
         <span class="slam-letter" id="sl-k">K</span>
         <span class="slam-letter" id="sl-a">A</span>
@@ -216,133 +309,261 @@
         <span class="slam-letter" id="sl-r">R</span>
         <span class="slam-letter" id="sl-i">I</span>
       </div>
-      <div id="s2-tagline" style="font-size:32px; font-style:italic; font-weight:500; margin-top:24px; color:#121212;">Personal Finance, 100% On-Device</div>
+      <div id="s2-tagline" style="font-size:32px; font-weight:600; margin-top:24px; color:#121212; letter-spacing:0.02em;">
+        The Offline-First Personal Finance Ledger for Android
+      </div>
+      <div style="display:flex; gap:16px; margin-top:28px;">
+        <div style="background:#121217; color:#F5F5F7; padding:10px 24px; border-radius:24px; font-size:15px; font-weight:700;">100% ON-DEVICE</div>
+        <div style="background:#121217; color:#F5F5F7; padding:10px 24px; border-radius:24px; font-size:15px; font-weight:700;">ZERO CLOUD CALLS</div>
+        <div style="background:#121217; color:#F5F5F7; padding:10px 24px; border-radius:24px; font-size:15px; font-weight:700;">NO ACCOUNTS NEEDED</div>
+      </div>
       <!-- Expanding Dot -->
       <div id="s2-dot" style="position:absolute; width:16px; height:16px; border-radius:50%; background:#0B0B10; transform:scale(0);"></div>
     </div>
 
-    <!-- Scene 3: Kinetic Triplet (3.75 - 6.56s) -->
+    <!-- ========================================== -->
+    <!-- SCENE 3: Core Security & Architecture Pillars (3.98 - 6.56s) -->
+    <!-- ========================================== -->
     <div id="scene-3" class="scene">
       <!-- Triplet A: Dual Engine (Cream background) -->
-      <div id="s3-triplet-a" style="position:absolute; width:100%; height:100%; background:#FAF9F5; display:flex; flex-direction:column; align-items:center; justify-content:center; color:#121212;">
-        <div style="font-family:'Panchang', sans-serif; font-size:100px; font-weight:700; letter-spacing:0.04em;">DUAL-ENGINE</div>
-        <div style="font-size:26px; font-weight:600; color:#555; margin-top:16px;">Bank SMS Parsing + Notification Listener • 5-min Dedupe</div>
-        <div style="margin-top:32px; display:flex; gap:16px;">
-          <div style="background:#121212; color:#F2F2F2; padding:12px 28px; border-radius:30px; font-size:16px; font-weight:600;">Priority 999 Ingestion</div>
-          <div style="background:#30A46C; color:#F2F2F2; padding:12px 28px; border-radius:30px; font-size:16px; font-weight:600;">15+ Bank Regex Patterns</div>
+      <div id="s3-triplet-a" style="position:absolute; width:100%; height:100%; background:#FAF9F5; display:flex; flex-direction:column; align-items:center; justify-content:center; color:#121212; padding:0 120px;">
+        <div style="display:inline-block; background:rgba(48,164,108,0.15); border:1.5px solid #30A46C; color:#30A46C; padding:6px 20px; border-radius:20px; font-size:14px; font-weight:700; letter-spacing:0.14em; text-transform:uppercase; margin-bottom:16px;">
+          CORE CAPABILITY 01
+        </div>
+        <div style="font-family:'Panchang', sans-serif; font-size:80px; font-weight:700; letter-spacing:0.04em; text-align:center;">DUAL-ENGINE CAPTURE</div>
+        <div style="font-size:28px; font-weight:600; color:#333; margin-top:16px; text-align:center; max-width:980px;">
+          Bank SMS Parsing + Payment Notification Listener with 5-Minute Deduplication
+        </div>
+        <div style="margin-top:36px; display:flex; gap:20px;">
+          <div style="background:#121212; color:#F2F2F2; padding:14px 32px; border-radius:30px; font-size:18px; font-weight:600;">Zero Manual Entry Required</div>
+          <div style="background:#30A46C; color:#F2F2F2; padding:14px 32px; border-radius:30px; font-size:18px; font-weight:600;">15+ Indian Bank Patterns</div>
         </div>
       </div>
-      <!-- Triplet B: SQLCipher Vault (Deep obsidian with echo pattern) -->
-      <div id="s3-triplet-b" style="position:absolute; width:100%; height:100%; background:#0B0B10; display:flex; flex-direction:column; align-items:center; justify-content:center; color:#F2F2F2; opacity:0;">
-        <div id="s3-echo-pattern" style="position:absolute; font-family:'Panchang', sans-serif; font-size:120px; font-weight:700; color:rgba(255,255,255,0.03); line-height:1; white-space:nowrap; text-align:center;">
-          SQLCIPHER AES-256<br>SQLCIPHER AES-256<br>SQLCIPHER AES-256
+
+      <!-- Triplet B: SQLCipher Vault (Deep obsidian) -->
+      <div id="s3-triplet-b" style="position:absolute; width:100%; height:100%; background:#0B0B10; display:flex; flex-direction:column; align-items:center; justify-content:center; color:#F2F2F2; opacity:0; padding:0 120px;">
+        <div style="display:inline-block; background:rgba(48,164,108,0.15); border:1.5px solid #30A46C; color:#30A46C; padding:6px 20px; border-radius:20px; font-size:14px; font-weight:700; letter-spacing:0.14em; text-transform:uppercase; margin-bottom:16px;">
+          CORE CAPABILITY 02
         </div>
-        <div style="font-family:'Panchang', sans-serif; font-size:84px; font-weight:700; color:#30A46C; z-index:2;">SQLCIPHER AES-256</div>
-        <div style="font-size:26px; font-weight:500; color:#A6A6A6; margin-top:16px; z-index:2;">Encrypted Database Sealed by Android Keystore</div>
-        <div style="margin-top:32px; z-index:2;">
-          <svg width="48" height="48" viewBox="0 0 24 24" fill="none" stroke="#30A46C" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
+        <div style="font-family:'Panchang', sans-serif; font-size:80px; font-weight:700; color:#30A46C; z-index:2; text-align:center;">
+          SQLCIPHER AES-256
+        </div>
+        <div style="font-size:28px; font-weight:500; color:#A6A6A6; margin-top:16px; z-index:2; text-align:center; max-width:980px;">
+          Hardware-Encrypted Database Sealed Inside Android Keystore (TEE / StrongBox)
+        </div>
+        <div style="margin-top:36px; display:flex; align-items:center; gap:20px; z-index:2;">
+          <svg width="44" height="44" viewBox="0 0 24 24" fill="none" stroke="#30A46C" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round">
             <rect x="3" y="11" width="18" height="11" rx="2" ry="2"></rect>
             <path id="s3-shackle" d="M7 11V7a5 5 0 0 1 10 0v4"></path>
           </svg>
+          <div style="background:rgba(255,255,255,0.08); border:1px solid rgba(255,255,255,0.15); padding:12px 28px; border-radius:30px; font-size:18px; font-weight:600;">
+            Zero Master Key Exposure
+          </div>
         </div>
       </div>
-      <!-- Triplet C: Zero Cloud (Electric Blue) -->
-      <div id="s3-triplet-c" style="position:absolute; width:100%; height:100%; background:#2F47FF; display:flex; flex-direction:column; align-items:center; justify-content:center; color:#F2F2F2; opacity:0;">
-        <div style="font-family:'Panchang', sans-serif; font-size:110px; font-weight:700;">ZERO CLOUD</div>
-        <div style="font-size:28px; font-weight:600; letter-spacing:0.12em; margin-top:16px;">NO ANALYTICS • NO ADS • NO TRACKING</div>
-        <div style="margin-top:32px; font-family:monospace; font-size:18px; border:1.5px solid #F2F2F2; padding:8px 24px; border-radius:8px;">100% PRIVATE HARDWARE AIRGAP</div>
+
+      <!-- Triplet C: Zero Cloud Airgap (Electric Blue) -->
+      <div id="s3-triplet-c" style="position:absolute; width:100%; height:100%; background:#2F47FF; display:flex; flex-direction:column; align-items:center; justify-content:center; color:#F2F2F2; opacity:0; padding:0 120px;">
+        <div style="display:inline-block; background:rgba(255,255,255,0.2); border:1.5px solid #F2F2F2; color:#F2F2F2; padding:6px 20px; border-radius:20px; font-size:14px; font-weight:700; letter-spacing:0.14em; text-transform:uppercase; margin-bottom:16px;">
+          CORE CAPABILITY 03
+        </div>
+        <div style="font-family:'Panchang', sans-serif; font-size:88px; font-weight:700; text-align:center;">100% AIRGAPPED</div>
+        <div style="font-size:28px; font-weight:600; letter-spacing:0.04em; margin-top:16px; text-align:center;">
+          NO SERVERS • NO ACCOUNTS • NO ADS • NO TRACKING
+        </div>
+        <div style="margin-top:36px; font-family:'Google Sans', monospace; font-size:18px; background:rgba(0,0,0,0.25); border:1.5px solid #F2F2F2; padding:12px 32px; border-radius:30px; font-weight:600;">
+          Your Financial Data Never Leaves Your Physical Phone
+        </div>
       </div>
     </div>
 
-    <!-- Scene 4: Signature 3D Visual (6.56 - 8.44s) -->
-    <div id="scene-4" class="scene" style="background:#0B0B10;">
-      <div style="position:absolute; top:120px; left:120px; z-index:20;">
-        <div style="font-family:'Panchang', sans-serif; font-size:48px; font-weight:700; color:#F2F2F2;">PIXEL DOTTILES</div>
-        <div style="font-size:18px; color:#A6A6A6; margin-top:8px;">3D Dynamic Matrix & Financial Health Topology</div>
+    <!-- ========================================== -->
+    <!-- SCENE 4: Feature 1 — SMS Auto-Capture in Action (6.56 - 8.91s) -->
+    <!-- ========================================== -->
+    <div id="scene-4" class="scene" style="perspective:1600px; flex-direction:column;">
+      <div class="caption-banner" id="s4-caption">
+        <div class="caption-pill">FEATURE 01 // DUAL-ENGINE CAPTURE</div>
+        <div class="caption-title">AUTOMATIC TRANSACTION LOGGING</div>
+        <div class="caption-desc">Seamlessly intercepts bank SMS & notifications without opening the app</div>
+      </div>
+
+      <!-- 3D Liquid Glass Interactive Card -->
+      <div id="s4-card" class="liquid-glass-card" style="width:1040px; height:460px; margin-top:120px; padding:44px 50px; display:flex; flex-direction:column; justify-content:space-between; transform-style:preserve-3d;">
+        <!-- Incoming Bank SMS Notification Toast -->
+        <div id="s4-sms-toast" style="background:#1A1A22; border:1px solid rgba(48,164,108,0.4); border-radius:24px; padding:24px 32px; display:flex; justify-content:space-between; align-items:center; box-shadow:0 12px 32px rgba(0,0,0,0.5);">
+          <div style="display:flex; align-items:center; gap:20px;">
+            <div style="width:48px; height:48px; border-radius:14px; background:#1E3A8A; display:flex; align-items:center; justify-content:center; color:#FFF; font-weight:700; font-size:18px;">
+              HDFC
+            </div>
+            <div>
+              <div style="font-size:22px; font-weight:700; color:#F5F5F7;">HDFC Bank • <span style="color:#E5484D;">−</span>₹1,950 Debited</div>
+              <div style="font-size:15px; color:#A1A1A6; margin-top:4px;">SMS received: "Spent ₹1,950 at Urban Cafe via UPI"</div>
+            </div>
+          </div>
+          <div style="background:rgba(48,164,108,0.18); border:1px solid #30A46C; color:#30A46C; border-radius:20px; padding:8px 22px; font-size:15px; font-weight:700;">
+            ✓ Auto-captured
+          </div>
+        </div>
+
+        <!-- Ledger Auto-Categorization Result -->
+        <div style="display:flex; justify-content:space-between; align-items:center; background:#14141A; border:1px solid rgba(255,255,255,0.08); border-radius:24px; padding:24px 32px;">
+          <div style="display:flex; align-items:center; gap:18px;">
+            <div style="width:44px; height:44px; border-radius:12px; background:rgba(48,164,108,0.15); display:flex; align-items:center; justify-content:center;">
+              <svg width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="#30A46C" stroke-width="2.2" stroke-linecap="round" stroke-linejoin="round">
+                <path d="M18 8h1a4 4 0 0 1 0 8h-1"></path>
+                <path d="M2 8h16v9a4 4 0 0 1-4 4H6a4 4 0 0 1-4-4V8z"></path>
+                <line x1="6" y1="1" x2="6" y2="4"></line>
+                <line x1="10" y1="1" x2="10" y2="4"></line>
+                <line x1="14" y1="1" x2="14" y2="4"></line>
+              </svg>
+            </div>
+            <div>
+              <div style="font-size:20px; font-weight:600; color:#F5F5F7;">Food & Dining</div>
+              <div style="font-size:14px; color:#A1A1A6; margin-top:2px;">Online Wallet • 5-min dedupe verified</div>
+            </div>
+          </div>
+          <div style="font-size:28px; font-weight:700; color:#F5F5F7;">−₹1,950.00</div>
+        </div>
+
+        <!-- Status Footer -->
+        <div style="display:flex; justify-content:space-between; align-items:center; font-size:15px; color:#A1A1A6; padding-top:8px;">
+          <span>Zero cloud delay • Logged in 42ms</span>
+          <span style="color:#30A46C; font-weight:600;">100% Offline Database Updated</span>
+        </div>
       </div>
     </div>
 
-    <!-- Scene 5: Product Micro-Moments (8.44 - 11.25s) -->
-    <div id="scene-5" class="scene" style="perspective:1600px;">
-      <!-- Frosted Liquid Glass Main Stage Card -->
-      <div id="s5-glass-card" style="width:1040px; height:560px; background:rgba(18, 18, 18, 0.82); border:1px solid rgba(255,255,255,0.14); border-radius:36px; box-shadow:0 36px 80px -20px rgba(0,0,0,0.7); backdrop-filter:blur(32px); padding:44px 54px; display:flex; flex-direction:column; justify-content:space-between; transform-style:preserve-3d;">
-        <!-- Card Top: HDFC Bank SMS Toast -->
+    <!-- ========================================== -->
+    <!-- SCENE 5: Feature 2 — Instant Bill Splitting (8.91 - 11.25s) -->
+    <!-- ========================================== -->
+    <div id="scene-5" class="scene" style="perspective:1600px; flex-direction:column;">
+      <div class="caption-banner" id="s5-caption">
+        <div class="caption-pill">FEATURE 02 // LEND & BORROW LEDGER</div>
+        <div class="caption-title">INSTANT GROUP BILL SPLITTING</div>
+        <div class="caption-desc">Split shared expenses from 2 to 20 people down to the exact paisa</div>
+      </div>
+
+      <!-- 3D Liquid Glass Split Card -->
+      <div id="s5-card" class="liquid-glass-card" style="width:1040px; height:460px; margin-top:120px; padding:44px 50px; display:flex; flex-direction:column; justify-content:space-between; transform-style:preserve-3d;">
+        <!-- Top Row: Bill Amount & Split Calc -->
         <div style="display:flex; justify-content:space-between; align-items:center;">
-          <div style="display:flex; align-items:center; gap:16px;">
-            <div style="width:12px; height:12px; border-radius:50%; background:#E5484D;"></div>
-            <span style="font-size:24px; font-weight:600; color:#F2F2F2;">HDFC Bank • <span style="color:#E5484D;">−</span>₹1,950 Debited</span>
+          <div>
+            <div style="font-size:16px; font-weight:600; color:#A1A1A6; text-transform:uppercase; letter-spacing:0.08em;">Total Bill</div>
+            <div style="font-size:36px; font-weight:700; color:#F5F5F7; margin-top:4px;">₹1,950.00</div>
           </div>
-          <div style="background:rgba(48,164,108,0.15); border:1px solid #30A46C; color:#30A46C; border-radius:20px; padding:8px 20px; font-size:15px; font-weight:600;">
-            Auto-captured
-          </div>
-        </div>
-
-        <!-- Card Middle: Bill Splitting & Savings Stepper -->
-        <div style="display:flex; justify-content:space-between; gap:40px; margin:24px 0;">
-          <!-- Left: Split Module -->
-          <div style="flex:1; background:#1A1A1A; border:1px solid rgba(255,255,255,0.08); border-radius:24px; padding:28px;">
-            <div style="display:flex; justify-content:space-between; align-items:center;">
-              <span style="font-size:18px; font-weight:600; color:#A6A6A6;">Split ₹1,950</span>
-              <span id="s5-split-calc" style="font-size:20px; font-weight:700; color:#30A46C;">4 people • ₹487.50 each</span>
-            </div>
-            <!-- Slider Track -->
-            <div style="position:relative; width:100%; height:12px; background:#2A2A2A; border-radius:6px; margin-top:28px;">
-              <div id="s5-slider-fill" style="position:absolute; width:75%; height:100%; background:#30A46C; border-radius:6px;"></div>
-              <div id="s5-slider-thumb" style="position:absolute; left:75%; top:-8px; width:28px; height:28px; border-radius:50%; background:#F2F2F2; box-shadow:0 4px 14px rgba(0,0,0,0.5); transform:translateX(-50%);"></div>
-            </div>
-          </div>
-          <!-- Right: Savings Goal -->
-          <div style="flex:1; background:#1A1A1A; border:1px solid rgba(255,255,255,0.08); border-radius:24px; padding:28px;">
-            <div style="display:flex; justify-content:space-between; align-items:center;">
-              <span style="font-size:18px; font-weight:600; color:#A6A6A6;">MacBook Fund</span>
-              <span style="background:#30A46C; color:#F2F2F2; padding:4px 14px; border-radius:14px; font-size:13px; font-weight:700;">+₹5,000</span>
-            </div>
-            <div id="s5-goal-num" style="font-size:32px; font-weight:700; color:#F2F2F2; margin-top:12px;">₹50,000 <span style="font-size:20px; color:#A6A6A6;">/ ₹60,000</span></div>
-            <div style="position:relative; width:100%; height:10px; background:#2A2A2A; border-radius:5px; margin-top:16px;">
-              <div id="s5-goal-bar" style="width:83.33%; height:100%; background:#30A46C; border-radius:5px;"></div>
-            </div>
+          <div style="text-align:right;">
+            <div style="font-size:16px; font-weight:600; color:#30A46C; text-transform:uppercase; letter-spacing:0.08em;">Each Person Pays</div>
+            <div id="s5-split-calc" style="font-size:36px; font-weight:700; color:#30A46C; margin-top:4px;">₹487.50</div>
           </div>
         </div>
 
-        <!-- Card Bottom: 7-bar chart -->
-        <div style="display:flex; justify-content:space-between; align-items:flex-end; height:120px; padding-top:12px; border-top:1px solid rgba(255,255,255,0.08);">
-          <div style="display:flex; gap:36px; align-items:flex-end; width:100%;">
-            <div style="display:flex; flex-direction:column; align-items:center; gap:6px;"><div style="width:32px; height:45px; background:#2A2A2A; border-radius:4px;"></div><span style="font-size:12px; color:#A6A6A6;">Mon</span></div>
-            <div style="display:flex; flex-direction:column; align-items:center; gap:6px;"><div style="width:32px; height:28px; background:#2A2A2A; border-radius:4px;"></div><span style="font-size:12px; color:#A6A6A6;">Tue</span></div>
-            <div style="display:flex; flex-direction:column; align-items:center; gap:6px;"><div style="width:32px; height:60px; background:#2A2A2A; border-radius:4px;"></div><span style="font-size:12px; color:#A6A6A6;">Wed</span></div>
-            <div style="display:flex; flex-direction:column; align-items:center; gap:6px;"><div style="width:32px; height:35px; background:#2A2A2A; border-radius:4px;"></div><span style="font-size:12px; color:#A6A6A6;">Thu</span></div>
-            <div style="display:flex; flex-direction:column; align-items:center; gap:6px;"><div style="width:32px; height:85px; background:#2A2A2A; border-radius:4px;"></div><span style="font-size:12px; color:#A6A6A6;">Fri</span></div>
-            <div style="display:flex; flex-direction:column; align-items:center; gap:6px;"><div id="s5-sat-bar" style="width:32px; height:110px; background:#30A46C; border-radius:4px; box-shadow:0 0 16px rgba(48,164,108,0.4);"></div><span style="font-size:12px; color:#30A46C; font-weight:700;">Sat</span></div>
-            <div style="display:flex; flex-direction:column; align-items:center; gap:6px;"><div style="width:32px; height:65px; background:#2A2A2A; border-radius:4px;"></div><span style="font-size:12px; color:#A6A6A6;">Sun</span></div>
+        <!-- Slider Module -->
+        <div style="background:#1A1A22; border:1px solid rgba(255,255,255,0.08); border-radius:24px; padding:24px 32px;">
+          <div style="display:flex; justify-content:space-between; font-size:16px; font-weight:600; color:#A1A1A6;">
+            <span>People Splitting</span>
+            <span id="s5-people-count" style="color:#F5F5F7; font-weight:700;">4 People</span>
           </div>
-          <div style="background:#1A1A1A; border:1px solid #30A46C; border-radius:12px; padding:6px 14px; font-size:13px; font-weight:600; color:#F2F2F2; white-space:nowrap;">Sat: ₹1,950</div>
+          <div style="position:relative; width:100%; height:12px; background:#2A2A32; border-radius:6px; margin-top:20px;">
+            <div id="s5-slider-fill" style="position:absolute; width:75%; height:100%; background:#30A46C; border-radius:6px;"></div>
+            <div id="s5-slider-thumb" style="position:absolute; left:75%; top:-8px; width:28px; height:28px; border-radius:50%; background:#F5F5F7; box-shadow:0 4px 16px rgba(0,0,0,0.6); transform:translateX(-50%);"></div>
+          </div>
+        </div>
+
+        <!-- 4 People Member Chips -->
+        <div style="display:flex; justify-content:space-between; gap:16px;">
+          <div style="flex:1; background:#14141A; border:1px solid rgba(48,164,108,0.3); border-radius:18px; padding:14px; text-align:center;">
+            <div style="font-size:15px; font-weight:700; color:#F5F5F7;">You</div>
+            <div style="font-size:13px; color:#30A46C; margin-top:2px; font-weight:600;">Paid ₹1,950</div>
+          </div>
+          <div style="flex:1; background:#14141A; border:1px solid rgba(255,255,255,0.08); border-radius:18px; padding:14px; text-align:center;">
+            <div style="font-size:15px; font-weight:700; color:#F5F5F7;">Alex</div>
+            <div style="font-size:13px; color:#E5484D; margin-top:2px; font-weight:600;">Owes ₹487.50</div>
+          </div>
+          <div style="flex:1; background:#14141A; border:1px solid rgba(255,255,255,0.08); border-radius:18px; padding:14px; text-align:center;">
+            <div style="font-size:15px; font-weight:700; color:#F5F5F7;">Sara</div>
+            <div style="font-size:13px; color:#E5484D; margin-top:2px; font-weight:600;">Owes ₹487.50</div>
+          </div>
+          <div style="flex:1; background:#14141A; border:1px solid rgba(255,255,255,0.08); border-radius:18px; padding:14px; text-align:center;">
+            <div style="font-size:15px; font-weight:700; color:#F5F5F7;">Vikram</div>
+            <div style="font-size:13px; color:#E5484D; margin-top:2px; font-weight:600;">Owes ₹487.50</div>
+          </div>
         </div>
       </div>
     </div>
 
-    <!-- Scene 6: Proof & Metric Slam (11.25 - 13.12s) -->
-    <div id="scene-6" class="scene" style="background:#0B0B10; flex-direction:column;">
-      <div style="font-family:'Google Sans', monospace; font-size:18px; color:#A6A6A6; letter-spacing:0.2em; text-transform:uppercase;">TOTAL TRACKED BALANCE</div>
-      <div id="s6-hero-counter" style="font-family:'Google Sans', sans-serif; font-size:130px; font-weight:700; color:#F2F2F2; line-height:1; margin:20px 0; display:flex; align-items:baseline;">
-        <span style="font-size:90px; margin-right:8px; color:#30A46C;">₹</span>
-        <span id="s6-counter-val">84,320</span>
+    <!-- ========================================== -->
+    <!-- SCENE 6: Feature 3 — Savings Goals & Analytics (11.25 - 13.12s) -->
+    <!-- ========================================== -->
+    <div id="scene-6" class="scene" style="perspective:1600px; flex-direction:column;">
+      <div class="caption-banner" id="s6-caption">
+        <div class="caption-pill">FEATURE 03 // GOALS & ANALYTICS</div>
+        <div class="caption-title">SAVINGS GOALS & WEEKLY TRENDS</div>
+        <div class="caption-desc">Quick steppers (+₹500, +₹1,000) and visual spending patterns</div>
       </div>
-      <div style="font-size:32px; font-weight:600; color:#30A46C; margin-bottom:40px;">+₹12,400 this month</div>
-      <div style="display:flex; gap:20px;">
-        <div style="background:rgba(255,255,255,0.06); border:1px solid rgba(255,255,255,0.12); border-radius:24px; padding:12px 32px; font-size:16px; font-weight:600; color:#F2F2F2;">100% OFFLINE</div>
-        <div style="background:rgba(255,255,255,0.06); border:1px solid rgba(255,255,255,0.12); border-radius:24px; padding:12px 32px; font-size:16px; font-weight:600; color:#F2F2F2;">ZERO ANALYTICS</div>
-        <div style="background:rgba(255,255,255,0.06); border:1px solid rgba(255,255,255,0.12); border-radius:24px; padding:12px 32px; font-size:16px; font-weight:600; color:#F2F2F2;">LOCAL SQLCIPHER</div>
+
+      <!-- 3D Liquid Glass Card: Left Goal, Right Chart -->
+      <div id="s6-card" class="liquid-glass-card" style="width:1040px; height:460px; margin-top:120px; padding:44px 50px; display:flex; justify-content:space-between; gap:44px; transform-style:preserve-3d;">
+        <!-- Left Half: Goal with Quick Stepper -->
+        <div style="flex:1; display:flex; flex-direction:column; justify-content:space-between; background:#1A1A22; border:1px solid rgba(255,255,255,0.08); border-radius:24px; padding:32px;">
+          <div>
+            <div style="display:flex; justify-content:space-between; align-items:center;">
+              <span style="font-size:20px; font-weight:700; color:#F5F5F7;">MacBook Pro Fund</span>
+              <span id="s6-stepper-btn" style="background:#30A46C; color:#FFF; padding:6px 16px; border-radius:14px; font-size:14px; font-weight:700; box-shadow:0 4px 12px rgba(48,164,108,0.3);">
+                +₹1,000
+              </span>
+            </div>
+            <div id="s6-goal-amount" style="font-size:36px; font-weight:700; color:#F5F5F7; margin-top:16px;">
+              ₹51,000 <span style="font-size:22px; color:#A1A1A6; font-weight:500;">/ ₹60,000</span>
+            </div>
+            <div style="position:relative; width:100%; height:12px; background:#2A2A32; border-radius:6px; margin-top:20px;">
+              <div id="s6-goal-fill" style="width:85%; height:100%; background:#30A46C; border-radius:6px; box-shadow:0 0 12px rgba(48,164,108,0.5);"></div>
+            </div>
+          </div>
+          <div style="font-size:15px; color:#30A46C; font-weight:600; display:flex; align-items:center; gap:8px;">
+            <span>★ 85.0% achieved • On track for Dec 2026</span>
+          </div>
+        </div>
+
+        <!-- Right Half: 7-Day Spending Breakdown -->
+        <div style="flex:1; display:flex; flex-direction:column; justify-content:space-between; background:#1A1A22; border:1px solid rgba(255,255,255,0.08); border-radius:24px; padding:32px;">
+          <div style="display:flex; justify-content:space-between; align-items:center;">
+            <span style="font-size:18px; font-weight:700; color:#F5F5F7;">Weekly Spending</span>
+            <span style="font-size:14px; color:#A1A1A6; font-weight:600;">Sat Peak: ₹1,950</span>
+          </div>
+          <!-- 7 Bars -->
+          <div style="display:flex; justify-content:space-between; align-items:flex-end; height:160px; padding-top:20px;">
+            <div style="display:flex; flex-direction:column; align-items:center; gap:8px;"><div style="width:28px; height:48px; background:#2A2A32; border-radius:6px;"></div><span style="font-size:12px; color:#A1A1A6;">M</span></div>
+            <div style="display:flex; flex-direction:column; align-items:center; gap:8px;"><div style="width:28px; height:32px; background:#2A2A32; border-radius:6px;"></div><span style="font-size:12px; color:#A1A1A6;">T</span></div>
+            <div style="display:flex; flex-direction:column; align-items:center; gap:8px;"><div style="width:28px; height:64px; background:#2A2A32; border-radius:6px;"></div><span style="font-size:12px; color:#A1A1A6;">W</span></div>
+            <div style="display:flex; flex-direction:column; align-items:center; gap:8px;"><div style="width:28px; height:40px; background:#2A2A32; border-radius:6px;"></div><span style="font-size:12px; color:#A1A1A6;">T</span></div>
+            <div style="display:flex; flex-direction:column; align-items:center; gap:8px;"><div style="width:28px; height:90px; background:#2A2A32; border-radius:6px;"></div><span style="font-size:12px; color:#A1A1A6;">F</span></div>
+            <div style="display:flex; flex-direction:column; align-items:center; gap:8px;"><div id="s6-sat-bar" style="width:28px; height:130px; background:#30A46C; border-radius:6px; box-shadow:0 0 18px rgba(48,164,108,0.5);"></div><span style="font-size:12px; color:#30A46C; font-weight:700;">S</span></div>
+            <div style="display:flex; flex-direction:column; align-items:center; gap:8px;"><div style="width:28px; height:70px; background:#2A2A32; border-radius:6px;"></div><span style="font-size:12px; color:#A1A1A6;">S</span></div>
+          </div>
+          <div style="font-size:14px; color:#A1A1A6;">Total Spent: ₹5,420 • Category: Food & Dining</div>
+        </div>
       </div>
     </div>
 
-    <!-- Scene 7: Emblem Outro & Seamless Loop (13.12 - 15.00s) -->
-    <div id="scene-7" class="scene" style="background:#0B0B10; flex-direction:column;">
+    <!-- ========================================== -->
+    <!-- SCENE 7: Commercial Outro & Perfect Loop Seam (13.12 - 15.00s) -->
+    <!-- ========================================== -->
+    <div id="scene-7" class="scene" style="background:#0A0A0F; flex-direction:column;">
       <svg id="s7-crest" viewBox="0 0 2048 2048" width="160" height="160" fill="#30A46C">
         <path d="M914,407L1134,407L1134,933L1024,823L914,933Z M914,1641L914,1115L1024,1225L1134,1115L1134,1641Z M197,617L499,617L894,1024L499,1431L197,1431L592,1024Z M1851,617L1549,617L1154,1024L1549,1431L1851,1431L1456,1024Z"/>
       </svg>
-      <div style="font-family:'Panchang', sans-serif; font-size:48px; font-weight:700; color:#F2F2F2; letter-spacing:0.16em; margin-top:24px;">KANRI</div>
-      <div style="font-size:24px; font-style:italic; font-weight:500; color:#A6A6A6; margin-top:8px;">Private. Offline. Yours.</div>
-      <div id="s7-url" style="font-family:'Google Sans', monospace; font-size:16px; color:#30A46C; letter-spacing:0.2em; margin-top:36px; padding:8px 24px; border:1px solid rgba(48,164,108,0.3); border-radius:20px;">GITHUB.COM/OMKARNUB/KANRI</div>
+      <div style="font-family:'Panchang', sans-serif; font-size:42px; font-weight:700; color:#F2F2F2; letter-spacing:0.16em; margin-top:20px;">KANRI</div>
+      <div style="font-size:14px; color:#A6A6A6; letter-spacing:0.24em; margin-top:8px;">OFFLINE-FIRST FINANCIAL LEDGER</div>
+      
+      <!-- Outro CTA Elements -->
+      <div id="s7-cta-wrap" style="display:flex; flex-direction:column; align-items:center; margin-top:28px;">
+        <div style="font-size:22px; font-weight:600; color:#30A46C; letter-spacing:0.04em;">
+          Take Control of Your Personal Finances
+        </div>
+        <div style="font-family:'Google Sans', monospace; font-size:15px; color:#F5F5F7; letter-spacing:0.16em; margin-top:16px; padding:10px 28px; background:rgba(255,255,255,0.06); border:1px solid rgba(48,164,108,0.4); border-radius:24px;">
+          GITHUB.COM/OMKARNUB/KANRI
+        </div>
+      </div>
     </div>
 
   </div>
@@ -350,7 +571,7 @@
   <script>
     window.VIDEO = { w: 1920, h: 1080, duration: 15.000, fps: 60 };
 
-    // --- Mathematical Damped Spring ---
+    // --- Mathematical Damped Spring (k=280, d=26, m=1) ---
     const K = 280.0;
     const D = 26.0;
     const WD = Math.sqrt(K - Math.pow(D / 2.0, 2)); // 10.5357
@@ -362,45 +583,37 @@
     const lerp = (a, b, k) => a + (b - a) * k;
     const seg = (t, a, b) => clamp((t - a) / (b - a));
 
-    // 3D Isometric DotTiles Canvas Engine
+    // 3D Isometric DotTiles Canvas Background Matrix
     const canvas = document.getElementById('stage-canvas');
     const ctx = canvas.getContext('2d');
 
     function render3DMatrix(tNorm) {
       ctx.clearRect(0, 0, 1920, 1080);
 
-      // Only render 3D matrix prominently during Scene 4 and subtle in backgrounds
-      const isS4 = (tNorm >= 6.50 && tNorm < 8.50);
-      const alphaBase = isS4 ? 0.85 : 0.06;
-
+      // Subtle dynamic perspective background
+      const alphaBase = 0.08;
       ctx.save();
       ctx.translate(960, 540);
 
-      // 3D Isometric projection angle
-      const rotX = isS4 ? (0.6 + 0.15 * Math.sin(tNorm * 1.5)) : 0.65;
-      const rotZ = isS4 ? (-0.4 + 0.2 * Math.cos(tNorm * 1.2)) : -0.45;
-
+      const rotX = 0.65;
+      const rotZ = -0.45;
       const gridSize = 9;
-      const spacing = isS4 ? 80 : 70;
+      const spacing = 75;
 
       for (let ix = -gridSize; ix <= gridSize; ix++) {
         for (let iy = -gridSize; iy <= gridSize; iy++) {
           const dist = Math.sqrt(ix * ix + iy * iy);
-          // Wave ripple from center
-          const wave = Math.sin(dist * 0.8 - tNorm * 5.0);
-          const elev = isS4 ? (wave * 35.0) : (wave * 8.0);
+          const wave = Math.sin(dist * 0.7 - tNorm * 4.5);
+          const elev = wave * 12.0;
 
-          // Isometric project
           const x0 = (ix - iy) * spacing * Math.cos(rotZ);
           const y0 = (ix + iy) * spacing * Math.sin(rotX) - elev;
 
-          // Color calculation
-          const isAccent = (dist < 4.0 && wave > 0.4);
-          ctx.fillStyle = isAccent ? `rgba(48, 164, 108, ${alphaBase * 0.9})` : `rgba(255, 255, 255, ${alphaBase * 0.4})`;
+          const isAccent = (dist < 4.5 && wave > 0.4);
+          ctx.fillStyle = isAccent ? `rgba(48, 164, 108, ${alphaBase * 1.5})` : `rgba(255, 255, 255, ${alphaBase * 0.5})`;
 
-          // Draw tile
           ctx.beginPath();
-          ctx.arc(x0, y0, isAccent ? 4.5 : 2.5, 0, Math.PI * 2);
+          ctx.arc(x0, y0, isAccent ? 3.5 : 2.0, 0, Math.PI * 2);
           ctx.fill();
         }
       }
@@ -428,48 +641,60 @@
       const scenes = document.querySelectorAll('.scene');
       scenes.forEach(s => { s.style.opacity = 0; });
 
-      // --- SCENE 1: Emblem Spark & Laser Expansion (0.00 - 1.88s) ---
+      // ========================================================
+      // SCENE 1: Problem Hook & Laser Expansion (0.00 - 2.11s)
+      // ========================================================
       const s1 = document.getElementById('scene-1');
-      if (tNorm < 1.88) {
+      if (tNorm < 2.11) {
         s1.style.opacity = 1;
         document.getElementById('hud-top-right').innerText = "SCENE 01 / 07";
-        document.getElementById('hud-bottom-left').innerText = "[ SYSTEM EMBLEM ]";
+        document.getElementById('hud-bottom-left').innerText = "[ PROBLEM HOOK ]";
 
         const wrap = document.getElementById('s1-emblem-wrap');
+        const hook = document.getElementById('s1-hook-wrap');
         const laser = document.getElementById('s1-laser');
 
-        if (tNorm < 1.41) {
-          const p = S(tNorm);
-          wrap.style.transform = `scale(${0.9 + 0.15 * p})`;
-          wrap.style.opacity = Math.min(1, tNorm * 3);
+        if (tNorm < 0.35) {
+          // Initial Emblem state (Identical to Frame 900 for loop continuity)
+          wrap.style.opacity = 1;
+          wrap.style.transform = 'scale(1)';
+          hook.style.opacity = 0;
+          laser.style.transform = 'scaleX(0)';
+        } else if (tNorm < 1.60) {
+          // Fade emblem, reveal problem hook
+          const pHook = S(tNorm - 0.35);
+          wrap.style.opacity = Math.max(0, 1 - (tNorm - 0.35) * 4);
+          hook.style.opacity = Math.min(1, pHook * 1.5);
+          hook.style.transform = `scale(${0.95 + 0.05 * pHook})`;
           laser.style.transform = 'scaleX(0)';
           laser.style.height = '2px';
-        } else if (tNorm < 1.75) {
+        } else if (tNorm < 1.95) {
           // Stretch into laser beam
-          const pLaser = S(tNorm - 1.41);
-          wrap.style.opacity = Math.max(0, 1 - (tNorm - 1.41) * 6);
+          const pLaser = S(tNorm - 1.60);
+          hook.style.opacity = Math.max(0, 1 - (tNorm - 1.60) * 5);
           laser.style.transform = `scaleX(${pLaser})`;
           laser.style.height = '3px';
         } else {
           // Expand vertically into flood
-          const pFlood = S(tNorm - 1.75);
+          const pFlood = S(tNorm - 1.95);
           laser.style.height = `${1080 * pFlood}px`;
           laser.style.top = `${540 - 540 * pFlood}px`;
         }
       }
 
-      // --- SCENE 2: Brand Slam (1.88 - 3.75s) ---
+      // ========================================================
+      // SCENE 2: Brand Slam & Commercial Reveal (2.11 - 3.98s)
+      // ========================================================
       const s2 = document.getElementById('scene-2');
-      if (tNorm >= 1.88 && tNorm < 3.75) {
+      if (tNorm >= 2.11 && tNorm < 3.98) {
         s2.style.opacity = 1;
         document.getElementById('hud-top-right').innerText = "SCENE 02 / 07";
-        document.getElementById('hud-bottom-left').innerText = "[ BRAND SLAM ]";
+        document.getElementById('hud-bottom-left').innerText = "[ BRAND REVEAL ]";
 
-        // Letters reveal on 1/16 beats
         const letters = ['sl-k', 'sl-a', 'sl-n', 'sl-r', 'sl-i'];
         letters.forEach((id, idx) => {
           const lEl = document.getElementById(id);
-          const tLetter = 1.88 + idx * 0.08;
+          const tLetter = 2.11 + idx * 0.08;
           if (tNorm >= tLetter) {
             const p = S(tNorm - tLetter);
             lEl.style.transform = `translateY(${(1 - p) * -60}px) scale(${0.8 + 0.2 * p})`;
@@ -479,42 +704,44 @@
           }
         });
 
-        // Expanding dot transition at 3.29s
+        // Expanding dot transition at 3.52s
         const dot = document.getElementById('s2-dot');
-        if (tNorm >= 3.29) {
-          const pDot = Math.pow((tNorm - 3.29) / (3.75 - 3.29), 2.5);
+        if (tNorm >= 3.52) {
+          const pDot = Math.pow((tNorm - 3.52) / (3.98 - 3.52), 2.5);
           dot.style.transform = `scale(${pDot * 250})`;
         } else {
           dot.style.transform = 'scale(0)';
         }
       }
 
-      // --- SCENE 3: Kinetic Triplet (3.75 - 6.56s) ---
+      // ========================================================
+      // SCENE 3: Core Security & Architecture Pillars (3.98 - 6.56s)
+      // ========================================================
       const s3 = document.getElementById('scene-3');
-      if (tNorm >= 3.75 && tNorm < 6.56) {
+      if (tNorm >= 3.98 && tNorm < 6.56) {
         s3.style.opacity = 1;
         document.getElementById('hud-top-right').innerText = "SCENE 03 / 07";
-        document.getElementById('hud-bottom-left').innerText = "[ CORE VALUE TRIPLETS ]";
+        document.getElementById('hud-bottom-left').innerText = "[ CORE ARCHITECTURE ]";
 
         const trA = document.getElementById('s3-triplet-a');
         const trB = document.getElementById('s3-triplet-b');
         const trC = document.getElementById('s3-triplet-c');
 
-        if (tNorm < 4.68) {
+        if (tNorm < 4.84) {
           // Triplet A: Dual Engine (Cream)
           trA.style.opacity = 1;
           trB.style.opacity = 0;
           trC.style.opacity = 0;
-          const pA = S(tNorm - 3.75);
+          const pA = S(tNorm - 3.98);
           trA.style.transform = `scale(${0.95 + 0.05 * pA})`;
-        } else if (tNorm < 5.62) {
+        } else if (tNorm < 5.70) {
           // Triplet B: SQLCipher Vault (Obsidian)
           trA.style.opacity = 0;
           trB.style.opacity = 1;
           trC.style.opacity = 0;
-          const pB = S(tNorm - 4.68);
+          const pB = S(tNorm - 4.84);
           trB.style.transform = `scale(${0.95 + 0.05 * pB})`;
-          // Shackle drop
+          // Shackle drop animation
           const shackle = document.getElementById('s3-shackle');
           shackle.setAttribute('transform', `translate(0, ${Math.min(4, pB * 4)})`);
         } else {
@@ -522,81 +749,117 @@
           trA.style.opacity = 0;
           trB.style.opacity = 0;
           trC.style.opacity = 1;
-          const pC = S(tNorm - 5.62);
+          const pC = S(tNorm - 5.70);
           trC.style.transform = `scale(${0.95 + 0.05 * pC})`;
         }
       }
 
-      // --- SCENE 4: Signature 3D Visual (6.56 - 8.44s) ---
+      // ========================================================
+      // SCENE 4: Feature 1 — SMS Auto-Capture (6.56 - 8.91s)
+      // ========================================================
       const s4 = document.getElementById('scene-4');
-      if (tNorm >= 6.56 && tNorm < 8.44) {
+      if (tNorm >= 6.56 && tNorm < 8.91) {
         s4.style.opacity = 1;
         document.getElementById('hud-top-right').innerText = "SCENE 04 / 07";
-        document.getElementById('hud-bottom-left').innerText = "[ TOPOLOGY ENGINE ]";
+        document.getElementById('hud-bottom-left').innerText = "[ FEATURE: AUTO-CAPTURE ]";
+
+        const card = document.getElementById('s4-card');
+        const pCard = S(tNorm - 6.56);
+        const rotX = (1.0 - pCard) * 10.0;
+        const rotY = (1.0 - pCard) * -12.0;
+        card.style.transform = `rotateX(${rotX}deg) rotateY(${rotY}deg) scale(${0.93 + 0.07 * pCard})`;
+
+        // Toast entry slide
+        const toast = document.getElementById('s4-sms-toast');
+        if (tNorm >= 7.0) {
+          const pToast = S(tNorm - 7.0);
+          toast.style.transform = `translateY(${(1 - pToast) * -20}px)`;
+          toast.style.opacity = Math.min(1, pToast * 2);
+        }
       }
 
-      // --- SCENE 5: Product Micro-Moments (8.44 - 11.25s) ---
+      // ========================================================
+      // SCENE 5: Feature 2 — Instant Bill Splitting (8.91 - 11.25s)
+      // ========================================================
       const s5 = document.getElementById('scene-5');
-      if (tNorm >= 8.44 && tNorm < 11.25) {
+      if (tNorm >= 8.91 && tNorm < 11.25) {
         s5.style.opacity = 1;
         document.getElementById('hud-top-right').innerText = "SCENE 05 / 07";
-        document.getElementById('hud-bottom-left').innerText = "[ FROSTED LIQUID UI ]";
+        document.getElementById('hud-bottom-left').innerText = "[ FEATURE: BILL SPLIT ]";
 
-        const card = document.getElementById('s5-glass-card');
-        const pCard = S(tNorm - 8.44);
-        // 3D perspective tilt
-        const rotY = (1.0 - pCard) * 15.0;
-        card.style.transform = `rotateY(${rotY}deg) scale(${0.94 + 0.06 * pCard})`;
+        const card = document.getElementById('s5-card');
+        const pCard = S(tNorm - 8.91);
+        card.style.transform = `rotateY(${(1.0 - pCard) * 12.0}deg) scale(${0.94 + 0.06 * pCard})`;
 
-        // Bill split dynamic drag
+        // Dynamic slider dragging across 4 people
         const sliderFill = document.getElementById('s5-slider-fill');
         const sliderThumb = document.getElementById('s5-slider-thumb');
+        const peopleCount = document.getElementById('s5-people-count');
         const splitCalc = document.getElementById('s5-split-calc');
 
-        if (tNorm >= 9.38 && tNorm < 10.31) {
-          const pDrag = S(tNorm - 9.38);
-          const thumbPct = 50 + 25 * pDrag; // drag to 4 people
+        if (tNorm >= 9.60) {
+          const pDrag = S(tNorm - 9.60);
+          const thumbPct = 25 + 50 * pDrag; // from 2 people (25%) to 4 people (75%)
           sliderFill.style.width = `${thumbPct}%`;
           sliderThumb.style.left = `${thumbPct}%`;
-          splitCalc.innerText = "4 people • ₹487.50 each";
-        }
-
-        // Savings goal progress
-        const goalBar = document.getElementById('s5-goal-bar');
-        const goalNum = document.getElementById('s5-goal-num');
-        if (tNorm >= 10.31) {
-          const pGoal = S(tNorm - 10.31);
-          goalBar.style.width = `${75 + 8.33 * pGoal}%`;
-          goalNum.innerHTML = `₹50,000 <span style="font-size:20px; color:#A6A6A6;">/ ₹60,000</span>`;
+          peopleCount.innerText = "4 People";
+          splitCalc.innerText = "₹487.50";
+        } else {
+          sliderFill.style.width = `25%`;
+          sliderThumb.style.left = `25%`;
+          peopleCount.innerText = "2 People";
+          splitCalc.innerText = "₹975.00";
         }
       }
 
-      // --- SCENE 6: Proof & Kinetic Counter (11.25 - 13.12s) ---
+      // ========================================================
+      // SCENE 6: Feature 3 — Goals & Analytics (11.25 - 13.12s)
+      // ========================================================
       const s6 = document.getElementById('scene-6');
       if (tNorm >= 11.25 && tNorm < 13.12) {
         s6.style.opacity = 1;
         document.getElementById('hud-top-right').innerText = "SCENE 06 / 07";
-        document.getElementById('hud-bottom-left').innerText = "[ METRIC PROOF ]";
+        document.getElementById('hud-bottom-left').innerText = "[ FEATURE: GOALS & TRENDS ]";
 
-        const pCount = S(tNorm - 11.25);
-        const countVal = Math.round(lerp(12000, 84320, pCount));
-        document.getElementById('s6-counter-val').innerText = countVal.toLocaleString();
-        document.getElementById('s6-hero-counter').style.transform = `scale(${0.92 + 0.08 * pCount})`;
+        const card = document.getElementById('s6-card');
+        const pCard = S(tNorm - 11.25);
+        card.style.transform = `scale(${0.94 + 0.06 * pCard})`;
+
+        // Stepper click animation & goal increase
+        const stepperBtn = document.getElementById('s6-stepper-btn');
+        const goalFill = document.getElementById('s6-goal-fill');
+        const goalAmount = document.getElementById('s6-goal-amount');
+
+        if (tNorm >= 11.80) {
+          const pStep = S(tNorm - 11.80);
+          // Emil Kowalski press scale down and rebound
+          const pressScale = (tNorm < 12.0) ? 0.94 : (0.94 + 0.06 * S(tNorm - 12.0));
+          stepperBtn.style.transform = `scale(${pressScale})`;
+          goalFill.style.width = `${83.33 + 1.67 * pStep}%`;
+          goalAmount.innerHTML = `₹51,000 <span style="font-size:22px; color:#A1A1A6; font-weight:500;">/ ₹60,000</span>`;
+        }
       }
 
-      // --- SCENE 7: Emblem Outro & Seamless Loop (13.12 - 15.00s) ---
+      // ========================================================
+      // SCENE 7: Commercial Outro & Perfect Loop Seam (13.12 - 15.00s)
+      // ========================================================
       const s7 = document.getElementById('scene-7');
       if (tNorm >= 13.12 || tNorm === 0) {
         s7.style.opacity = 1;
         document.getElementById('hud-top-right').innerText = "SCENE 07 / 07";
-        document.getElementById('hud-bottom-left').innerText = "[ KANRI EMBLEM ]";
+        document.getElementById('hud-bottom-left').innerText = "[ KANRI BRAND CTA ]";
 
         const crest = document.getElementById('s7-crest');
-        if (tNorm >= 13.12) {
+        const ctaWrap = document.getElementById('s7-cta-wrap');
+
+        if (tNorm >= 13.12 && tNorm < 14.60) {
           const pOutro = S(tNorm - 13.12);
           crest.style.transform = `scale(${0.85 + 0.15 * pOutro})`;
+          ctaWrap.style.opacity = Math.min(1, pOutro * 1.5);
         } else {
+          // Seamless transition back to exactly Frame 0
           crest.style.transform = 'scale(1)';
+          ctaWrap.style.opacity = Math.max(0, 1 - (tNorm >= 14.60 ? (tNorm - 14.60) * 2.5 : 1));
         }
       }
     };
@@ -606,7 +869,7 @@
       await document.fonts.ready;
       window.seek(0);
       window.__ready = true;
-      console.log("Kanri High-Energy Showcase stage ready.");
+      console.log("Kanri Commercial Product Ad stage ready.");
     }
     window.addEventListener('DOMContentLoaded', init);
   </script>
