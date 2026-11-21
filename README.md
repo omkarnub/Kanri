@@ -13,7 +13,7 @@
     </a>
   </p>
 
-  [![Website](https://img.shields.io/badge/Website-omkarnub.github.io%2FKanri-30A46C?style=for-the-badge)](https://omkarnub.github.io/Kanri/)
+  [![Website](https://img.shields.io/badge/Website-kanri--web-30A46C?style=for-the-badge)](https://omkarnub.github.io/kanri-web/)
   [![Latest release](https://img.shields.io/github/v/release/omkarnub/Kanri?style=for-the-badge&color=30A46C&label=Release)](https://github.com/omkarnub/Kanri/releases/latest)
   [![Downloads](https://img.shields.io/github/downloads/omkarnub/Kanri/total?style=for-the-badge&color=30A46C&label=Downloads)](https://github.com/omkarnub/Kanri/releases)
   [![License](https://img.shields.io/badge/License-GPL%203.0-30A46C?style=for-the-badge)](LICENSE)
@@ -25,7 +25,7 @@
 
 ## Table of Contents
 
-- [Official Website](https://omkarnub.github.io/Kanri/)
+- [Official Website (kanri-web)](https://omkarnub.github.io/kanri-web/)
 - [Overview](#overview)
 - [Screenshots](#screenshots)
 - [Features](#features)

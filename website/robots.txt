@@ -1,4 +1,0 @@
-User-agent: *
-Allow: /
-
-Sitemap: https://omkarnub.github.io/Kanri/sitemap.xml

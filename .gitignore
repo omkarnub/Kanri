@@ -23,10 +23,6 @@ skills-lock.json
 !app/src/main/res/**/*.png
 !docs/screenshots/*.png
 !kanri-motion/deliverables/*.png
-!website/**/*.png
-!website/**/*.webp
-!website/**/*.mp4
-!website/**/*.webm
 node_modules/
 kanri-motion/node_modules/
 kanri-motion/ref_frames/

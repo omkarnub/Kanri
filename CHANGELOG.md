@@ -22,6 +22,11 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
     - Refactored `cinematic-hero.tsx` into a pure monochrome Kanri React component featuring Safe-to-Spend daily allowance dials, HDFC SMS auto-capture card, and dual wallet counters.
 - Bumped version to `1.19.10` (Build 77).
 
+### Changed
+- **Website Relocation (`https://github.com/omkarnub/kanri-web`)**:
+  - Migrated the official Kanri website, documentation hub, and motion UI components into a dedicated standalone repository at [`omkarnub/kanri-web`](https://github.com/omkarnub/kanri-web).
+  - Removed `website/` directory and `.github/workflows/deploy-pages.yml` from the Android app repository to cleanly decouple web hosting from the Android application codebase.
+
 ## [1.19.9] - 2026-11-21
 
 ### Added
