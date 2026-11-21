@@ -5,18 +5,6 @@ All notable changes to Kanri will be documented in this file.
 The format is based on [Keep a Changelog](https://keepachangelog.com/en/1.0.0/),
 and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0.html).
 
-## [1.19.11] - 2026-11-21
-
-### Added
-- **Commercial Product Ad Video & Motion Graphics Suite (`kanri-motion/showcase.html`, `kanri_showcase_1920_60.mp4`)**:
-  - Elevated the showcase reel into a commercial product advertisement video with a clear problem hook, fluid motion graphics, and high-contrast explanatory captions describing Kanri's core value propositions.
-  - **Hook & Problem Introduction**: Problem hook addressing data tracking, cloud harvesting, and subscription paywalls, transitioning into the brand slam with the authentic Kanri geometric crest and Panchang Bold logotype.
-  - **Core Architectural Pillars & Captions**: Crisp headline captions and descriptive sub-captions for Dual-Engine Capture (Bank SMS + Notification listener), SQLCipher AES-256 database encryption sealed by Android Keystore hardware, and 100% Air-Gapped privacy.
-  - **Living 3D Frosted Liquid Glass UI Demonstrations**: Apple-grade frosted liquid-glass panels (`backdrop-filter: blur(32px)`) featuring incoming HDFC Bank SMS auto-capture toast (`₹1,950 Debited`), 4-person group bill split slider with elastic spring momentum ($\text{₹1,950} / 4 = \text{₹487.50}$), and MacBook Pro Fund savings goal stepper with `:active` press bounce (`+₹1,000` $\to$ 85.0% achieved) alongside weekly category spending trends.
-  - **100% Byte-Identical Loop Seam**: Verified pixel-identical loop return between Frame 0 ($t=0.00\text{ s}$) and Frame 900 ($t=15.00\text{ s}$) (156,859 bytes), delivering infinite seamless playback.
-  - **Re-rendered & Verified 1080p Deliverable Suite in `kanri-motion/deliverables/`**: `kanri_showcase_1920_60.mp4` (Master Full HD 60fps), `kanri_showcase_1080_60.mp4` (Square Cut), `kanri_showcase_silent.mp4` (Silent Web Hero), `kanri_showcase.webm` (VP9), `kanri_showcase.gif` (Palette-optimized preview), `showcase_poster.png`, and `showcase_contact_sheet.png`.
-- Bumped version to `1.19.11` (Build 78).
-
 ## [1.19.10] - 2026-11-21
 
 ### Added
